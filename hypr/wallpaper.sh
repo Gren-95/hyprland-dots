@@ -24,3 +24,6 @@ wp=$(find "$WALLPAPER_DIR" -type f | shuf -n 1)
 for monitor in "${MONITORS[@]}"; do
     hyprctl hyprpaper wallpaper "$monitor,$wp"
 done
+
+
+echo "Wallpaper set"

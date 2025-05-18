@@ -15,6 +15,7 @@
     ],
     "modules-right": [
         "tray",
+        "bluetooth",
         "pulseaudio",
         "battery"
     ],
@@ -88,5 +89,12 @@
         "format": "🔔",
         "tooltip": "Show notifications",
         "on-click": "swaync-client -t -sw -C"
+    },
+
+    "bluetooth": {
+        "format": " {status}",
+        "format-connected": " {device_alias}",
+        "format-disconnected": " Disconnected",
+        "on-click": "blueman-manager"
     }
 }
