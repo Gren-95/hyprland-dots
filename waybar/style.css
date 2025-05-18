@@ -1,0 +1,24 @@
+* {
+    color: #f5f5f4;
+}
+
+#tray,
+#pulseaudio,
+#network,
+#battery {
+    background: none;
+    background-color: transparent;
+    margin: 0 12px;
+}
+
+#waybar {
+    background: #1c1917;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px 0 #292524cc;
+    border: 1px solid #44403c;
+    font-family: 'Inter', 'ui-sans-serif', 'system-ui', sans-serif;
+}
+
+#custom-notifications {
+    margin: 0 12px;
+}

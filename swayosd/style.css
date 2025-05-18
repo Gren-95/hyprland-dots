@@ -1,0 +1,66 @@
+* {
+    font-family: "JetBrains Mono", "SF Pro Display", "Noto Sans", "monospace";
+    color: #f3f4f6; /* stone-100 */
+}
+
+window {
+    background: transparent;
+    border-radius: 16px;
+}
+
+#osd {
+    background: #1a1a1a; /* stone-900 */
+    border-radius: 16px;
+    padding: 28px 36px;
+    min-width: 300px;
+    font-size: 18px;
+    border: 2px solid #44403c; /* stone-700 */
+    box-shadow: 0 8px 32px 0 rgba(0,0,0,0.45);
+}
+
+#osd .icon {
+    font-size: 36px;
+    margin-right: 20px;
+    color: #a8a29e; /* stone-400 */
+}
+
+#osd .label {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 6px;
+    letter-spacing: 0.01em;
+    color: #e7e5e4; /* stone-200 */
+}
+
+#osd .value {
+    font-size: 16px;
+    color: #fbbf24; /* amber-400 for accent */
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+progressbar:disabled,
+image:disabled {
+    opacity: 0.5;
+}
+
+progressbar {
+    min-height: 10px;
+    border-radius: 999px;
+    background: #292524; /* stone-800 */
+    border: none;
+}
+
+trough {
+    min-height: inherit;
+    border-radius: inherit;
+    border: none;
+    background: #292524; /* stone-800 */
+}
+
+progress {
+    min-height: inherit;
+    border-radius: inherit;
+    border: none;
+    background: #a8a29e; /* stone-400 */
+}
