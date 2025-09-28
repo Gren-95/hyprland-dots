@@ -12,6 +12,7 @@
     ],
     "modules-center": [
         "clock",
+        "custom/hypridle",
         "custom/notifications"
     ],
     "modules-right": [
@@ -61,9 +62,9 @@
     },
 
     "pulseaudio": {
-        "format": " {volume}%",
-        "format-muted": " muted",
-        "on-click": "pavucontrol",
+        "format": "🔊 {volume}%",
+        "format-muted": "🔇 muted",
+        "on-click": "flatpak run com.saivert.pwvucontrol",
         "format-icons": {
             "default": ["", "", ""]
         },
@@ -104,5 +105,14 @@
         "format-connected": " {device_alias}",
         "format-disconnected": " Disconnected",
         "on-click": "blueman-manager"
+    },
+
+    "custom/hypridle": {
+        "format": "{}",
+        "interval": 5,
+        "exec": "if pgrep -x hypridle > /dev/null; then echo '💤'; else echo '💻'; fi",
+        "tooltip": true,
+        "tooltip-format": "Click to toggle idle management",
+        "on-click": "if pgrep -x hypridle > /dev/null; then pkill hypridle && notify-send 'Stay Awake' 'Idle management disabled' -i caffeine-on; else hypridle & notify-send 'Sleep Mode' 'Idle management enabled' -i caffeine-off; fi"
     }
 }

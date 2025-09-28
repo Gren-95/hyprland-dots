@@ -21,7 +21,7 @@
 * `grim`
 * `wl-clipboard`
 * `swayosd`
-* `vim`
+* `neovim`
 * `waybar`
 * `firefox`
 * `brightnessctl`
@@ -54,7 +54,7 @@ sudo dnf install nautilus-open-any-terminal
 ### Install all dependancies
 
 ```bash
-sudo dnf install hyprland kitty wofi nautilus clipse hyprpaper hyprpicker hyprlock hypridle swaync grim wl-clipboard swayosd vim waybar firefox brightnessctl playerctl slurp pavucontrol polkit-gnome blueman-applet network-manager-applet gnome-calendar powerprofilesctl
+sudo dnf install hyprland kitty wofi nautilus clipse hyprpaper hyprpicker hyprlock hypridle swaync grim wl-clipboard swayosd neovim waybar firefox brightnessctl playerctl slurp pavucontrol polkit-gnome blueman-applet network-manager-applet gnome-calendar powerprofilesctl hyprland-plugin-hyprtrails hyprland-plugin-hyprexpo
 ```
 
 ## Setup
@@ -70,7 +70,7 @@ chmod +x hypr/wallpaper.sh
 and add all pictures to hyprpaper to preload otherwise it will not work
 
 ```bash
-vim hypr/hyprpaper.conf
+nvim hypr/hyprpaper.conf
 ```
 
 ### Restart script
@@ -84,7 +84,7 @@ chmod +x hypr/restart.sh
 If you modified any of the dependancies you should modify the processes here also:
 
 ```bash
-vim hypr/restart.sh
+nvim hypr/restart.sh
 ```
 
 ### Idle timeout
@@ -92,7 +92,7 @@ vim hypr/restart.sh
 Set your own custom values in `hypr/hypridle.conf`
 
 ```bash
-vim hypr/hypridle.conf
+nvim hypr/hypridle.conf
 ```
 
 ### Keybinds
@@ -100,7 +100,7 @@ vim hypr/hypridle.conf
 Set your own preferred keybinds at `hypr/hyprland.conf`
 
 ```bash
-vim hypr/hyprland.conf
+nvim hypr/hyprland.conf
 ```
 
 ### OSD
