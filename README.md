@@ -1,7 +1,7 @@
 # Dotfiles for my theme of hyprland (inspired by tailwind)
 
 > [!TIP]
-> I recomment symbolic linking the folders to .config (each folder seperatly)
+> I recommend symbolic linking the folders to .config (each folder separately)
 
 > [!NOTE]
 > I made this on Nobara 42 Gnome so there may be some Fedora/Nobara specific commands.
@@ -29,10 +29,10 @@
 * `slurp`
 * `pavucontrol`
 * `polkit-gnome`
-* `blueman-applet`
 * `network-manager-applet`
 * `gnome-calendar`
 * `powerprofilesctl`
+* `io.github.ebonjaeger.bluejay`      <!-- Added Bluejay Bluetooth app -->
 
 ## Install Dependancies (Nobara 42)
 
@@ -54,8 +54,12 @@ sudo dnf install nautilus-open-any-terminal
 ### Install all dependancies
 
 ```bash
-sudo dnf install hyprland kitty wofi nautilus clipse hyprpaper hyprpicker hyprlock hypridle swaync grim wl-clipboard swayosd neovim waybar firefox brightnessctl playerctl slurp pavucontrol polkit-gnome blueman-applet network-manager-applet gnome-calendar powerprofilesctl hyprland-plugin-hyprtrails hyprland-plugin-hyprexpo
+sudo dnf install hyprland kitty wofi nautilus clipse hyprpaper hyprpicker hyprlock hypridle swaync grim wl-clipboard swayosd neovim waybar firefox brightnessctl playerctl slurp pavucontrol polkit-gnome network-manager-applet gnome-calendar powerprofilesctl hyprland-plugin-hyprtrails hyprland-plugin-hyprexpo
 ```
+> **Note:** For Bluetooth app Bluejay, install with:
+> ```bash
+> flatpak install flathub io.github.ebonjaeger.bluejay
+> ```
 
 ## Setup
 
@@ -81,7 +85,7 @@ This script is for easily restarting startup services
 chmod +x hypr/restart.sh
 ```
 
-If you modified any of the dependancies you should modify the processes here also:
+If you modified any of the dependencies you should modify the processes here also:
 
 ```bash
 nvim hypr/restart.sh
