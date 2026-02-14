@@ -1,0 +1,20 @@
+# Backup files
+*.backup
+*.bak
+*_bak_*
+*.backup.*
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+*~
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.kate-swp
