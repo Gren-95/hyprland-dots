@@ -3,9 +3,17 @@
 # Screenshot to text (OCR) script
 # Takes a screenshot of selected area and extracts text using tesseract
 
+# Debug log
+LOG_FILE="/tmp/screenshot-ocr-debug.log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+echo "=== OCR Script Started: $(date) ==="
+
 # Ensure wayland display is set
 export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-1}"
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+
+echo "WAYLAND_DISPLAY=$WAYLAND_DISPLAY"
+echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"
 
 # Screenshot directory
 SCREENSHOT_DIR="$HOME/Pictures/Screenshots"
@@ -44,13 +52,21 @@ fi
 
 # Copy to clipboard
 echo -n "Copying to clipboard ... "
-echo "$TEXT" | wl-copy
-sleep 0.2
+echo "Text to copy (length: ${#TEXT}):"
+echo "$TEXT" | head -c 200
+echo ""
+echo "$TEXT" | /usr/bin/wl-copy
+WL_EXIT=$?
+echo "wl-copy exit code: $WL_EXIT"
+sleep 1
+echo "Verifying clipboard..."
+VERIFY=$(/usr/bin/wl-paste 2>&1 | head -c 100)
+echo "Clipboard content: $VERIFY"
 echo "OK"
 
 # Add to clipboard manager
 echo -n "Adding to clipboard history ... "
-echo "$TEXT" | cliphist store
+echo "$TEXT" | /usr/bin/cliphist store
 sleep 0.2
 echo "OK"
 
