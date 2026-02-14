@@ -22,11 +22,11 @@ echo "OK"
 
 # Perform OCR
 echo -n "Running OCR ... "
-TEXT=$(tesseract "$SCREENSHOT" - 2>/dev/null)
-if [[ $? -ne 0 ]]; then
+TEXT=$(tesseract "$SCREENSHOT" - -l eng 2>&1)
+OCR_EXIT=$?
+if [[ $OCR_EXIT -ne 0 ]]; then
     echo "FAILED"
-    notify-send "Screenshot OCR" "OCR processing failed" -u critical
-    rm -f "$SCREENSHOT"
+    notify-send "Screenshot OCR" "OCR processing failed:\n$TEXT" -u critical
     exit 1
 fi
 echo "OK"
@@ -40,8 +40,9 @@ fi
 
 # Copy to clipboard
 echo -n "Copying to clipboard ... "
-echo -n "$TEXT" | wl-copy
-if [[ $? -eq 0 ]]; then
+printf "%s" "$TEXT" | wl-copy
+COPY_EXIT=$?
+if [[ $COPY_EXIT -eq 0 ]]; then
     echo "OK"
     # Show notification with preview (first 100 chars)
     PREVIEW=$(echo "$TEXT" | head -c 100)
