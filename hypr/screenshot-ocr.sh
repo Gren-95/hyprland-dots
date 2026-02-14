@@ -22,11 +22,11 @@ echo "OK"
 
 # Perform OCR
 echo -n "Running OCR ... "
-TEXT=$(tesseract "$SCREENSHOT" - -l eng 2>&1)
+TEXT=$(tesseract "$SCREENSHOT" - -l eng 2>/dev/null)
 OCR_EXIT=$?
 if [[ $OCR_EXIT -ne 0 ]]; then
     echo "FAILED"
-    notify-send "Screenshot OCR" "OCR processing failed:\n$TEXT" -u critical
+    notify-send "Screenshot OCR" "OCR processing failed" -u critical
     exit 1
 fi
 echo "OK"
@@ -40,7 +40,8 @@ fi
 
 # Copy to clipboard
 echo -n "Copying to clipboard ... "
-printf "%s" "$TEXT" | wl-copy
+printf "%s" "$TEXT" | wl-copy --type text/plain
+sleep 0.5
 COPY_EXIT=$?
 if [[ $COPY_EXIT -eq 0 ]]; then
     echo "OK"
@@ -49,10 +50,11 @@ if [[ $COPY_EXIT -eq 0 ]]; then
     if [[ ${#TEXT} -gt 100 ]]; then
         PREVIEW="${PREVIEW}..."
     fi
-    notify-send "Screenshot OCR" "Text copied to clipboard!\nScreenshot saved to:\n$SCREENSHOT\n\n$PREVIEW" -u normal
+    notify-send "Screenshot OCR" "Text copied to clipboard!\nScreenshot saved to:\n$SCREENSHOT\n\n$PREVIEW" -u normal -t 5000
 else
     echo "FAILED"
     notify-send "Screenshot OCR" "Failed to copy text to clipboard" -u critical
 fi
 
 echo "Screenshot saved: $SCREENSHOT"
+echo "Text length: ${#TEXT} characters"
