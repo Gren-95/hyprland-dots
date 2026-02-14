@@ -50,23 +50,15 @@ if [[ -z "$TEXT" ]]; then
     exit 0
 fi
 
-# Copy to clipboard
+# Copy to clipboard (using echo -n to avoid trailing newline)
 echo -n "Copying to clipboard ... "
-echo "Text to copy (length: ${#TEXT}):"
-echo "$TEXT" | head -c 200
-echo ""
-echo "$TEXT" | /usr/bin/wl-copy
-WL_EXIT=$?
-echo "wl-copy exit code: $WL_EXIT"
-sleep 1
-echo "Verifying clipboard..."
-VERIFY=$(/usr/bin/wl-paste 2>&1 | head -c 100)
-echo "Clipboard content: $VERIFY"
+echo -n "$TEXT" | /usr/bin/wl-copy 2>/dev/null
+sleep 0.5
 echo "OK"
 
 # Add to clipboard manager
 echo -n "Adding to clipboard history ... "
-echo "$TEXT" | /usr/bin/cliphist store
+echo -n "$TEXT" | /usr/bin/cliphist store 2>/dev/null
 sleep 0.2
 echo "OK"
 
