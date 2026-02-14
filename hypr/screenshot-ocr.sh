@@ -38,10 +38,16 @@ if [[ -z "$TEXT" ]]; then
     exit 0
 fi
 
-# Copy to clipboard and clipboard manager
+# Copy to clipboard
 echo -n "Copying to clipboard ... "
-printf "%s" "$TEXT" | tee >(wl-copy --type text/plain) | cliphist store
-sleep 0.5
+echo "$TEXT" | wl-copy
+sleep 0.2
+echo "OK"
+
+# Add to clipboard manager
+echo -n "Adding to clipboard history ... "
+echo "$TEXT" | cliphist store
+sleep 0.2
 echo "OK"
 
 # Show notification with preview (first 100 chars)
@@ -49,7 +55,7 @@ PREVIEW=$(echo "$TEXT" | head -c 100)
 if [[ ${#TEXT} -gt 100 ]]; then
     PREVIEW="${PREVIEW}..."
 fi
-notify-send "Screenshot OCR" "Text copied to clipboard!\nScreenshot saved to:\n$SCREENSHOT\n\n$PREVIEW" -u normal -t 5000
+notify-send "Screenshot OCR" "Text copied!\n\n$PREVIEW" -u normal -t 5000
 
 echo "Screenshot saved: $SCREENSHOT"
 echo "Text length: ${#TEXT} characters"
