@@ -3,6 +3,10 @@
 # Screenshot to text (OCR) script
 # Takes a screenshot of selected area and extracts text using tesseract
 
+# Ensure wayland display is set
+export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-1}"
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+
 # Screenshot directory
 SCREENSHOT_DIR="$HOME/Pictures/Screenshots"
 mkdir -p "$SCREENSHOT_DIR"
