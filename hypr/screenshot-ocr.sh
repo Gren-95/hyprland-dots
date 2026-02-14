@@ -3,12 +3,12 @@
 # Screenshot to text (OCR) script
 # Takes a screenshot of selected area and extracts text using tesseract
 
-# Create temp directory if it doesn't exist
-TEMP_DIR="/tmp/screenshot-ocr"
-mkdir -p "$TEMP_DIR"
+# Screenshot directory
+SCREENSHOT_DIR="$HOME/Pictures/Screenshots"
+mkdir -p "$SCREENSHOT_DIR"
 
-# Temp file for screenshot
-SCREENSHOT="$TEMP_DIR/screenshot-$(date +%s).png"
+# Screenshot file (saved permanently)
+SCREENSHOT="$SCREENSHOT_DIR/ocr-screenshot-$(date +%Y%m%d-%H%M%S).png"
 
 # Take screenshot of selected area
 echo -n "Taking screenshot ... "
@@ -48,14 +48,10 @@ if [[ $? -eq 0 ]]; then
     if [[ ${#TEXT} -gt 100 ]]; then
         PREVIEW="${PREVIEW}..."
     fi
-    notify-send "Screenshot OCR" "Text copied to clipboard:\n\n$PREVIEW" -u normal
+    notify-send "Screenshot OCR" "Text copied to clipboard!\nScreenshot saved to:\n$SCREENSHOT\n\n$PREVIEW" -u normal
 else
     echo "FAILED"
     notify-send "Screenshot OCR" "Failed to copy text to clipboard" -u critical
 fi
 
-# Cleanup
-rm -f "$SCREENSHOT"
-
-# Clean up old temp files (older than 1 hour)
-find "$TEMP_DIR" -name "screenshot-*.png" -mmin +60 -delete 2>/dev/null
+echo "Screenshot saved: $SCREENSHOT"
