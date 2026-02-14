@@ -11,14 +11,18 @@
 * `hyprland`
 * `kitty`
 * `wofi`
+* `wlogout`
 * `nautilus`
-* `clispe`
+* `clipse`
+* `cliphist`
 * `hyprpaper`
 * `hyprpicker`
 * `hyprlock`
 * `hypridle`
 * `swaync`
 * `grim`
+* `slurp`
+* `swappy`
 * `wl-clipboard`
 * `swayosd`
 * `neovim`
@@ -26,13 +30,13 @@
 * `firefox`
 * `brightnessctl`
 * `playerctl`
-* `slurp`
 * `pavucontrol`
 * `polkit-gnome`
 * `network-manager-applet`
 * `gnome-calendar`
+* `gnome-keyring`
 * `powerprofilesctl`
-* `io.github.ebonjaeger.bluejay`      <!-- Added Bluejay Bluetooth app -->
+* `io.github.ebonjaeger.bluejay`
 
 ## Install Dependancies (Nobara 42)
 
@@ -54,7 +58,7 @@ sudo dnf install nautilus-open-any-terminal
 ### Install all dependancies
 
 ```bash
-sudo dnf install hyprland kitty wofi nautilus clipse hyprpaper hyprpicker hyprlock hypridle swaync grim wl-clipboard swayosd neovim waybar firefox brightnessctl playerctl slurp pavucontrol polkit-gnome network-manager-applet gnome-calendar powerprofilesctl hyprland-plugin-hyprtrails hyprland-plugin-hyprexpo
+sudo dnf install hyprland kitty wofi wlogout nautilus clipse cliphist hyprpaper hyprpicker hyprlock hypridle swaync grim slurp swappy wl-clipboard swayosd neovim waybar firefox brightnessctl playerctl pavucontrol polkit-gnome network-manager-applet gnome-calendar gnome-keyring powerprofilesctl hyprland-plugin-hyprtrails hyprland-plugin-hyprexpo
 ```
 > **Note:** For Bluetooth app Bluejay, install with:
 > ```bash
