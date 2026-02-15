@@ -70,7 +70,28 @@ sudo dnf install hyprland kitty wofi wlogout nautilus clipse cliphist hyprpaper 
 
 ## Setup
 
-### Wallpapers
+### Quick Setup (Recommended)
+
+For a fresh installation, use the automated setup script:
+
+```bash
+cd /path/to/dotfiles
+chmod +x setup.sh
+./setup.sh
+```
+
+This script will:
+- Check for missing dependencies
+- Offer to install them (on Fedora/Nobara)
+- Create symlinks for all config directories
+- Set up script permissions
+- Configure initial system settings (GTK theme, SwayOSD)
+
+### Manual Setup
+
+If you prefer to set up manually:
+
+#### Wallpapers
 
 Set your own pictures directory in `scripts/wallpaper.sh`
 
