@@ -1,5 +1,7 @@
 # Dotfiles for my theme of hyprland (inspired by tailwind)
 
+![Desktop Screenshot](screenshots/desktop.png)
+
 > [!TIP]
 > I recommend symbolic linking the folders to .config (each folder separately)
 
@@ -70,10 +72,10 @@ sudo dnf install hyprland kitty wofi wlogout nautilus clipse cliphist hyprpaper 
 
 ### Wallpapers
 
-Set your own pictures directory in `hypr/wallpaper.sh`
+Set your own pictures directory in `scripts/wallpaper.sh`
 
 ```bash
-chmod +x hypr/wallpaper.sh
+chmod +x scripts/wallpaper.sh
 ```
 
 and add all pictures to hyprpaper to preload otherwise it will not work
@@ -87,13 +89,13 @@ nvim hypr/hyprpaper.conf
 This script is for easily restarting startup services
 
 ```bash
-chmod +x hypr/restart.sh
+chmod +x scripts/restart.sh
 ```
 
 If you modified any of the dependencies you should modify the processes here also:
 
 ```bash
-nvim hypr/restart.sh
+nvim scripts/restart.sh
 ```
 
 ### Idle timeout

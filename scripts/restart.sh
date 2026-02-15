@@ -54,7 +54,7 @@ if pgrep -x swayosd-server >/dev/null; then echo "OK"; else echo "FAILED"; fi
 # Restart SwayOSD monitor
 echo -n "Running: swayosd-monitor ... "
 pkill -f swayosd-monitor.sh 2>/dev/null
-bash /home/ghost/.config/hypr/swayosd-monitor.sh >/dev/null 2>&1 &
+bash /home/ghost/.config/scripts/swayosd-monitor.sh >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -f swayosd-monitor.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
@@ -87,8 +87,8 @@ fi
 # Restart clipsync
 echo -n "Running: clipsync ... "
 pkill -f clipsync.sh 2>/dev/null
-if [[ -f /home/ghost/Documents/dots/hypr/clipsync.sh ]]; then
-    bash /home/ghost/Documents/dots/hypr/clipsync.sh >/dev/null 2>&1 &
+if [[ -f /home/ghost/Documents/dots/scripts/clipsync.sh ]]; then
+    bash /home/ghost/Documents/dots/scripts/clipsync.sh >/dev/null 2>&1 &
     sleep 0.5
     # Check for either the script or its child processes
     if pgrep -f "clipsync.sh\|wl-paste.*sync_clipboard" >/dev/null; then
@@ -133,7 +133,7 @@ fi
 
 # Run wallpaper script
 echo -n "Running: wallpaper.sh ... "
-bash /home/ghost/.config/hypr/wallpaper.sh >/dev/null 2>&1
+bash /home/ghost/.config/scripts/wallpaper.sh >/dev/null 2>&1
 if [[ $? -eq 0 ]]; then echo "OK"; else echo "FAILED"; fi
 
 # Update environment
