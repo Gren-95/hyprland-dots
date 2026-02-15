@@ -57,7 +57,7 @@ check_dependencies() {
     local required_deps=(
         "hyprland" "kitty" "wofi" "nautilus" "hyprpaper" "hyprpicker"
         "hyprlock" "hypridle" "swaync" "grim" "slurp" "swappy"
-        "tesseract" "wl-copy" "swayosd-server" "neovim" "waybar"
+        "tesseract" "wl-copy" "swayosd-server" "nvim" "waybar"
         "firefox" "brightnessctl" "playerctl" "pavucontrol"
         "nm-applet" "gnome-keyring"
     )
