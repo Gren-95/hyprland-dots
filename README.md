@@ -145,3 +145,27 @@ You will need to run this command for osd to run
 sudo systemctl start --now swayosd-libinput-backend.service
 sudo systemctl enable --now swayosd-libinput-backend.service
 ```
+
+### Remote Access (wayvnc)
+
+wayvnc is an optional VNC server for remote desktop access from other devices on your network.
+
+**Start/stop:** `Super+Shift+V` — toggles wayvnc on/off and shows a notification with the IP:port to connect to.
+
+**Connect:** Use any VNC viewer (e.g. TigerVNC) and connect to `<local-ip>:5900`.
+
+```bash
+vncviewer <local-ip>:5900
+```
+
+**Security:** The default config binds to `0.0.0.0` with no authentication — suitable for a trusted LAN. For remote access outside your LAN, use [Tailscale](https://tailscale.com) to keep it private.
+
+To add password auth, edit `wayvnc/config`:
+
+```ini
+enable_auth=true
+username=ghost
+password=yourpassword
+```
+
+**Note:** wayvnc is not started automatically. Use `Super+Shift+V` to start it when needed. Running `Super+B` (restart services) will stop wayvnc if it was active.

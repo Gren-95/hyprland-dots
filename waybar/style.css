@@ -75,3 +75,16 @@
 #battery.critical:not(.charging):not(.plugged) {
     color: #ef4444;
 }
+
+#custom-wayvnc {
+    color: #f97316;
+    margin: 0 12px;
+}
+
+#custom-bluetooth.connected {
+    color: #60a5fa;
+}
+
+#custom-bluetooth.disconnected {
+    color: #78716c;
+}
