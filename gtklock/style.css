@@ -1,0 +1,127 @@
+/* gtklock theme - Tailwind Stone */
+/* Matches waybar/swaync theme */
+
+* {
+    font-family: 'FiraCode Nerd Font', 'Fira Code', sans-serif;
+    color: #f5f5f4;  /* stone-100 */
+}
+
+window {
+    background: transparent;
+}
+
+/* Main body container */
+#body {
+    background: rgba(28, 25, 23, 0.85);  /* stone-900 with blur bg */
+    border-radius: 16px;
+    border: 1px solid #44403c;           /* stone-700 */
+    padding: 32px 40px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+/* Clock - time */
+#clock-time {
+    font-size: 4rem;
+    font-weight: bold;
+    color: #f5f5f4;  /* stone-100 */
+    margin-bottom: 4px;
+}
+
+/* Clock - date */
+#clock-date {
+    font-size: 1rem;
+    color: #a8a29e;  /* stone-400 */
+    margin-bottom: 24px;
+}
+
+/* Password entry */
+entry {
+    background: rgba(41, 37, 36, 0.9);  /* stone-800 */
+    border: 1px solid #44403c;           /* stone-700 */
+    border-radius: 8px;
+    color: #f5f5f4;
+    padding: 10px 16px;
+    caret-color: #f5f5f4;
+    min-width: 280px;
+}
+
+entry:focus {
+    border-color: #78716c;  /* stone-500 */
+    box-shadow: 0 0 0 2px rgba(120, 113, 108, 0.3);
+}
+
+/* Error message */
+#error-label {
+    color: #ef4444;  /* red-500 */
+    font-size: 0.85rem;
+    margin-top: 8px;
+}
+
+/* Unlock button */
+button {
+    background: rgba(41, 37, 36, 0.9);  /* stone-800 */
+    border: 1px solid #44403c;
+    border-radius: 8px;
+    color: #f5f5f4;
+    padding: 8px 20px;
+    transition: background 0.15s ease;
+}
+
+button:hover {
+    background: rgba(68, 64, 60, 0.9);  /* stone-700 */
+    border-color: #57534e;
+}
+
+/* Userinfo module */
+#userinfo-box {
+    margin-bottom: 20px;
+}
+
+#user-image {
+    border-radius: 100%;
+    border: 2px solid #44403c;
+    margin-bottom: 10px;
+}
+
+#username {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #f5f5f4;
+}
+
+/* Playerctl module */
+#player-box {
+    background: rgba(41, 37, 36, 0.9);
+    border: 1px solid #44403c;
+    border-radius: 12px;
+    padding: 12px;
+    margin-top: 20px;
+    min-width: 280px;
+}
+
+#player-cover-art {
+    border-radius: 8px;
+}
+
+#player-title {
+    font-weight: bold;
+    font-size: 0.95rem;
+    color: #f5f5f4;
+}
+
+#player-artist {
+    font-size: 0.85rem;
+    color: #a8a29e;  /* stone-400 */
+}
+
+#player-box button {
+    background: transparent;
+    border: none;
+    padding: 4px 8px;
+    color: #a8a29e;
+}
+
+#player-box button:hover {
+    background: rgba(68, 64, 60, 0.9);
+    color: #f5f5f4;
+}
