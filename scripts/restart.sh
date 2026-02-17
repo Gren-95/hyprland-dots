@@ -58,6 +58,13 @@ bash /home/ghost/.config/scripts/swayosd-monitor.sh >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -f swayosd-monitor.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
+# Restart battery notifier
+echo -n "Running: battery-notify ... "
+pkill -f battery-notify.sh 2>/dev/null
+bash /home/ghost/.config/scripts/battery-notify.sh >/dev/null 2>&1 &
+sleep 0.2
+if pgrep -f battery-notify.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
+
 # Restart wl-paste clipboard watchers
 echo -n "Running: wl-paste (text) ... "
 pkill -f "wl-paste.*text.*cliphist" 2>/dev/null
