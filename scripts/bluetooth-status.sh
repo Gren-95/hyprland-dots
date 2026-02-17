@@ -41,7 +41,7 @@ fi
 tooltip=$(printf '%s\n' "${DEVICES[@]}" | tr '\n' '|' | sed 's/|$//' | sed 's/|/\\n/g')
 
 if [[ $idx -eq 0 ]]; then
-    echo "{\"text\": \"󰂰 $COUNT connected\", \"tooltip\": \"$tooltip\"}"
+    echo "{\"text\": \"󰂰 $COUNT\", \"tooltip\": \"$tooltip\"}"
 else
     device="${DEVICES[$((idx - 1))]}"
     echo "{\"text\": \"󰂰 $device\", \"tooltip\": \"$tooltip\"}"
