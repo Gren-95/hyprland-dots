@@ -17,13 +17,15 @@
     ],
     "modules-right": [
         "tray",
+        "network",
         "bluetooth",
         "pulseaudio",
+        "custom/powerprofile",
         "battery"
     ],
 
     "custom/ppmenu": {
-        "format": "💿",
+        "format": "",
         "tooltip": "Open app menu",
         "tooltip-format": "Open app menu",
         "on-click": "wofi --show drun -s /home/ghost/.config/wofi/style.css"
@@ -33,16 +35,16 @@
         "format": "{icon}",
         "on-click": "activate",
         "format-icons": {
-            "1": "",
-            "2": "",
-            "3": "",
-            "4": "",
-            "5": "",
-            "6": "",
-            "7": "",
-            "8": "",
-            "9": "",
-            "default": ""
+            "1": "",
+            "2": "",
+            "3": "",
+            "4": "",
+            "5": "",
+            "6": "",
+            "7": "",
+            "8": "",
+            "9": "",
+            "default": ""
         },
         "dynamic": true
     },
@@ -54,7 +56,7 @@
     },
 
     "clock": {
-        "format": "  {:%a %b %d  %H:%M}",
+        "format": "  {:%a %b %d  %H:%M}",
         "tooltip": true,
         "tooltip-format": "<b>{}</b>\nEstonia/Tallinn is UTC+3 (3 hours ahead of UTC)",
         "interval": 1,
@@ -62,31 +64,30 @@
     },
 
     "pulseaudio": {
-        "format": "🔊 {volume}%",
-        "format-muted": "🔇 muted",
+        "format": "󰕾 {volume}%",
+        "format-muted": "󰖁 muted",
         "on-click": "flatpak run com.saivert.pwvucontrol",
         "format-icons": {
-            "default": ["", "", ""]
+            "default": ["󰕿", "󰖀", "󰕾"]
         },
         "scroll-step": 5
     },
 
     "network": {
-        "format-wifi": "  <b>{essid}</b> ({signalStrength}%)",
-        "format-ethernet": " 🌐 {ifname} ",
-        "format-disconnected": " ❌ Disconnected ",
-        "tooltip-format": "🔌 {ifname} - 🌍 {ipaddr}",
-        "on-click": "network-manager-applet"
+        "format-wifi": "󰤨  {essid} ({signalStrength}%)",
+        "format-ethernet": "󰈀 {ifname}",
+        "format-disconnected": "󰤭 Disconnected",
+        "tooltip-format": "󰌘 {ifname} - 󰩟 {ipaddr}",
+        "on-click": "nm-applet"
     },
 
     "battery": {
-        "format": "🔋 {capacity}%",
-        "format-charging": "⚡ {capacity}%",
-        "format-plugged": "🔌 {capacity}%",
-        "format-alt": "{time} left",
-        "format-icons": ["🪫", "🔋", "🔋", "🔋", "🟩"],
+        "format": "{icon} {capacity}%",
+        "format-charging": "󰂄 {capacity}%",
+        "format-plugged": "󰂏 {capacity}%",
+        "format-alt": "{icon} {time} left",
+        "format-icons": ["󰂎", "󰁺", "󰁾", "󰂀", "󰁹"],
         "interval": 30,
-        "on-click-right": "current=$(powerprofilesctl get); if [ \"$current\" = \"performance\" ]; then powerprofilesctl set balanced && notify-send 'Power Profile' 'Set to Balanced'; elif [ \"$current\" = \"balanced\" ]; then powerprofilesctl set power-saver && notify-send 'Power Profile' 'Set to Power Saver'; else powerprofilesctl set performance && notify-send 'Power Profile' 'Set to Performance'; fi",
         "on-scroll-up": "swayosd-client --brightness raise",
         "on-scroll-down": "swayosd-client --brightness lower"
     },
@@ -97,24 +98,33 @@
     },
 
     "custom/notifications": {
-        "format": "🔔",
+        "format": "󰂚",
         "tooltip": "Show notifications",
         "on-click": "swaync-client -t -sw -C"
     },
 
     "bluetooth": {
-        "format": " {status}",
-        "format-connected": " {device_alias}",
-        "format-disconnected": " Disconnected",
+        "format": "󰂯 {status}",
+        "format-connected": "󰂰 {device_alias}",
+        "format-disconnected": "󰂲 Disconnected",
         "on-click": "flatpak run io.github.ebonjaeger.bluejay"
     },
 
     "custom/hypridle": {
         "format": "{}",
         "interval": 5,
-        "exec": "if pgrep -x hypridle > /dev/null; then echo '💤'; else echo '💻'; fi",
+        "exec": "if pgrep -x hypridle > /dev/null; then echo '󰒳'; else echo '󰒲'; fi",
         "tooltip": true,
         "tooltip-format": "Click to toggle idle management",
         "on-click": "if pgrep -x hypridle > /dev/null; then pkill hypridle && notify-send 'Stay Awake' 'Idle management disabled' -i caffeine-on; else hypridle & notify-send 'Sleep Mode' 'Idle management enabled' -i caffeine-off; fi"
+    },
+
+    "custom/powerprofile": {
+        "format": "{}",
+        "interval": 5,
+        "exec": "profile=$(powerprofilesctl get); if [ \"$profile\" = \"performance\" ]; then echo '󱐋 Performance'; elif [ \"$profile\" = \"balanced\" ]; then echo '󱘴 Balanced'; else echo '󱟦 Power Saver'; fi",
+        "tooltip": true,
+        "tooltip-format": "Right-click to cycle power profile",
+        "on-click": "current=$(powerprofilesctl get); if [ \"$current\" = \"performance\" ]; then powerprofilesctl set balanced && notify-send 'Power Profile' 'Set to Balanced'; elif [ \"$current\" = \"balanced\" ]; then powerprofilesctl set power-saver && notify-send 'Power Profile' 'Set to Power Saver'; else powerprofilesctl set performance && notify-send 'Power Profile' 'Set to Performance'; fi"
     }
 }
