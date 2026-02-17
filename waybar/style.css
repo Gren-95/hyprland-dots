@@ -43,12 +43,12 @@
 #clock.date {
     color: #a8a29e;
     font-size: 0.85rem;
-    margin-right: 2px;
+    margin: 0 4px 0 12px;
 }
 
 #clock.time {
     font-weight: bold;
-    margin-left: 2px;
+    margin: 0 12px 0 4px;
 }
 
 #custom-powerprofile.performance {
