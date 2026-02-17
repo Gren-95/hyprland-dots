@@ -158,6 +158,15 @@ echo -n "Running: hyprctl monitor fallback ... "
 hyprctl keyword monitor "FALLBACK,1920x1080@60,auto,1" >/dev/null 2>&1
 if [[ $? -eq 0 ]]; then echo "OK"; else echo "FAILED"; fi
 
+# Stop WayVNC if running (user can restart manually with Super+Shift+V)
+echo -n "Running: wayvnc ... "
+if pgrep -x wayvnc >/dev/null; then
+    pkill wayvnc
+    echo "SKIPPED (stopped — restart with Super+Shift+V)"
+else
+    echo "SKIPPED (not running)"
+fi
+
 echo "======================================"
 echo "Restart Complete!"
 echo "======================================"

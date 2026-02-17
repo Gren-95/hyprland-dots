@@ -26,7 +26,7 @@ case "$1" in
 esac
 
 if [[ $COUNT -eq 0 ]]; then
-    echo '{"text": "󰂲 Disconnected", "tooltip": "No devices connected"}'
+    echo '{"text": "󰂲", "tooltip": "No devices connected", "class": "disconnected"}'
     exit 0
 fi
 
@@ -41,8 +41,8 @@ fi
 tooltip=$(printf '%s\n' "${DEVICES[@]}" | tr '\n' '|' | sed 's/|$//' | sed 's/|/\\n/g')
 
 if [[ $idx -eq 0 ]]; then
-    echo "{\"text\": \"󰂰 $COUNT\", \"tooltip\": \"$tooltip\"}"
+    echo "{\"text\": \"󰂰 $COUNT\", \"tooltip\": \"$tooltip\", \"class\": \"connected\"}"
 else
     device="${DEVICES[$((idx - 1))]}"
-    echo "{\"text\": \"󰂰 $device\", \"tooltip\": \"$tooltip\"}"
+    echo "{\"text\": \"󰂰 $device\", \"tooltip\": \"$tooltip\", \"class\": \"connected\"}"
 fi

@@ -1,0 +1,6 @@
+# wayvnc config
+# Security: no auth — rely on Tailscale or LAN-only access
+# To add a password: set enable_auth=true, username=ghost, password=yourpassword
+
+address=0.0.0.0
+port=5900
