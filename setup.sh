@@ -85,9 +85,10 @@ install_dependencies() {
     fi
 
     print_info "Adding required COPR repositories..."
-    sudo dnf copr enable -y markupstart/SwayOSD
+    sudo dnf copr enable -y lionheartp/Hyprland
     sudo dnf copr enable -y azandure/clipse
-    sudo dnf copr enable -y solopasha/hyprland
+    sudo dnf copr enable -y erikreider/SwayNotificationCenter
+    sudo dnf copr enable -y washkinazy/wayland-wm-extras
 
     print_info "Installing dependencies..."
     sudo dnf install -y \
@@ -96,7 +97,8 @@ install_dependencies() {
         swappy tesseract wl-clipboard swayosd neovim waybar firefox \
         brightnessctl playerctl pavucontrol polkit-gnome \
         network-manager-applet gnome-calendar gnome-keyring \
-        powerprofilesctl
+        powerprofilesctl gtklock gtklock-meta \
+        gtklock-playerctl-module gtklock-userinfo-module
 
     print_success "Dependencies installed"
 }
