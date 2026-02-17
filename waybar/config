@@ -26,38 +26,34 @@
         "custom/sep",
         "battery"
     ],
-
     "custom/ppmenu": {
-        "format": "",
+        "format": "",
         "tooltip": "Open app menu",
         "tooltip-format": "Open app menu",
         "on-click": "wofi --show drun -s /home/ghost/.config/wofi/style.css"
     },
-
     "hyprland/workspaces": {
         "format": "{icon}",
         "on-click": "activate",
         "format-icons": {
-            "1": "",
-            "2": "",
-            "3": "",
-            "4": "",
-            "5": "",
-            "6": "",
-            "7": "",
-            "8": "",
-            "9": "",
-            "default": ""
+            "1": "",
+            "2": "",
+            "3": "",
+            "4": "",
+            "5": "",
+            "6": "",
+            "7": "",
+            "8": "",
+            "9": "",
+            "default": ""
         },
         "dynamic": true
     },
-
     "hyprland/window": {
         "max-length": 40,
         "separate-outputs": true,
         "format": "{title}"
     },
-
     "clock": {
         "format": "  {:%a %b %d  %H:%M}",
         "tooltip": true,
@@ -65,17 +61,19 @@
         "interval": 1,
         "on-click": "gnome-calendar"
     },
-
     "pulseaudio": {
         "format": "󰕾 {volume}%",
         "format-muted": "󰖁 muted",
         "on-click": "flatpak run com.saivert.pwvucontrol",
         "format-icons": {
-            "default": ["󰕿", "󰖀", "󰕾"]
+            "default": [
+                "󰕿",
+                "󰖀",
+                "󰕾"
+            ]
         },
         "scroll-step": 5
     },
-
     "network": {
         "format-wifi": "󰤨  {essid} ({signalStrength}%)",
         "format-ethernet": "󰈀 {ifname}",
@@ -83,13 +81,18 @@
         "tooltip-format": "󰌘 {ifname} - 󰩟 {ipaddr}",
         "on-click": "nm-applet"
     },
-
     "battery": {
         "format": "{icon} {capacity}%",
         "format-charging": "󰂄 {capacity}%",
         "format-plugged": "󰂏 {capacity}%",
         "format-alt": "{icon} {time} left",
-        "format-icons": ["󰂎", "󰁺", "󰁾", "󰂀", "󰁹"],
+        "format-icons": [
+            "󰂎",
+            "󰁺",
+            "󰁾",
+            "󰂀",
+            "󰁹"
+        ],
         "interval": 30,
         "states": {
             "critical": 20
@@ -97,18 +100,15 @@
         "on-scroll-up": "swayosd-client --brightness raise",
         "on-scroll-down": "swayosd-client --brightness lower"
     },
-
     "tray": {
         "icon-size": 20,
         "spacing": 10
     },
-
     "custom/notifications": {
         "format": "󰂚",
         "tooltip": "Show notifications",
         "on-click": "swaync-client -t -sw -C"
     },
-
     "custom/bluetooth": {
         "format": "{}",
         "return-type": "json",
@@ -119,13 +119,11 @@
         "on-scroll-down": "bash ~/.config/scripts/bluetooth-status.sh scroll-down",
         "on-click": "flatpak run io.github.ebonjaeger.bluejay"
     },
-
     "custom/sep": {
         "format": "│",
         "interval": "once",
         "tooltip": false
     },
-
     "custom/hypridle": {
         "format": "{}",
         "interval": 5,
@@ -134,7 +132,6 @@
         "tooltip-format": "Click to toggle idle management",
         "on-click": "if pgrep -x hypridle > /dev/null; then pkill hypridle && notify-send 'Stay Awake' 'Idle management disabled' -i caffeine-on; else hypridle & notify-send 'Sleep Mode' 'Idle management enabled' -i caffeine-off; fi"
     },
-
     "custom/powerprofile": {
         "format": "{}",
         "return-type": "json",
