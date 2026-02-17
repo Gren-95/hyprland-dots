@@ -11,8 +11,8 @@ window {
 #osd {
     background: #1a1a1a; /* stone-900 */
     border-radius: 16px;
-    padding: 28px 36px;
-    min-width: 300px;
+    padding: 12px 20px;
+    min-width: 200px;
     font-size: 18px;
     border: 2px solid #44403c; /* stone-700 */
     box-shadow: 0 8px 32px 0 rgba(0,0,0,0.45);
@@ -20,7 +20,7 @@ window {
 
 #osd .icon {
     font-size: 36px;
-    margin-right: 20px;
+    margin-right: 10px;
     color: #a8a29e; /* stone-400 */
 }
 
