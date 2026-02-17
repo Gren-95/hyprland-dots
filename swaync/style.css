@@ -306,7 +306,7 @@ notificationwindow, blankwindow {
 :root {
   --mpris-album-art-overlay: rgba(28, 25, 23, 0.92);
   --mpris-button-hover: rgba(87, 83, 78, 0.85);
-  --mpris-album-art-icon-size: 96px;
+  --mpris-album-art-icon-size: 80px;
   --mpris-album-art-shadow: 0px 0px 10px rgba(0, 0, 0, 0.75);
 }
 
@@ -334,7 +334,7 @@ notificationwindow, blankwindow {
 }
 
 .widget-mpris .widget-mpris-player .mpris-overlay .widget-mpris-album-art {
-  border-radius: var(--border-radius);
+  border-radius: 10px;
   box-shadow: var(--mpris-album-art-shadow);
 }
 
