@@ -38,7 +38,7 @@ if [[ $idx -gt $COUNT ]]; then
     echo "0" > "$INDEX_FILE"
 fi
 
-tooltip=$(printf '%s\n' "${DEVICES[@]}")
+tooltip=$(printf '%s\n' "${DEVICES[@]}" | tr '\n' '|' | sed 's/|$//' | sed 's/|/\\n/g')
 
 if [[ $idx -eq 0 ]]; then
     echo "{\"text\": \"󰂰 $COUNT connected\", \"tooltip\": \"$tooltip\"}"
