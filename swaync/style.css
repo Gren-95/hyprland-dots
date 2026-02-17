@@ -3,11 +3,11 @@
 
 :root {
   --cc-bg: rgba(28, 25, 23, 0.97);          /* stone-900 */
-  --noti-bg: 60, 56, 54;                    /* stone-700 - used as rgba components */
+  --noti-bg: 41, 37, 36;                    /* stone-800 - used as rgba components */
   --noti-bg-alpha: 0.97;
   --noti-bg-darker: rgb(28, 25, 23);        /* stone-900 */
-  --noti-bg-hover: rgb(87, 83, 78);         /* stone-600 */
-  --noti-bg-focus: rgba(41, 37, 36, 0.6);  /* stone-800 */
+  --noti-bg-hover: rgb(60, 56, 54);         /* stone-700 */
+  --noti-bg-focus: rgba(28, 25, 23, 0.6);  /* stone-900 */
   --noti-border-color: rgba(231, 229, 228, 0.12);  /* stone-100 subtle */
   --noti-close-bg: rgba(120, 113, 108, 0.15);      /* stone-500 subtle */
   --noti-close-bg-hover: rgba(120, 113, 108, 0.28);
