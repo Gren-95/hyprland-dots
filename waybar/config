@@ -87,8 +87,8 @@
         "format-icons": ["🪫", "🔋", "🔋", "🔋", "🟩"],
         "interval": 30,
         "on-click-right": "current=$(powerprofilesctl get); if [ \"$current\" = \"performance\" ]; then powerprofilesctl set balanced && notify-send 'Power Profile' 'Set to Balanced'; elif [ \"$current\" = \"balanced\" ]; then powerprofilesctl set power-saver && notify-send 'Power Profile' 'Set to Power Saver'; else powerprofilesctl set performance && notify-send 'Power Profile' 'Set to Performance'; fi",
-        "on-scroll-up": "brightnessctl set 5%+",
-        "on-scroll-down": "brightnessctl set 5%-"
+        "on-scroll-up": "swayosd-client --brightness raise",
+        "on-scroll-down": "swayosd-client --brightness lower"
     },
 
     "tray": {
