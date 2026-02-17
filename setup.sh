@@ -26,6 +26,7 @@ CONFIG_ITEMS=(
     "swayosd"
     "swappy"
     "scripts"
+    "wayvnc"
 )
 
 # Print colored output

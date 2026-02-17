@@ -28,13 +28,14 @@
         "custom/sep",
         "custom/powerprofile",
         "custom/sep",
-        "battery"
+        "battery",
+        "custom/wayvnc"
     ],
     "custom/ppmenu": {
         "format": "󱗼",
         "tooltip": "Open app menu",
         "tooltip-format": "Open app menu",
-        "on-click": "wofi --show drun -s /home/ghost/.config/wofi/style.css"
+        "on-click": "vicinae toggle"
     },
     "hyprland/workspaces": {
         "format": "{icon}",
@@ -162,5 +163,14 @@
         "on-click": "current=$(powerprofilesctl get); if [ \"$current\" = \"performance\" ]; then powerprofilesctl set balanced && notify-send 'Power Profile' 'Set to Balanced'; elif [ \"$current\" = \"balanced\" ]; then powerprofilesctl set power-saver && notify-send 'Power Profile' 'Set to Power Saver'; else powerprofilesctl set performance && notify-send 'Power Profile' 'Set to Performance'; fi",
         "on-scroll-up": "brightnessctl --device='dell::kbd_backlight' set +1",
         "on-scroll-down": "brightnessctl --device='dell::kbd_backlight' set 1-"
+    },
+    "custom/wayvnc": {
+        "format": "󰢹",
+        "tooltip": true,
+        "tooltip-format": "WayVNC active — click to stop",
+        "interval": 3,
+        "exec": "echo ''",
+        "exec-if": "pgrep -x wayvnc",
+        "on-click": "pkill wayvnc && notify-send -i network-vpn 'WayVNC' 'Remote access stopped'"
     }
 }
