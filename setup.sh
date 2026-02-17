@@ -60,7 +60,7 @@ check_dependencies() {
         "hyprlock" "hypridle" "swaync" "grim" "slurp" "swappy"
         "tesseract" "wl-copy" "swayosd-server" "nvim" "waybar"
         "firefox" "brightnessctl" "playerctl" "pavucontrol"
-        "nm-applet" "gnome-keyring"
+        "nm-applet" "gnome-keyring" "vicinae"
     )
 
     for dep in "${required_deps[@]}"; do
@@ -90,6 +90,7 @@ install_dependencies() {
     sudo dnf copr enable -y azandure/clipse
     sudo dnf copr enable -y erikreider/SwayNotificationCenter
     sudo dnf copr enable -y washkinazy/wayland-wm-extras
+    sudo dnf copr enable -y quadratech188/vicinae
 
     print_info "Installing dependencies..."
     sudo dnf install -y \
@@ -99,7 +100,7 @@ install_dependencies() {
         brightnessctl playerctl pavucontrol polkit-gnome \
         network-manager-applet gnome-calendar gnome-keyring \
         powerprofilesctl gtklock gtklock-meta \
-        gtklock-playerctl-module gtklock-userinfo-module
+        gtklock-playerctl-module gtklock-userinfo-module vicinae
 
     print_success "Dependencies installed"
 }

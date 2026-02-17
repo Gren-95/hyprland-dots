@@ -40,6 +40,7 @@
 * `gnome-calendar`
 * `gnome-keyring`
 * `powerprofilesctl`
+* `vicinae`
 * `io.github.ebonjaeger.bluejay`
 
 ## Install Dependancies (Nobara 42)
@@ -51,6 +52,7 @@ sudo dnf copr enable lionheartp/Hyprland                    # hyprland
 sudo dnf copr enable azandure/clipse                        # clipboard
 sudo dnf copr enable erikreider/SwayNotificationCenter      # swaync
 sudo dnf copr enable washkinazy/wayland-wm-extras           # swayosd + gtklock
+sudo dnf copr enable quadratech188/vicinae                  # vicinae launcher
 ```
 
 #### Optional integration of Kitty to Nautilus
@@ -63,7 +65,7 @@ sudo dnf install nautilus-open-any-terminal
 ### Install all dependancies
 
 ```bash
-sudo dnf install hyprland kitty wofi wlogout nautilus clipse cliphist hyprpaper hyprpicker hyprlock hypridle swaync grim slurp swappy tesseract wl-clipboard swayosd neovim waybar firefox brightnessctl playerctl pavucontrol polkit-gnome network-manager-applet gnome-calendar gnome-keyring powerprofilesctl gtklock gtklock-meta gtklock-playerctl-module gtklock-userinfo-module
+sudo dnf install hyprland kitty wofi wlogout nautilus clipse cliphist hyprpaper hyprpicker hyprlock hypridle swaync grim slurp swappy tesseract wl-clipboard swayosd neovim waybar firefox brightnessctl playerctl pavucontrol polkit-gnome network-manager-applet gnome-calendar gnome-keyring powerprofilesctl gtklock gtklock-meta gtklock-playerctl-module gtklock-userinfo-module vicinae
 ```
 > **Note:** For Bluetooth app Bluejay, install with:
 > ```bash
