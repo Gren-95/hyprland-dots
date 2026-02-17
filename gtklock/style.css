@@ -1,127 +1,136 @@
-/* gtklock theme - Tailwind Stone */
-/* Matches waybar/swaync theme */
+/* gtklock theme - Minimalist Stone */
 
 * {
     font-family: 'FiraCode Nerd Font', 'Fira Code', sans-serif;
-    color: #f5f5f4;  /* stone-100 */
+    color: #f5f5f4;
 }
 
 window {
     background: transparent;
 }
 
-/* Main body container */
+/* Main body - minimal, no heavy box */
 #body {
-    background: rgba(28, 25, 23, 0.85);  /* stone-900 with blur bg */
-    border-radius: 16px;
-    border: 1px solid #44403c;           /* stone-700 */
-    padding: 32px 40px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    background: rgba(28, 25, 23, 0.55);
+    border-radius: 20px;
+    border: 1px solid rgba(68, 64, 60, 0.4);
+    padding: 40px 48px;
+    box-shadow: none;
 }
 
 /* Clock - time */
 #clock-time {
-    font-size: 4rem;
+    font-size: 5rem;
     font-weight: bold;
-    color: #f5f5f4;  /* stone-100 */
-    margin-bottom: 4px;
+    color: #f5f5f4;
+    margin-bottom: 2px;
+    letter-spacing: -2px;
 }
 
 /* Clock - date */
 #clock-date {
-    font-size: 1rem;
-    color: #a8a29e;  /* stone-400 */
-    margin-bottom: 24px;
+    font-size: 0.9rem;
+    color: #a8a29e;
+    margin-bottom: 32px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
 }
 
 /* Password entry */
 entry {
-    background: rgba(41, 37, 36, 0.9);  /* stone-800 */
-    border: 1px solid #44403c;           /* stone-700 */
-    border-radius: 8px;
+    background: rgba(28, 25, 23, 0.6);
+    border: 1px solid rgba(68, 64, 60, 0.6);
+    border-radius: 10px 0 0 10px;
     color: #f5f5f4;
     padding: 10px 16px;
     caret-color: #f5f5f4;
-    min-width: 280px;
+    min-width: 240px;
+    border-right: none;
 }
 
 entry:focus {
-    border-color: #78716c;  /* stone-500 */
-    box-shadow: 0 0 0 2px rgba(120, 113, 108, 0.3);
+    border-color: rgba(120, 113, 108, 0.7);
+    background: rgba(41, 37, 36, 0.75);
 }
 
 /* Error message */
 #error-label {
-    color: #ef4444;  /* red-500 */
-    font-size: 0.85rem;
-    margin-top: 8px;
+    color: #ef4444;
+    font-size: 0.8rem;
+    margin-top: 6px;
 }
 
-/* Unlock button */
+/* Unlock button - inline with entry */
 button {
-    background: rgba(41, 37, 36, 0.9);  /* stone-800 */
-    border: 1px solid #44403c;
-    border-radius: 8px;
-    color: #f5f5f4;
-    padding: 8px 20px;
-    transition: background 0.15s ease;
+    background: rgba(41, 37, 36, 0.7);
+    border: 1px solid rgba(68, 64, 60, 0.6);
+    border-radius: 0 10px 10px 0;
+    color: #a8a29e;
+    padding: 10px 16px;
+    transition: all 0.15s ease;
+    min-width: 0;
+    margin: 0;
 }
 
 button:hover {
-    background: rgba(68, 64, 60, 0.9);  /* stone-700 */
-    border-color: #57534e;
+    background: rgba(68, 64, 60, 0.8);
+    color: #f5f5f4;
 }
 
 /* Userinfo module */
 #userinfo-box {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
+/* Profile picture - circle */
 #user-image {
-    border-radius: 100%;
-    border: 2px solid #44403c;
-    margin-bottom: 10px;
+    border-radius: 50%;
+    border: 2px solid rgba(68, 64, 60, 0.6);
+    margin-bottom: 8px;
+    min-width: 72px;
+    min-height: 72px;
 }
 
 #username {
-    font-size: 1.1rem;
-    font-weight: bold;
-    color: #f5f5f4;
+    font-size: 1rem;
+    color: #a8a29e;
+    font-weight: normal;
 }
 
-/* Playerctl module */
+/* Playerctl module - minimal */
 #player-box {
-    background: rgba(41, 37, 36, 0.9);
-    border: 1px solid #44403c;
+    background: rgba(28, 25, 23, 0.5);
+    border: 1px solid rgba(68, 64, 60, 0.4);
     border-radius: 12px;
-    padding: 12px;
+    padding: 10px 14px;
     margin-top: 20px;
     min-width: 280px;
 }
 
 #player-cover-art {
-    border-radius: 8px;
+    border-radius: 6px;
 }
 
 #player-title {
     font-weight: bold;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: #f5f5f4;
 }
 
 #player-artist {
-    font-size: 0.85rem;
-    color: #a8a29e;  /* stone-400 */
+    font-size: 0.8rem;
+    color: #a8a29e;
 }
 
 #player-box button {
     background: transparent;
     border: none;
+    border-radius: 6px;
     padding: 4px 8px;
     color: #a8a29e;
 }
 
 #player-box button:hover {
-    background: rgba(68, 64, 60, 0.9);
+    background: rgba(68, 64, 60, 0.6);
     color: #f5f5f4;
 }
