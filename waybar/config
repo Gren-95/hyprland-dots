@@ -22,6 +22,10 @@
     "modules-right": [
         "tray",
         "custom/sep",
+        "custom/clipboard",
+        "custom/sep",
+        "custom/colorpicker",
+        "custom/sep",
         "custom/bluetooth",
         "custom/sep",
         "pulseaudio",
@@ -146,6 +150,18 @@
         "format": "│",
         "interval": "once",
         "tooltip": false
+    },
+    "custom/clipboard": {
+        "format": "󰅍",
+        "tooltip": true,
+        "tooltip-format": "Open clipboard history",
+        "on-click": "kitty --class clipse -e clipse"
+    },
+    "custom/colorpicker": {
+        "format": "󰈊",
+        "tooltip": true,
+        "tooltip-format": "Pick a color (copies to clipboard)",
+        "on-click": "hyprpicker -a"
     },
     "custom/hypridle": {
         "format": "{}",
