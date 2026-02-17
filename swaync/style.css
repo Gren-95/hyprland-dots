@@ -85,7 +85,7 @@
 .notification-row .notification-background .notification .notification-default-action .notification-content {
   background: transparent;
   border-radius: 12px;
-  padding: 6px;
+  padding: 12px 16px;
 }
 
 .notification-row .notification-background .notification .notification-default-action .notification-content .image {
