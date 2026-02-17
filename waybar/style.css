@@ -89,6 +89,11 @@
     margin: 0 12px;
 }
 
+#custom-microphone {
+    color: #f97316;
+    margin: 0 12px;
+}
+
 #custom-bluetooth.connected {
     color: #60a5fa;
 }
