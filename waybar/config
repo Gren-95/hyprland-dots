@@ -28,7 +28,7 @@
         "battery"
     ],
     "custom/ppmenu": {
-        "format": "b",
+        "format": "󱗼",
         "tooltip": "Open app menu",
         "tooltip-format": "Open app menu",
         "on-click": "wofi --show drun -s /home/ghost/.config/wofi/style.css"
