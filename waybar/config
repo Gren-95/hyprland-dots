@@ -18,7 +18,7 @@
     "modules-right": [
         "tray",
         "network",
-        "bluetooth",
+        "custom/bluetooth",
         "pulseaudio",
         "custom/powerprofile",
         "battery"
@@ -103,10 +103,14 @@
         "on-click": "swaync-client -t -sw -C"
     },
 
-    "bluetooth": {
-        "format": "󰂯 {status}",
-        "format-connected": "󰂰 {device_alias}",
-        "format-disconnected": "󰂲 Disconnected",
+    "custom/bluetooth": {
+        "format": "{}",
+        "return-type": "json",
+        "interval": 10,
+        "exec": "bash ~/.config/scripts/bluetooth-status.sh",
+        "signal": 8,
+        "on-scroll-up": "bash ~/.config/scripts/bluetooth-status.sh scroll-up",
+        "on-scroll-down": "bash ~/.config/scripts/bluetooth-status.sh scroll-down",
         "on-click": "flatpak run io.github.ebonjaeger.bluejay"
     },
 
