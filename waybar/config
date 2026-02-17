@@ -137,6 +137,8 @@
         "return-type": "json",
         "interval": 5,
         "exec": "profile=$(powerprofilesctl get); if [ \"$profile\" = \"performance\" ]; then echo '{\"text\": \"󱐋\", \"tooltip\": \"Performance\", \"class\": \"performance\"}'; elif [ \"$profile\" = \"balanced\" ]; then echo '{\"text\": \"󰾅\", \"tooltip\": \"Balanced\", \"class\": \"balanced\"}'; else echo '{\"text\": \"󱟦\", \"tooltip\": \"Power Saver\", \"class\": \"power-saver\"}'; fi",
-        "on-click": "current=$(powerprofilesctl get); if [ \"$current\" = \"performance\" ]; then powerprofilesctl set balanced && notify-send 'Power Profile' 'Set to Balanced'; elif [ \"$current\" = \"balanced\" ]; then powerprofilesctl set power-saver && notify-send 'Power Profile' 'Set to Power Saver'; else powerprofilesctl set performance && notify-send 'Power Profile' 'Set to Performance'; fi"
+        "on-click": "current=$(powerprofilesctl get); if [ \"$current\" = \"performance\" ]; then powerprofilesctl set balanced && notify-send 'Power Profile' 'Set to Balanced'; elif [ \"$current\" = \"balanced\" ]; then powerprofilesctl set power-saver && notify-send 'Power Profile' 'Set to Power Saver'; else powerprofilesctl set performance && notify-send 'Power Profile' 'Set to Performance'; fi",
+        "on-scroll-up": "brightnessctl --device='dell::kbd_backlight' set +1",
+        "on-scroll-down": "brightnessctl --device='dell::kbd_backlight' set 1-"
     }
 }
