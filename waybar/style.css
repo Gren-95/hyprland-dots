@@ -50,3 +50,16 @@
 #custom-powerprofile.power-saver {
     color: #22c55e;
 }
+
+#battery.charging,
+#battery.plugged {
+    color: #22c55e;
+}
+
+#battery.discharging {
+    color: #eab308;
+}
+
+#battery.critical {
+    color: #ef4444;
+}
