@@ -38,3 +38,15 @@
     margin: 0;
     padding: 0;
 }
+
+#custom-powerprofile.performance {
+    color: #ef4444;
+}
+
+#custom-powerprofile.balanced {
+    color: #eab308;
+}
+
+#custom-powerprofile.power-saver {
+    color: #22c55e;
+}
