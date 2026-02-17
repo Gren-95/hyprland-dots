@@ -1,12 +1,10 @@
 {
   "$schema": "/etc/xdg/swaync/configSchema.json",
-
   "positionX": "right",
   "positionY": "top",
   "layer": "overlay",
   "control-center-layer": "top",
   "layer-shell": true,
-
   "cssPriority": "application",
   "control-center-margin-top": 12,
   "control-center-margin-bottom": 12,
@@ -18,7 +16,6 @@
   "notification-icon-size": 56,
   "notification-body-image-height": 120,
   "notification-body-image-width": 220,
-
   "notification-2fa-action": true,
   "notification-inline-replies": true,
   "timeout": 8,
@@ -32,7 +29,6 @@
   "hide-on-clear": true,
   "hide-on-action": true,
   "script-fail-notify": true,
-
   "notification-visibility": {
     "spotify-muted": {
       "state": "muted",
@@ -45,7 +41,6 @@
       "app-name": "gnome-calendar"
     }
   },
-
   "scripts": {
     "clipboard-clear": {
       "exec": "clipse -clear",
@@ -56,7 +51,6 @@
       "urgency": "Low"
     }
   },
-
   "widgets": [
     "inhibitors",
     "title",
@@ -64,7 +58,6 @@
     "mpris",
     "notifications"
   ],
-
   "widget-config": {
     "inhibitors": {
       "text": "Active Inhibitors",
@@ -84,10 +77,8 @@
       "text": "No new notifications"
     },
     "mpris": {
-      "image-size": 80,
-      "image-radius": 10,
-      "show-controls": true,
-      "show-position-slider": true
+      "show-album-art": "when-available",
+      "autohide": true
     },
     "buttons-grid": {
       "actions": [
@@ -100,7 +91,7 @@
         },
         {
           "label": "󰍛",
-          "type": "button",
+          "type": "normal",
           "command": "clipse -clear"
         }
       ]
