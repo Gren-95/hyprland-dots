@@ -16,7 +16,7 @@
     border-radius: 0.5rem;
     box-shadow: 0 2px 8px 0 #292524cc;
     border: 1px solid #44403c;
-    font-family: 'FiraCode Nerd Font', 'Inter', 'ui-sans-serif', 'system-ui', sans-serif;
+    font-family: 'FiraCode Nerd Font', 'Fira Code', sans-serif;
 }
 
 #custom-notifications {
