@@ -60,6 +60,6 @@
     color: #eab308;
 }
 
-#battery.critical {
+#battery.critical:not(.charging):not(.plugged) {
     color: #ef4444;
 }
