@@ -5,7 +5,9 @@
 #tray,
 #pulseaudio,
 #network,
-#battery {
+#battery,
+#custom-bluetooth,
+#custom-powerprofile {
     background: none;
     background-color: transparent;
     margin: 0 12px;
