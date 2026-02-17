@@ -13,7 +13,6 @@
   "control-center-width": 420,
   "control-center-height": 340,
   "notification-window-width": 420,
-  "notification-icon-size": 56,
   "notification-body-image-height": 120,
   "notification-body-image-width": 220,
   "notification-2fa-action": true,
