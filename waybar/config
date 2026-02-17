@@ -17,7 +17,6 @@
     ],
     "modules-right": [
         "tray",
-        "network",
         "custom/bluetooth",
         "pulseaudio",
         "custom/powerprofile",
