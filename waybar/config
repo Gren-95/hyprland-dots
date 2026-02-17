@@ -33,7 +33,8 @@
         "custom/powerprofile",
         "custom/sep",
         "battery",
-        "custom/wayvnc"
+        "custom/wayvnc",
+        "custom/microphone"
     ],
     "custom/ppmenu": {
         "format": "󱗼",
@@ -188,5 +189,13 @@
         "exec": "echo ''",
         "exec-if": "pgrep -x wayvnc",
         "on-click": "pkill wayvnc && notify-send -i network-vpn 'WayVNC' 'Remote access stopped'"
+    },
+    "custom/microphone": {
+        "format": "󰍬",
+        "interval": 2,
+        "exec": "echo ''",
+        "exec-if": "pactl get-source-mute @DEFAULT_SOURCE@ 2>/dev/null | grep -q 'Mute: no'",
+        "on-click": "pactl set-source-mute @DEFAULT_SOURCE@ toggle",
+        "tooltip": false
     }
 }
