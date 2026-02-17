@@ -12,8 +12,11 @@
         "hyprland/window"
     ],
     "modules-center": [
-        "clock",
+        "clock#date",
+        "clock#time",
+        "custom/sep",
         "custom/hypridle",
+        "custom/sep",
         "custom/notifications"
     ],
     "modules-right": [
@@ -55,12 +58,16 @@
         "separate-outputs": true,
         "format": "{title}"
     },
-    "clock": {
-        "format": "  {:%a %b %d  %H:%M}",
-        "tooltip": true,
-        "tooltip-format": "<b>{}</b>\nEstonia/Tallinn is UTC+3 (3 hours ahead of UTC)",
-        "interval": 1,
+    "clock#date": {
+        "format": "  {:%a, %d %b}",
+        "tooltip": false,
         "on-click": "gnome-calendar"
+    },
+
+    "clock#time": {
+        "format": "{:%H:%M}",
+        "tooltip-format": "Estonia/Tallinn — UTC+3",
+        "interval": 1
     },
     "pulseaudio": {
         "format": "󰕾 {volume}%",
