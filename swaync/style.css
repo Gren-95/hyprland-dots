@@ -243,6 +243,7 @@ notificationwindow, blankwindow {
 
 .floating-notifications .notification {
   box-shadow: var(--notification-shadow);
+  background: rgba(60, 56, 54, 0.97) !important;  /* stone-700 - lighter to stand out */
 }
 
 /*** Widgets ***/
