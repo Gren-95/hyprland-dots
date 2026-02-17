@@ -91,6 +91,9 @@
         "format-alt": "{icon} {time} left",
         "format-icons": ["󰂎", "󰁺", "󰁾", "󰂀", "󰁹"],
         "interval": 30,
+        "states": {
+            "critical": 20
+        },
         "on-scroll-up": "swayosd-client --brightness raise",
         "on-scroll-down": "swayosd-client --brightness lower"
     },
