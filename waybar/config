@@ -106,9 +106,23 @@
         "spacing": 10
     },
     "custom/notifications": {
-        "format": "󰂚",
-        "tooltip": "Show notifications",
-        "on-click": "swaync-client -t -sw -C"
+        "format": "{icon}",
+        "format-icons": {
+            "notification": "󰂞",
+            "none": "󰂚",
+            "dnd-notification": "󰂛",
+            "dnd-none": "󰂛",
+            "inhibited-notification": "󰂞",
+            "inhibited-none": "󰂚",
+            "dnd-inhibited-notification": "󰂛",
+            "dnd-inhibited-none": "󰂛"
+        },
+        "return-type": "json",
+        "exec-if": "which swaync-client",
+        "exec": "swaync-client --subscribe-waybar",
+        "on-click": "swaync-client --toggle-panel --skip-wait",
+        "on-click-right": "swaync-client --toggle-dnd --skip-wait",
+        "escape": true
     },
     "custom/bluetooth": {
         "format": "{}",
