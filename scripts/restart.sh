@@ -54,14 +54,14 @@ if pgrep -x swayosd-server >/dev/null; then echo "OK"; else echo "FAILED"; fi
 # Restart SwayOSD monitor
 echo -n "Running: swayosd-monitor ... "
 pkill -f swayosd-monitor.sh 2>/dev/null
-bash /home/ghost/.config/scripts/swayosd-monitor.sh >/dev/null 2>&1 &
+bash "$HOME/.config/scripts/swayosd-monitor.sh" >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -f swayosd-monitor.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
 # Restart battery notifier
 echo -n "Running: battery-notify ... "
 pkill -f battery-notify.sh 2>/dev/null
-bash /home/ghost/.config/scripts/battery-notify.sh >/dev/null 2>&1 &
+bash "$HOME/.config/scripts/battery-notify.sh" >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -f battery-notify.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
@@ -105,7 +105,7 @@ fi
 
 # Run wallpaper script
 echo -n "Running: wallpaper.sh ... "
-bash /home/ghost/.config/scripts/wallpaper.sh >/dev/null 2>&1
+bash "$HOME/.config/scripts/wallpaper.sh" >/dev/null 2>&1
 if [[ $? -eq 0 ]]; then echo "OK"; else echo "FAILED"; fi
 
 # Update environment
