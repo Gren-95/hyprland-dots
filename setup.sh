@@ -91,7 +91,7 @@ install_dependencies() {
 
     print_info "Installing dependencies..."
     sudo dnf install -y \
-        hyprland kitty wlogout nautilus clipse cliphist \
+        hyprland kitty nautilus clipse \
         hyprpaper hyprpicker hypridle swaync grim slurp \
         swappy tesseract wl-clipboard swayosd waybar firefox \
         brightnessctl playerctl pavucontrol polkit-gnome \
@@ -194,7 +194,7 @@ show_summary() {
     echo "Next steps:"
     echo "1. Log out and log back into Hyprland"
     echo "2. Configure wallpapers in scripts/wallpaper.sh"
-    echo "3. Review keybindings in hypr/hyprland.conf"
+    echo "3. Review keybindings in hypr/modules/keys.conf"
     echo "4. Customize colors and themes to your liking"
     echo ""
     echo "Useful commands:"
