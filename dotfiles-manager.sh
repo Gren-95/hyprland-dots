@@ -18,7 +18,6 @@ CONFIG_ITEMS=(
     "nvim"
     "vim"
     "waybar"
-    "wofi"
     "swaync"
     "swayosd"
     "swappy"
