@@ -21,7 +21,6 @@ CONFIG_ITEMS=(
     "nvim"
     "vim"
     "waybar"
-    "wofi"
     "swaync"
     "swayosd"
     "swappy"
@@ -56,8 +55,8 @@ check_dependencies() {
 
     local missing_deps=()
     local required_deps=(
-        "hyprland" "kitty" "wofi" "nautilus" "hyprpaper" "hyprpicker"
-        "hyprlock" "hypridle" "swaync" "grim" "slurp" "swappy"
+        "hyprland" "kitty" "nautilus" "hyprpaper" "hyprpicker"
+        "hypridle" "swaync" "grim" "slurp" "swappy"
         "tesseract" "wl-copy" "swayosd-server" "nvim" "waybar"
         "firefox" "brightnessctl" "playerctl" "pavucontrol"
         "nm-applet" "gnome-keyring" "vicinae"
@@ -94,8 +93,8 @@ install_dependencies() {
 
     print_info "Installing dependencies..."
     sudo dnf install -y \
-        hyprland kitty wofi wlogout nautilus clipse cliphist \
-        hyprpaper hyprpicker hyprlock hypridle swaync grim slurp \
+        hyprland kitty wlogout nautilus clipse cliphist \
+        hyprpaper hyprpicker hypridle swaync grim slurp \
         swappy tesseract wl-clipboard swayosd neovim waybar firefox \
         brightnessctl playerctl pavucontrol polkit-gnome \
         network-manager-applet gnome-calendar gnome-keyring \

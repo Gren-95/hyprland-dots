@@ -11,7 +11,6 @@ The `dotfiles-manager.sh` script manages your dotfiles by creating symlinks from
 - nvim
 - vim
 - waybar
-- wofi
 - swaync
 - swayosd
 - swappy
@@ -144,7 +143,6 @@ All 9 config folders are now properly symlinked:
 ✓ nvim      → /mnt/DATA/Home_Folders/Documents/dots/nvim
 ✓ vim       → /mnt/DATA/Home_Folders/Documents/dots/vim
 ✓ waybar    → /mnt/DATA/Home_Folders/Documents/dots/waybar
-✓ wofi      → /mnt/DATA/Home_Folders/Documents/dots/wofi
 ✓ swaync    → /mnt/DATA/Home_Folders/Documents/dots/swaync
 ✓ swayosd   → /mnt/DATA/Home_Folders/Documents/dots/swayosd
 ✓ swappy    → /mnt/DATA/Home_Folders/Documents/dots/swappy

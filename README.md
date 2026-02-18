@@ -12,14 +12,12 @@
 
 * `hyprland`
 * `kitty`
-* `wofi`
 * `wlogout`
 * `nautilus`
 * `clipse`
 * `cliphist`
 * `hyprpaper`
 * `hyprpicker`
-* `hyprlock`
 * `hypridle`
 * `gtklock`
 * `swaync`
@@ -65,7 +63,7 @@ sudo dnf install nautilus-open-any-terminal
 ### Install all dependancies
 
 ```bash
-sudo dnf install hyprland kitty wofi wlogout nautilus clipse cliphist hyprpaper hyprpicker hyprlock hypridle swaync grim slurp swappy tesseract wl-clipboard swayosd neovim waybar firefox brightnessctl playerctl pavucontrol polkit-gnome network-manager-applet gnome-calendar gnome-keyring powerprofilesctl gtklock gtklock-meta gtklock-playerctl-module gtklock-userinfo-module vicinae
+sudo dnf install hyprland kitty wlogout nautilus clipse cliphist hyprpaper hyprpicker hypridle swaync grim slurp swappy tesseract wl-clipboard swayosd neovim waybar firefox brightnessctl playerctl pavucontrol polkit-gnome network-manager-applet gnome-calendar gnome-keyring powerprofilesctl gtklock gtklock-meta gtklock-playerctl-module gtklock-userinfo-module vicinae
 ```
 > **Note:** For Bluetooth app Bluejay, install with:
 > ```bash
