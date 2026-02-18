@@ -8,8 +8,6 @@ The `dotfiles-manager.sh` script manages your dotfiles by creating symlinks from
 
 - hypr
 - kitty
-- nvim
-- vim
 - waybar
 - swaync
 - swayosd
@@ -140,8 +138,6 @@ All 9 config folders are now properly symlinked:
 ```
 ✓ hypr      → /mnt/DATA/Home_Folders/Documents/dots/hypr
 ✓ kitty     → /mnt/DATA/Home_Folders/Documents/dots/kitty
-✓ nvim      → /mnt/DATA/Home_Folders/Documents/dots/nvim
-✓ vim       → /mnt/DATA/Home_Folders/Documents/dots/vim
 ✓ waybar    → /mnt/DATA/Home_Folders/Documents/dots/waybar
 ✓ swaync    → /mnt/DATA/Home_Folders/Documents/dots/swaync
 ✓ swayosd   → /mnt/DATA/Home_Folders/Documents/dots/swayosd
