@@ -65,47 +65,12 @@ bash /home/ghost/.config/scripts/battery-notify.sh >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -f battery-notify.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
-# Restart wl-paste clipboard watchers
-echo -n "Running: wl-paste (text) ... "
-pkill -f "wl-paste.*text.*cliphist" 2>/dev/null
-wl-paste --type text --watch cliphist store >/dev/null 2>&1 &
-echo "OK"
-
-echo -n "Running: wl-paste (image) ... "
-pkill -f "wl-paste.*image.*cliphist" 2>/dev/null
-wl-paste --type image --watch cliphist store >/dev/null 2>&1 &
-echo "OK"
-
-# Restart clipse (optional - may not be configured)
+# Restart clipse clipboard daemon
 echo -n "Running: clipse ... "
-killall clipse 2>/dev/null
-if command -v clipse >/dev/null 2>&1; then
-    clipse -listen >/dev/null 2>&1 &
-    sleep 0.5
-    if pgrep -x clipse >/dev/null; then
-        echo "OK"
-    else
-        echo "SKIPPED (not running)"
-    fi
-else
-    echo "SKIPPED (not installed)"
-fi
-
-# Restart clipsync
-echo -n "Running: clipsync ... "
-pkill -f clipsync.sh 2>/dev/null
-if [[ -f /home/ghost/Documents/dots/scripts/clipsync.sh ]]; then
-    bash /home/ghost/Documents/dots/scripts/clipsync.sh >/dev/null 2>&1 &
-    sleep 0.5
-    # Check for either the script or its child processes
-    if pgrep -f "clipsync.sh\|wl-paste.*sync_clipboard" >/dev/null; then
-        echo "OK"
-    else
-        echo "SKIPPED (not running)"
-    fi
-else
-    echo "SKIPPED (script not found)"
-fi
+pkill -f "clipse" 2>/dev/null
+clipse -listen >/dev/null 2>&1 &
+sleep 0.2
+if pgrep -f "clipse" >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
 # Restart nm-applet
 echo -n "Running: nm-applet ... "
@@ -148,8 +113,9 @@ echo -n "Running: dbus-update-activation-environment ... "
 dbus-update-activation-environment --systemd --all >/dev/null 2>&1
 if [[ $? -eq 0 ]]; then echo "OK"; else echo "FAILED"; fi
 
-# Set GTK dark theme preference
-echo -n "Running: gsettings (GTK dark mode) ... "
+# Set GTK theme and dark mode preference
+echo -n "Running: gsettings (GTK theme) ... "
+gsettings set org.gnome.desktop.interface gtk-theme "Adwaita" >/dev/null 2>&1 && \
 gsettings set org.gnome.desktop.interface color-scheme "prefer-dark" >/dev/null 2>&1
 if [[ $? -eq 0 ]]; then echo "OK"; else echo "FAILED"; fi
 
@@ -166,6 +132,11 @@ if pgrep -x wayvnc >/dev/null; then
 else
     echo "SKIPPED (not running)"
 fi
+
+# Set app listener
+echo -n "Running: hyprctl monitor fallback ... "
+vicinae server >/dev/null 2>&1
+if [[ $? -eq 0 ]]; then echo "OK"; else echo "FAILED"; fi
 
 echo "======================================"
 echo "Restart Complete!"
