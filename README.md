@@ -12,10 +12,8 @@
 
 * `hyprland`
 * `kitty`
-* `wlogout`
 * `nautilus`
 * `clipse`
-* `cliphist`
 * `hyprpaper`
 * `hyprpicker`
 * `hypridle`
@@ -62,7 +60,7 @@ sudo dnf install nautilus-open-any-terminal
 ### Install all dependancies
 
 ```bash
-sudo dnf install hyprland kitty wlogout nautilus clipse cliphist hyprpaper hyprpicker hypridle swaync grim slurp swappy tesseract wl-clipboard swayosd waybar firefox brightnessctl playerctl pavucontrol polkit-gnome network-manager-applet gnome-calendar gnome-keyring powerprofilesctl gtklock gtklock-meta gtklock-playerctl-module gtklock-userinfo-module vicinae
+sudo dnf install hyprland kitty nautilus clipse hyprpaper hyprpicker hypridle swaync grim slurp swappy tesseract wl-clipboard swayosd waybar firefox brightnessctl playerctl pavucontrol polkit-gnome network-manager-applet gnome-calendar gnome-keyring powerprofilesctl gtklock gtklock-meta gtklock-playerctl-module gtklock-userinfo-module vicinae
 ```
 > **Note:** For Bluetooth app Bluejay, install with:
 > ```bash
@@ -130,10 +128,10 @@ $EDITOR hypr/hypridle.conf
 
 ### Keybinds
 
-Set your own preferred keybinds at `hypr/hyprland.conf`
+Set your own preferred keybinds at `hypr/modules/keys.conf`
 
 ```bash
-$EDITOR hypr/hyprland.conf
+$EDITOR hypr/modules/keys.conf
 ```
 
 ### OSD
