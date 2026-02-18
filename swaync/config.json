@@ -41,10 +41,6 @@
     }
   },
   "scripts": {
-    "clipboard-clear": {
-      "exec": "clipse -clear",
-      "urgency": "Normal"
-    },
     "wifi-toggle": {
       "exec": "nmcli radio wifi off && sleep 1 && nmcli radio wifi on",
       "urgency": "Low"
@@ -91,7 +87,7 @@
         {
           "label": "󰍛",
           "type": "normal",
-          "command": "clipse -clear"
+          "command": ""
         }
       ]
     }
