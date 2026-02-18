@@ -24,6 +24,7 @@ CONFIG_ITEMS=(
     "swappy"
     "scripts"
     "wayvnc"
+    "gtklock"
 )
 
 # Print colored output
