@@ -15,8 +15,6 @@ LOCK_FILE="/tmp/dotfiles-manager.lock"
 CONFIG_ITEMS=(
     "hypr"
     "kitty"
-    "nvim"
-    "vim"
     "waybar"
     "swaync"
     "swayosd"

@@ -27,7 +27,6 @@
 * `tesseract`
 * `wl-clipboard`
 * `swayosd`
-* `neovim`
 * `waybar`
 * `firefox`
 * `brightnessctl`
@@ -63,7 +62,7 @@ sudo dnf install nautilus-open-any-terminal
 ### Install all dependancies
 
 ```bash
-sudo dnf install hyprland kitty wlogout nautilus clipse cliphist hyprpaper hyprpicker hypridle swaync grim slurp swappy tesseract wl-clipboard swayosd neovim waybar firefox brightnessctl playerctl pavucontrol polkit-gnome network-manager-applet gnome-calendar gnome-keyring powerprofilesctl gtklock gtklock-meta gtklock-playerctl-module gtklock-userinfo-module vicinae
+sudo dnf install hyprland kitty wlogout nautilus clipse cliphist hyprpaper hyprpicker hypridle swaync grim slurp swappy tesseract wl-clipboard swayosd waybar firefox brightnessctl playerctl pavucontrol polkit-gnome network-manager-applet gnome-calendar gnome-keyring powerprofilesctl gtklock gtklock-meta gtklock-playerctl-module gtklock-userinfo-module vicinae
 ```
 > **Note:** For Bluetooth app Bluejay, install with:
 > ```bash
@@ -104,7 +103,7 @@ chmod +x scripts/wallpaper.sh
 and add all pictures to hyprpaper to preload otherwise it will not work
 
 ```bash
-nvim hypr/hyprpaper.conf
+$EDITOR hypr/hyprpaper.conf
 ```
 
 ### Restart script
@@ -118,7 +117,7 @@ chmod +x scripts/restart.sh
 If you modified any of the dependencies you should modify the processes here also:
 
 ```bash
-nvim scripts/restart.sh
+$EDITOR scripts/restart.sh
 ```
 
 ### Idle timeout
@@ -126,7 +125,7 @@ nvim scripts/restart.sh
 Set your own custom values in `hypr/hypridle.conf`
 
 ```bash
-nvim hypr/hypridle.conf
+$EDITOR hypr/hypridle.conf
 ```
 
 ### Keybinds
@@ -134,7 +133,7 @@ nvim hypr/hypridle.conf
 Set your own preferred keybinds at `hypr/hyprland.conf`
 
 ```bash
-nvim hypr/hyprland.conf
+$EDITOR hypr/hyprland.conf
 ```
 
 ### OSD

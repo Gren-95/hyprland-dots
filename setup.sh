@@ -18,8 +18,6 @@ NC='\033[0m' # No Color
 CONFIG_ITEMS=(
     "hypr"
     "kitty"
-    "nvim"
-    "vim"
     "waybar"
     "swaync"
     "swayosd"
@@ -57,7 +55,7 @@ check_dependencies() {
     local required_deps=(
         "hyprland" "kitty" "nautilus" "hyprpaper" "hyprpicker"
         "hypridle" "swaync" "grim" "slurp" "swappy"
-        "tesseract" "wl-copy" "swayosd-server" "nvim" "waybar"
+        "tesseract" "wl-copy" "swayosd-server" "waybar"
         "firefox" "brightnessctl" "playerctl" "pavucontrol"
         "nm-applet" "gnome-keyring" "vicinae"
     )
@@ -95,7 +93,7 @@ install_dependencies() {
     sudo dnf install -y \
         hyprland kitty wlogout nautilus clipse cliphist \
         hyprpaper hyprpicker hypridle swaync grim slurp \
-        swappy tesseract wl-clipboard swayosd neovim waybar firefox \
+        swappy tesseract wl-clipboard swayosd waybar firefox \
         brightnessctl playerctl pavucontrol polkit-gnome \
         network-manager-applet gnome-calendar gnome-keyring \
         powerprofilesctl gtklock gtklock-meta \
