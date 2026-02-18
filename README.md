@@ -3,42 +3,42 @@
 ![Desktop Screenshot](screenshots/desktop.png)
 
 > [!TIP]
-> I recommend symbolic linking the folders to .config (each folder separately)
+> I recommend symbolic linking the folders to .config using dotfiles-manager.sh
 
 > [!NOTE]
-> I made this on Nobara 42 Gnome so there may be some Fedora/Nobara specific commands.
+> I made this on Nobara 43 so there may be some Fedora/Nobara specific commands.
 
 ## Dependencies
 
-* `hyprland`
-* `kitty`
-* `nautilus`
-* `clipse`
-* `hyprpaper`
-* `hyprpicker`
-* `hypridle`
-* `gtklock`
-* `swaync`
-* `grim`
-* `slurp`
-* `swappy`
-* `tesseract`
-* `wl-clipboard`
-* `swayosd`
-* `waybar`
-* `firefox`
-* `brightnessctl`
-* `playerctl`
-* `pavucontrol`
-* `polkit-gnome`
-* `network-manager-applet`
-* `gnome-calendar`
-* `gnome-keyring`
-* `powerprofilesctl`
-* `vicinae`
-* `io.github.ebonjaeger.bluejay`
+- `hyprland`
+- `kitty`
+- `nautilus`
+- `clipse`
+- `hyprpaper`
+- `hyprpicker`
+- `hypridle`
+- `gtklock`
+- `swaync`
+- `grim`
+- `slurp`
+- `swappy`
+- `tesseract`
+- `wl-clipboard`
+- `swayosd`
+- `waybar`
+- `firefox`
+- `brightnessctl`
+- `playerctl`
+- `pavucontrol`
+- `polkit-gnome`
+- `network-manager-applet`
+- `gnome-calendar`
+- `gnome-keyring`
+- `powerprofilesctl`
+- `vicinae`
+- `io.github.ebonjaeger.bluejay`
 
-## Install Dependancies (Nobara 42)
+## Install Dependancies (Nobara 43)
 
 ### External repositories
 
@@ -62,7 +62,9 @@ sudo dnf install nautilus-open-any-terminal
 ```bash
 sudo dnf install hyprland kitty nautilus clipse hyprpaper hyprpicker hypridle swaync grim slurp swappy tesseract wl-clipboard swayosd waybar firefox brightnessctl playerctl pavucontrol polkit-gnome network-manager-applet gnome-calendar gnome-keyring powerprofilesctl gtklock gtklock-meta gtklock-playerctl-module gtklock-userinfo-module vicinae
 ```
+
 > **Note:** For Bluetooth app Bluejay, install with:
+>
 > ```bash
 > flatpak install flathub io.github.ebonjaeger.bluejay
 > ```
@@ -80,6 +82,7 @@ chmod +x setup.sh
 ```
 
 This script will:
+
 - Check for missing dependencies
 - Offer to install them (on Fedora/Nobara)
 - Create symlinks for all config directories
