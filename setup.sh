@@ -25,6 +25,7 @@ CONFIG_ITEMS=(
     "scripts"
     "wayvnc"
     "gtklock"
+    "vicinae"
 )
 
 # Print colored output
