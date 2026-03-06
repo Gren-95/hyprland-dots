@@ -26,7 +26,7 @@ while IFS= read -r line; do
     else
         devices+="$(printf '\uf293')  $name\n"
     fi
-done < <(bluetoothctl devices Paired 2>/dev/null)
+done < <(bluetoothctl devices 2>/dev/null)
 
 POWER_OFF="$(printf '\uf011')  Disable Bluetooth"
 SCAN="$(printf '\uf002')  Scan for devices"
@@ -62,7 +62,7 @@ fi
 
 # Connect or disconnect selected device
 device_name=$(echo "$CHOSEN" | sed 's/^[^ ]*  //')
-mac=$(bluetoothctl devices Paired 2>/dev/null | grep -F "$device_name" | awk '{print $2}' | head -1)
+mac=$(bluetoothctl devices 2>/dev/null | grep -F "$device_name" | awk '{print $2}' | head -1)
 
 [ -z "$mac" ] && exit 1
 
