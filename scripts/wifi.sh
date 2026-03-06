@@ -41,12 +41,27 @@ done < <(nmcli -t -f SSID,SIGNAL,SECURITY,IN-USE dev wifi list 2>/dev/null \
     | sort -t: -k4 -r -k2 -rn \
     | awk -F: '!seen[$1]++')
 
-DISCONNECT="$(printf '\uf011')  Disconnect"
+DISCONNECT="$(printf '\uf011')  Disconnect Wi-Fi"
 WIFI_OFF="$(printf '\uf204')  Turn Wi-Fi off"
 
-CHOSEN=$(printf "%b" "$networks\n$DISCONNECT\n$WIFI_OFF" \
-    | rofi -dmenu -p "Wi-Fi" \
-        -mesg "$(printf '\uf00c') connected  $(printf '\uf023') secured" \
+# Build VPN list
+vpns=""
+while IFS=: read -r name type; do
+    active=$(nmcli -t -f NAME con show --active | grep -Fx "$name")
+    if [ -n "$active" ]; then
+        vpns+="$(printf '\uf49e')  $name\n"
+    else
+        vpns+="$(printf '\uf023')  $name\n"
+    fi
+done < <(nmcli -t -f NAME,TYPE con show | grep -E ":vpn$|:wireguard$")
+
+sep=""
+[ -n "$vpns" ] && sep="──────────────────────\n$(printf '\uf49e')  VPN Connections\n"
+
+CHOSEN=$(printf "%b" "$networks\n$DISCONNECT\n$WIFI_OFF\n${sep}${vpns}" \
+    | grep -v "^$" \
+    | rofi -dmenu -p "Network" \
+        -mesg "$(printf '\uf00c')   connected | $(printf '\uf023')   secured | $(printf '\uf49e')   vpn on" \
         -no-custom \
         -theme "$THEME")
 
@@ -57,10 +72,31 @@ if echo "$CHOSEN" | grep -q "Turn Wi-Fi off"; then
     exit 0
 fi
 
-if echo "$CHOSEN" | grep -q "Disconnect"; then
+if echo "$CHOSEN" | grep -q "Disconnect Wi-Fi"; then
     nmcli con down "$(nmcli -t -f NAME,DEVICE con show --active | grep wifi | cut -d: -f1 | head -1)" 2>/dev/null
     exit 0
 fi
+
+# Check if chosen item is a VPN entry
+vpn_name=$(echo "$CHOSEN" | sed 's/^[^ ]*  //')
+if nmcli -t -f NAME,TYPE con show | grep -qE "^${vpn_name}:(vpn|wireguard)$"; then
+    active=$(nmcli -t -f NAME con show --active | grep -Fx "$vpn_name")
+    if [ -n "$active" ]; then
+        nmcli con down "$vpn_name" && notify-send -i network-vpn "VPN" "Disconnected from $vpn_name"
+    else
+        username=$(rofi -dmenu -p "Username" -mesg "VPN: $vpn_name" -theme "$THEME" < /dev/null)
+        [ -z "$username" ] && exit 0
+        password=$(rofi -dmenu -p "Password" -mesg "VPN: $vpn_name" -password -theme "$THEME" < /dev/null)
+        [ -z "$password" ] && exit 0
+        printf "vpn.secrets.username:%s\nvpn.secrets.password:%s\n" "$username" "$password" \
+            | nmcli --wait -1 con up "$vpn_name" passwd-file /dev/stdin \
+            && notify-send -i network-vpn "VPN" "Connected to $vpn_name"
+    fi
+    exit 0
+fi
+
+# Section header/separator rows — ignore
+echo "$CHOSEN" | grep -qE "^──|VPN Connections" && exit 0
 
 # Extract SSID (strip leading icon + spaces + trailing lock icon)
 ssid=$(echo "$CHOSEN" | sed 's/^[^ ]*  //; s/ '"$(printf '\uf023')"'$//')
