@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keybinds</title>
+<style>
+  :root {
+    --bg:        #1c1917;
+    --surface:   #242120;
+    --hover:     #2e2b28;
+    --border:    #3a3735;
+    --border-hi: #524f4c;
+    --text:      #e7e3de;
+    --text-2:    #9d9490;
+    --text-3:    #5c5855;
+    --cyan:      #33ccff;
+    --green:     #00ff99;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: var(--bg);
+    background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+    background-size: 22px 22px;
+    color: var(--text);
+    font-family: 'Iosevka Nerd Font', 'Iosevka', 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* Vignette over the dot grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 40%, rgba(28,25,23,.65) 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 26px 24px 60px;
+  }
+
+  /* ── Header ─────────────────────────────────────── */
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0;
+    width: 56px; height: 2px;
+    background: linear-gradient(90deg, var(--cyan), transparent);
+  }
+
+  .logo {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+  }
+  .logo em { font-style: normal; color: var(--cyan); }
+
+  .badge {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    color: var(--text-3);
+    letter-spacing: .06em;
+    padding-bottom: 1px;
+  }
+  .badge::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 7px var(--green);
+    flex-shrink: 0;
+  }
+
+  /* ── Sections ───────────────────────────────────── */
+  .sections { display: flex; flex-direction: column; gap: 26px; }
+
+  .section {
+    opacity: 0;
+    transform: translateY(6px);
+    animation: up .28s ease forwards;
+  }
+  @keyframes up { to { opacity: 1; transform: none; } }
+
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 9px;
+  }
+
+  .pip {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+
+  .section-tally {
+    font-size: 9px;
+    color: var(--text-3);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1px 6px;
+  }
+
+  .rule {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  /* ── Bind grid ───────────────────────────────────── */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 8px;
+  }
+
+  .bind {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 7px;
+    border-radius: 5px;
+    transition: background .1s;
+  }
+  .bind:hover { background: var(--hover); }
+
+  /* ── Key badges ──────────────────────────────────── */
+  .keys {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+    width: 168px;
+  }
+
+  kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    min-width: 22px;
+    height: 20px;
+    font: inherit;
+    font-size: 10px;
+    font-weight: 500;
+    white-space: nowrap;
+    user-select: none;
+    border-radius: 4px;
+    background: #2b2825;
+    color: var(--text);
+    border: 1px solid #4a4643;
+    border-bottom-width: 2px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 1px 0 #161412;
+  }
+
+  kbd.mod {
+    background: rgba(51,204,255,.09);
+    color: var(--cyan);
+    border-color: rgba(51,204,255,.3);
+    border-bottom-color: rgba(51,204,255,.5);
+    box-shadow: inset 0 1px 0 rgba(51,204,255,.07), 0 1px 0 rgba(0,0,0,.4);
+  }
+
+  .plus { color: var(--text-3); font-size: 9px; padding: 0 1px; }
+
+  /* ── Description ─────────────────────────────────── */
+  .desc {
+    flex: 1;
+    font-size: 12px;
+    color: var(--text-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* compact workspace row spans both columns */
+  .bind.compact { grid-column: 1 / -1; }
+  .bind.compact .desc { color: var(--text-3); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div class="logo">KEY<em>BINDS</em></div>
+    <div class="badge" id="badge">—</div>
+  </header>
+  <div class="sections" id="sections"></div>
+</div>
+
+<script>
+const binds = __BINDS_JSON__;
+
+// ── Mod decoding ──────────────────────────────────────────────────────────────
+const MOD_BITS = [[64,'Super'],[4,'Ctrl'],[8,'Alt'],[1,'Shift']];
+const mods = mask => MOD_BITS.filter(([b]) => mask & b).map(([,n]) => n);
+
+// ── Key display names ─────────────────────────────────────────────────────────
+const KEY_NAMES = {
+  grave:'`', bracketleft:'[', bracketright:']', semicolon:';',
+  apostrophe:"'", comma:',', period:'.', slash:'/', backslash:'\\',
+  minus:'-', equal:'=', space:'Space', Return:'↵', Tab:'⇥',
+  Delete:'Del', BackSpace:'⌫', Escape:'Esc', Print:'PrtSc',
+  KP_Add:'Num+', KP_Subtract:'Num−',
+  XF86AudioRaiseVolume:'Vol↑', XF86AudioLowerVolume:'Vol↓',
+  XF86AudioMute:'Mute', XF86AudioMicMute:'MicMute',
+  XF86MonBrightnessUp:'Bright↑', XF86MonBrightnessDown:'Bright↓',
+  XF86AudioNext:'⏭', XF86AudioPrev:'⏮',
+  XF86AudioPlay:'⏯', XF86AudioPause:'⏸',
+  XF86PowerOff:'⏻', XF86CapsLock:'Caps',
+  mouse_down:'Scroll↓', mouse_up:'Scroll↑',
+  UP:'↑', DOWN:'↓', left:'←', right:'→', up:'↑', down:'↓',
+};
+const fmtKey = k => KEY_NAMES[k] ?? (k.length === 1 ? k.toUpperCase() : k);
+
+// ── Human labels ──────────────────────────────────────────────────────────────
+const EXEC_LABELS = [
+  [/kitty(?:\s|$)/,              'Terminal'],
+  [/nautilus/,                   'File Manager'],
+  [/firefox/,                    'Browser'],
+  [/rofi.*drun/,                 'App Launcher'],
+  [/cliphist/,                   'Clipboard History'],
+  [/gtklock/,                    'Lock Screen'],
+  [/swaync-client.*-t/,          'Notifications'],
+  [/hyprpicker/,                 'Color Picker'],
+  [/playerctl next/,             'Next Track'],
+  [/playerctl previous/,         'Prev Track'],
+  [/playerctl play-pause/,       'Play / Pause'],
+  [/swayosd.*output-volume raise/,'Volume Up'],
+  [/swayosd.*output-volume lower/,'Volume Down'],
+  [/swayosd.*mute-toggle/,       'Toggle Mute'],
+  [/swayosd.*input-volume mute/, 'Toggle Mic'],
+  [/swayosd.*brightness raise/,  'Brightness Up'],
+  [/swayosd.*brightness lower/,  'Brightness Down'],
+  [/swayosd.*caps-lock/,         'Caps Lock'],
+  [/systemctl suspend/,          'Suspend'],
+  [/restart\.sh/,                'Restart Services'],
+  [/wallpaper\.sh/,              'Change Wallpaper'],
+  [/screenshot-ocr/,             'Screenshot → OCR'],
+  [/swappy/,                     'Screenshot & Annotate'],
+  [/grim.*wl-copy/,              'Screenshot → Clipboard'],
+  [/wayvnc-toggle/,              'Toggle WayVNC'],
+  [/keybinds/,                   'Show Keybinds'],
+  [/media start/,                'Media Start'],
+  [/media stop/,                 'Media Stop'],
+  [/bluetooth/,                  'Bluetooth'],
+  [/monitor.*disable/,           'Disable Laptop Screen'],
+  [/monitor.*preferred/,         'Enable Laptop Screen'],
+  [/pavucontrol/,                'Audio Mixer'],
+];
+
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+function getLabel({dispatcher: d, arg: a}) {
+  if (d === 'exec') {
+    for (const [p, l] of EXEC_LABELS) if (p.test(a)) return l;
+    return cap(a.split(' ')[0].split('/').pop().replace(/-/g, ' '));
+  }
+  if (d === 'killactive')               return 'Close Window';
+  if (d === 'togglefloating')           return 'Toggle Float';
+  if (d === 'fullscreenstate')          return 'Fullscreen';
+  if (d === 'pseudo')                   return 'Pseudo Tile';
+  if (d === 'togglesplit')              return 'Toggle Split';
+  if (d === 'cyclenext')                return 'Cycle Windows';
+  if (d === 'resizeactive')             return 'Resize Window';
+  if (d === 'movecurrentworkspacetomonitor') return 'WS → Next Monitor';
+  if (d === 'movefocus')                return `Focus ${cap(a)}`;
+  if (d === 'movewindow')               return `Move ${cap(a)}`;
+  if (d === 'focusmonitor')             return 'Focus Next Monitor';
+  if (d === 'workspace') {
+    if (a === 'previous') return 'Last Workspace';
+    if (a === 'm-1') return 'Prev WS on Monitor';
+    if (a === 'm+1') return 'Next WS on Monitor';
+    if (a === 'e+1') return 'Next WS (global)';
+    if (a === 'e-1') return 'Prev WS (global)';
+    return `Workspace ${a}`;
+  }
+  if (d === 'movetoworkspace') {
+    if (a === 'm-1') return '→ Prev WS';
+    if (a === 'm+1') return '→ Next WS';
+    return `→ Workspace ${a}`;
+  }
+  return `${d} ${a}`.trim();
+}
+
+// ── Categorise ────────────────────────────────────────────────────────────────
+function cat({dispatcher: d, arg: a, key, mouse}) {
+  if (mouse || key.startsWith('switch:') || key.startsWith('mouse:')) return null;
+  if (d === 'exec') {
+    if (/playerctl|XF86Audio/.test(a) || /XF86Audio/.test(key))       return 'Media';
+    if (/brightness/.test(a)          || /XF86MonBrightness/.test(key)) return 'Brightness';
+    if (/grim|slurp|swappy|screenshot/.test(a))                        return 'Screenshots';
+    if (/kitty|nautilus|firefox|rofi|hyprpicker|pavucontrol/.test(a)) return 'Apps';
+    return 'System';
+  }
+  if (/killactive|togglefloating|fullscreen|pseudo|togglesplit|resize|movewindow|movefocus|cyclenext/.test(d)) return 'Windows';
+  if (/workspace|movetoworkspace|movecurrent|focusmonitor/.test(d))    return 'Workspaces';
+  return null;
+}
+
+// ── Group & compact workspaces 1–10 ──────────────────────────────────────────
+const ORDER  = ['Apps','Windows','Workspaces','Screenshots','Media','Brightness','System'];
+const COLORS = {Apps:'#33ccff',Windows:'#00ff99',Workspaces:'#33ccff',Screenshots:'#00ff99',Media:'#33ccff',Brightness:'#00ff99',System:'#33ccff'};
+
+const grouped = {};
+let total = 0;
+
+for (const b of binds) {
+  const c = cat(b);
+  if (!c) continue;
+  (grouped[c] ??= []).push(b);
+  total++;
+}
+
+// Compact numeric workspace entries into single representative rows
+function compact(items) {
+  const wsNums  = items.filter(b => b.dispatcher === 'workspace'       && /^\d+$/.test(b.arg));
+  const mvNums  = items.filter(b => b.dispatcher === 'movetoworkspace' && /^\d+$/.test(b.arg));
+  const rest    = items.filter(b =>
+    !(b.dispatcher === 'workspace'       && /^\d+$/.test(b.arg)) &&
+    !(b.dispatcher === 'movetoworkspace' && /^\d+$/.test(b.arg))
+  );
+  const out = [...rest];
+  if (wsNums.length)
+    out.unshift({_compact:true, modmask:64,  key:'0–9', dispatcher:'workspace',       arg:'1–10', _label:`Switch to Workspace 1–10`});
+  if (mvNums.length)
+    out.unshift({_compact:true, modmask:65,  key:'0–9', dispatcher:'movetoworkspace', arg:'1–10', _label:`Move Window to WS 1–10`});
+  return out;
+}
+
+if (grouped['Workspaces']) grouped['Workspaces'] = compact(grouped['Workspaces']);
+
+// ── Render ────────────────────────────────────────────────────────────────────
+document.getElementById('badge').textContent = `${total} bindings`;
+
+const root = document.getElementById('sections');
+
+ORDER.forEach((name, ci) => {
+  const items = grouped[name];
+  if (!items?.length) return;
+
+  const color = COLORS[name];
+
+  const sec = document.createElement('div');
+  sec.className = 'section';
+  sec.style.animationDelay = `${ci * 35}ms`;
+
+  const head = document.createElement('div');
+  head.className = 'section-head';
+  head.innerHTML = `
+    <div class="pip" style="background:${color};box-shadow:0 0 7px ${color}88"></div>
+    <span class="section-label">${name}</span>
+    <span class="section-tally">${items.length}</span>
+    <div class="rule"></div>
+  `;
+
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+
+  for (const b of items) {
+    const modKeys = mods(b.modmask);
+    const keyStr  = fmtKey(b.key);
+    const allKeys = [...modKeys, keyStr];
+    const lbl     = b._label ?? getLabel(b);
+
+    const row = document.createElement('div');
+    row.className = 'bind' + (b._compact ? ' compact' : '');
+
+    const keysDiv = document.createElement('div');
+    keysDiv.className = 'keys';
+
+    allKeys.forEach((k, i) => {
+      if (i > 0) {
+        const sp = document.createElement('span');
+        sp.className = 'plus';
+        sp.textContent = '+';
+        keysDiv.appendChild(sp);
+      }
+      const kbd = document.createElement('kbd');
+      kbd.textContent = k;
+      if (modKeys.includes(k)) kbd.classList.add('mod');
+      keysDiv.appendChild(kbd);
+    });
+
+    const desc = document.createElement('span');
+    desc.className = 'desc';
+    desc.textContent = lbl;
+
+    row.appendChild(keysDiv);
+    row.appendChild(desc);
+    grid.appendChild(row);
+  }
+
+  sec.appendChild(head);
+  sec.appendChild(grid);
+  root.appendChild(sec);
+});
+</script>
+</body>
+</html>

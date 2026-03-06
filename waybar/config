@@ -40,7 +40,7 @@
         "format": "󱗼",
         "tooltip": "Open app menu",
         "tooltip-format": "Open app menu",
-        "on-click": "vicinae toggle"
+        "on-click": "rofi -show drun -show-icons -theme ~/.config/rofi/launcher.rasi"
     },
     "hyprland/workspaces": {
         "format": "{icon}",
