@@ -32,9 +32,7 @@ done < <(bluetoothctl devices Paired 2>/dev/null)
 # Add discovered (unpaired) devices from cache
 discovered_devices=""
 if [ -f "$DISCOVERED_CACHE" ]; then
-    while IFS= read -r line; do
-        mac=$(echo "$line" | awk '{print $1}')
-        name=$(echo "$line" | cut -d' ' -f2-)
+    while read -r mac name; do
         paired=$(bluetoothctl info "$mac" 2>/dev/null | grep -c "Paired: yes")
         [ "$paired" -gt 0 ] && continue  # skip if already paired
         discovered_devices+="$(printf '\uf0c1')  $name [pair]\n"
@@ -69,15 +67,14 @@ if echo "$CHOSEN" | grep -q "Scan"; then
     SCAN_ROFI_PID=$!
 
     # Scan and capture [NEW] devices into cache
-    (timeout 8 bluetoothctl scan on 2>&1 \
-        | grep -E "^\[NEW\] Device" \
-        | sed 's/\[NEW\] Device //' \
-        | awk '{mac=$1; $1=""; print mac $0}' >> "$DISCOVERED_CACHE"
+    (stdbuf -oL bluetoothctl --timeout 8 scan on 2>&1 \
+        | stdbuf -oL sed 's/\x1B\[[0-9;]*m//g' \
+        | stdbuf -oL grep -E "^\[NEW\] Device [0-9A-F:]" \
+        | sed 's/^\[NEW\] Device //' >> "$DISCOVERED_CACHE"
      sort -u "$DISCOVERED_CACHE" -o "$DISCOVERED_CACHE" 2>/dev/null
      kill $SCAN_ROFI_PID 2>/dev/null) &
 
     wait $SCAN_ROFI_PID 2>/dev/null
-    bluetoothctl scan off 2>/dev/null
     exec "$0"
     exit 0
 fi
@@ -88,7 +85,7 @@ device_name=$(echo "$CHOSEN" | sed 's/^[^ ]*  //; s/ \[pair\]$//')
 # Check paired devices first, then discovered cache
 mac=$(bluetoothctl devices Paired 2>/dev/null | grep -F "$device_name" | awk '{print $2}')
 if [ -z "$mac" ] && [ -f "$DISCOVERED_CACHE" ]; then
-    mac=$(grep -F "$device_name" "$DISCOVERED_CACHE" | awk '{print $1}')
+    mac=$(grep -F "$device_name" "$DISCOVERED_CACHE" | read -r m _; echo "$m")
 fi
 
 [ -z "$mac" ] && exit 1
