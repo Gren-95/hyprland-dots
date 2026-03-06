@@ -29,9 +29,9 @@ while IFS= read -r line; do
 done < <(bluetoothctl devices)
 
 POWER_OFF="$(printf '\uf011')  Disable Bluetooth"
-SCAN="$(printf '\uf002')  Scan for devices"
+PAIR="$(printf '\uf0c1')  Pair new device..."
 
-CHOSEN=$(printf "%b" "$devices\n$SCAN\n$POWER_OFF" \
+CHOSEN=$(printf "%b" "$devices\n$PAIR\n$POWER_OFF" \
     | rofi -dmenu -p "Bluetooth" \
         -mesg "● connected  ○ disconnected" \
         -no-custom \
@@ -44,12 +44,8 @@ if echo "$CHOSEN" | grep -q "Disable"; then
     exit 0
 fi
 
-if echo "$CHOSEN" | grep -q "Scan"; then
-    notify-send "Bluetooth" "Scanning for devices..." --icon=bluetooth -t 8000
-    bluetoothctl scan on 2>/dev/null &
-    sleep 8
-    bluetoothctl scan off 2>/dev/null
-    exec "$0"
+if echo "$CHOSEN" | grep -q "Pair"; then
+    kitty --title "Bluetooth Pairing" bash -c "bluetoothctl scan on & echo 'Scanning for devices... (press Ctrl+C to stop)'; bluetoothctl; kill %1 2>/dev/null"
     exit 0
 fi
 
