@@ -63,7 +63,7 @@ check_dependencies() {
         "hypridle" "swaync" "grim" "slurp" "swappy"
         "tesseract" "convert" "rofi" "cliphist" "wl-copy" "wl-paste" "swayosd-server" "waybar"
         "firefox" "brightnessctl" "playerctl" "pavucontrol"
-        "gnome-keyring-daemon" "jq" "python3" "fish" "nvim" "ranger"
+        "gnome-keyring-daemon" "jq" "pactl" "wpctl" "python3" "fish" "nvim" "ranger"
     )
 
     for dep in "${required_deps[@]}"; do
@@ -156,6 +156,15 @@ create_symlinks() {
         ln -sf "$source" "$target"
         print_success "Symlinked $item"
     done
+}
+
+# Check optional external dependencies
+check_optional_deps() {
+    if [[ ! -f "$HOME/Documents/Code/linux-sysutil/cli_tool.py" ]]; then
+        print_warning "linux-sysutil not found at ~/Documents/Code/linux-sysutil/"
+        print_warning "Super+Shift+M/K keybinds will not work without it"
+        print_warning "Clone it from: https://github.com/Gren-95/linux-sysutil"
+    fi
 }
 
 # Set up scripts permissions
@@ -252,6 +261,9 @@ main() {
     if [[ ! $REPLY =~ ^[Nn]$ ]]; then
         create_symlinks
     fi
+
+    # Check optional dependencies
+    check_optional_deps
 
     # Configure keybindings
     configure_clipboard_key

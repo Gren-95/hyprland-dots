@@ -3,7 +3,7 @@
 # List your monitor names here (as seen in hyprctl monitors)
 # Dynamically detect connected monitor names using hyprctl
 MONITORS=($(hyprctl monitors -j | jq -r '.[].name'))
-WALLPAPER_DIR="/mnt/DATA/Home_Folders/Pictures/wallpapers"
+WALLPAPER_DIR="$HOME/Pictures/wallpapers"
 
 # Wait for hyprpaper socket to appear (max 10 seconds)
 SOCKET=$(find /run/user/$(id -u)/hypr/ -name '*.hyprpaper.sock' 2>/dev/null | head -n 1)
