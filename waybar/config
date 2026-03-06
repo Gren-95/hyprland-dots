@@ -80,7 +80,7 @@
     "pulseaudio": {
         "format": "󰕾 {volume}%",
         "format-muted": "󰖁 muted",
-        "on-click": "flatpak run com.saivert.pwvucontrol",
+        "on-click": "pavucontrol",
         "format-icons": {
             "default": [
                 "󰕿",
@@ -160,7 +160,7 @@
         "format": "󰅍",
         "tooltip": true,
         "tooltip-format": "Open clipboard history",
-        "on-click": "kitty --class clipse -e clipse"
+        "on-click": "cliphist list | rofi -dmenu -p Clipboard -theme ~/.config/rofi/clipboard.rasi | cliphist decode | wl-copy"
     },
     "custom/colorpicker": {
         "format": "󰈊",

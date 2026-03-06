@@ -63,7 +63,7 @@ check_dependencies() {
         "hypridle" "swaync" "grim" "slurp" "swappy"
         "tesseract" "convert" "rofi" "cliphist" "wl-copy" "wl-paste" "swayosd-server" "waybar"
         "firefox" "brightnessctl" "playerctl" "pavucontrol"
-        "gnome-keyring-daemon" "python3" "fish" "nvim" "ranger"
+        "gnome-keyring-daemon" "jq" "python3" "fish" "nvim" "ranger"
     )
 
     for dep in "${required_deps[@]}"; do
@@ -99,7 +99,7 @@ install_dependencies() {
         hyprpaper hyprpicker hypridle swaync grim slurp \
         swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard swayosd waybar firefox rofi \
         brightnessctl playerctl pavucontrol polkit-gnome \
-        gnome-calendar gnome-keyring \
+        gnome-calendar gnome-keyring jq \
         powerprofilesctl gtklock gtklock-meta \
         gtklock-playerctl-module gtklock-userinfo-module \
         fish neovim ranger python3
@@ -255,9 +255,6 @@ main() {
 
     # Configure keybindings
     configure_clipboard_key
-
-    # Set up fish config
-    setup_fish
 
     # Set up scripts
     setup_scripts
