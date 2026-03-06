@@ -28,6 +28,8 @@
         "custom/sep",
         "custom/bluetooth",
         "custom/sep",
+        "network",
+        "custom/sep",
         "pulseaudio",
         "custom/sep",
         "custom/powerprofile",
@@ -93,7 +95,7 @@
         "format-ethernet": "󰈀 {ifname}",
         "format-disconnected": "󰤭 Disconnected",
         "tooltip-format": "󰌘 {ifname} - 󰩟 {ipaddr}",
-        "on-click": "nm-applet"
+        "on-click": "bash ~/.config/scripts/wifi.sh"
     },
     "battery": {
         "format": "{icon} {capacity}%",

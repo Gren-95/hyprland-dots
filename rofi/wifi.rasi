@@ -26,7 +26,28 @@ mainbox {
     background-color: transparent;
     spacing:          0px;
     padding:          0px;
-    children:         [message, listview];
+    children:         [message, inputbar, listview];
+}
+
+inputbar {
+    background-color: @bg1;
+    border:           0px 0px 1px 0px;
+    border-color:     @border;
+    padding:          8px 16px;
+    children:         [prompt, entry];
+}
+
+prompt {
+    background-color: transparent;
+    text-color:       @accent;
+    padding:          0px 8px 0px 0px;
+}
+
+entry {
+    background-color: transparent;
+    text-color:       @fg0;
+    placeholder:      "Type here...";
+    placeholder-color: @fg2;
 }
 
 message {
