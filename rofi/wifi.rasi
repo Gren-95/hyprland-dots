@@ -1,0 +1,73 @@
+* {
+    bg0:    #1c1917;
+    bg1:    #242120;
+    bg2:    #2e2b28;
+    border: #3a3735;
+    fg0:    #e7e3de;
+    fg1:    #9d9490;
+    fg2:    #5c5855;
+    accent: #33ccff;
+
+    background-color: transparent;
+    text-color:       @fg0;
+    font:             "Noto Sans 13";
+}
+
+window {
+    background-color: @bg0;
+    border:           1px;
+    border-color:     @border;
+    border-radius:    12px;
+    width:            380px;
+    padding:          0px;
+}
+
+mainbox {
+    background-color: transparent;
+    spacing:          0px;
+    padding:          0px;
+    children:         [message, listview];
+}
+
+message {
+    background-color: @bg1;
+    border-radius:    12px 12px 0px 0px;
+    border:           0px 0px 1px 0px;
+    border-color:     @border;
+    padding:          10px 16px;
+}
+
+textbox {
+    background-color: transparent;
+    text-color:       @fg1;
+    font:             "Noto Sans 11";
+    horizontal-align: 0.0;
+}
+
+listview {
+    background-color: transparent;
+    padding:          8px 0px;
+    lines:            10;
+    scrollbar:        false;
+    spacing:          0px;
+}
+
+element {
+    background-color: transparent;
+    padding:          9px 16px;
+    border-radius:    6px;
+    margin:           2px 8px;
+}
+
+element selected {
+    background-color: @bg2;
+    border:           1px;
+    border-color:     @accent;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       inherit;
+    highlight:        none;
+    vertical-align:   0.5;
+}
