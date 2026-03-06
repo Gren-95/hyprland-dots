@@ -19,6 +19,14 @@ CONFIG_ITEMS=(
     "swaync"
     "swayosd"
     "swappy"
+    "scripts"
+    "wayvnc"
+    "gtklock"
+    "rofi"
+    "fish"
+    "nvim"
+    "ranger"
+    "hyprshell"
 )
 
 # Options
