@@ -45,11 +45,10 @@ if echo "$CHOSEN" | grep -q "Disable"; then
 fi
 
 if echo "$CHOSEN" | grep -q "Scan"; then
-    bluetoothctl scan on &
-    SCAN_PID=$!
-    sleep 5
-    kill $SCAN_PID 2>/dev/null
-    bluetoothctl scan off
+    notify-send "Bluetooth" "Scanning for devices..." --icon=bluetooth -t 8000
+    bluetoothctl scan on 2>/dev/null &
+    sleep 8
+    bluetoothctl scan off 2>/dev/null
     exec "$0"
     exit 0
 fi
