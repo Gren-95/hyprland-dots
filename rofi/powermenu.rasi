@@ -9,7 +9,7 @@
 
     background-color: transparent;
     text-color:       @fg0;
-    font:             "Iosevka Nerd Font 15";
+    font:             "Noto Sans 14";
 }
 
 window {
@@ -17,13 +17,13 @@ window {
     border:           1px;
     border-color:     @border;
     border-radius:    14px;
-    width:            420px;
-    padding:          16px;
+    width:            300px;
+    padding:          12px;
 }
 
 mainbox {
     background-color: transparent;
-    spacing:          10px;
+    spacing:          8px;
     padding:          0px;
     children:         [message, listview];
 }
@@ -36,26 +36,26 @@ message {
 textbox {
     background-color: transparent;
     text-color:       @fg1;
-    font:             "Iosevka Nerd Font 11";
+    font:             "Noto Sans 11";
     horizontal-align: 0.5;
 }
 
 listview {
     background-color: transparent;
-    columns:          5;
-    lines:            1;
+    columns:          1;
+    lines:            5;
     scrollbar:        false;
-    spacing:          8px;
+    spacing:          4px;
 }
 
 element {
     background-color: @bg1;
     border:           1px;
     border-color:     @border;
-    border-radius:    10px;
-    padding:          18px 8px;
-    orientation:      vertical;
-    spacing:          6px;
+    border-radius:    8px;
+    padding:          10px 16px;
+    orientation:      horizontal;
+    spacing:          0px;
 }
 
 element selected {
@@ -67,6 +67,6 @@ element selected {
 element-text {
     background-color: transparent;
     text-color:       inherit;
-    horizontal-align: 0.5;
+    horizontal-align: 0.0;
     highlight:        none;
 }
