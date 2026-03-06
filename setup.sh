@@ -29,6 +29,7 @@ CONFIG_ITEMS=(
     "fish"
     "nvim"
     "ranger"
+    "hyprshell"
 )
 
 # Print colored output
