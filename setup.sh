@@ -57,7 +57,7 @@ check_dependencies() {
     local required_deps=(
         "hyprland" "kitty" "nautilus" "hyprpaper" "hyprpicker"
         "hypridle" "swaync" "grim" "slurp" "swappy"
-        "tesseract" "wl-copy" "swayosd-server" "waybar"
+        "tesseract" "convert" "wl-copy" "swayosd-server" "waybar"
         "firefox" "brightnessctl" "playerctl" "pavucontrol"
         "nm-applet" "gnome-keyring" "vicinae"
     )
@@ -95,7 +95,7 @@ install_dependencies() {
     sudo dnf install -y \
         hyprland kitty nautilus clipse \
         hyprpaper hyprpicker hypridle swaync grim slurp \
-        swappy tesseract wl-clipboard swayosd waybar firefox \
+        swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard swayosd waybar firefox \
         brightnessctl playerctl pavucontrol polkit-gnome \
         network-manager-applet gnome-calendar gnome-keyring \
         powerprofilesctl gtklock gtklock-meta \
@@ -186,6 +186,31 @@ system_setup() {
     fi
 }
 
+# Configure Super+V clipboard keybind
+configure_clipboard_key() {
+    local keys_conf="$CONFIG_DIR/hypr/modules/keys.conf"
+
+    if [[ ! -f "$keys_conf" ]]; then
+        print_warning "keys.conf not found, skipping clipboard key configuration"
+        return
+    fi
+
+    echo ""
+    echo "Choose what Super+V opens:"
+    echo "  1) Clipse  — terminal clipboard manager (default)"
+    echo "  2) Vicinae — clipboard history in launcher"
+    read -p "Choice [1/2]: " -n 1 -r
+    echo
+
+    if [[ $REPLY == "2" ]]; then
+        sed -i 's|bind = \$mainMod, V, exec, .*|bind = $mainMod, V, exec, vicinae deeplink vicinae://extensions/vicinae/clipboard/history|' "$keys_conf"
+        print_success "Super+V → Vicinae clipboard"
+    else
+        sed -i 's|bind = \$mainMod, V, exec, .*|bind = $mainMod, V, exec, $terminal --class $clipboard|' "$keys_conf"
+        print_success "Super+V → Clipse"
+    fi
+}
+
 # Display setup summary
 show_summary() {
     echo ""
@@ -236,6 +261,9 @@ main() {
     if [[ ! $REPLY =~ ^[Nn]$ ]]; then
         create_symlinks
     fi
+
+    # Configure keybindings
+    configure_clipboard_key
 
     # Set up scripts
     setup_scripts

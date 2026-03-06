@@ -9,7 +9,7 @@
    "fallbacks": [],
 
    "providers": {
-      "clipboard": { "enabled": false },
+      "clipboard": { "enabled": true },
       "files": { "enabled": false }
    }
 }

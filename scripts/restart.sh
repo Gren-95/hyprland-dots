@@ -65,6 +65,13 @@ bash "$HOME/.config/scripts/battery-notify.sh" >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -f battery-notify.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
+# Restart media inhibit (prevents screen sleep during playback)
+echo -n "Running: media-inhibit ... "
+pkill -f media-inhibit.sh 2>/dev/null
+bash "$HOME/.config/scripts/media-inhibit.sh" >/dev/null 2>&1 &
+sleep 0.2
+if pgrep -f media-inhibit.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
+
 # Restart clipse clipboard daemon
 echo -n "Running: clipse ... "
 pkill -f "clipse" 2>/dev/null
