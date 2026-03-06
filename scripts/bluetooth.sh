@@ -34,7 +34,9 @@ discovered_devices=""
 if [ -f "$DISCOVERED_CACHE" ]; then
     while read -r mac name; do
         paired=$(bluetoothctl info "$mac" 2>/dev/null | grep -c "Paired: yes")
-        [ "$paired" -gt 0 ] && continue  # skip if already paired
+        [ "$paired" -gt 0 ] && continue  # skip already paired
+        # Skip devices with no real name (name looks like a MAC address)
+        [[ "$name" =~ ^[0-9A-Fa-f]{2}[-:] ]] && continue
         discovered_devices+="$(printf '\uf0c1')  $name [pair]\n"
     done < "$DISCOVERED_CACHE"
 fi
@@ -66,11 +68,23 @@ if echo "$CHOSEN" | grep -q "Scan"; then
         -theme "$THEME" &
     SCAN_ROFI_PID=$!
 
-    # Scan and capture [NEW] devices into cache
-    (stdbuf -oL bluetoothctl --timeout 8 scan on 2>&1 \
-        | stdbuf -oL sed 's/\x1B\[[0-9;]*m//g' \
-        | stdbuf -oL grep -E "^\[NEW\] Device [0-9A-F:]" \
-        | sed 's/^\[NEW\] Device //' >> "$DISCOVERED_CACHE"
+    # Scan and capture devices with real names
+    (tmpout=$(mktemp)
+     bluetoothctl --timeout 8 scan on 2>&1 \
+         | sed 's/\x1B\[[0-9;]*m//g' > "$tmpout"
+
+     # Add newly discovered devices (initial entry with MAC as placeholder name)
+     grep -E "^\[NEW\] Device [0-9A-F:]" "$tmpout" \
+         | sed 's/^\[NEW\] Device //' >> "$DISCOVERED_CACHE"
+
+     # Update entries where a real name was advertised
+     grep -E "^\[CHG\] Device [0-9A-F:].* Name: " "$tmpout" \
+         | while IFS= read -r line; do
+             mac=$(echo "$line" | awk '{print $3}')
+             name=$(echo "$line" | sed 's/.*Name: //')
+             sed -i "s|^$mac .*|$mac $name|" "$DISCOVERED_CACHE"
+         done
+
      sort -u "$DISCOVERED_CACHE" -o "$DISCOVERED_CACHE" 2>/dev/null
      kill $SCAN_ROFI_PID 2>/dev/null) &
 
