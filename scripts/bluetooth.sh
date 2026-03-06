@@ -15,37 +15,25 @@ if [ "$powered" -eq 0 ]; then
     exit 0
 fi
 
-# Build device list from all known devices
+# Build device list — paired devices only, check connected status
 devices=""
 while IFS= read -r line; do
     mac=$(echo "$line" | awk '{print $2}')
     name=$(echo "$line" | cut -d' ' -f3-)
-
-    info=$(bluetoothctl info "$mac" 2>/dev/null)
-    paired=$(echo "$info" | grep -c "Paired: yes")
-    connected=$(echo "$info" | grep -c "Connected: yes")
-
-    # Skip unpaired devices with no real name (anonymous beacons)
-    if [ "$paired" -eq 0 ]; then
-        [[ "$name" =~ ^[0-9A-Fa-f]{2}[-:] ]] && continue
-    fi
-
+    connected=$(bluetoothctl info "$mac" 2>/dev/null | grep -c "Connected: yes")
     if [ "$connected" -eq 1 ]; then
         devices+="$(printf '\uf294')  $name\n"
-    elif [ "$paired" -eq 1 ]; then
-        devices+="$(printf '\uf293')  $name\n"
     else
-        devices+="$(printf '\uf0c1')  $name [pair]\n"
+        devices+="$(printf '\uf293')  $name\n"
     fi
-done < <(bluetoothctl devices 2>/dev/null)
+done < <(bluetoothctl devices Paired 2>/dev/null)
 
 POWER_OFF="$(printf '\uf011')  Disable Bluetooth"
 SCAN="$(printf '\uf002')  Scan for devices"
 
-mesg="$(printf '\uf294') connected  $(printf '\uf293') paired  $(printf '\uf0c1') unpaired"
 CHOSEN=$(printf "%b" "$devices\n$SCAN\n$POWER_OFF" \
     | rofi -dmenu -p "Bluetooth" \
-        -mesg "$mesg" \
+        -mesg "$(printf '\uf294') connected  $(printf '\uf293') disconnected" \
         -no-custom \
         -theme "$THEME")
 
@@ -72,19 +60,15 @@ if echo "$CHOSEN" | grep -q "Scan"; then
     exit 0
 fi
 
-# Extract device name and find MAC
-device_name=$(echo "$CHOSEN" | sed 's/^[^ ]*  //; s/ \[pair\]$//')
-mac=$(bluetoothctl devices 2>/dev/null | grep -F "$device_name" | awk '{print $2}' | head -1)
+# Connect or disconnect selected device
+device_name=$(echo "$CHOSEN" | sed 's/^[^ ]*  //')
+mac=$(bluetoothctl devices Paired 2>/dev/null | grep -F "$device_name" | awk '{print $2}' | head -1)
 
 [ -z "$mac" ] && exit 1
 
-if echo "$CHOSEN" | grep -q "\[pair\]"; then
-    bluetoothctl pair "$mac" && bluetoothctl connect "$mac"
+connected=$(bluetoothctl info "$mac" 2>/dev/null | grep -c "Connected: yes")
+if [ "$connected" -eq 1 ]; then
+    bluetoothctl disconnect "$mac"
 else
-    connected=$(bluetoothctl info "$mac" 2>/dev/null | grep -c "Connected: yes")
-    if [ "$connected" -eq 1 ]; then
-        bluetoothctl disconnect "$mac"
-    else
-        bluetoothctl connect "$mac"
-    fi
+    bluetoothctl connect "$mac"
 fi
