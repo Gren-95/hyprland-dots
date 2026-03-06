@@ -41,13 +41,6 @@ sudo dnf copr enable erikreider/SwayNotificationCenter      # swaync
 sudo dnf copr enable washkinazy/wayland-wm-extras           # swayosd + gtklock
 ```
 
-#### Optional: Kitty integration in Nautilus
-
-```bash
-sudo dnf copr enable monkeygold/nautilus-open-any-terminal
-sudo dnf install nautilus-open-any-terminal
-```
-
 ### Install all dependencies
 
 ```bash
