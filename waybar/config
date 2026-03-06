@@ -145,7 +145,7 @@
         "signal": 8,
         "on-scroll-up": "bash ~/.config/scripts/bluetooth-status.sh scroll-up",
         "on-scroll-down": "bash ~/.config/scripts/bluetooth-status.sh scroll-down",
-        "on-click": "flatpak run io.github.ebonjaeger.bluejay"
+        "on-click": "bash ~/.config/scripts/bluetooth.sh"
     },
     "custom/sep": {
         "format": "│",
