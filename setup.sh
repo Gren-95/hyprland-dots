@@ -27,6 +27,8 @@ CONFIG_ITEMS=(
     "gtklock"
     "rofi"
     "fish"
+    "nvim"
+    "ranger"
 )
 
 # Print colored output
