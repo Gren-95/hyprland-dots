@@ -60,9 +60,9 @@ check_dependencies() {
     local required_deps=(
         "hyprland" "kitty" "nautilus" "hyprpaper" "hyprpicker"
         "hypridle" "swaync" "grim" "slurp" "swappy"
-        "tesseract" "convert" "rofi" "cliphist" "wl-copy" "swayosd-server" "waybar"
+        "tesseract" "convert" "rofi" "cliphist" "wl-copy" "wl-paste" "swayosd-server" "waybar"
         "firefox" "brightnessctl" "playerctl" "pavucontrol"
-        "nm-applet" "gnome-keyring"
+        "nm-applet" "gnome-keyring-daemon" "python3" "fish" "nvim" "ranger"
     )
 
     for dep in "${required_deps[@]}"; do
@@ -89,7 +89,6 @@ install_dependencies() {
 
     print_info "Adding required COPR repositories..."
     sudo dnf copr enable -y lionheartp/Hyprland
-    sudo dnf copr enable -y azandure/clipse
     sudo dnf copr enable -y erikreider/SwayNotificationCenter
     sudo dnf copr enable -y washkinazy/wayland-wm-extras
 
@@ -101,7 +100,8 @@ install_dependencies() {
         brightnessctl playerctl pavucontrol polkit-gnome \
         network-manager-applet gnome-calendar gnome-keyring \
         powerprofilesctl gtklock gtklock-meta \
-        gtklock-playerctl-module gtklock-userinfo-module
+        gtklock-playerctl-module gtklock-userinfo-module \
+        fish neovim ranger python3
 
     print_success "Dependencies installed"
 }
