@@ -59,7 +59,7 @@ check_dependencies() {
 
     local missing_deps=()
     local required_deps=(
-        "hyprland" "kitty" "nautilus" "hyprpaper" "hyprpicker"
+        "hyprland" "hyprshell" "kitty" "nautilus" "hyprpaper" "hyprpicker"
         "hypridle" "swaync" "grim" "slurp" "swappy"
         "tesseract" "convert" "rofi" "cliphist" "wl-copy" "wl-paste" "swayosd-server" "waybar"
         "firefox" "brightnessctl" "playerctl" "pavucontrol"
@@ -95,7 +95,7 @@ install_dependencies() {
 
     print_info "Installing dependencies..."
     sudo dnf install -y \
-        hyprland kitty nautilus cliphist \
+        hyprland hyprland-devel hyprshell kitty nautilus cliphist \
         hyprpaper hyprpicker hypridle swaync grim slurp \
         swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard swayosd waybar firefox rofi \
         brightnessctl playerctl pavucontrol polkit-gnome \
