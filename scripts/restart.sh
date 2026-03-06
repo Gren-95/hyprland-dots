@@ -72,12 +72,12 @@ bash "$HOME/.config/scripts/media-inhibit.sh" >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -f media-inhibit.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
-# Restart clipse clipboard daemon
-echo -n "Running: clipse ... "
-pkill -f "clipse" 2>/dev/null
-clipse -listen >/dev/null 2>&1 &
+# Restart cliphist daemon (Wayland clipboard history)
+echo -n "Running: cliphist ... "
+pkill -f "wl-paste.*cliphist" 2>/dev/null
+wl-paste --watch cliphist store >/dev/null 2>&1 &
 sleep 0.2
-if pgrep -f "clipse" >/dev/null; then echo "OK"; else echo "FAILED"; fi
+if pgrep -f "wl-paste.*cliphist" >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
 # Restart nm-applet
 echo -n "Running: nm-applet ... "
@@ -139,11 +139,6 @@ if pgrep -x wayvnc >/dev/null; then
 else
     echo "SKIPPED (not running)"
 fi
-
-# Set app listener
-echo -n "Running: hyprctl monitor fallback ... "
-vicinae server >/dev/null 2>&1
-if [[ $? -eq 0 ]]; then echo "OK"; else echo "FAILED"; fi
 
 echo "======================================"
 echo "Restart Complete!"

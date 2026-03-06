@@ -1,0 +1,78 @@
+* {
+    bg0:    #1c1917;
+    bg1:    #242120;
+    bg2:    #2e2b28;
+    border: #3a3735;
+    fg0:    #e7e3de;
+    fg1:    #9d9490;
+    fg2:    #5c5855;
+    accent: #00ff99;
+
+    background-color: transparent;
+    text-color:       @fg0;
+    font:             "Iosevka Nerd Font 12";
+}
+
+window {
+    background-color: @bg0;
+    border:           1px;
+    border-color:     @border;
+    border-radius:    12px;
+    width:            640px;
+    padding:          0px;
+}
+
+mainbox {
+    background-color: transparent;
+    spacing:          0px;
+    padding:          0px;
+    children:         [inputbar, listview];
+}
+
+inputbar {
+    background-color: @bg1;
+    border-radius:    12px 12px 0px 0px;
+    border:           0px 0px 1px 0px;
+    border-color:     @border;
+    padding:          10px 16px;
+    spacing:          10px;
+    children:         [prompt, entry];
+}
+
+prompt {
+    background-color: transparent;
+    text-color:       @accent;
+}
+
+entry {
+    background-color:  transparent;
+    text-color:        @fg0;
+    placeholder-color: @fg2;
+    placeholder:       "search clipboard...";
+}
+
+listview {
+    background-color: transparent;
+    padding:          6px 0px;
+    lines:            12;
+    scrollbar:        false;
+    spacing:          0px;
+}
+
+element {
+    background-color: transparent;
+    padding:          7px 14px;
+    border-radius:    5px;
+    margin:           1px 8px;
+}
+
+element selected {
+    background-color: @bg2;
+    text-color:       @fg0;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       inherit;
+    highlight:        bold;
+}

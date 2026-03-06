@@ -25,7 +25,8 @@ CONFIG_ITEMS=(
     "scripts"
     "wayvnc"
     "gtklock"
-    "vicinae"
+    "rofi"
+    "fish"
 )
 
 # Print colored output
@@ -57,9 +58,9 @@ check_dependencies() {
     local required_deps=(
         "hyprland" "kitty" "nautilus" "hyprpaper" "hyprpicker"
         "hypridle" "swaync" "grim" "slurp" "swappy"
-        "tesseract" "convert" "wl-copy" "swayosd-server" "waybar"
+        "tesseract" "convert" "rofi" "cliphist" "wl-copy" "swayosd-server" "waybar"
         "firefox" "brightnessctl" "playerctl" "pavucontrol"
-        "nm-applet" "gnome-keyring" "vicinae"
+        "nm-applet" "gnome-keyring"
     )
 
     for dep in "${required_deps[@]}"; do
@@ -89,17 +90,16 @@ install_dependencies() {
     sudo dnf copr enable -y azandure/clipse
     sudo dnf copr enable -y erikreider/SwayNotificationCenter
     sudo dnf copr enable -y washkinazy/wayland-wm-extras
-    sudo dnf copr enable -y quadratech188/vicinae
 
     print_info "Installing dependencies..."
     sudo dnf install -y \
-        hyprland kitty nautilus clipse \
+        hyprland kitty nautilus cliphist \
         hyprpaper hyprpicker hypridle swaync grim slurp \
-        swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard swayosd waybar firefox \
+        swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard swayosd waybar firefox rofi \
         brightnessctl playerctl pavucontrol polkit-gnome \
         network-manager-applet gnome-calendar gnome-keyring \
         powerprofilesctl gtklock gtklock-meta \
-        gtklock-playerctl-module gtklock-userinfo-module vicinae
+        gtklock-playerctl-module gtklock-userinfo-module
 
     print_success "Dependencies installed"
 }
@@ -196,19 +196,7 @@ configure_clipboard_key() {
     fi
 
     echo ""
-    echo "Choose what Super+V opens:"
-    echo "  1) Clipse  — terminal clipboard manager (default)"
-    echo "  2) Vicinae — clipboard history in launcher"
-    read -p "Choice [1/2]: " -n 1 -r
-    echo
-
-    if [[ $REPLY == "2" ]]; then
-        sed -i 's|bind = \$mainMod, V, exec, .*|bind = $mainMod, V, exec, vicinae deeplink vicinae://extensions/vicinae/clipboard/history|' "$keys_conf"
-        print_success "Super+V → Vicinae clipboard"
-    else
-        sed -i 's|bind = \$mainMod, V, exec, .*|bind = $mainMod, V, exec, $terminal --class $clipboard|' "$keys_conf"
-        print_success "Super+V → Clipse"
-    fi
+    print_success "Super+V → cliphist (rofi)"
 }
 
 # Display setup summary
@@ -264,6 +252,9 @@ main() {
 
     # Configure keybindings
     configure_clipboard_key
+
+    # Set up fish config
+    setup_fish
 
     # Set up scripts
     setup_scripts
