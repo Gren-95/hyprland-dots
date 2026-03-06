@@ -55,6 +55,8 @@ EXEC_LABELS = [
     (r'media start',                'Media Start'),
     (r'media stop',                 'Media Stop'),
     (r'bluetooth',                  'Bluetooth'),
+    (r'wifi',                       'Wi-Fi & VPN'),
+    (r'powermenu',                  'Power Menu'),
     (r'pavucontrol',                'Audio Mixer'),
 ]
 
