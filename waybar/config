@@ -91,10 +91,12 @@
         "scroll-step": 5
     },
     "network": {
-        "format-wifi": "󰤨  {essid} ({signalStrength}%)",
-        "format-ethernet": "󰈀 {ifname}",
-        "format-disconnected": "󰤭 Disconnected",
-        "tooltip-format": "󰌘 {ifname} - 󰩟 {ipaddr}",
+        "format-wifi": "󰤨",
+        "format-ethernet": "󰈀",
+        "format-disconnected": "󰤭",
+        "tooltip-format-wifi": "{essid}  {signalStrength}%\n󰩟 {ipaddr}",
+        "tooltip-format-ethernet": "󰌘 {ifname}\n󰩟 {ipaddr}",
+        "tooltip-format-disconnected": "Disconnected",
         "on-click": "bash ~/.config/scripts/wifi.sh"
     },
     "battery": {
