@@ -1,0 +1,72 @@
+* {
+    bg0:    #1c1917;
+    bg1:    #242120;
+    bg2:    #2e2b28;
+    border: #3a3735;
+    fg0:    #e7e3de;
+    fg1:    #9d9490;
+    danger: #ef4444;
+
+    background-color: transparent;
+    text-color:       @fg0;
+    font:             "Iosevka Nerd Font 15";
+}
+
+window {
+    background-color: @bg0;
+    border:           1px;
+    border-color:     @border;
+    border-radius:    14px;
+    width:            420px;
+    padding:          16px;
+}
+
+mainbox {
+    background-color: transparent;
+    spacing:          10px;
+    padding:          0px;
+    children:         [message, listview];
+}
+
+message {
+    background-color: transparent;
+    padding:          0px 0px 4px 0px;
+}
+
+textbox {
+    background-color: transparent;
+    text-color:       @fg1;
+    font:             "Iosevka Nerd Font 11";
+    horizontal-align: 0.5;
+}
+
+listview {
+    background-color: transparent;
+    columns:          5;
+    lines:            1;
+    scrollbar:        false;
+    spacing:          8px;
+}
+
+element {
+    background-color: @bg1;
+    border:           1px;
+    border-color:     @border;
+    border-radius:    10px;
+    padding:          18px 8px;
+    orientation:      vertical;
+    spacing:          6px;
+}
+
+element selected {
+    background-color: @bg2;
+    border-color:     @danger;
+    text-color:       @danger;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       inherit;
+    horizontal-align: 0.5;
+    highlight:        none;
+}
