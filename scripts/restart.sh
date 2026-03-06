@@ -23,10 +23,21 @@ waybar >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -x waybar >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
+# Generate hyprpaper config from all wallpapers in ~/Pictures/wallpapers/
+WALLPAPER_DIR="$HOME/Pictures/wallpapers"
+HYPRPAPER_CACHE="$HOME/.cache/hyprpaper.conf"
+mkdir -p "$HOME/.cache"
+{
+    echo "splash = false"
+    find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.webp" \) \
+        2>/dev/null | sort | while read -r f; do echo "preload = $f"; done
+    echo "wallpaper = ,$WALLPAPER_DIR/Dark_Nature.png"
+} > "$HYPRPAPER_CACHE"
+
 # Restart Hyprpaper
 echo -n "Running: hyprpaper ... "
 killall hyprpaper 2>/dev/null
-hyprpaper >/dev/null 2>&1 &
+hyprpaper -c "$HYPRPAPER_CACHE" >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -x hyprpaper >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
@@ -78,13 +89,6 @@ pkill -f "wl-paste.*cliphist" 2>/dev/null
 wl-paste --watch cliphist store >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -f "wl-paste.*cliphist" >/dev/null; then echo "OK"; else echo "FAILED"; fi
-
-# Restart nm-applet
-echo -n "Running: nm-applet ... "
-killall nm-applet 2>/dev/null
-nm-applet --indicator >/dev/null 2>&1 &
-sleep 0.2
-if pgrep -x nm-applet >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
 # Enable WiFi
 echo -n "Running: nmcli radio wifi on ... "
