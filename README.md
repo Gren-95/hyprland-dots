@@ -3,77 +3,66 @@
 ![Desktop Screenshot](screenshots/desktop.png)
 
 > [!TIP]
-> I recommend symbolic linking the folders to .config using dotfiles-manager.sh
+> Use `setup.sh` for automated installation, or `dotfiles-manager.sh` for managing symlinks.
 
 > [!NOTE]
-> I made this on Nobara 43 so there may be some Fedora/Nobara specific commands.
+> Built on Nobara 43. Some commands are Fedora/Nobara specific.
 
 ## Dependencies
 
-- `hyprland`
-- `kitty`
-- `nautilus`
-- `clipse`
-- `hyprpaper`
-- `hyprpicker`
-- `hypridle`
-- `gtklock`
-- `swaync`
-- `grim`
-- `slurp`
-- `swappy`
-- `tesseract`
-- `wl-clipboard`
-- `swayosd`
-- `waybar`
-- `firefox`
-- `brightnessctl`
-- `playerctl`
-- `pavucontrol`
-- `polkit-gnome`
-- `network-manager-applet`
-- `gnome-calendar`
-- `gnome-keyring`
-- `powerprofilesctl`
-- `vicinae`
-- `io.github.ebonjaeger.bluejay`
+- `hyprland` + `hyprland-devel` — compositor + plugin support
+- `hyprshell` — Alt+Tab window switcher
+- `kitty` — terminal
+- `nautilus` — file manager
+- `cliphist` + `wl-clipboard` — clipboard history
+- `hyprpaper` `hyprpicker` `hypridle` — wallpaper, color picker, idle daemon
+- `gtklock` + modules — lock screen
+- `swaync` — notification center
+- `grim` `slurp` `swappy` — screenshots
+- `tesseract` — OCR from screenshots
+- `swayosd` — OSD for volume/brightness
+- `waybar` — status bar
+- `rofi` — app launcher, menus
+- `firefox` — browser
+- `brightnessctl` `playerctl` — brightness and media control
+- `pavucontrol` — audio mixer
+- `polkit-gnome` — polkit agent
+- `gnome-calendar` `gnome-keyring` — calendar, secrets
+- `powerprofilesctl` — power profiles
+- `jq` — JSON parsing (used by wallpaper script)
 
-## Install Dependancies (Nobara 43)
+## Install Dependencies (Nobara 43)
 
 ### External repositories
 
 ```bash
 sudo dnf copr enable lionheartp/Hyprland                    # hyprland
-sudo dnf copr enable azandure/clipse                        # clipboard
 sudo dnf copr enable erikreider/SwayNotificationCenter      # swaync
 sudo dnf copr enable washkinazy/wayland-wm-extras           # swayosd + gtklock
-sudo dnf copr enable quadratech188/vicinae                  # vicinae launcher
 ```
 
-#### Optional integration of Kitty to Nautilus
+#### Optional: Kitty integration in Nautilus
 
 ```bash
 sudo dnf copr enable monkeygold/nautilus-open-any-terminal
 sudo dnf install nautilus-open-any-terminal
 ```
 
-### Install all dependancies
+### Install all dependencies
 
 ```bash
-sudo dnf install hyprland kitty nautilus clipse hyprpaper hyprpicker hypridle swaync grim slurp swappy tesseract wl-clipboard swayosd waybar firefox brightnessctl playerctl pavucontrol polkit-gnome network-manager-applet gnome-calendar gnome-keyring powerprofilesctl gtklock gtklock-meta gtklock-playerctl-module gtklock-userinfo-module vicinae
+sudo dnf install hyprland hyprland-devel hyprshell kitty nautilus cliphist \
+  hyprpaper hyprpicker hypridle swaync grim slurp swappy tesseract \
+  wl-clipboard swayosd waybar firefox rofi brightnessctl playerctl \
+  pavucontrol polkit-gnome gnome-calendar gnome-keyring jq \
+  powerprofilesctl gtklock gtklock-meta \
+  gtklock-playerctl-module gtklock-userinfo-module \
+  fish neovim ranger python3
 ```
-
-> **Note:** For Bluetooth app Bluejay, install with:
->
-> ```bash
-> flatpak install flathub io.github.ebonjaeger.bluejay
-> ```
 
 ## Setup
 
 ### Quick Setup (Recommended)
-
-For a fresh installation, use the automated setup script:
 
 ```bash
 cd /path/to/dotfiles
@@ -81,49 +70,17 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-This script will:
-
-- Check for missing dependencies
-- Offer to install them (on Fedora/Nobara)
+This will:
+- Check for missing dependencies and offer to install them
 - Create symlinks for all config directories
 - Set up script permissions
-- Configure initial system settings (GTK theme, SwayOSD)
+- Configure GTK theme and SwayOSD
 
-### Manual Setup
+### Wallpapers
 
-If you prefer to set up manually:
-
-#### Wallpapers
-
-Set your own pictures directory in `scripts/wallpaper.sh`
-
-```bash
-chmod +x scripts/wallpaper.sh
-```
-
-and add all pictures to hyprpaper to preload otherwise it will not work
-
-```bash
-$EDITOR hypr/hyprpaper.conf
-```
-
-### Restart script
-
-This script is for easily restarting startup services
-
-```bash
-chmod +x scripts/restart.sh
-```
-
-If you modified any of the dependencies you should modify the processes here also:
-
-```bash
-$EDITOR scripts/restart.sh
-```
+Put your wallpapers in `~/Pictures/wallpapers/`. They are preloaded automatically on startup — no manual config needed.
 
 ### Idle timeout
-
-Set your own custom values in `hypr/hypridle.conf`
 
 ```bash
 $EDITOR hypr/hypridle.conf
@@ -131,41 +88,32 @@ $EDITOR hypr/hypridle.conf
 
 ### Keybinds
 
-Set your own preferred keybinds at `hypr/modules/keys.conf`
-
 ```bash
 $EDITOR hypr/modules/keys.conf
 ```
 
+Press `Super+F1` in session to view all active keybinds.
+
 ### OSD
 
-You will need to run this command for osd to run
-
 ```bash
-sudo systemctl start --now swayosd-libinput-backend.service
 sudo systemctl enable --now swayosd-libinput-backend.service
 ```
 
 ### Remote Access (wayvnc)
 
-wayvnc is an optional VNC server for remote desktop access from other devices on your network.
+wayvnc is an optional VNC server for remote desktop access.
 
-**Start/stop:** `Super+Shift+V` — toggles wayvnc on/off and shows a notification with the IP:port to connect to.
+**Start/stop:** `Super+Shift+R` — toggles wayvnc on/off.
 
-**Connect:** Use any VNC viewer (e.g. TigerVNC) and connect to `<local-ip>:5900`.
+**Connect:** Use any VNC viewer and connect to `<local-ip>:5900`.
 
-```bash
-vncviewer <local-ip>:5900
-```
-
-**Security:** The default config binds to `0.0.0.0` with no authentication — suitable for a trusted LAN. For remote access outside your LAN, use [Tailscale](https://tailscale.com) to keep it private.
+**Security:** Default config binds to `0.0.0.0` with no auth — suitable for trusted LAN only. For remote access, use [Tailscale](https://tailscale.com).
 
 To add password auth, edit `wayvnc/config`:
 
 ```ini
 enable_auth=true
-username=ghost
+username=user
 password=yourpassword
 ```
-
-**Note:** wayvnc is not started automatically. Use `Super+Shift+V` to start it when needed. Running `Super+B` (restart services) will stop wayvnc if it was active.
