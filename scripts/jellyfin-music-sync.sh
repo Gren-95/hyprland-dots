@@ -1,8 +1,7 @@
 #!/bin/bash
 # Syncs music from Jellyfin to ~/Music
+# Jellyfin is the master — files removed from Jellyfin are deleted locally
 # Config is saved to ~/.config/jellyfin-sync.conf on first run
-
-set -e
 
 CONFIG="$HOME/.config/jellyfin-sync.conf"
 MUSIC_DIR="$HOME/Music"
@@ -42,7 +41,6 @@ load_config() {
         done
     fi
 
-    # Save config
     cat > "$CONFIG" <<EOF
 JELLYFIN_URL="$JELLYFIN_URL"
 JELLYFIN_API_KEY="$JELLYFIN_API_KEY"
@@ -65,54 +63,54 @@ get_user_id() {
     echo "$user_id"
 }
 
-# Fetch all audio items from Jellyfin
-get_music_items() {
-    local user_id="$1"
-    curl -sf \
-        -H "X-Emby-Token: $JELLYFIN_API_KEY" \
-        "$JELLYFIN_URL/Users/$user_id/Items?Recursive=true&IncludeItemTypes=Audio&Fields=Path,Album,AlbumArtist&Limit=100000" \
-        | jq -c '.Items[]'
-}
-
 # Sanitize a string for use as a filename
 sanitize() {
     echo "$1" | tr -d '/:*?"<>|\\' | sed 's/^ *//;s/ *$//'
 }
 
-# Sync all music
 sync_music() {
     local user_id
     user_id=$(get_user_id)
+
     print_info "Fetching music library from Jellyfin..."
 
-    local items
-    items=$(get_music_items "$user_id")
+    local raw_items
+    raw_items=$(curl -sf \
+        -H "X-Emby-Token: $JELLYFIN_API_KEY" \
+        "$JELLYFIN_URL/Users/$user_id/Items?Recursive=true&IncludeItemTypes=Audio&Fields=Path,Album,AlbumArtist&Limit=100000")
 
-    local total downloaded skipped failed
-    total=$(echo "$items" | wc -l)
-    downloaded=0
-    skipped=0
-    failed=0
+    if [[ -z "$raw_items" ]]; then
+        print_error "No response from Jellyfin — check server URL and API key"
+        exit 1
+    fi
 
-    print_info "Found $total tracks — syncing to $MUSIC_DIR"
+    local total
+    total=$(echo "$raw_items" | jq '.TotalRecordCount')
+    print_info "Found $total tracks on server"
+
     mkdir -p "$MUSIC_DIR"
 
+    # Build list of expected local paths from server library
+    declare -A expected_files
+    local downloaded=0 skipped=0 failed=0
+
     while IFS= read -r item; do
-        local id name artist album ext dest_dir dest_file
+        local id name artist album ext dest_dir dest_file server_path
 
-        id=$(echo "$item" | jq -r '.Id')
-        name=$(echo "$item" | jq -r '.Name')
+        id=$(echo "$item"     | jq -r '.Id')
+        name=$(echo "$item"   | jq -r '.Name')
         artist=$(echo "$item" | jq -r '.AlbumArtist // "Unknown Artist"')
-        album=$(echo "$item" | jq -r '.Album // "Unknown Album"')
-
-        # Get file extension from the server path
-        local server_path
+        album=$(echo "$item"  | jq -r '.Album // "Unknown Album"')
         server_path=$(echo "$item" | jq -r '.Path // ""')
+
         ext="${server_path##*.}"
         [[ -z "$ext" || "$ext" == "$server_path" ]] && ext="mp3"
 
         dest_dir="$MUSIC_DIR/$(sanitize "$artist")/$(sanitize "$album")"
         dest_file="$dest_dir/$(sanitize "$name").$ext"
+
+        # Track this file as expected
+        expected_files["$dest_file"]=1
 
         if [[ -f "$dest_file" ]]; then
             ((skipped++)) || true
@@ -120,11 +118,12 @@ sync_music() {
         fi
 
         mkdir -p "$dest_dir"
+        print_info "Downloading: $artist — $name"
 
         if curl -sf \
             -H "X-Emby-Token: $JELLYFIN_API_KEY" \
             "$JELLYFIN_URL/Audio/$id/stream?static=true" \
-            -o "$dest_file" 2>>"$LOG"; then
+            -o "$dest_file"; then
             ((downloaded++)) || true
             print_success "Downloaded: $artist — $name"
         else
@@ -132,11 +131,25 @@ sync_music() {
             print_warning "Failed: $artist — $name"
             rm -f "$dest_file"
         fi
-    done <<< "$items"
+    done < <(echo "$raw_items" | jq -c '.Items[]')
+
+    # Remove local files not on the server
+    local removed=0
+    while IFS= read -r local_file; do
+        if [[ -z "${expected_files[$local_file]}" ]]; then
+            print_warning "Removing (not on server): ${local_file#$MUSIC_DIR/}"
+            rm -f "$local_file"
+            ((removed++)) || true
+        fi
+    done < <(find "$MUSIC_DIR" -type f \( -name "*.mp3" -o -name "*.flac" -o -name "*.ogg" \
+        -o -name "*.opus" -o -name "*.m4a" -o -name "*.wav" -o -name "*.aac" \))
+
+    # Clean up empty directories
+    find "$MUSIC_DIR" -type d -empty -delete 2>/dev/null || true
 
     echo ""
-    print_success "Sync complete: $downloaded downloaded, $skipped already present, $failed failed"
-    echo "$(date): $downloaded downloaded, $skipped skipped, $failed failed" >> "$LOG"
+    print_success "Sync complete: $downloaded downloaded, $skipped up to date, $removed removed, $failed failed"
+    echo "$(date): downloaded=$downloaded skipped=$skipped removed=$removed failed=$failed" >> "$LOG"
 }
 
 load_config
