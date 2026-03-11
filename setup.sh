@@ -215,6 +215,69 @@ setup_immich_cli() {
         print_error "Login failed — check your URL and API key"
 }
 
+# Set up Jellyfin music sync
+setup_jellyfin_sync() {
+    print_info "Setting up Jellyfin music sync..."
+
+    local autostart="$CONFIG_DIR/hypr/modules/autostart.conf"
+
+    # Prompt for sync interval
+    echo ""
+    print_info "How often should music sync run?"
+    echo "  1) Every 30 minutes"
+    echo "  2) Every 1 hour"
+    echo "  3) Every 2 hours"
+    echo "  4) Every 6 hours"
+    read -p "  Choose [1-4] (default: 3): " interval_choice
+    echo
+
+    local sleep_secs=7200
+    case "$interval_choice" in
+        1) sleep_secs=1800  ;;
+        2) sleep_secs=3600  ;;
+        3) sleep_secs=7200  ;;
+        4) sleep_secs=21600 ;;
+        *) sleep_secs=7200  ;;
+    esac
+
+    # Write the interval into the sync script
+    local sync_script="$CONFIG_DIR/scripts/jellyfin-music-sync.sh"
+    if [[ -f "$sync_script" ]]; then
+        sed -i "s/sleep [0-9]*/sleep $sleep_secs/" "$sync_script"
+        print_success "Sync interval set to $sleep_secs seconds"
+    fi
+
+    # Add to autostart if not already present
+    if [[ -f "$autostart" ]] && ! grep -q "jellyfin-music-sync" "$autostart"; then
+        echo "exec-once = bash ~/.config/scripts/jellyfin-music-sync.sh --daemon" >> "$autostart"
+        print_success "Added Jellyfin sync to Hyprland autostart"
+    fi
+
+    # Prompt for credentials now
+    local conf="$HOME/.config/jellyfin-sync.conf"
+    if [[ ! -f "$conf" ]]; then
+        print_info "Configure Jellyfin server connection"
+        while true; do
+            read -p "  Server URL (e.g. http://192.168.0.200:8096): " jf_url
+            [[ -n "$jf_url" ]] && break
+            print_warning "URL cannot be empty"
+        done
+        while true; do
+            read -p "  API key (Jellyfin → Dashboard → API Keys): " jf_key
+            [[ -n "$jf_key" ]] && break
+            print_warning "API key cannot be empty"
+        done
+        cat > "$conf" <<EOF
+JELLYFIN_URL="$jf_url"
+JELLYFIN_API_KEY="$jf_key"
+EOF
+        chmod 600 "$conf"
+        print_success "Jellyfin credentials saved"
+    else
+        print_success "Jellyfin credentials already configured"
+    fi
+}
+
 # Set up scripts permissions
 setup_scripts() {
     print_info "Setting up script permissions..."
@@ -334,6 +397,14 @@ main() {
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         setup_immich_cli
+    fi
+
+    # Optional: Jellyfin music sync
+    echo ""
+    read -p "Set up Jellyfin music sync? (y/N) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        setup_jellyfin_sync
     fi
 
     # Show summary
