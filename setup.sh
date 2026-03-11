@@ -213,6 +213,31 @@ setup_immich_cli() {
     immich login "$immich_url/api" "$immich_key" && \
         print_success "Logged in to Immich" || \
         print_error "Login failed — check your URL and API key"
+
+    # Prompt for sync interval
+    echo ""
+    print_info "How often should Immich sync run?"
+    echo "  1) Every 30 minutes"
+    echo "  2) Every 1 hour"
+    echo "  3) Every 2 hours"
+    echo "  4) Every 6 hours"
+    read -p "  Choose [1-4] (default: 2): " interval_choice
+    echo
+
+    local sleep_secs=3600
+    case "$interval_choice" in
+        1) sleep_secs=1800  ;;
+        2) sleep_secs=3600  ;;
+        3) sleep_secs=7200  ;;
+        4) sleep_secs=21600 ;;
+        *) sleep_secs=3600  ;;
+    esac
+
+    local sync_script="$CONFIG_DIR/scripts/immich-sync.sh"
+    if [[ -f "$sync_script" ]]; then
+        sed -i "s/sleep [0-9]*/sleep $sleep_secs/" "$sync_script"
+        print_success "Immich sync interval set to $sleep_secs seconds"
+    fi
 }
 
 # Set up Jellyfin music sync
