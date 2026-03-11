@@ -122,6 +122,13 @@ sync_music() {
             -H "X-Emby-Token: $JELLYFIN_API_KEY" \
             "$JELLYFIN_URL/Audio/$id/stream?static=true")
 
+        # Fall back to generic download for video-stored audio files
+        if [[ "$http_code" == "404" ]]; then
+            http_code=$(curl -s -o "$dest_file" -w "%{http_code}" \
+                -H "X-Emby-Token: $JELLYFIN_API_KEY" \
+                "$JELLYFIN_URL/Items/$id/Download")
+        fi
+
         if [[ "$http_code" == "200" ]]; then
             ((downloaded++)) || true
             print_success "Downloaded: $name"
