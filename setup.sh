@@ -167,6 +167,53 @@ check_optional_deps() {
     fi
 }
 
+# Install and configure Immich CLI
+setup_immich_cli() {
+    print_info "Setting up Immich CLI..."
+
+    # Find a package manager
+    local pm=""
+    if command_exists bun; then
+        pm="bun"
+    elif command_exists npm; then
+        pm="npm"
+    else
+        print_warning "Neither bun nor npm found — installing Node.js via dnf"
+        sudo dnf install -y nodejs npm
+        pm="npm"
+    fi
+
+    # Install @immich/cli globally
+    if command_exists immich; then
+        print_success "Immich CLI already installed ($(immich --version 2>/dev/null || echo 'unknown version'))"
+    else
+        print_info "Installing @immich/cli via $pm..."
+        if [[ "$pm" == "bun" ]]; then
+            bun install -g @immich/cli
+        else
+            npm install -g @immich/cli
+        fi
+        print_success "Immich CLI installed"
+    fi
+
+    # Configure server connection
+    echo ""
+    print_info "Configure Immich server connection (leave blank to skip)"
+    read -p "  Immich server URL (e.g. https://immich.example.com): " immich_url
+    if [[ -n "$immich_url" ]]; then
+        read -p "  API key (from Immich → Account → API Keys): " immich_key
+        if [[ -n "$immich_key" ]]; then
+            immich login "$immich_url/api" "$immich_key" && \
+                print_success "Logged in to Immich" || \
+                print_warning "Login failed — run 'immich login <url>/api <key>' manually"
+        else
+            print_warning "No API key provided — run 'immich login <url>/api <key>' manually"
+        fi
+    else
+        print_warning "Skipped — run 'immich login <url>/api <key>' to configure later"
+    fi
+}
+
 # Set up scripts permissions
 setup_scripts() {
     print_info "Setting up script permissions..."
@@ -229,6 +276,7 @@ show_summary() {
     echo "  - Super+Shift+N: Change wallpaper"
     echo "  - Super+R: Open app launcher"
     echo ""
+    echo "  - immich login <url>/api <key>: Configure Immich CLI"
     echo "For more info, see README.md"
     echo "========================================"
 }
@@ -277,6 +325,14 @@ main() {
     echo
     if [[ ! $REPLY =~ ^[Nn]$ ]]; then
         system_setup
+    fi
+
+    # Optional: Immich CLI
+    echo ""
+    read -p "Install and configure Immich CLI? (y/N) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        setup_immich_cli
     fi
 
     # Show summary
