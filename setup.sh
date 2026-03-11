@@ -196,22 +196,10 @@ setup_immich_cli() {
         print_success "Immich CLI installed"
     fi
 
-    # Configure server connection
     echo ""
-    print_info "Configure Immich server connection (leave blank to skip)"
-    read -p "  Immich server URL (e.g. https://immich.example.com): " immich_url
-    if [[ -n "$immich_url" ]]; then
-        read -p "  API key (from Immich → Account → API Keys): " immich_key
-        if [[ -n "$immich_key" ]]; then
-            immich login "$immich_url/api" "$immich_key" && \
-                print_success "Logged in to Immich" || \
-                print_warning "Login failed — run 'immich login <url>/api <key>' manually"
-        else
-            print_warning "No API key provided — run 'immich login <url>/api <key>' manually"
-        fi
-    else
-        print_warning "Skipped — run 'immich login <url>/api <key>' to configure later"
-    fi
+    print_success "Immich CLI ready. When you have your server URL and API key, run:"
+    echo "  immich login <your-server>/api <your-api-key>"
+    echo "  Example: immich login https://immich.example.com/api abc123..."
 }
 
 # Set up scripts permissions
