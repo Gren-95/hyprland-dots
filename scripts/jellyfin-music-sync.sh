@@ -106,8 +106,7 @@ sync_music() {
         ext="${server_path##*.}"
         [[ -z "$ext" || "$ext" == "$server_path" ]] && ext="mp3"
 
-        dest_dir="$MUSIC_DIR/$(sanitize "$artist")/$(sanitize "$album")"
-        dest_file="$dest_dir/$(sanitize "$name").$ext"
+        dest_file="$MUSIC_DIR/$(sanitize "$name").$ext"
 
         # Track this file as expected
         expected_files["$dest_file"]=1
@@ -116,8 +115,6 @@ sync_music() {
             ((skipped++)) || true
             continue
         fi
-
-        mkdir -p "$dest_dir"
         print_info "Downloading: $artist — $name"
 
         if curl -sf \
