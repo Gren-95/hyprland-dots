@@ -119,14 +119,18 @@ sync_music() {
 
         local http_code
         http_code=$(curl -s -o "$dest_file" -w "%{http_code}" \
-            -H "X-Emby-Token: $JELLYFIN_API_KEY" \
-            "$JELLYFIN_URL/Audio/$id/stream?static=true")
+            "$JELLYFIN_URL/Audio/$id/stream?static=true&api_key=$JELLYFIN_API_KEY")
 
-        # Fall back to generic download for video-stored audio files
+        # Fall back to generic download endpoint
         if [[ "$http_code" == "404" ]]; then
             http_code=$(curl -s -o "$dest_file" -w "%{http_code}" \
-                -H "X-Emby-Token: $JELLYFIN_API_KEY" \
-                "$JELLYFIN_URL/Items/$id/Download")
+                "$JELLYFIN_URL/Items/$id/Download?api_key=$JELLYFIN_API_KEY")
+        fi
+
+        # Fall back to video stream (for video-stored audio)
+        if [[ "$http_code" == "404" ]]; then
+            http_code=$(curl -s -o "$dest_file" -w "%{http_code}" \
+                "$JELLYFIN_URL/Videos/$id/stream?static=true&api_key=$JELLYFIN_API_KEY")
         fi
 
         if [[ "$http_code" == "200" ]]; then
@@ -135,6 +139,7 @@ sync_music() {
         else
             ((failed++)) || true
             print_warning "Failed [$http_code]: $name"
+            print_warning "  Server path: $server_path"
             rm -f "$dest_file"
         fi
     done < <(echo "$raw_items" | jq -c '.Items[]')
