@@ -48,12 +48,12 @@ EOF
     chmod 600 "$CONFIG"
 }
 
-# Get the current user's ID from Jellyfin
+# Get the first user's ID from Jellyfin (API keys are not user-scoped)
 get_user_id() {
     local user_id
     user_id=$(curl -sf \
         -H "X-Emby-Token: $JELLYFIN_API_KEY" \
-        "$JELLYFIN_URL/Users/Me" | jq -r '.Id')
+        "$JELLYFIN_URL/Users" | jq -r '.[0].Id')
 
     if [[ -z "$user_id" || "$user_id" == "null" ]]; then
         print_error "Could not get user ID — check your URL and API key"
