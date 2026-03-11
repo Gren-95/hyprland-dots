@@ -121,16 +121,18 @@ sync_music() {
         http_code=$(curl -s -o "$dest_file" -w "%{http_code}" \
             "$JELLYFIN_URL/Audio/$id/stream?static=true&api_key=$JELLYFIN_API_KEY")
 
-        # Fall back to generic download endpoint
+        # Fall back: get direct stream URL from PlaybackInfo
         if [[ "$http_code" == "404" ]]; then
-            http_code=$(curl -s -o "$dest_file" -w "%{http_code}" \
-                "$JELLYFIN_URL/Items/$id/Download?api_key=$JELLYFIN_API_KEY")
-        fi
+            local stream_url
+            stream_url=$(curl -sf \
+                -H "X-Emby-Token: $JELLYFIN_API_KEY" \
+                "$JELLYFIN_URL/Items/$id/PlaybackInfo?UserId=$user_id" \
+                | jq -r '.MediaSources[0].DirectStreamUrl // empty')
 
-        # Fall back to video stream (for video-stored audio)
-        if [[ "$http_code" == "404" ]]; then
-            http_code=$(curl -s -o "$dest_file" -w "%{http_code}" \
-                "$JELLYFIN_URL/Videos/$id/stream?static=true&api_key=$JELLYFIN_API_KEY")
+            if [[ -n "$stream_url" ]]; then
+                http_code=$(curl -s -o "$dest_file" -w "%{http_code}" \
+                    "$JELLYFIN_URL$stream_url")
+            fi
         fi
 
         if [[ "$http_code" == "200" ]]; then
