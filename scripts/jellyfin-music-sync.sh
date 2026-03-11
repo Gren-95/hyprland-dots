@@ -63,9 +63,9 @@ get_user_id() {
     echo "$user_id"
 }
 
-# Sanitize a string for use as a filename
+# Sanitize a string for use as a filename (max 200 chars to stay under fs limit)
 sanitize() {
-    echo "$1" | tr -d '/:*?"<>|\\' | sed 's/^ *//;s/ *$//'
+    echo "$1" | tr -d '/:*?"<>|\\' | sed 's/^ *//;s/ *$//' | cut -c1-200
 }
 
 sync_music() {
@@ -117,15 +117,17 @@ sync_music() {
         fi
         print_info "Downloading: $artist — $name"
 
-        if curl -sf \
+        local http_code
+        http_code=$(curl -s -o "$dest_file" -w "%{http_code}" \
             -H "X-Emby-Token: $JELLYFIN_API_KEY" \
-            "$JELLYFIN_URL/Audio/$id/stream?static=true" \
-            -o "$dest_file"; then
+            "$JELLYFIN_URL/Audio/$id/stream?static=true")
+
+        if [[ "$http_code" == "200" ]]; then
             ((downloaded++)) || true
-            print_success "Downloaded: $artist — $name"
+            print_success "Downloaded: $name"
         else
             ((failed++)) || true
-            print_warning "Failed: $artist — $name"
+            print_warning "Failed [$http_code]: $name"
             rm -f "$dest_file"
         fi
     done < <(echo "$raw_items" | jq -c '.Items[]')
