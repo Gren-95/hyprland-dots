@@ -40,5 +40,5 @@ if status is-interactive
     alias reload="fish -c 'source ~/.config/fish/config.fish'"
 
     set -gx PATH $HOME/.local/bin $HOME/bin $HOME/.nix-profile/bin $PATH
-
+    set -gx PATH ~/.npm-global/bin $PATH
 end
