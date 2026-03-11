@@ -166,4 +166,12 @@ sync_music() {
 }
 
 load_config
-sync_music
+
+if [[ "$1" == "--daemon" ]]; then
+    while true; do
+        sync_music
+        sleep 7200
+    done
+else
+    sync_music
+fi
