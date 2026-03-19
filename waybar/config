@@ -97,7 +97,7 @@
         "tooltip-format-wifi": "{essid}  {signalStrength}%\n󰩟 {ipaddr}",
         "tooltip-format-ethernet": "󰌘 {ifname}\n󰩟 {ipaddr}",
         "tooltip-format-disconnected": "Disconnected",
-        "on-click": "bash ~/.config/scripts/wifi.sh"
+        "on-click": "nm-applet"
     },
     "battery": {
         "format": "{icon} {capacity}%",
