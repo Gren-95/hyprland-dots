@@ -10,7 +10,7 @@
             switch_workspaces: false,
             exclude_special_workspaces: "",
         ),
-        switch_ws: (
+        switch_2: (
             modifier: "super",
             key: "Tab",
             filter_by: [],
