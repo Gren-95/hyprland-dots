@@ -90,12 +90,12 @@ wl-paste --watch cliphist store >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -f "wl-paste.*cliphist" >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
-# Restart hyprshell (window switcher)
+# Ensure hyprshell is running (start if not, don't restart if already running)
 echo -n "Running: hyprshell ... "
-pkill hyprshell 2>/dev/null
-sleep 0.3
-hyprctl dispatch exec "hyprshell run" >/dev/null 2>&1
-sleep 0.5
+if ! pgrep -x hyprshell >/dev/null; then
+    hyprshell run >/dev/null 2>&1 &
+    sleep 0.5
+fi
 if pgrep -x hyprshell >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
 # Enable WiFi
