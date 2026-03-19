@@ -28,8 +28,6 @@
         "custom/sep",
         "custom/bluetooth",
         "custom/sep",
-        "network",
-        "custom/sep",
         "pulseaudio",
         "custom/sep",
         "custom/powerprofile",
@@ -89,15 +87,6 @@
             ]
         },
         "scroll-step": 5
-    },
-    "network": {
-        "format-wifi": "󰤨",
-        "format-ethernet": "󰈀",
-        "format-disconnected": "󰤭",
-        "tooltip-format-wifi": "{essid}  {signalStrength}%\n󰩟 {ipaddr}",
-        "tooltip-format-ethernet": "󰌘 {ifname}\n󰩟 {ipaddr}",
-        "tooltip-format-disconnected": "Disconnected",
-        "on-click": "nm-applet"
     },
     "battery": {
         "format": "{icon} {capacity}%",
