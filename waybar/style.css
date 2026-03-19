@@ -102,7 +102,8 @@
     color: #78716c;
 }
 #custom-powermenu {
-    margin: 0 12px 0 4px;
+    margin: 0 12px;
+    padding: 0 8px;
     color: #ef4444;
     font-size: 16px;
 }
