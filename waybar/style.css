@@ -101,3 +101,8 @@
 #custom-bluetooth.disconnected {
     color: #78716c;
 }
+#custom-powermenu {
+    margin: 0 12px 0 4px;
+    color: #ef4444;
+    font-size: 16px;
+}
