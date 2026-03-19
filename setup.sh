@@ -98,7 +98,7 @@ install_dependencies() {
         hyprland hyprland-devel hyprshell kitty nautilus cliphist \
         hyprpaper hyprpicker hypridle swaync grim slurp \
         swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard swayosd waybar firefox rofi \
-        brightnessctl playerctl pavucontrol polkit-gnome \
+        brightnessctl playerctl pavucontrol polkit-gnome network-manager-applet \
         gnome-calendar gnome-keyring jq \
         powerprofilesctl gtklock gtklock-meta \
         gtklock-playerctl-module gtklock-userinfo-module \
