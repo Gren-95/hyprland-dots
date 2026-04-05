@@ -46,6 +46,7 @@ EXEC_LABELS = [
     (r'swayosd.*caps-lock',         'Caps Lock'),
     (r'systemctl suspend',          'Suspend'),
     (r'restart\.sh',                'Restart Services'),
+    (r'waybar-toggle',              'Toggle Waybar Mode'),
     (r'wallpaper\.sh',              'Change Wallpaper'),
     (r'screenshot-ocr',             'Screenshot → OCR'),
     (r'swappy',                     'Screenshot & Annotate'),
