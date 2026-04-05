@@ -94,14 +94,6 @@ wl-paste --watch cliphist store >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -f "wl-paste.*cliphist" >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
-# Ensure hyprshell is running (start if not, don't restart if already running)
-echo -n "Running: hyprshell ... "
-if ! pgrep -x hyprshell >/dev/null; then
-    systemd-run --user --scope hyprshell run >/dev/null 2>&1 &
-    sleep 1
-fi
-if pgrep -x hyprshell >/dev/null; then echo "OK"; else echo "FAILED"; fi
-
 # Enable WiFi
 echo -n "Running: nmcli radio wifi on ... "
 nmcli radio wifi on >/dev/null 2>&1
