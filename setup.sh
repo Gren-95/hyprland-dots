@@ -102,7 +102,7 @@ install_dependencies() {
         gnome-calendar gnome-keyring jq \
         powerprofilesctl gtklock gtklock-meta \
         gtklock-playerctl-module gtklock-userinfo-module \
-        fish neovim ranger python3
+        fish neovim ranger python3 python3-pillow
 
     print_success "Dependencies installed"
 }
@@ -156,6 +156,12 @@ create_symlinks() {
         ln -sf "$source" "$target"
         print_success "Symlinked $item"
     done
+
+    # Avatar symlink: point ~/.config/hypr/avatar.png to AccountsService icon
+    local avatar_link="$HOME/.config/hypr/avatar.png"
+    local avatar_source="/var/lib/AccountsService/icons/$(whoami)"
+    ln -sf "$avatar_source" "$avatar_link"
+    print_success "Avatar symlink -> $avatar_source"
 }
 
 # Check optional external dependencies
@@ -371,6 +377,22 @@ show_summary() {
 }
 
 # Main installation flow
+setup_avatar() {
+    print_info "Generating initials avatar..."
+    if ! command_exists python3; then
+        print_warning "python3 not found, skipping avatar generation"
+        return
+    fi
+    if ! python3 -c "from PIL import Image" 2>/dev/null; then
+        print_warning "python3-pillow not found, skipping avatar generation"
+        return
+    fi
+
+    bash "$CONFIG_DIR/scripts/generate-avatar.sh" && \
+        print_success "Avatar installed to /var/lib/AccountsService/icons/$(whoami)" || \
+        print_warning "Avatar generation failed"
+}
+
 main() {
     echo "========================================"
     echo "  Hyprland Dotfiles Setup"
@@ -430,6 +452,14 @@ main() {
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         setup_jellyfin_sync
+    fi
+
+    # Generate avatar
+    echo ""
+    read -p "Generate initials avatar for lockscreen? (Y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+        setup_avatar
     fi
 
     # Show summary
