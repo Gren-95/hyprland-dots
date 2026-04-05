@@ -1,50 +1,42 @@
 /* Hyprshell window switcher — Stone dark theme */
 
 window {
-    background: transparent;
-}
-
-#hyprshell-window-switcher {
     background: rgba(28, 25, 23, 0.92);
     border: 1px solid rgba(51, 204, 255, 0.25);
     border-radius: 16px;
-    padding: 20px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
 }
 
-.window-item {
+.client {
     background: rgba(41, 37, 36, 0.8);
     border: 1px solid rgba(87, 83, 78, 0.4);
     border-radius: 10px;
     padding: 10px;
     margin: 6px;
     transition: all 150ms ease;
-    min-width: 120px;
-    min-height: 100px;
 }
 
-.window-item:hover {
+.client:hover {
     background: rgba(51, 204, 255, 0.12);
     border-color: rgba(51, 204, 255, 0.5);
 }
 
-.window-item.selected {
+.client.active {
     background: rgba(51, 204, 255, 0.18);
     border: 1px solid #33ccff;
     box-shadow: 0 0 12px rgba(51, 204, 255, 0.3);
 }
 
-.window-item label {
-    color: #e7e5e4;
-    font-size: 12px;
-    font-weight: 500;
-    margin-top: 6px;
-}
-
-.window-item.selected label {
-    color: #33ccff;
-}
-
-.window-item image {
+.client-image {
     -gtk-icon-size: 48px;
+}
+
+.workspace {
+    color: #78716c;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.workspace.active {
+    color: #33ccff;
 }

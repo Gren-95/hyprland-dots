@@ -97,8 +97,8 @@ if pgrep -f "wl-paste.*cliphist" >/dev/null; then echo "OK"; else echo "FAILED";
 # Ensure hyprshell is running (start if not, don't restart if already running)
 echo -n "Running: hyprshell ... "
 if ! pgrep -x hyprshell >/dev/null; then
-    hyprshell run >/dev/null 2>&1 &
-    sleep 0.5
+    systemd-run --user --scope hyprshell run >/dev/null 2>&1 &
+    sleep 1
 fi
 if pgrep -x hyprshell >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
