@@ -1,18 +1,23 @@
 #!/bin/bash
 # Toggle waybar between floating and docked mode
 
-FLOATING="$HOME/.config/waybar/config"
-DOCKED="$HOME/.config/waybar/config-docked"
-ACTIVE="$HOME/.config/waybar/config-active"
+FLOATING_CONF="$HOME/.config/waybar/config"
+DOCKED_CONF="$HOME/.config/waybar/config-docked"
+FLOATING_CSS="$HOME/.config/waybar/style.css"
+DOCKED_CSS="$HOME/.config/waybar/style-docked.css"
+ACTIVE_CONF="$HOME/.config/waybar/config-active"
+ACTIVE_CSS="$HOME/.config/waybar/style-active.css"
 
 # Determine current mode from symlink or fallback to floating
-if [[ -L "$ACTIVE" ]] && [[ "$(readlink "$ACTIVE")" == "$DOCKED" ]]; then
-    ln -sf "$FLOATING" "$ACTIVE"
+if [[ -L "$ACTIVE_CONF" ]] && [[ "$(readlink "$ACTIVE_CONF")" == "$DOCKED_CONF" ]]; then
+    ln -sf "$FLOATING_CONF" "$ACTIVE_CONF"
+    ln -sf "$FLOATING_CSS" "$ACTIVE_CSS"
     notify-send -i preferences-desktop "Waybar" "Switched to floating mode"
 else
-    ln -sf "$DOCKED" "$ACTIVE"
+    ln -sf "$DOCKED_CONF" "$ACTIVE_CONF"
+    ln -sf "$DOCKED_CSS" "$ACTIVE_CSS"
     notify-send -i preferences-desktop "Waybar" "Switched to docked mode"
 fi
 
 killall waybar
-waybar -c "$ACTIVE" &
+waybar -c "$ACTIVE_CONF" -s "$ACTIVE_CSS" >/dev/null 2>&1 &

@@ -1,0 +1,110 @@
+* {
+    color: #f5f5f4;
+}
+
+#tray,
+#pulseaudio,
+#network,
+#battery,
+#custom-bluetooth,
+#custom-powerprofile {
+    background: none;
+    background-color: transparent;
+    margin: 0 12px;
+}
+
+#waybar {
+    background: #1c1917;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+    border-bottom: 1px solid #44403c;
+    font-family: 'FiraCode Nerd Font', 'Fira Code', sans-serif;
+}
+
+#custom-notifications {
+    margin: 0 12px;
+    padding: 0 8px;
+}
+
+#custom-ppmenu {
+    margin: 0 12px;
+}
+
+#custom-clipboard {
+    margin: 0 12px;
+}
+
+#custom-colorpicker {
+    margin: 0 12px;
+}
+
+#custom-hypridle {
+    margin: 0 12px;
+}
+
+#custom-sep {
+    color: #57534e;
+    margin: 0;
+    padding: 0;
+}
+
+#clock.date {
+    color: #a8a29e;
+    font-size: 0.85rem;
+    margin: 0 4px 0 12px;
+}
+
+#clock.time {
+    font-weight: bold;
+    margin: 0 12px 0 4px;
+}
+
+#custom-powerprofile.performance {
+    color: #ef4444;
+}
+
+#custom-powerprofile.balanced {
+    color: #eab308;
+}
+
+#custom-powerprofile.power-saver {
+    color: #22c55e;
+}
+
+#battery.charging,
+#battery.plugged {
+    color: #22c55e;
+}
+
+#battery.discharging {
+    color: #eab308;
+}
+
+#battery.critical:not(.charging):not(.plugged) {
+    color: #ef4444;
+}
+
+#custom-wayvnc {
+    color: #f97316;
+    margin: 0 12px;
+}
+
+#custom-microphone {
+    color: #f97316;
+    margin: 0 12px;
+}
+
+#custom-bluetooth.connected {
+    color: #60a5fa;
+}
+
+#custom-bluetooth.disconnected {
+    color: #78716c;
+}
+#custom-powermenu {
+    margin: 0 12px;
+    padding: 0 8px;
+    color: #ef4444;
+    font-size: 16px;
+}

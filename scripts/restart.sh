@@ -20,8 +20,10 @@ fi
 echo -n "Running: waybar ... "
 killall waybar 2>/dev/null
 WAYBAR_CONF="$HOME/.config/waybar/config-active"
+WAYBAR_CSS="$HOME/.config/waybar/style-active.css"
 [[ ! -L "$WAYBAR_CONF" ]] && WAYBAR_CONF="$HOME/.config/waybar/config"
-waybar -c "$WAYBAR_CONF" >/dev/null 2>&1 &
+[[ ! -L "$WAYBAR_CSS" ]] && WAYBAR_CSS="$HOME/.config/waybar/style.css"
+waybar -c "$WAYBAR_CONF" -s "$WAYBAR_CSS" >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -x waybar >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
