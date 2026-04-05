@@ -19,7 +19,9 @@ fi
 # Restart Waybar
 echo -n "Running: waybar ... "
 killall waybar 2>/dev/null
-waybar >/dev/null 2>&1 &
+WAYBAR_CONF="$HOME/.config/waybar/config-active"
+[[ ! -L "$WAYBAR_CONF" ]] && WAYBAR_CONF="$HOME/.config/waybar/config"
+waybar -c "$WAYBAR_CONF" >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -x waybar >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
