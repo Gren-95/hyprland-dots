@@ -1,6 +1,6 @@
 # This file contains fish universal variable definitions.
 # VERSION: 3.0
-SETUVAR CURSOR:218
+SETUVAR CURSOR:222
 SETUVAR --export DOCKER_CONFIG:/home/ghost/\x2econfig/docker
 SETUVAR --export DOTNET_CLI_HOME:/home/ghost/\x2elocal/share/dotnet
 SETUVAR --export EDITOR:nvim
