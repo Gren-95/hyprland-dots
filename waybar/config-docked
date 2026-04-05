@@ -1,0 +1,202 @@
+{
+    "layer": "top",
+    "position": "top",
+    "height": 36,
+    "on-scroll-up": "hyprctl dispatch workspace e+1",
+    "on-scroll-down": "hyprctl dispatch workspace e-1",
+    "modules-left": [
+        "custom/ppmenu",
+        "custom/sep",
+        "hyprland/workspaces",
+        "hyprland/window"
+    ],
+    "modules-center": [
+        "clock#date",
+        "clock#time",
+        "custom/sep",
+        "custom/hypridle",
+        "custom/sep",
+        "custom/notifications"
+    ],
+    "modules-right": [
+        "tray",
+        "custom/sep",
+        "custom/clipboard",
+        "custom/sep",
+        "custom/colorpicker",
+        "custom/sep",
+        "custom/bluetooth",
+        "custom/sep",
+        "pulseaudio",
+        "custom/sep",
+        "custom/powerprofile",
+        "custom/sep",
+        "battery",
+        "custom/wayvnc",
+        "custom/microphone",
+        "custom/sep",
+        "custom/powermenu"
+    ],
+    "custom/ppmenu": {
+        "format": "󱗼",
+        "tooltip": "Open app menu",
+        "tooltip-format": "Open app menu",
+        "on-click": "rofi -show drun -show-icons -theme ~/.config/rofi/launcher.rasi"
+    },
+    "hyprland/workspaces": {
+        "format": "{icon}",
+        "on-click": "activate",
+        "on-scroll-up": "hyprctl dispatch workspace e+1",
+        "on-scroll-down": "hyprctl dispatch workspace e-1",
+        "format-icons": {
+            "1": "",
+            "2": "",
+            "3": "",
+            "4": "",
+            "5": "",
+            "6": "",
+            "7": "",
+            "8": "",
+            "9": "",
+            "default": ""
+        },
+        "dynamic": true
+    },
+    "hyprland/window": {
+        "max-length": 40,
+        "separate-outputs": true,
+        "format": "{title}"
+    },
+    "clock#date": {
+        "format": "  {:%a, %d %b}",
+        "tooltip": false,
+        "on-click": "gnome-calendar"
+    },
+
+    "clock#time": {
+        "format": "{:%H:%M}",
+        "tooltip-format": "Estonia/Tallinn — UTC+3",
+        "interval": 1
+    },
+    "pulseaudio": {
+        "format": "󰕾 {volume}%",
+        "format-muted": "󰖁 muted",
+        "on-click": "pavucontrol",
+        "format-icons": {
+            "default": [
+                "󰕿",
+                "󰖀",
+                "󰕾"
+            ]
+        },
+        "scroll-step": 5
+    },
+    "battery": {
+        "format": "{icon} {capacity}%",
+        "format-charging": "󰂄 {capacity}%",
+        "format-plugged": "󰂏 {capacity}%",
+        "format-alt": "{icon} {time} left",
+        "format-icons": [
+            "󰂎",
+            "󰁺",
+            "󰁾",
+            "󰂀",
+            "󰁹"
+        ],
+        "interval": 30,
+        "states": {
+            "critical": 20
+        },
+        "on-scroll-up": "swayosd-client --brightness raise",
+        "on-scroll-down": "swayosd-client --brightness lower"
+    },
+    "tray": {
+        "icon-size": 20,
+        "spacing": 10
+    },
+    "custom/notifications": {
+        "format": "{icon}",
+        "format-icons": {
+            "notification": "󰂞",
+            "none": "󰂚",
+            "dnd-notification": "󰂛",
+            "dnd-none": "󰂛",
+            "inhibited-notification": "󰂞",
+            "inhibited-none": "󰂚",
+            "dnd-inhibited-notification": "󰂛",
+            "dnd-inhibited-none": "󰂛"
+        },
+        "return-type": "json",
+        "exec-if": "which swaync-client",
+        "exec": "swaync-client --subscribe-waybar",
+        "on-click": "swaync-client --toggle-panel --skip-wait",
+        "on-click-right": "swaync-client --toggle-dnd --skip-wait",
+        "escape": true
+    },
+    "custom/bluetooth": {
+        "format": "{}",
+        "return-type": "json",
+        "interval": 10,
+        "exec": "bash ~/.config/scripts/bluetooth-status.sh",
+        "signal": 8,
+        "on-scroll-up": "bash ~/.config/scripts/bluetooth-status.sh scroll-up",
+        "on-scroll-down": "bash ~/.config/scripts/bluetooth-status.sh scroll-down",
+        "on-click": "bash ~/.config/scripts/bluetooth.sh"
+    },
+    "custom/sep": {
+        "format": "│",
+        "interval": "once",
+        "tooltip": false
+    },
+    "custom/clipboard": {
+        "format": "󰅍",
+        "tooltip": true,
+        "tooltip-format": "Open clipboard history",
+        "on-click": "cliphist list | rofi -dmenu -p Clipboard -theme ~/.config/rofi/clipboard.rasi | cliphist decode | wl-copy"
+    },
+    "custom/colorpicker": {
+        "format": "󰈊",
+        "tooltip": true,
+        "tooltip-format": "Pick a color (copies to clipboard)",
+        "on-click": "hyprpicker -a"
+    },
+    "custom/hypridle": {
+        "format": "{}",
+        "interval": 5,
+        "exec": "if pgrep -x hypridle > /dev/null; then echo '󰒳'; else echo '󰒲'; fi",
+        "tooltip": true,
+        "tooltip-format": "Click to toggle idle management",
+        "on-click": "if pgrep -x hypridle > /dev/null; then pkill hypridle && notify-send 'Stay Awake' 'Idle management disabled' -i caffeine-on; else hypridle & notify-send 'Sleep Mode' 'Idle management enabled' -i caffeine-off; fi"
+    },
+    "custom/powerprofile": {
+        "format": "{}",
+        "return-type": "json",
+        "interval": 5,
+        "exec": "profile=$(powerprofilesctl get); if [ \"$profile\" = \"performance\" ]; then echo '{\"text\": \"󱐋\", \"tooltip\": \"Performance\", \"class\": \"performance\"}'; elif [ \"$profile\" = \"balanced\" ]; then echo '{\"text\": \"󰾅\", \"tooltip\": \"Balanced\", \"class\": \"balanced\"}'; else echo '{\"text\": \"󱟦\", \"tooltip\": \"Power Saver\", \"class\": \"power-saver\"}'; fi",
+        "on-click": "current=$(powerprofilesctl get); if [ \"$current\" = \"performance\" ]; then powerprofilesctl set balanced && notify-send 'Power Profile' 'Set to Balanced'; elif [ \"$current\" = \"balanced\" ]; then powerprofilesctl set power-saver && notify-send 'Power Profile' 'Set to Power Saver'; else powerprofilesctl set performance && notify-send 'Power Profile' 'Set to Performance'; fi",
+        "on-scroll-up": "brightnessctl --device='dell::kbd_backlight' set +1",
+        "on-scroll-down": "brightnessctl --device='dell::kbd_backlight' set 1-"
+    },
+    "custom/wayvnc": {
+        "format": "󰢹",
+        "tooltip": true,
+        "tooltip-format": "WayVNC active — click to stop",
+        "interval": 3,
+        "exec": "echo ''",
+        "exec-if": "pgrep -x wayvnc",
+        "on-click": "pkill wayvnc && notify-send -i network-vpn 'WayVNC' 'Remote access stopped'"
+    },
+    "custom/microphone": {
+        "format": "󰍬",
+        "interval": 2,
+        "exec": "echo ''",
+        "exec-if": "pactl get-source-mute @DEFAULT_SOURCE@ 2>/dev/null | grep -q 'Mute: no'",
+        "on-click": "pactl set-source-mute @DEFAULT_SOURCE@ toggle",
+        "tooltip": false
+    },
+    "custom/powermenu": {
+        "format": "⏻",
+        "tooltip-format": "Power menu",
+        "on-click": "bash ~/.config/scripts/powermenu.sh"
+    }
+}
