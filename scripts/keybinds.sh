@@ -49,8 +49,10 @@ EXEC_LABELS = [
     (r'waybar-toggle',              'Toggle Waybar Mode'),
     (r'wallpaper\.sh',              'Change Wallpaper'),
     (r'screenshot-ocr',             'Screenshot → OCR'),
+    (r'screenshot\.sh',             'Screenshot → Save & Copy'),
+    (r'screenrecord',               'Toggle Screen Recording'),
     (r'swappy',                     'Screenshot & Annotate'),
-    (r'grim.*wl-copy',              'Screenshot'),
+    (r'grim.*wl-copy',              'Screenshot → Clipboard'),
     (r'wayvnc-toggle',              'Toggle WayVNC'),
     (r'keybinds',                   'Show Keybinds'),
     (r'media start',                'Media Start'),
@@ -103,7 +105,7 @@ def get_cat(b):
     if d == 'exec':
         if re.search(r'playerctl|XF86Audio', a) or re.search(r'XF86Audio', k): return 'Media'
         if re.search(r'brightness', a) or re.search(r'XF86MonBrightness', k): return 'Brightness'
-        if re.search(r'grim|slurp|swappy|screenshot', a): return 'Screenshots'
+        if re.search(r'grim|slurp|swappy|screenshot|screenrecord', a): return 'Screenshots'
         if re.search(r'kitty|nautilus|firefox|rofi|hyprpicker|pavucontrol', a): return 'Apps'
         return 'System'
     if re.search(r'killactive|togglefloating|fullscreen|pseudo|togglesplit|resize|movewindow|movefocus|cyclenext', d):
