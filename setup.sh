@@ -28,7 +28,6 @@ CONFIG_ITEMS=(
     "fish"
     "nvim"
     "ranger"
-    "hyprshell"
 )
 
 # Print colored output
@@ -58,7 +57,7 @@ check_dependencies() {
 
     local missing_deps=()
     local required_deps=(
-        "hyprland" "hyprshell" "kitty" "nautilus" "hyprpaper" "hyprpicker"
+        "hyprland" "kitty" "nautilus" "hyprpaper" "hyprpicker"
         "hypridle" "swaync" "grim" "slurp" "swappy"
         "tesseract" "convert" "rofi" "cliphist" "wl-copy" "wl-paste" "swayosd-server" "waybar"
         "firefox" "brightnessctl" "playerctl" "pavucontrol"
@@ -94,7 +93,7 @@ install_dependencies() {
 
     print_info "Installing dependencies..."
     sudo dnf install -y \
-        hyprland hyprland-devel hyprshell kitty nautilus cliphist \
+        hyprland hyprland-devel kitty nautilus cliphist \
         hyprpaper hyprpicker hypridle swaync grim slurp \
         swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard swayosd waybar firefox rofi \
         brightnessctl playerctl pavucontrol polkit-gnome network-manager-applet \
@@ -154,6 +153,15 @@ create_symlinks() {
         ln -sf "$source" "$target"
         print_success "Symlinked $item"
     done
+
+    # Waybar active config symlinks — default to floating style
+    local waybar_dir="$HOME/.config/waybar"
+    [[ ! -e "$waybar_dir/config-active" ]] && \
+        ln -sf "$waybar_dir/config" "$waybar_dir/config-active" && \
+        print_success "Waybar config-active -> config (floating)"
+    [[ ! -e "$waybar_dir/style-active.css" ]] && \
+        ln -sf "$waybar_dir/style.css" "$waybar_dir/style-active.css" && \
+        print_success "Waybar style-active.css -> style.css (floating)"
 
     # Avatar symlink: point ~/.config/hypr/avatar.png to AccountsService icon
     local avatar_link="$HOME/.config/hypr/avatar.png"
