@@ -6,6 +6,16 @@ echo "======================================"
 echo "Restarting Hyprland Services"
 echo "======================================"
 
+# Restart XDG desktop portal (required for screen sharing, file pickers, etc.)
+echo -n "Running: xdg-desktop-portal-hyprland ... "
+pkill -f xdg-desktop-portal 2>/dev/null
+sleep 0.5
+/usr/libexec/xdg-desktop-portal-hyprland >/dev/null 2>&1 &
+sleep 0.3
+/usr/libexec/xdg-desktop-portal >/dev/null 2>&1 &
+sleep 0.3
+if pgrep -f xdg-desktop-portal >/dev/null; then echo "OK"; else echo "FAILED"; fi
+
 # Start gnome-keyring-daemon
 echo -n "Running: gnome-keyring-daemon ... "
 eval $(/usr/bin/gnome-keyring-daemon --start --components=pkcs11,secrets,ssh,gpg) >/dev/null 2>&1
