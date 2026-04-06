@@ -2,7 +2,7 @@
 # keybinds.sh - Searchable keybind viewer using rofi
 
 python3 - <<'EOF'
-import subprocess, json, re, os, sys
+import subprocess, json, re, os, sys, html
 
 raw = subprocess.check_output(['hyprctl', 'binds', '-j']).decode()
 binds = json.loads(raw)
@@ -167,7 +167,7 @@ for cat in CAT_ORDER:
         pad = ' ' * max(2, 30 - len(plain_keys))
 
         cat_markup  = f'<span foreground="#5c5855">{cat:<13}</span>'
-        desc_markup = f'<span foreground="#9d9490">{label}</span>'
+        desc_markup = f'<span foreground="#9d9490">{html.escape(label)}</span>'
 
         line = f'{cat_markup}  {keys_markup}{pad}{desc_markup}'
         entries.append((line, action))
