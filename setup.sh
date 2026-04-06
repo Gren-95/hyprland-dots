@@ -24,7 +24,6 @@ CONFIG_ITEMS=(
     "swappy"
     "scripts"
     "wayvnc"
-    "gtklock"
     "rofi"
     "fish"
     "nvim"
@@ -100,8 +99,7 @@ install_dependencies() {
         swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard swayosd waybar firefox rofi \
         brightnessctl playerctl pavucontrol polkit-gnome network-manager-applet \
         gnome-calendar gnome-keyring jq \
-        powerprofilesctl gtklock gtklock-meta \
-        gtklock-playerctl-module gtklock-userinfo-module \
+        powerprofilesctl hyprlock \
         fish neovim ranger python3 python3-pillow
 
     print_success "Dependencies installed"
