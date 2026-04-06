@@ -98,7 +98,7 @@ install_dependencies() {
         swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard swayosd waybar firefox rofi \
         brightnessctl playerctl pavucontrol polkit-gnome network-manager-applet \
         gnome-calendar gnome-keyring jq \
-        powerprofilesctl hyprlock \
+        powerprofilesctl hyprlock gpu-screen-recorder \
         fish neovim ranger python3 python3-pillow
 
     print_success "Dependencies installed"
