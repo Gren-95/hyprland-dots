@@ -4,9 +4,13 @@
 WARNED_20=false
 WARNED_10=false
 
+BATTERY=$(find /sys/class/power_supply/ -maxdepth 1 -name "BAT*" 2>/dev/null | sort | head -1)
+BATTERY=${BATTERY##*/}
+
 while true; do
-    CAPACITY=$(cat /sys/class/power_supply/BAT0/capacity 2>/dev/null || cat /sys/class/power_supply/BAT1/capacity 2>/dev/null)
-    STATUS=$(cat /sys/class/power_supply/BAT0/status 2>/dev/null || cat /sys/class/power_supply/BAT1/status 2>/dev/null)
+    [[ -z "$BATTERY" ]] && { sleep 60; continue; }
+    CAPACITY=$(cat "/sys/class/power_supply/$BATTERY/capacity" 2>/dev/null)
+    STATUS=$(cat "/sys/class/power_supply/$BATTERY/status" 2>/dev/null)
 
     if [[ "$STATUS" == "Charging" || "$STATUS" == "Full" ]]; then
         WARNED_20=false
