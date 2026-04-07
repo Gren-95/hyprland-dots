@@ -6,7 +6,7 @@
 ################################################################################
 
 # Constants
-DOTS_DIR="/mnt/DATA/Home_Folders/Documents/dots"
+DOTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_DIR="$HOME/.config"
 LOG_FILE="$CONFIG_DIR/.dotfiles_symlink.log"
 LOCK_FILE="/tmp/dotfiles-manager.lock"
@@ -21,12 +21,10 @@ CONFIG_ITEMS=(
     "swappy"
     "scripts"
     "wayvnc"
-    "gtklock"
     "rofi"
     "fish"
     "nvim"
     "ranger"
-    "hyprshell"
 )
 
 # Options

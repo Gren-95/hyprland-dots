@@ -45,7 +45,8 @@ mkdir -p "$HOME/.cache"
     echo "splash = false"
     find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.webp" \) \
         2>/dev/null | sort | while read -r f; do echo "preload = $f"; done
-    echo "wallpaper = ,$WALLPAPER_DIR/Dark_Nature.png"
+    FIRST_WP=$(find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.webp" \) 2>/dev/null | sort | head -1)
+    [[ -n "$FIRST_WP" ]] && echo "wallpaper = ,$FIRST_WP"
 } > "$HYPRPAPER_CACHE"
 
 # Restart Hyprpaper

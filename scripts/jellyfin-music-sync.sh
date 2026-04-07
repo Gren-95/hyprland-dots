@@ -165,6 +165,10 @@ sync_music() {
     echo "$(date): downloaded=$downloaded skipped=$skipped removed=$removed failed=$failed" >> "$LOG"
 }
 
+if [[ "$1" == "--daemon" ]] && [[ ! -f "$CONFIG" ]]; then
+    exit 0
+fi
+
 load_config
 
 if [[ "$1" == "--daemon" ]]; then

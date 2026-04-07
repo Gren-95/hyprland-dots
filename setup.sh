@@ -346,17 +346,19 @@ system_setup() {
     fi
 }
 
-# Configure Super+V clipboard keybind
-configure_clipboard_key() {
-    local keys_conf="$CONFIG_DIR/hypr/modules/keys.conf"
-
-    if [[ ! -f "$keys_conf" ]]; then
-        print_warning "keys.conf not found, skipping clipboard key configuration"
-        return
-    fi
-
-    echo ""
-    print_success "Super+V → cliphist (rofi)"
+# Create expected user directories
+create_dirs() {
+    print_info "Creating user directories..."
+    local dirs=(
+        "$HOME/Pictures/Screenshots"
+        "$HOME/Pictures/wallpapers"
+        "$HOME/Videos/Recordings"
+        "$HOME/Music"
+    )
+    for d in "${dirs[@]}"; do
+        mkdir -p "$d"
+        print_success "Directory: $d"
+    done
 }
 
 # Display setup summary
@@ -430,8 +432,8 @@ main() {
     # Check optional dependencies
     check_optional_deps
 
-    # Configure keybindings
-    configure_clipboard_key
+    # Create expected directories
+    create_dirs
 
     # Set up scripts
     setup_scripts
