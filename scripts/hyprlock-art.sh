@@ -4,8 +4,8 @@
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 DEST="$LOCK_ART"
 
-# Update lock background symlink to the currently active wallpaper
-WP=$(hyprctl hyprpaper listactive 2>/dev/null | awk '{print $NF}' | head -1)
+# Pick a random wallpaper for the lock background
+WP=$(find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.webp" \) 2>/dev/null | shuf -n1)
 [[ -f "$WP" ]] && ln -sf "$WP" "$LOCK_BG"
 
 url=$(playerctl metadata mpris:artUrl 2>/dev/null)
