@@ -2,10 +2,10 @@
 # Syncs music from Jellyfin to ~/Music
 # Jellyfin is the master — files removed from Jellyfin are deleted locally
 # Config is saved to ~/.config/jellyfin-sync.conf on first run
+source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 
-CONFIG="$HOME/.config/jellyfin-sync.conf"
-MUSIC_DIR="$HOME/Music"
-LOG="$HOME/.cache/jellyfin-sync.log"
+CONFIG="$JELLYFIN_CONF"
+LOG="$JELLYFIN_LOG"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'

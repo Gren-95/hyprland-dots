@@ -1,6 +1,7 @@
 #!/bin/bash
 # Hyprland services restart script
 # Restarts all services started via exec-once in hyprland.conf
+source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 
 echo "======================================"
 echo "Restarting Hyprland Services"
@@ -38,9 +39,7 @@ sleep 0.2
 if pgrep -x waybar >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
 # Generate hyprpaper config from all wallpapers in ~/Pictures/wallpapers/
-WALLPAPER_DIR="$HOME/Pictures/wallpapers"
-HYPRPAPER_CACHE="$HOME/.cache/hyprpaper.conf"
-mkdir -p "$HOME/.cache"
+mkdir -p "$CACHE_DIR"
 {
     echo "splash = false"
     find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.webp" \) \

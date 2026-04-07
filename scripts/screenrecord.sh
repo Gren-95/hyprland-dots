@@ -1,10 +1,10 @@
 #!/bin/bash
 # screenrecord.sh - Toggle screen recording with gpu-screen-recorder
+source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 
-RECORDING_DIR="$HOME/Videos/Recordings"
-mkdir -p "$RECORDING_DIR"
-FILE="$RECORDING_DIR/$(date +%Y%m%d-%H%M%S).mp4"
-PIDFILE="/tmp/screenrecord.pid"
+mkdir -p "$RECORDINGS_DIR"
+FILE="$RECORDINGS_DIR/$(date +%Y%m%d-%H%M%S).mp4"
+PIDFILE="$SCREENRECORD_PID"
 
 if [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
     # Stop recording

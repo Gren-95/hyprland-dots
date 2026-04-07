@@ -1,11 +1,12 @@
 #!/bin/bash
 # Copies current MPRIS album art to a fixed path for hyprlock to read
 # Also updates the lock screen background from the current wallpaper
-DEST=/tmp/hyprlock-art.jpg
+source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
+DEST="$LOCK_ART"
 
 # Update lock background symlink to the currently active wallpaper
 WP=$(hyprctl hyprpaper listactive 2>/dev/null | awk '{print $NF}' | head -1)
-[[ -f "$WP" ]] && ln -sf "$WP" ~/.config/hypr/lockbg
+[[ -f "$WP" ]] && ln -sf "$WP" "$LOCK_BG"
 
 url=$(playerctl metadata mpris:artUrl 2>/dev/null)
 
