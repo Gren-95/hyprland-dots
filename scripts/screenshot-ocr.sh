@@ -1,8 +1,8 @@
 #!/bin/bash
+source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 
-SCREENSHOT_DIR="$HOME/Pictures/Screenshots/ocr"
-mkdir -p "$SCREENSHOT_DIR"
-SCREENSHOT="$SCREENSHOT_DIR/ocr-$(date +%Y%m%d-%H%M%S).png"
+mkdir -p "$OCR_DIR"
+SCREENSHOT="$OCR_DIR/ocr-$(date +%Y%m%d-%H%M%S).png"
 
 grim -g "$(slurp)" "$SCREENSHOT" || exit 0
 
