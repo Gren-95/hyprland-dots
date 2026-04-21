@@ -69,7 +69,8 @@
     "clock#time": {
         "format": "{:%H:%M}",
         "tooltip-format": "Estonia/Tallinn — UTC+3",
-        "interval": 1
+        "interval": 1,
+        "on-click": "gnome-calendar"
     },
     "pulseaudio": {
         "format": "󰕾 {volume}%",
