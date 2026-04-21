@@ -25,6 +25,7 @@ CONFIG_ITEMS=(
     "fish"
     "nvim"
     "ranger"
+    "gtk-3.0"
 )
 
 # Options
