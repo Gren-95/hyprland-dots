@@ -32,4 +32,4 @@ IMMICH_LOG="$HOME/.cache/immich-sync.log"
 JELLYFIN_LOG="$HOME/.cache/jellyfin-sync.log"
 
 # External tool configs
-JELLYFIN_CONF="$HOME/.config/jellyfin-sync.conf"
+JELLYFIN_CONF="$HOME/.config/jellyfin/sync.conf"
