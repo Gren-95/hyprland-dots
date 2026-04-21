@@ -30,6 +30,7 @@
 - `powerprofilesctl` — power profiles
 - `python3` + `python3-pillow` — avatar generation
 - `jq` — JSON parsing
+- `inotify-tools` — dotfile hot-reload daemon
 
 ## Install Dependencies (Nobara 43)
 
@@ -48,7 +49,7 @@ sudo dnf install hyprland hyprland-devel kitty nautilus cliphist \
   hyprpaper hyprpicker hypridle hyprlock swaync grim slurp swappy tesseract \
   wl-clipboard swayosd waybar firefox rofi brightnessctl playerctl \
   pavucontrol polkit-gnome gnome-calendar gnome-keyring jq \
-  powerprofilesctl gpu-screen-recorder \
+  powerprofilesctl gpu-screen-recorder inotify-tools \
   fish neovim ranger python3 python3-pillow
 ```
 
@@ -125,4 +126,68 @@ To add password auth, edit `wayvnc/config`:
 enable_auth=true
 username=user
 password=yourpassword
+```
+
+## Background Daemons
+
+These run automatically on login via `restart.sh` and restart cleanly on each session.
+
+| Script | Purpose |
+|---|---|
+| `battery-notify.sh` | Notifies at 20% and 10% battery; dismisses alert when plugged in |
+| `dotwatch.sh` | Watches dotfiles for changes and hot-reloads affected services |
+| `media-inhibit.sh` | Prevents screen sleep during media playback |
+| `network-notify.sh` | Notifies on network connect/disconnect |
+| `swayosd-monitor.sh` | Monitors input events for OSD triggers |
+
+### dotwatch — hot-reload
+
+Edits to dotfiles are picked up automatically without restarting your session:
+
+| File changed | Action |
+|---|---|
+| `waybar/style*.css`, `waybar/config*` | Restart waybar |
+| `swaync/style.css` | Reload swaync CSS |
+| `swaync/config.json` | Reload swaync config |
+| `hypr/hyprland.conf`, `hypr/modules/*` | `hyprctl reload` |
+| `hypr/hypridle.conf` | Restart hypridle |
+| `hypr/hyprlock.conf` | Notification (applies on next lock) |
+| `swayosd/style.css` | Restart swayosd-server |
+| `gtk-3.0/gtk.css` | Notification (restart GTK apps to apply) |
+
+## Optional Services
+
+### Immich (photo sync)
+
+Automatically uploads `~/Pictures/` to your Immich server every hour. Notifies when new photos are uploaded.
+
+**Setup:**
+
+```bash
+npm install -g @immich/cli --prefix ~/.npm-global
+immich login https://your-immich-server/api YOUR_API_KEY
+```
+
+Auth is stored in `~/.config/immich/auth.yml` (gitignored).
+
+### Jellyfin (music sync)
+
+Syncs your Jellyfin music library to `~/Music/` every 2 hours. Jellyfin is the master — tracks removed from Jellyfin are deleted locally. Notifies after each sync with a download/skip/remove summary.
+
+**Setup:**
+
+```bash
+bash ~/.config/scripts/jellyfin-music-sync.sh
+```
+
+You will be prompted for your Jellyfin server URL and API key on first run. Config is stored in `~/.config/jellyfin/sync.conf` (gitignored). To reconfigure, delete the file and run the script again.
+
+## Dotfiles Manager
+
+```bash
+./dotfiles-manager.sh status          # Check all symlink states
+./dotfiles-manager.sh backup          # Create symlinks (backs up existing dirs)
+./dotfiles-manager.sh backup --dry-run  # Preview without making changes
+./dotfiles-manager.sh fix             # Fix broken or inconsistent symlinks
+./dotfiles-manager.sh undo            # Restore backups and remove symlinks
 ```
