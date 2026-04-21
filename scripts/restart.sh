@@ -17,8 +17,9 @@ sleep 0.3
 sleep 0.3
 if pgrep -f xdg-desktop-portal >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
-# Start gnome-keyring-daemon
+# Restart gnome-keyring-daemon
 echo -n "Running: gnome-keyring-daemon ... "
+pkill -x gnome-keyring-daemon 2>/dev/null
 eval $(/usr/bin/gnome-keyring-daemon --start --components=pkcs11,secrets,ssh,gpg) >/dev/null 2>&1
 if [[ $? -eq 0 ]] && [[ -n "$SSH_AUTH_SOCK" ]]; then
     export SSH_AUTH_SOCK

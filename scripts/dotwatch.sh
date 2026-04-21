@@ -77,6 +77,7 @@ notify_gtk() {
 log "Watching $DOTS_DIR"
 
 inotifywait -m -r -e close_write,moved_to,create \
+    --exclude '\.git' \
     --format '%w%f' \
     "$DOTS_DIR" 2>/dev/null | while read -r path; do
 
