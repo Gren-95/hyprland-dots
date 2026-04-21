@@ -28,20 +28,28 @@ case "$ACTION" in
         echo $(( (mode + 2) % 3 )) > "$MODE_FILE"
         pkill -RTMIN+9 waybar
         ;;
+    toggle)
+        if tailscale status --json 2>/dev/null | jq -e '.BackendState == "Running"' > /dev/null 2>&1; then
+            tailscale down
+        else
+            tailscale up
+        fi
+        pkill -RTMIN+9 waybar
+        ;;
     click)
         mode=$(get_mode)
         case "$mode" in
             1)
                 bin=$(immich_bin)
                 if [[ -n "$bin" ]]; then
-                    notify-send -i camera-photo "Immich" "Starting sync..."
+                    notify-send -u low -i camera-photo "Immich" "Starting sync..."
                     "$bin" upload --recursive "$PICTURES_DIR" --ignore "**/ocr/**" &
                 else
                     notify-send -u critical "Immich" "immich CLI not found"
                 fi
                 ;;
             2)
-                notify-send -i audio-x-generic "Jellyfin" "Starting sync..."
+                notify-send -u low -i audio-x-generic "Jellyfin" "Starting sync..."
                 bash "$SCRIPTS_DIR/jellyfin-music-sync.sh" &
                 ;;
             *)
