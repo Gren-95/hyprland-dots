@@ -57,7 +57,7 @@ get_user_id() {
 
     if [[ -z "$user_id" || "$user_id" == "null" ]]; then
         print_error "Could not get user ID — check your URL and API key"
-        exit 1
+        return 1
     fi
 
     echo "$user_id"
@@ -70,7 +70,10 @@ sanitize() {
 
 sync_music() {
     local user_id
-    user_id=$(get_user_id)
+    if ! user_id=$(get_user_id); then
+        notify-send -u critical -i dialog-error "Jellyfin Sync Failed" "Could not reach server — check URL and API key"
+        return 1
+    fi
 
     print_info "Fetching music library from Jellyfin..."
 
@@ -81,7 +84,8 @@ sync_music() {
 
     if [[ -z "$raw_items" ]]; then
         print_error "No response from Jellyfin — check server URL and API key"
-        exit 1
+        notify-send -u critical -i dialog-error "Jellyfin Sync Failed" "No response from server"
+        return 1
     fi
 
     local total

@@ -14,9 +14,15 @@ run_upload() {
         return
     fi
 
-    local output
+    local output exit_code
     output=$("$bin" upload --recursive "$PICTURES_DIR" --ignore "**/ocr/**" 2>&1)
+    exit_code=$?
     echo "$output" >> "$IMMICH_LOG"
+
+    if [[ "$exit_code" -ne 0 ]]; then
+        notify-send -u critical -i dialog-error "Immich Sync Failed" "$(echo "$output" | tail -1)"
+        return
+    fi
 
     local new_count
     new_count=$(echo "$output" | grep -oP 'Found \K\d+(?= new)' | head -1)
