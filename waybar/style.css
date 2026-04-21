@@ -127,3 +127,27 @@
 #custom-trayscale.jellyfin {
     color: #818cf8;
 }
+
+#custom-trayscale.notifications {
+    color: #f5f5f4;
+}
+
+#custom-trayscale.dnd {
+    color: #f97316;
+}
+
+#custom-trayscale.idle-on {
+    color: #22c55e;
+}
+
+#custom-trayscale.idle-off {
+    color: #78716c;
+}
+
+#custom-trayscale.colorpicker {
+    color: #e879f9;
+}
+
+#custom-trayscale.clipboard {
+    color: #94a3b8;
+}
