@@ -167,14 +167,14 @@
         "exec": "if pgrep -x hypridle > /dev/null; then echo '󰒳'; else echo '󰒲'; fi",
         "tooltip": true,
         "tooltip-format": "Click to toggle idle management",
-        "on-click": "if pgrep -x hypridle > /dev/null; then pkill hypridle && notify-send 'Stay Awake' 'Idle management disabled' -i caffeine-on; else hypridle & notify-send 'Sleep Mode' 'Idle management enabled' -i caffeine-off; fi"
+        "on-click": "if pgrep -x hypridle > /dev/null; then pkill hypridle && notify-send -u low 'Stay Awake' 'Idle management disabled' -i caffeine-on; else hypridle & notify-send -u low 'Sleep Mode' 'Idle management enabled' -i caffeine-off; fi"
     },
     "custom/powerprofile": {
         "format": "{}",
         "return-type": "json",
         "interval": 5,
         "exec": "profile=$(powerprofilesctl get); if [ \"$profile\" = \"performance\" ]; then echo '{\"text\": \"󱐋\", \"tooltip\": \"Performance\", \"class\": \"performance\"}'; elif [ \"$profile\" = \"balanced\" ]; then echo '{\"text\": \"󰾅\", \"tooltip\": \"Balanced\", \"class\": \"balanced\"}'; else echo '{\"text\": \"󱟦\", \"tooltip\": \"Power Saver\", \"class\": \"power-saver\"}'; fi",
-        "on-click": "current=$(powerprofilesctl get); if [ \"$current\" = \"performance\" ]; then powerprofilesctl set balanced && notify-send 'Power Profile' 'Set to Balanced'; elif [ \"$current\" = \"balanced\" ]; then powerprofilesctl set power-saver && notify-send 'Power Profile' 'Set to Power Saver'; else powerprofilesctl set performance && notify-send 'Power Profile' 'Set to Performance'; fi",
+        "on-click": "current=$(powerprofilesctl get); if [ \"$current\" = \"performance\" ]; then powerprofilesctl set balanced && notify-send -u low 'Power Profile' 'Set to Balanced'; elif [ \"$current\" = \"balanced\" ]; then powerprofilesctl set power-saver && notify-send -u low 'Power Profile' 'Set to Power Saver'; else powerprofilesctl set performance && notify-send -u low 'Power Profile' 'Set to Performance'; fi",
         "on-scroll-up": "brightnessctl --device='dell::kbd_backlight' set +1",
         "on-scroll-down": "brightnessctl --device='dell::kbd_backlight' set 1-"
     },
@@ -185,7 +185,7 @@
         "interval": 3,
         "exec": "echo ''",
         "exec-if": "pgrep -x wayvnc",
-        "on-click": "pkill wayvnc && notify-send -i network-vpn 'WayVNC' 'Remote access stopped'"
+        "on-click": "pkill wayvnc && notify-send -u low -i network-vpn 'WayVNC' 'Remote access stopped'"
     },
     "custom/microphone": {
         "format": "󰍬",
@@ -207,6 +207,7 @@
         "exec": "bash ~/.config/scripts/trayscale-status.sh",
         "signal": 9,
         "on-click": "bash ~/.config/scripts/trayscale-status.sh click",
+        "on-click-middle": "bash ~/.config/scripts/trayscale-status.sh toggle",
         "on-scroll-up": "bash ~/.config/scripts/trayscale-status.sh scroll-up",
         "on-scroll-down": "bash ~/.config/scripts/trayscale-status.sh scroll-down",
         "tooltip": true
