@@ -20,12 +20,12 @@ immich_bin() {
 case "$ACTION" in
     scroll-up)
         mode=$(get_mode)
-        echo $(( (mode + 1) % 3 )) > "$MODE_FILE"
+        echo $(( (mode + 1) % 7 )) > "$MODE_FILE"
         pkill -RTMIN+9 waybar
         ;;
     scroll-down)
         mode=$(get_mode)
-        echo $(( (mode + 2) % 3 )) > "$MODE_FILE"
+        echo $(( (mode + 6) % 7 )) > "$MODE_FILE"
         pkill -RTMIN+9 waybar
         ;;
     toggle)
@@ -52,6 +52,25 @@ case "$ACTION" in
                 notify-send -u low -i audio-x-generic "Jellyfin" "Starting sync..."
                 bash "$SCRIPTS_DIR/jellyfin-music-sync.sh" &
                 ;;
+            3)
+                swaync-client --toggle-panel --skip-wait
+                ;;
+            4)
+                if pgrep -x hypridle > /dev/null; then
+                    pkill hypridle
+                    notify-send -u low 'Stay Awake' 'Idle management disabled' -i caffeine-on
+                else
+                    hypridle &
+                    notify-send -u low 'Sleep Mode' 'Idle management enabled' -i caffeine-off
+                fi
+                pkill -RTMIN+9 waybar
+                ;;
+            5)
+                hyprpicker -a
+                ;;
+            6)
+                cliphist list | rofi -dmenu -p Clipboard -theme ~/.config/rofi/clipboard.rasi | cliphist decode | wl-copy
+                ;;
             *)
                 flatpak run dev.deedles.Trayscale
                 ;;
@@ -65,6 +84,26 @@ case "$ACTION" in
                 ;;
             2)
                 echo '{"text": "󰝚", "tooltip": "Jellyfin — click to sync", "class": "jellyfin"}'
+                ;;
+            3)
+                if swaync-client --get-dnd 2>/dev/null | grep -q "true"; then
+                    echo '{"text": "󰂛", "tooltip": "DND on — click to open panel", "class": "dnd"}'
+                else
+                    echo '{"text": "󰂚", "tooltip": "Notifications — click to open panel", "class": "notifications"}'
+                fi
+                ;;
+            4)
+                if pgrep -x hypridle > /dev/null; then
+                    echo '{"text": "󰒳", "tooltip": "Idle: Active — click to disable", "class": "idle-on"}'
+                else
+                    echo '{"text": "󰒲", "tooltip": "Idle: Disabled — click to enable", "class": "idle-off"}'
+                fi
+                ;;
+            5)
+                echo '{"text": "󰈊", "tooltip": "Color picker — click to pick", "class": "colorpicker"}'
+                ;;
+            6)
+                echo '{"text": "󰅍", "tooltip": "Clipboard — click to open", "class": "clipboard"}'
                 ;;
             *)
                 if tailscale status --json 2>/dev/null | jq -e '.BackendState == "Running"' > /dev/null 2>&1; then

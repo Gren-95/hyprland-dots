@@ -12,19 +12,11 @@
     ],
     "modules-center": [
         "clock#date",
-        "clock#time",
-        "custom/sep",
-        "custom/hypridle",
-        "custom/sep",
-        "custom/notifications"
+        "clock#time"
     ],
     "modules-right": [
         "tray",
         "custom/trayscale",
-        "custom/sep",
-        "custom/clipboard",
-        "custom/sep",
-        "custom/colorpicker",
         "custom/sep",
         "custom/bluetooth",
         "custom/sep",
