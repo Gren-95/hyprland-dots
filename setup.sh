@@ -102,6 +102,15 @@ install_dependencies() {
         fish neovim ranger python3 python3-pillow
 
     print_success "Dependencies installed"
+
+    # Install Trayscale (Tailscale GUI tray applet)
+    if command_exists flatpak; then
+        print_info "Installing Trayscale (Tailscale GUI)..."
+        flatpak install -y flathub dev.deedles.Trayscale
+        print_success "Trayscale installed"
+    else
+        print_warning "flatpak not found — skipping Trayscale install"
+    fi
 }
 
 # Create backup of existing config
@@ -343,6 +352,13 @@ system_setup() {
         print_info "Setting GTK dark theme..."
         gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"
         print_success "GTK theme configured"
+    fi
+
+    # Allow current user to manage Tailscale without sudo
+    if command_exists tailscale; then
+        print_info "Setting Tailscale operator to $USER..."
+        sudo tailscale set --operator="$USER"
+        print_success "Tailscale operator set to $USER"
     fi
 }
 

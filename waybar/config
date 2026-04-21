@@ -23,6 +23,7 @@
     ],
     "modules-right": [
         "tray",
+        "custom/trayscale",
         "custom/sep",
         "custom/clipboard",
         "custom/sep",
@@ -201,5 +202,16 @@
         "format": "⏻",
         "tooltip-format": "Power menu",
         "on-click": "bash ~/.config/scripts/powermenu.sh"
+    },
+    "custom/trayscale": {
+        "format": "{}",
+        "return-type": "json",
+        "interval": 5,
+        "exec": "bash ~/.config/scripts/trayscale-status.sh",
+        "signal": 9,
+        "on-click": "bash ~/.config/scripts/trayscale-status.sh click",
+        "on-scroll-up": "bash ~/.config/scripts/trayscale-status.sh scroll-up",
+        "on-scroll-down": "bash ~/.config/scripts/trayscale-status.sh scroll-down",
+        "tooltip": true
     }
 }
