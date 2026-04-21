@@ -149,6 +149,13 @@ echo -n "Running: hyprctl monitor fallback ... "
 hyprctl keyword monitor "FALLBACK,1920x1080@60,auto,1" >/dev/null 2>&1
 if [[ $? -eq 0 ]]; then echo "OK"; else echo "FAILED"; fi
 
+# Restart dotwatch (inotify hot-reload daemon)
+echo -n "Running: dotwatch ... "
+pkill -f dotwatch.sh 2>/dev/null
+bash "$HOME/.config/scripts/dotwatch.sh" >/dev/null 2>&1 &
+sleep 0.2
+if pgrep -f dotwatch.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
+
 # Stop WayVNC if running (user can restart manually with Super+Shift+V)
 echo -n "Running: wayvnc ... "
 if pgrep -x wayvnc >/dev/null; then

@@ -163,6 +163,10 @@ sync_music() {
     echo ""
     print_success "Sync complete: $downloaded downloaded, $skipped up to date, $removed removed, $failed failed"
     echo "$(date): downloaded=$downloaded skipped=$skipped removed=$removed failed=$failed" >> "$LOG"
+
+    local body="${downloaded} downloaded · ${skipped} up to date · ${removed} removed"
+    [[ "$failed" -gt 0 ]] && body+=" · ${failed} failed"
+    notify-send -u normal -i audio-x-generic "Jellyfin Sync" "$body"
 }
 
 if [[ "$1" == "--daemon" ]] && [[ ! -f "$CONFIG" ]]; then
