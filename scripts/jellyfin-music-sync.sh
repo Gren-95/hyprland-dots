@@ -1,7 +1,7 @@
 #!/bin/bash
 # Syncs music from Jellyfin to ~/Music
 # Jellyfin is the master — files removed from Jellyfin are deleted locally
-# Config is saved to ~/.config/jellyfin-sync.conf on first run
+# Config is saved to ~/.config/jellyfin/sync.conf on first run
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 
 CONFIG="$JELLYFIN_CONF"
@@ -20,6 +20,14 @@ print_error()   { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # Load or create config
 load_config() {
+    # Migrate from old config path if it exists and new one doesn't
+    local old_config="$HOME/.config/jellyfin-sync.conf"
+    if [[ -f "$old_config" && ! -f "$CONFIG" ]]; then
+        mkdir -p "$(dirname "$CONFIG")"
+        mv "$old_config" "$CONFIG"
+        print_info "Migrated config from $old_config to $CONFIG"
+    fi
+
     if [[ -f "$CONFIG" ]]; then
         # shellcheck source=/dev/null
         source "$CONFIG"

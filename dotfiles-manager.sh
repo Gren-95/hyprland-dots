@@ -26,6 +26,8 @@ CONFIG_ITEMS=(
     "nvim"
     "ranger"
     "gtk-3.0"
+    "immich"
+    "jellyfin"
 )
 
 # Options
