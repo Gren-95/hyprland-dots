@@ -25,7 +25,7 @@
 - `firefox` — browser
 - `brightnessctl` `playerctl` — brightness and media control
 - `pavucontrol` — audio mixer
-- `polkit-gnome` — polkit agent
+- `hyprpolkitagent` — polkit agent
 - `gnome-calendar` `gnome-keyring` — calendar, secrets
 - `powerprofilesctl` — power profiles
 - `python3` + `python3-pillow` — avatar generation
