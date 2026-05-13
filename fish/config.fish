@@ -39,6 +39,10 @@ if status is-interactive
     alias mvup="util file mvup"
     alias reload="fish -c 'source ~/.config/fish/config.fish'"
 
-    set -gx PATH $HOME/.local/bin $HOME/bin $HOME/.nix-profile/bin $PATH
-    set -gx PATH ~/.npm-global/bin $PATH
 end
+
+# Outside the is-interactive block: scripts and Claude Code spawn
+# non-interactive shells, and these need to be set there too.
+set -gx PATH $HOME/.local/bin $HOME/bin $HOME/.nix-profile/bin ~/.npm-global/bin $PATH
+# Cache rustc invocations across cargo clean / branch switches.
+set -gx RUSTC_WRAPPER sccache
