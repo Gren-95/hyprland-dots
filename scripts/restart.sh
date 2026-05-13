@@ -129,7 +129,7 @@ if pgrep -f immich-sync.sh >/dev/null; then echo "OK"; else echo "SKIPPED (immic
 # Restart jellyfin sync daemon
 echo -n "Running: jellyfin-sync ... "
 pkill -f jellyfin-music-sync.sh 2>/dev/null
-bash -c '[[ -f ~/.config/jellyfin-sync.conf ]] && exec bash ~/.config/scripts/jellyfin-music-sync.sh --daemon' >/dev/null 2>&1 &
+bash -c '[[ -f ~/.config/jellyfin/sync.conf ]] && exec bash ~/.config/scripts/jellyfin-music-sync.sh --daemon' >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -f jellyfin-music-sync.sh >/dev/null; then echo "OK"; else echo "SKIPPED (no config)"; fi
 

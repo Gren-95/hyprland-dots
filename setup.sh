@@ -300,7 +300,7 @@ setup_jellyfin_sync() {
     fi
 
     # Prompt for credentials now
-    local conf="$HOME/.config/jellyfin-sync.conf"
+    local conf="$HOME/.config/jellyfin/sync.conf"
     if [[ ! -f "$conf" ]]; then
         print_info "Configure Jellyfin server connection"
         while true; do
@@ -313,6 +313,7 @@ setup_jellyfin_sync() {
             [[ -n "$jf_key" ]] && break
             print_warning "API key cannot be empty"
         done
+        mkdir -p "$(dirname "$conf")"
         cat > "$conf" <<EOF
 JELLYFIN_URL="$jf_url"
 JELLYFIN_API_KEY="$jf_key"
