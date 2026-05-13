@@ -145,25 +145,16 @@ Scope {
                         id: btMod
                         parentBar: bar
                         onNavigateNext: { popupOpen = false; sndMod.openAt(0) }
-                        onNavigatePrev: { popupOpen = false; pmMod.openAt(-1) }
+                        onNavigatePrev: { popupOpen = false; sysMod.openAt(-1) }
                     }
                     BarSep {}
 
                     SoundModule {
                         id: sndMod
                         parentBar: bar
-                        onNavigateNext: { popupOpen = false; ppMod.openAt(0) }
+                        onNavigateNext: { popupOpen = false; bellMod.openAt(0) }
                         onNavigatePrev: { popupOpen = false; btMod.openAt(-1) }
                     }
-                    BarSep {}
-
-                    PowerProfileModule {
-                        id: ppMod
-                        parentBar: bar
-                        onNavigateNext: { popupOpen = false; bellMod.openAt(0) }
-                        onNavigatePrev: { popupOpen = false; sndMod.openAt(-1) }
-                    }
-                    BarSep {}
 
                     // Battery
                     BarIcon {
@@ -224,13 +215,13 @@ Scope {
                     NotifBell {
                         id: bellMod
                         parentBar: bar
-                        onNavigateNext: pmMod.openAt(0)
-                        onNavigatePrev: { notifs.closeCenter(); ppMod.openAt(-1) }
+                        onNavigateNext: sysMod.openAt(0)
+                        onNavigatePrev: { notifs.closeCenter(); sndMod.openAt(-1) }
                     }
                     BarSep {}
 
-                    PowerMenuModule {
-                        id: pmMod
+                    SystemModule {
+                        id: sysMod
                         parentBar: bar
                         onNavigateNext: { popupOpen = false; btMod.openAt(0) }
                         onNavigatePrev: { popupOpen = false; bellMod.openAt(-1) }
@@ -723,6 +714,377 @@ Scope {
         }
     }
 
+    component SystemModule: Item {
+        id: sys
+        property var parentBar
+        property bool popupOpen: false
+        signal navigateNext()
+        signal navigatePrev()
+
+        // Sections (in tab order):
+        //   0..2     : Power profile (Performance/Balanced/PowerSaver)
+        //   3        : Screen brightness slider
+        //   4        : Keyboard backlight slider
+        //   5..9     : Power actions (Lock/Suspend/Logout/Reboot/Shutdown)
+        property int tabIndex: 0
+        readonly property var profiles: [PowerProfile.Performance, PowerProfile.Balanced, PowerProfile.PowerSaver]
+        readonly property var actions: [
+            { glyph: "󰌾", color: "#a8a29e", label: "Lock",     cmd: ["loginctl", "lock-session"] },
+            { glyph: "󰤄", color: "#60a5fa", label: "Suspend",  cmd: ["systemctl", "suspend"] },
+            { glyph: "󰍃", color: "#eab308", label: "Logout",   cmd: ["hyprctl", "dispatch", "exit"] },
+            { glyph: "󰜉", color: "#f97316", label: "Reboot",   cmd: ["systemctl", "reboot"] },
+            { glyph: "⏻",  color: "#ef4444", label: "Shutdown", cmd: ["systemctl", "poweroff"] },
+        ]
+
+        // Brightness state
+        property real screenLevel: 0.5
+        property real kbLevel: 0
+        property int kbMax: 2
+
+        Layout.fillHeight: true
+        implicitWidth: 32
+
+        function activateProfile(i) {
+            if (i < 0 || i >= profiles.length) return;
+            PowerProfiles.profile = profiles[i];
+        }
+        function activateAction(i) {
+            if (i < 0 || i >= actions.length) return;
+            actionProc.command = actions[i].cmd;
+            actionProc.startDetached();
+            popupOpen = false;
+        }
+        function setScreen(v) {
+            const pct = Math.round(Math.max(0, Math.min(1, v)) * 100);
+            screenLevel = pct / 100;
+            setScreenProc.command = ["brightnessctl", "set", pct + "%"];
+            setScreenProc.startDetached();
+        }
+        function setKb(v) {
+            const raw = Math.round(Math.max(0, Math.min(1, v)) * kbMax);
+            kbLevel = kbMax > 0 ? raw / kbMax : 0;
+            setKbProc.command = ["brightnessctl", "--device=dell::kbd_backlight", "set", String(raw)];
+            setKbProc.startDetached();
+        }
+        function refreshBrightness() {
+            getScreenProc.running = false; getScreenProc.running = true;
+            getKbProc.running = false; getKbProc.running = true;
+        }
+        function activateTab() {
+            if (tabIndex <= 2) activateProfile(tabIndex);
+            else if (tabIndex === 3) {}  // slider: use ←/→
+            else if (tabIndex === 4) {}
+            else activateAction(tabIndex - 5);
+        }
+        function cycleTab(delta) {
+            const n = 10;
+            tabIndex = (tabIndex + delta + n) % n;
+        }
+        function openAt(idx) {
+            popupOpen = true;
+            tabIndex = idx < 0 ? 9 : Math.min(idx, 9);
+            refreshBrightness();
+        }
+        onPopupOpenChanged: if (popupOpen) {
+            const i = profiles.indexOf(PowerProfiles.profile);
+            tabIndex = i >= 0 ? i : 0;
+            refreshBrightness();
+        }
+
+        Text {
+            anchors.centerIn: parent
+            text: "⏻"
+            color: "#ef4444"
+            font.family: "FiraCode Nerd Font"
+            font.pixelSize: 16
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            acceptedButtons: Qt.LeftButton
+            onClicked: sys.popupOpen = !sys.popupOpen
+        }
+
+        Process { id: actionProc; command: [] }
+        Process { id: setScreenProc; command: [] }
+        Process { id: setKbProc; command: [] }
+        Process {
+            id: getScreenProc
+            command: ["sh", "-c", "echo $(brightnessctl get) $(brightnessctl max)"]
+            running: false
+            stdout: SplitParser {
+                onRead: (line) => {
+                    const parts = line.trim().split(/\s+/);
+                    const cur = parseInt(parts[0]); const max = parseInt(parts[1]);
+                    if (!isNaN(cur) && !isNaN(max) && max > 0) sys.screenLevel = cur / max;
+                }
+            }
+        }
+        Process {
+            id: getKbProc
+            command: ["sh", "-c", "echo $(brightnessctl --device=dell::kbd_backlight get) $(brightnessctl --device=dell::kbd_backlight max)"]
+            running: false
+            stdout: SplitParser {
+                onRead: (line) => {
+                    const parts = line.trim().split(/\s+/);
+                    const cur = parseInt(parts[0]); const max = parseInt(parts[1]);
+                    if (!isNaN(cur) && !isNaN(max)) {
+                        sys.kbMax = max;
+                        sys.kbLevel = max > 0 ? cur / max : 0;
+                    }
+                }
+            }
+        }
+        Timer {
+            interval: 4000
+            running: sys.popupOpen
+            repeat: true
+            onTriggered: sys.refreshBrightness()
+        }
+
+        PopupWindow {
+            id: sysPopup
+            anchor.window: sys.parentBar
+            anchor.rect.x: sys.parentBar.width - implicitWidth - 8
+            anchor.rect.y: sys.parentBar.height + 2
+            implicitWidth: 340
+            implicitHeight: sysCol.implicitHeight + 28
+            visible: sys.popupOpen
+            color: "transparent"
+
+            Rectangle {
+                anchors.fill: parent
+                color: "#1c1917"
+                radius: 8
+                border.color: "#78716c"
+                border.width: 1
+                focus: sys.popupOpen
+                Keys.onPressed: (e) => {
+                    const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
+                    if (e.key === Qt.Key_Escape) {
+                        sys.popupOpen = false;
+                        e.accepted = true;
+                    } else if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
+                        sys.navigateNext();
+                        e.accepted = true;
+                    } else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
+                        sys.navigatePrev();
+                        e.accepted = true;
+                    } else if (e.key === Qt.Key_Tab || e.key === Qt.Key_Down || e.key === Qt.Key_J) {
+                        sys.cycleTab(e.modifiers & Qt.ShiftModifier ? -1 : 1);
+                        e.accepted = true;
+                    } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
+                        sys.cycleTab(-1);
+                        e.accepted = true;
+                    } else if (e.key === Qt.Key_Right || e.key === Qt.Key_L) {
+                        if (sys.tabIndex === 3) sys.setScreen(sys.screenLevel + 0.05);
+                        else if (sys.tabIndex === 4) sys.setKb(sys.kbLevel + 1 / Math.max(1, sys.kbMax));
+                        else sys.cycleTab(1);
+                        e.accepted = true;
+                    } else if (e.key === Qt.Key_Left || e.key === Qt.Key_H) {
+                        if (sys.tabIndex === 3) sys.setScreen(sys.screenLevel - 0.05);
+                        else if (sys.tabIndex === 4) sys.setKb(sys.kbLevel - 1 / Math.max(1, sys.kbMax));
+                        else sys.cycleTab(-1);
+                        e.accepted = true;
+                    } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
+                        sys.activateTab();
+                        e.accepted = true;
+                    }
+                }
+
+                ColumnLayout {
+                    id: sysCol
+                    anchors.fill: parent
+                    anchors.margins: 14
+                    spacing: 14
+
+                    Text {
+                        text: "POWER PROFILE"
+                        color: "#78716c"
+                        font.family: "FiraCode Nerd Font"
+                        font.pixelSize: 9
+                        font.letterSpacing: 1
+                        font.bold: true
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.topMargin: -8
+                        spacing: 6
+                        Repeater {
+                            model: sys.profiles
+                            delegate: ProfileChip {
+                                required property var modelData
+                                required property int index
+                                profile: modelData
+                                highlighted: sys.tabIndex === index
+                                Layout.fillWidth: true
+                                onPicked: sys.activateProfile(index)
+                                onHovered: sys.tabIndex = index
+                            }
+                        }
+                    }
+
+                    Text {
+                        text: "BACKLIGHT"
+                        color: "#78716c"
+                        font.family: "FiraCode Nerd Font"
+                        font.pixelSize: 9
+                        font.letterSpacing: 1
+                        font.bold: true
+                    }
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        Layout.topMargin: -8
+                        spacing: 8
+                        BrightnessRow {
+                            Layout.fillWidth: true
+                            glyph: "󰃞"
+                            label: "Screen"
+                            value: sys.screenLevel
+                            highlighted: sys.tabIndex === 3
+                            onMoved: (v) => sys.setScreen(v)
+                            onHovered: sys.tabIndex = 3
+                        }
+                        BrightnessRow {
+                            Layout.fillWidth: true
+                            glyph: "󰌌"
+                            label: "Keyboard"
+                            value: sys.kbLevel
+                            highlighted: sys.tabIndex === 4
+                            onMoved: (v) => sys.setKb(v)
+                            onHovered: sys.tabIndex = 4
+                        }
+                    }
+
+                    Text {
+                        text: "SYSTEM"
+                        color: "#78716c"
+                        font.family: "FiraCode Nerd Font"
+                        font.pixelSize: 9
+                        font.letterSpacing: 1
+                        font.bold: true
+                    }
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        Layout.topMargin: -8
+                        spacing: 2
+                        Repeater {
+                            model: sys.actions
+                            delegate: PowerMenuRow {
+                                required property var modelData
+                                required property int index
+                                entry: modelData
+                                selected: sys.tabIndex === index + 5
+                                Layout.fillWidth: true
+                                onPicked: sys.activateAction(index)
+                                onHovered: sys.tabIndex = index + 5
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        HyprlandFocusGrab {
+            active: sys.popupOpen
+            windows: [sysPopup]
+            onCleared: sys.popupOpen = false
+        }
+    }
+
+    component ProfileChip: Rectangle {
+        id: pc
+        property int profile
+        property bool highlighted: false
+        signal picked()
+        signal hovered()
+        readonly property bool active: PowerProfiles.profile === profile
+        readonly property color accent: pc.profile === PowerProfile.Performance ? "#ef4444"
+            : pc.profile === PowerProfile.Balanced ? "#eab308" : "#22c55e"
+        implicitHeight: 62
+        radius: 8
+        color: pc.active ? Qt.rgba(pc.accent.r, pc.accent.g, pc.accent.b, 0.18)
+             : (pcMa.containsMouse ? "#292524" : "#1f1c1a")
+        border.color: pc.highlighted ? "#fafaf9" : (pc.active ? pc.accent : "#3a3633")
+        border.width: pc.highlighted ? 2 : 1
+
+        ColumnLayout {
+            anchors.centerIn: parent
+            spacing: 3
+            Text {
+                Layout.alignment: Qt.AlignHCenter
+                text: pc.profile === PowerProfile.Performance ? "󱐋"
+                    : pc.profile === PowerProfile.Balanced ? "󰾅" : "󱟦"
+                color: pc.accent
+                font.family: "FiraCode Nerd Font"
+                font.pixelSize: 20
+            }
+            Text {
+                Layout.alignment: Qt.AlignHCenter
+                text: pc.profile === PowerProfile.Performance ? "Perf"
+                    : pc.profile === PowerProfile.Balanced ? "Balanced" : "Save"
+                color: pc.active ? "#fafaf9" : "#a8a29e"
+                font.family: "FiraCode Nerd Font"
+                font.pixelSize: 10
+                font.bold: pc.active
+            }
+        }
+        MouseArea {
+            id: pcMa
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: pc.picked()
+            onContainsMouseChanged: if (containsMouse) pc.hovered()
+        }
+    }
+
+    component BrightnessRow: RowLayout {
+        id: br
+        property string glyph: ""
+        property string label: ""
+        property real value: 0
+        property bool highlighted: false
+        signal moved(real v)
+        signal hovered()
+        spacing: 10
+        Text {
+            text: br.glyph
+            color: br.highlighted ? "#fafaf9" : "#d6d3d1"
+            font.family: "FiraCode Nerd Font"
+            font.pixelSize: 16
+            Layout.preferredWidth: 20
+            horizontalAlignment: Text.AlignHCenter
+        }
+        Text {
+            text: br.label
+            color: br.highlighted ? "#fafaf9" : "#a8a29e"
+            font.family: "FiraCode Nerd Font"
+            font.pixelSize: 11
+            font.bold: br.highlighted
+            Layout.preferredWidth: 70
+        }
+        VolumeSlider {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 12
+            value: br.value
+            border.color: br.highlighted ? "#fafaf9" : "#44403c"
+            border.width: br.highlighted ? 2 : 1
+            onMoved: br.moved(value)
+            HoverHandler { onHoveredChanged: if (hovered) br.hovered() }
+        }
+        Text {
+            text: Math.round(br.value * 100) + "%"
+            color: br.highlighted ? "#fafaf9" : "#d6d3d1"
+            font.family: "FiraCode Nerd Font"
+            font.pixelSize: 11
+            font.bold: br.highlighted
+            Layout.preferredWidth: 38
+            horizontalAlignment: Text.AlignRight
+        }
+    }
+
     component PowerMenuModule: Item {
         id: pm
         property var parentBar
@@ -861,27 +1223,32 @@ Scope {
         property bool selected: false
         signal picked()
         signal hovered()
-        implicitHeight: 32
+        implicitHeight: 34
         radius: 6
-        color: pmrow.selected ? "#3b3531" : (rowMa.containsMouse ? "#292524" : "transparent")
+        color: pmrow.selected ? "#2d2724" : (rowMa.containsMouse ? "#262220" : "transparent")
+        border.color: pmrow.selected ? (pmrow.entry ? pmrow.entry.color : "#fafaf9") : "transparent"
+        border.width: pmrow.selected ? 1 : 0
 
         RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: 10
-            anchors.rightMargin: 10
-            spacing: 10
+            anchors.leftMargin: 12
+            anchors.rightMargin: 12
+            spacing: 12
             Text {
                 text: pmrow.entry ? pmrow.entry.glyph : ""
                 color: pmrow.entry ? pmrow.entry.color : "#f5f5f4"
                 font.family: "FiraCode Nerd Font"
-                font.pixelSize: 14
+                font.pixelSize: 15
+                Layout.preferredWidth: 18
+                horizontalAlignment: Text.AlignHCenter
             }
             Text {
                 Layout.fillWidth: true
                 text: pmrow.entry ? pmrow.entry.label : ""
-                color: "#f5f5f4"
+                color: pmrow.selected ? "#fafaf9" : "#e7e5e4"
                 font.family: "FiraCode Nerd Font"
                 font.pixelSize: 12
+                font.bold: pmrow.selected
             }
         }
 
@@ -1198,9 +1565,9 @@ Scope {
         id: vs
         property real value: 0
         signal moved()
-        implicitHeight: 8
-        radius: 4
-        color: "#292524"
+        implicitHeight: 10
+        radius: height / 2
+        color: "#1f1c1a"
         border.color: "#44403c"
         border.width: 1
 
@@ -1210,13 +1577,29 @@ Scope {
             anchors.bottom: parent.bottom
             anchors.margins: 1
             width: Math.max(0, Math.min(parent.width - 2, (parent.width - 2) * vs.value))
-            radius: 4
-            color: "#60a5fa"
+            radius: height / 2
+            color: "#3b82f6"
+        }
+
+        Rectangle {
+            id: thumb
+            width: 14; height: 14
+            radius: 7
+            color: "#fafaf9"
+            border.color: "#3b82f6"
+            border.width: 2
+            anchors.verticalCenter: parent.verticalCenter
+            x: Math.max(-width / 2 + 1,
+                Math.min(parent.width - width / 2 - 1,
+                    (parent.width - 2) * vs.value - width / 2))
+            visible: dragArea.containsMouse || dragArea.pressed
         }
 
         MouseArea {
+            id: dragArea
             anchors.fill: parent
-            anchors.margins: -4
+            anchors.margins: -6
+            hoverEnabled: true
             preventStealing: true
             onPressed: (e) => { vs.value = Math.max(0, Math.min(1, e.x / vs.width)); vs.moved(); }
             onPositionChanged: (e) => {
