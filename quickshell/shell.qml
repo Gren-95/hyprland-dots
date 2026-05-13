@@ -410,8 +410,14 @@ Scope {
     component NotifBell: Item {
         id: bell
         property var parentBar
+        property int selectedIndex: 0
         Layout.fillHeight: true
         implicitWidth: row.implicitWidth + 14
+
+        Connections {
+            target: notifs
+            function onCenterOpenChanged() { if (notifs.centerOpen) bell.selectedIndex = 0 }
+        }
 
         RowLayout {
             id: row
@@ -473,6 +479,34 @@ Scope {
                 radius: 8
                 border.color: "#78716c"
                 border.width: 1
+                focus: notifs.centerOpen
+                Keys.onPressed: (e) => {
+                    const n = notifs.historyList.length;
+                    if (e.key === Qt.Key_Escape) {
+                        notifs.closeCenter();
+                        e.accepted = true;
+                    } else if (e.key === Qt.Key_D && (e.modifiers & Qt.ControlModifier)) {
+                        notifs.dnd = !notifs.dnd;
+                        e.accepted = true;
+                    } else if (e.key === Qt.Key_C && (e.modifiers & Qt.ControlModifier)) {
+                        notifs.clearHistory();
+                        e.accepted = true;
+                    } else if (n === 0) {
+                        return;
+                    } else if (e.key === Qt.Key_Down || e.key === Qt.Key_J) {
+                        bell.selectedIndex = (bell.selectedIndex + 1) % n;
+                        e.accepted = true;
+                    } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
+                        bell.selectedIndex = (bell.selectedIndex - 1 + n) % n;
+                        e.accepted = true;
+                    } else if (e.key === Qt.Key_Delete || e.key === Qt.Key_Backspace) {
+                        const entry = notifs.historyList[bell.selectedIndex];
+                        if (entry) notifs.dismissHistoryEntry(entry.id);
+                        if (bell.selectedIndex >= notifs.historyList.length)
+                            bell.selectedIndex = Math.max(0, notifs.historyList.length - 1);
+                        e.accepted = true;
+                    }
+                }
 
                 ColumnLayout {
                     id: centerCol
@@ -527,9 +561,12 @@ Scope {
                             model: notifs.historyList
                             delegate: HistoryRow {
                                 required property var modelData
+                                required property int index
                                 entry: modelData
+                                highlighted: bell.selectedIndex === index
                                 Layout.fillWidth: true
                                 onDismiss: notifs.dismissHistoryEntry(modelData.id)
+                                onHovered: bell.selectedIndex = index
                             }
                         }
                     }
@@ -547,10 +584,12 @@ Scope {
     component HistoryRow: Rectangle {
         id: hrow
         property var entry
+        property bool highlighted: false
         signal dismiss()
+        signal hovered()
         implicitHeight: hcol.implicitHeight + 16
         radius: 6
-        color: hoverArea.containsMouse ? "#292524" : "transparent"
+        color: hrow.highlighted ? "#3b3531" : (hoverArea.containsMouse ? "#292524" : "transparent")
 
         ColumnLayout {
             id: hcol
@@ -620,6 +659,7 @@ Scope {
             cursorShape: Qt.PointingHandCursor
             acceptedButtons: Qt.LeftButton
             onClicked: {} // future: invoke notification
+            onContainsMouseChanged: if (containsMouse) hrow.hovered()
         }
     }
 
@@ -773,10 +813,30 @@ Scope {
         id: snd
         property var parentBar
         property bool popupOpen: false
+        property int selectedIndex: 0
         readonly property var sink: Pipewire.defaultAudioSink
         readonly property var source: Pipewire.defaultAudioSource
+        readonly property var outputDevices: {
+            if (!Pipewire.nodes) return [];
+            return (Pipewire.nodes.values || []).filter(n => n.isSink && !n.isStream && n.audio);
+        }
         Layout.fillHeight: true
         implicitWidth: row.implicitWidth + 16
+
+        onPopupOpenChanged: if (popupOpen) {
+            const idx = outputDevices.indexOf(sink);
+            selectedIndex = idx >= 0 ? idx : 0;
+        }
+
+        function adjustVolume(delta) {
+            if (!sink || !sink.audio) return;
+            sink.audio.volume = Math.max(0, Math.min(1, sink.audio.volume + delta));
+        }
+        function activateOutput(i) {
+            const list = outputDevices;
+            if (i < 0 || i >= list.length) return;
+            Pipewire.preferredDefaultAudioSink = list[i];
+        }
 
         PwObjectTracker { objects: [snd.sink, snd.source] }
 
@@ -845,6 +905,32 @@ Scope {
                 radius: 8
                 border.color: "#78716c"
                 border.width: 1
+                focus: snd.popupOpen
+                Keys.onPressed: (e) => {
+                    const n = snd.outputDevices.length;
+                    if (e.key === Qt.Key_Escape) {
+                        snd.popupOpen = false;
+                        e.accepted = true;
+                    } else if (e.key === Qt.Key_M) {
+                        if (snd.sink && snd.sink.audio) snd.sink.audio.muted = !snd.sink.audio.muted;
+                        e.accepted = true;
+                    } else if (e.key === Qt.Key_Right || e.key === Qt.Key_Plus || e.key === Qt.Key_Equal) {
+                        snd.adjustVolume(0.05);
+                        e.accepted = true;
+                    } else if (e.key === Qt.Key_Left || e.key === Qt.Key_Minus) {
+                        snd.adjustVolume(-0.05);
+                        e.accepted = true;
+                    } else if (n > 0 && (e.key === Qt.Key_Down || e.key === Qt.Key_J)) {
+                        snd.selectedIndex = (snd.selectedIndex + 1) % n;
+                        e.accepted = true;
+                    } else if (n > 0 && (e.key === Qt.Key_Up || e.key === Qt.Key_K)) {
+                        snd.selectedIndex = (snd.selectedIndex - 1 + n) % n;
+                        e.accepted = true;
+                    } else if (n > 0 && (e.key === Qt.Key_Return || e.key === Qt.Key_Enter)) {
+                        snd.activateOutput(snd.selectedIndex);
+                        e.accepted = true;
+                    }
+                }
 
                 ColumnLayout {
                     id: sndCol
@@ -857,7 +943,9 @@ Scope {
                         title: "󰕾  Output"
                         node: snd.sink
                         isSink: true
+                        selectedIndex: snd.selectedIndex
                         onLaunchMixer: { pavuProc.startDetached(); snd.popupOpen = false }
+                        onDeviceHovered: (idx) => snd.selectedIndex = idx
                     }
 
                     Rectangle { Layout.fillWidth: true; height: 1; color: "#44403c" }
@@ -887,7 +975,9 @@ Scope {
         property string title: ""
         property var node
         property bool isSink: true
+        property int selectedIndex: -1
         signal launchMixer()
+        signal deviceHovered(int idx)
         spacing: 6
 
         RowLayout {
@@ -944,13 +1034,16 @@ Scope {
                 }
                 delegate: AudioDeviceRow {
                     required property var modelData
+                    required property int index
                     node: modelData
                     isActive: section.node === modelData
+                    highlighted: section.selectedIndex === index
                     Layout.fillWidth: true
                     onPicked: {
                         if (section.isSink) Pipewire.preferredDefaultAudioSink = modelData;
                         else Pipewire.preferredDefaultAudioSource = modelData;
                     }
+                    onHovered: section.deviceHovered(index)
                 }
             }
         }
@@ -994,10 +1087,14 @@ Scope {
         id: arow
         property var node
         property bool isActive: false
+        property bool highlighted: false
         signal picked()
+        signal hovered()
         implicitHeight: 26
         radius: 4
-        color: arow.isActive ? "#231f1d" : (rowMa.containsMouse ? "#292524" : "transparent")
+        color: arow.highlighted ? "#3b3531"
+             : arow.isActive ? "#231f1d"
+             : (rowMa.containsMouse ? "#292524" : "transparent")
 
         RowLayout {
             anchors.fill: parent
@@ -1027,6 +1124,7 @@ Scope {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: arow.picked()
+            onContainsMouseChanged: if (containsMouse) arow.hovered()
         }
     }
 
@@ -1236,6 +1334,7 @@ Scope {
         id: bt
         property var parentBar
         property bool popupOpen: false
+        property int selectedIndex: 0
         readonly property var adapter: Bluetooth.defaultAdapter
         readonly property bool powered: adapter && adapter.enabled
         readonly property var connectedDevices: {
@@ -1246,6 +1345,22 @@ Scope {
                 if (d.connected) list.push(d);
             }
             return list;
+        }
+        readonly property var visibleDevices: {
+            const all = (Bluetooth.devices ? Bluetooth.devices.values : []) || [];
+            return all.filter(d => d.paired || d.connected).sort((a, b) => {
+                if (a.connected !== b.connected) return a.connected ? -1 : 1;
+                return (a.name || "").localeCompare(b.name || "");
+            });
+        }
+
+        onPopupOpenChanged: if (popupOpen) selectedIndex = 0
+
+        function activateDevice(i) {
+            if (i < 0 || i >= visibleDevices.length) return;
+            const d = visibleDevices[i];
+            if (d.connected) d.disconnect();
+            else d.connect();
         }
 
         Layout.fillHeight: true
@@ -1299,6 +1414,35 @@ Scope {
                 radius: 8
                 border.color: "#44403c"
                 border.width: 1
+                focus: bt.popupOpen
+                Keys.onPressed: (e) => {
+                    const n = bt.visibleDevices.length;
+                    if (e.key === Qt.Key_Escape) {
+                        bt.popupOpen = false;
+                        e.accepted = true;
+                    } else if (e.key === Qt.Key_B && (e.modifiers & Qt.ControlModifier)) {
+                        if (bt.adapter) bt.adapter.enabled = !bt.adapter.enabled;
+                        e.accepted = true;
+                    } else if (e.key === Qt.Key_S && (e.modifiers & Qt.ControlModifier)) {
+                        if (bt.adapter) bt.adapter.discovering = !bt.adapter.discovering;
+                        e.accepted = true;
+                    } else if (n === 0) {
+                        return;
+                    } else if (e.key === Qt.Key_Down || e.key === Qt.Key_J) {
+                        bt.selectedIndex = (bt.selectedIndex + 1) % n;
+                        e.accepted = true;
+                    } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
+                        bt.selectedIndex = (bt.selectedIndex - 1 + n) % n;
+                        e.accepted = true;
+                    } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
+                        bt.activateDevice(bt.selectedIndex);
+                        e.accepted = true;
+                    } else if (e.key === Qt.Key_Delete || e.key === Qt.Key_Backspace) {
+                        const d = bt.visibleDevices[bt.selectedIndex];
+                        if (d) d.forget();
+                        e.accepted = true;
+                    }
+                }
 
                 ColumnLayout {
                     id: contentCol
@@ -1377,14 +1521,14 @@ Scope {
                         visible: bt.powered
                         Repeater {
                             id: deviceRepeater
-                            model: {
-                                const all = (Bluetooth.devices ? Bluetooth.devices.values : []) || [];
-                                return all.filter(d => d.paired || d.connected).sort((a, b) => {
-                                    if (a.connected !== b.connected) return a.connected ? -1 : 1;
-                                    return (a.name || "").localeCompare(b.name || "");
-                                });
+                            model: bt.visibleDevices
+                            delegate: BtDeviceRow {
+                                required property var modelData
+                                required property int index
+                                device: modelData
+                                highlighted: bt.selectedIndex === index
+                                onHovered: bt.selectedIndex = index
                             }
-                            delegate: BtDeviceRow { required property var modelData; device: modelData }
                         }
                     }
                 }
@@ -1428,10 +1572,12 @@ Scope {
     component BtDeviceRow: Rectangle {
         id: dr
         property var device
+        property bool highlighted: false
+        signal hovered()
         Layout.fillWidth: true
         implicitHeight: 36
         radius: 6
-        color: hover.containsMouse ? "#292524" : "transparent"
+        color: dr.highlighted ? "#3b3531" : (hover.containsMouse ? "#292524" : "transparent")
 
         RowLayout {
             anchors.fill: parent
@@ -1483,6 +1629,7 @@ Scope {
                 if (dr.device.connected) dr.device.disconnect();
                 else dr.device.connect();
             }
+            onContainsMouseChanged: if (containsMouse) dr.hovered()
         }
     }
 
