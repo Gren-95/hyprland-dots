@@ -16,6 +16,7 @@ CONFIG_ITEMS=(
     "hypr"
     "kitty"
     "waybar"
+    "quickshell"
     "swaync"
     "swayosd"
     "swappy"
