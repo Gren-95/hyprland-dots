@@ -26,16 +26,20 @@ Scope {
             screen: modelData
 
             anchors { top: true; left: true; right: true }
-            margins { top: 4; left: 4; right: 4 }
             implicitHeight: 36
             color: "transparent"
 
             Rectangle {
                 anchors.fill: parent
                 color: "#1c1917"
-                radius: 8
-                border.color: "#44403c"
-                border.width: 1
+                radius: 0
+                border.width: 0
+
+                Rectangle {
+                    anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+                    height: 1
+                    color: "#78716c"
+                }
 
                 MouseArea {
                     anchors.fill: parent
@@ -519,18 +523,15 @@ Scope {
             anchor.item: bell
             anchor.edges: Edges.Bottom
             anchor.gravity: Edges.Bottom | Edges.Left
-            anchor.margins.top: 2
+            anchor.margins.top: 0
             implicitWidth: 380
             implicitHeight: Math.min(560, centerCol.implicitHeight + 24)
             visible: notifs.centerOpen
             color: "transparent"
 
-            Rectangle {
+            SproutBg { anchors.fill: parent; fillColor: "#1c1917"; borderColor: "#78716c" }
+            Item {
                 anchors.fill: parent
-                color: "#1c1917"
-                radius: 8
-                border.color: "#78716c"
-                border.width: 1
                 focus: notifs.centerOpen
                 Keys.onPressed: (e) => {
                     const n = notifs.historyList.length;
@@ -586,6 +587,10 @@ Scope {
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: 8
+                        PinButton {
+                            pinned: notifs.pinned
+                            onToggled: notifs.pinned = !notifs.pinned
+                        }
                         Text {
                             text: "󰂚  Notifications"
                             color: "#f5f5f4"
@@ -646,7 +651,7 @@ Scope {
         }
 
         HyprlandFocusGrab {
-            active: notifs.centerOpen
+            active: notifs.centerOpen && !notifs.pinned
             windows: [centerPop]
             onCleared: notifs.closeCenter()
         }
@@ -738,6 +743,7 @@ Scope {
         id: sys
         property var parentBar
         property bool popupOpen: false
+        property bool pinned: false
         signal navigateNext()
         signal navigatePrev()
 
@@ -873,12 +879,9 @@ Scope {
             visible: sys.popupOpen
             color: "transparent"
 
-            Rectangle {
+            SproutBg { anchors.fill: parent; fillColor: "#1c1917"; borderColor: "#78716c" }
+            Item {
                 anchors.fill: parent
-                color: "#1c1917"
-                radius: 8
-                border.color: "#78716c"
-                border.width: 1
                 focus: sys.popupOpen
                 Keys.onPressed: (e) => {
                     const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
@@ -919,13 +922,22 @@ Scope {
                     anchors.margins: 14
                     spacing: 14
 
-                    Text {
-                        text: "POWER PROFILE"
-                        color: "#78716c"
-                        font.family: "FiraCode Nerd Font"
-                        font.pixelSize: 9
-                        font.letterSpacing: 1
-                        font.bold: true
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+                        PinButton {
+                            pinned: sys.pinned
+                            onToggled: sys.pinned = !sys.pinned
+                        }
+                        Text {
+                            text: "POWER PROFILE"
+                            color: "#78716c"
+                            font.family: "FiraCode Nerd Font"
+                            font.pixelSize: 9
+                            font.letterSpacing: 1
+                            font.bold: true
+                        }
+                        Item { Layout.fillWidth: true }
                     }
                     RowLayout {
                         Layout.fillWidth: true
@@ -1007,7 +1019,7 @@ Scope {
         }
 
         HyprlandFocusGrab {
-            active: sys.popupOpen
+            active: sys.popupOpen && !sys.pinned
             windows: [sysPopup]
             onCleared: sys.popupOpen = false
         }
@@ -1109,6 +1121,7 @@ Scope {
         id: pm
         property var parentBar
         property bool popupOpen: false
+        property bool pinned: false
         property int selectedIndex: 0
         signal navigateNext()
         signal navigatePrev()
@@ -1166,12 +1179,9 @@ Scope {
             visible: pm.popupOpen
             color: "transparent"
 
-            Rectangle {
+            SproutBg { anchors.fill: parent; fillColor: "#1c1917"; borderColor: "#78716c" }
+            Item {
                 anchors.fill: parent
-                color: "#1c1917"
-                radius: 8
-                border.color: "#78716c"
-                border.width: 1
                 focus: pm.popupOpen
                 Keys.onPressed: (e) => {
                     const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
@@ -1231,7 +1241,7 @@ Scope {
         Process { id: pmCmd; command: [] }
 
         HyprlandFocusGrab {
-            active: pm.popupOpen
+            active: pm.popupOpen && !pm.pinned
             windows: [pmPopup]
             onCleared: pm.popupOpen = false
         }
@@ -1286,6 +1296,7 @@ Scope {
         id: snd
         property var parentBar
         property bool popupOpen: false
+        property bool pinned: false
         // Tab layout:
         //   0                       : output mute toggle
         //   1..outCount             : output device i = tabIndex - 1
@@ -1406,18 +1417,15 @@ Scope {
             anchor.item: snd
             anchor.edges: Edges.Bottom
             anchor.gravity: Edges.Bottom | Edges.Left
-            anchor.margins.top: 2
+            anchor.margins.top: 0
             implicitWidth: 320
             implicitHeight: sndCol.implicitHeight + 24
             visible: snd.popupOpen
             color: "transparent"
 
-            Rectangle {
+            SproutBg { anchors.fill: parent; fillColor: "#1c1917"; borderColor: "#78716c" }
+            Item {
                 anchors.fill: parent
-                color: "#1c1917"
-                radius: 8
-                border.color: "#78716c"
-                border.width: 1
                 focus: snd.popupOpen
                 Keys.onPressed: (e) => {
                     const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
@@ -1459,6 +1467,23 @@ Scope {
                     anchors.margins: 12
                     spacing: 8
 
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+                        PinButton {
+                            pinned: snd.pinned
+                            onToggled: snd.pinned = !snd.pinned
+                        }
+                        Text {
+                            text: "Sound"
+                            color: "#f5f5f4"
+                            font.family: "FiraCode Nerd Font"
+                            font.pixelSize: 13
+                            font.bold: true
+                        }
+                        Item { Layout.fillWidth: true }
+                    }
+
                     AudioSection {
                         Layout.fillWidth: true
                         title: "󰕾  Output"
@@ -1491,7 +1516,7 @@ Scope {
         Process { id: pavuProc; command: ["pavucontrol"] }
 
         HyprlandFocusGrab {
-            active: snd.popupOpen
+            active: snd.popupOpen && !snd.pinned
             windows: [sndPopup]
             onCleared: snd.popupOpen = false
         }
@@ -1680,6 +1705,7 @@ Scope {
         id: pp
         property var parentBar
         property bool popupOpen: false
+        property bool pinned: false
         property int selectedIndex: 0
         signal navigateNext()
         signal navigatePrev()
@@ -1764,18 +1790,15 @@ Scope {
             anchor.item: pp
             anchor.edges: Edges.Bottom
             anchor.gravity: Edges.Bottom | Edges.Left
-            anchor.margins.top: 2
+            anchor.margins.top: 0
             implicitWidth: 220
             implicitHeight: ppCol.implicitHeight + 16
             visible: pp.popupOpen
             color: "transparent"
 
-            Rectangle {
+            SproutBg { anchors.fill: parent; fillColor: "#1c1917"; borderColor: "#78716c" }
+            Item {
                 anchors.fill: parent
-                color: "#1c1917"
-                radius: 8
-                border.color: "#78716c"
-                border.width: 1
                 focus: pp.popupOpen
                 Keys.onPressed: (e) => {
                     const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
@@ -1833,7 +1856,7 @@ Scope {
         }
 
         HyprlandFocusGrab {
-            active: pp.popupOpen
+            active: pp.popupOpen && !pp.pinned
             windows: [ppPopup]
             onCleared: pp.popupOpen = false
         }
@@ -1912,6 +1935,7 @@ Scope {
         id: bt
         property var parentBar
         property bool popupOpen: false
+        property bool pinned: false
         // tabIndex: 0 = Power toggle, 1 = Scan toggle, 2+ = device[tabIndex-2]
         property int tabIndex: 0
         signal navigateNext()
@@ -1997,18 +2021,15 @@ Scope {
             anchor.item: bt
             anchor.edges: Edges.Bottom
             anchor.gravity: Edges.Bottom | Edges.Left
-            anchor.margins.top: 2
+            anchor.margins.top: 0
             implicitWidth: 300
             implicitHeight: contentCol.implicitHeight + 24
             visible: bt.popupOpen
             color: "transparent"
 
-            Rectangle {
+            SproutBg { anchors.fill: parent; fillColor: "#1c1917"; borderColor: "#44403c" }
+            Item {
                 anchors.fill: parent
-                color: "#1c1917"
-                radius: 8
-                border.color: "#44403c"
-                border.width: 1
                 focus: bt.popupOpen
                 Keys.onPressed: (e) => {
                     const n = bt.visibleDevices.length;
@@ -2057,6 +2078,10 @@ Scope {
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: 8
+                        PinButton {
+                            pinned: bt.pinned
+                            onToggled: bt.pinned = !bt.pinned
+                        }
                         Text {
                             text: "󰂯  Bluetooth"
                             color: "#f5f5f4"
@@ -2143,7 +2168,7 @@ Scope {
         }
 
         HyprlandFocusGrab {
-            active: bt.popupOpen
+            active: bt.popupOpen && !bt.pinned
             windows: [popup]
             onCleared: bt.popupOpen = false
         }

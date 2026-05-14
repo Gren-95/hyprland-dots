@@ -12,6 +12,7 @@ Scope {
     property var events: []          // array of {start: Date, end: Date, summary, location, allDay: bool}
     property date selectedDate: new Date()
     property bool open: false
+    property bool pinned: false
     property var anchorBar: null
     property var anchorItem: null
 
@@ -148,16 +149,13 @@ Scope {
         anchor.item: root.anchorItem
         anchor.edges: Edges.Bottom
         anchor.gravity: Edges.Bottom
-        anchor.margins.top: 2
+        anchor.margins.top: 0
         implicitWidth: 320
         implicitHeight: gridCol.implicitHeight + 24
 
-        Rectangle {
+        SproutBg { anchors.fill: parent; fillColor: "#1c1917"; borderColor: "#78716c" }
+        Item {
             anchors.fill: parent
-            color: "#1c1917"
-            radius: 8
-            border.color: "#78716c"
-            border.width: 1
             focus: root.open
             Keys.onPressed: (e) => {
                 if (e.key === Qt.Key_Escape) { root.close(); e.accepted = true; }
@@ -175,6 +173,10 @@ Scope {
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 6
+                    PinButton {
+                        pinned: root.pinned
+                        onToggled: root.pinned = !root.pinned
+                    }
                     NavBtn {
                         glyph: "‹"
                         onClicked: root.prevMonth()
@@ -291,7 +293,7 @@ Scope {
     }
 
     HyprlandFocusGrab {
-        active: root.open
+        active: root.open && !root.pinned
         windows: [popup]
         onCleared: root.close()
     }
