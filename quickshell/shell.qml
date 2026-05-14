@@ -2,6 +2,7 @@
 
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
@@ -16,6 +17,12 @@ import Quickshell.Services.UPower
 Scope {
     Notifications { id: notifs }
     IcsCalendar { id: cal }
+    AppLauncher { id: launcher }
+    Spotlight { id: spotlight }
+    Clipboard { id: clipboard }
+    Osd { id: osd }
+    Keybinds { id: keybinds }
+    PowerMenu { id: powerMenu }
 
     Variants {
         model: Quickshell.screens
@@ -30,8 +37,9 @@ Scope {
             color: "transparent"
 
             Rectangle {
+                id: barRect
                 anchors.fill: parent
-                color: "#1c1917"
+                color: "#292524"
                 radius: 0
                 border.width: 0
 
@@ -56,8 +64,6 @@ Scope {
                     interval: 1000; running: true; repeat: true
                     onTriggered: now = new Date()
                 }
-                Process { id: ppmenu; command: ["rofi", "-show", "drun", "-show-icons", "-theme",
-                    Quickshell.env("HOME") + "/.config/rofi/launcher.rasi"] }
 
                 // ============ CENTER (absolute, anchored to monitor center) ============
                 Item {
@@ -66,6 +72,7 @@ Scope {
                     anchors.verticalCenter: parent.verticalCenter
                     implicitWidth: clockRow.implicitWidth + 12
                     implicitHeight: clockRow.implicitHeight + 4
+                    Component.onCompleted: { cal.anchorBar = bar; cal.anchorItem = clockAnchor; }
 
                     RowLayout {
                         id: clockRow
@@ -101,10 +108,12 @@ Scope {
                     spacing: 0
 
                     BarIcon {
+                        id: launcherIcon
                         glyph: "󰀻"
                         pixelSize: 18
                         tooltip: "Open app menu"
-                        onClicked: ppmenu.startDetached()
+                        Component.onCompleted: { launcher.anchorBar = bar; launcher.anchorItem = launcherIcon; }
+                        onClicked: launcher.toggle()
                     }
                     BarSep {}
 
@@ -154,14 +163,9 @@ Scope {
                         }
                     }
 
-                    // Trayscale (delegates to existing script)
-                    BarScript {
-                        scriptName: "trayscale-status.sh"
-                        intervalMs: 5000
-                        onClickArg: "click"
-                        onMiddleClickArg: "toggle"
-                        onScrollUpArg: "scroll-up"
-                        onScrollDownArg: "scroll-down"
+                    QuickActions {
+                        id: quickMod
+                        parentBar: bar
                     }
                     BarSep {}
 
@@ -169,19 +173,21 @@ Scope {
                         id: btMod
                         parentBar: bar
                         onNavigateNext: { popupOpen = false; sndMod.openAt(0) }
-                        onNavigatePrev: { popupOpen = false; sysMod.openAt(-1) }
+                        onNavigatePrev: { popupOpen = false; cal.openAt(0) }
                     }
                     BarSep {}
 
                     SoundModule {
                         id: sndMod
                         parentBar: bar
-                        onNavigateNext: { popupOpen = false; bellMod.openAt(0) }
+                        onNavigateNext: { popupOpen = false; sysMod.openAt(0) }
                         onNavigatePrev: { popupOpen = false; btMod.openAt(-1) }
                     }
 
-                    // Battery
+                    // Battery (also toggles the System popup)
                     BarIcon {
+                        id: batteryIcon
+                        onClicked: sysMod.popupOpen = !sysMod.popupOpen
                         readonly property var dev: UPower.displayDevice
                         readonly property int pct: dev ? Math.round(dev.percentage * 100) : 0
                         readonly property bool charging: dev && (dev.state === UPowerDeviceState.Charging
@@ -236,20 +242,54 @@ Scope {
                         PwObjectTracker { objects: [Pipewire.defaultAudioSource] }
                     }
 
-                    NotifBell {
-                        id: bellMod
-                        parentBar: bar
-                        onNavigateNext: sysMod.openAt(0)
-                        onNavigatePrev: { notifs.closeCenter(); sndMod.openAt(-1) }
-                    }
-                    BarSep {}
-
                     SystemModule {
                         id: sysMod
                         parentBar: bar
-                        onNavigateNext: { popupOpen = false; btMod.openAt(0) }
-                        onNavigatePrev: { popupOpen = false; bellMod.openAt(-1) }
+                        triggerItem: batteryIcon
+                        onNavigateNext: { popupOpen = false; launcher.openAt(0) }
+                        onNavigatePrev: { popupOpen = false; sndMod.openAt(-1) }
                     }
+                }
+
+                Connections {
+                    target: cal
+                    function onNavigateNext() { cal.close(); btMod.openAt(0) }
+                    function onNavigatePrev() { cal.close(); launcher.openAt(0) }
+                }
+                Connections {
+                    target: launcher
+                    function onNavigateNext() { launcher.close(); cal.openAt(0) }
+                    function onNavigatePrev() { launcher.close(); sysMod.openAt(-1) }
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "launcher"
+                    description: "Toggle app launcher"
+                    onPressed: launcher.toggle()
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "spotlight"
+                    description: "Toggle Spotlight-style launcher"
+                    onPressed: spotlight.toggle()
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "clipboard"
+                    description: "Toggle clipboard history selector"
+                    onPressed: clipboard.toggle()
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "keybinds"
+                    description: "Toggle keybinds viewer"
+                    onPressed: keybinds.toggle()
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "powermenu"
+                    description: "Toggle power menu"
+                    onPressed: powerMenu.toggle()
                 }
             }
         }
@@ -522,14 +562,14 @@ Scope {
             anchor.window: bell.parentBar
             anchor.item: bell
             anchor.edges: Edges.Bottom
-            anchor.gravity: Edges.Bottom | Edges.Left
+            anchor.gravity: Edges.Bottom
             anchor.margins.top: 0
             implicitWidth: 380
             implicitHeight: Math.min(560, centerCol.implicitHeight + 24)
             visible: notifs.centerOpen
             color: "transparent"
 
-            SproutBg { anchors.fill: parent; fillColor: "#1c1917"; borderColor: "#78716c" }
+            SproutBg { anchors.fill: parent; fillColor: "#292524"; borderColor: "#78716c"; tailX: width / 2 }
             Item {
                 anchors.fill: parent
                 focus: notifs.centerOpen
@@ -742,6 +782,7 @@ Scope {
     component SystemModule: Item {
         id: sys
         property var parentBar
+        property var triggerItem: null  // if set, popup anchors to this item; bar icon hidden
         property bool popupOpen: false
         property bool pinned: false
         signal navigateNext()
@@ -768,7 +809,7 @@ Scope {
         property int kbMax: 2
 
         Layout.fillHeight: true
-        implicitWidth: 32
+        implicitWidth: triggerItem ? 0 : 32
 
         function activateProfile(i) {
             if (i < 0 || i >= profiles.length) return;
@@ -818,6 +859,7 @@ Scope {
         }
 
         Text {
+            visible: !sys.triggerItem
             anchors.centerIn: parent
             text: "⏻"
             color: "#ef4444"
@@ -826,6 +868,7 @@ Scope {
         }
 
         MouseArea {
+            visible: !sys.triggerItem
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             acceptedButtons: Qt.LeftButton
@@ -871,15 +914,27 @@ Scope {
 
         PopupWindow {
             id: sysPopup
+            // Compute trigger center in bar coords, then place popup centered & clamped
+            readonly property real _trigCenter: {
+                const trig = sys.triggerItem || sys;
+                return trig.mapToItem(barRect, trig.width / 2, 0).x;
+            }
+            readonly property real _popupX: Math.max(8,
+                Math.min(sys.parentBar.width - implicitWidth - 8, _trigCenter - implicitWidth / 2))
             anchor.window: sys.parentBar
-            anchor.rect.x: sys.parentBar.width - implicitWidth - 8
-            anchor.rect.y: sys.parentBar.height + 2
+            anchor.rect.x: _popupX
+            anchor.rect.y: sys.parentBar.height
             implicitWidth: 340
             implicitHeight: sysCol.implicitHeight + 28
             visible: sys.popupOpen
             color: "transparent"
 
-            SproutBg { anchors.fill: parent; fillColor: "#1c1917"; borderColor: "#78716c" }
+            SproutBg {
+                anchors.fill: parent
+                fillColor: "#292524"
+                borderColor: "#78716c"
+                tailX: sysPopup._trigCenter - sysPopup._popupX
+            }
             Item {
                 anchors.fill: parent
                 focus: sys.popupOpen
@@ -1179,7 +1234,7 @@ Scope {
             visible: pm.popupOpen
             color: "transparent"
 
-            SproutBg { anchors.fill: parent; fillColor: "#1c1917"; borderColor: "#78716c" }
+            SproutBg { anchors.fill: parent; fillColor: "#292524"; borderColor: "#78716c" }
             Item {
                 anchors.fill: parent
                 focus: pm.popupOpen
@@ -1413,17 +1468,23 @@ Scope {
 
         PopupWindow {
             id: sndPopup
+            readonly property real _trigCenter: snd.mapToItem(barRect, snd.width / 2, 0).x
+            readonly property real _popupX: Math.max(8,
+                Math.min(snd.parentBar.width - implicitWidth - 8, _trigCenter - implicitWidth / 2))
             anchor.window: snd.parentBar
-            anchor.item: snd
-            anchor.edges: Edges.Bottom
-            anchor.gravity: Edges.Bottom | Edges.Left
-            anchor.margins.top: 0
+            anchor.rect.x: _popupX
+            anchor.rect.y: snd.parentBar.height
             implicitWidth: 320
             implicitHeight: sndCol.implicitHeight + 24
             visible: snd.popupOpen
             color: "transparent"
 
-            SproutBg { anchors.fill: parent; fillColor: "#1c1917"; borderColor: "#78716c" }
+            SproutBg {
+                anchors.fill: parent
+                fillColor: "#292524"
+                borderColor: "#78716c"
+                tailX: sndPopup._trigCenter - sndPopup._popupX
+            }
             Item {
                 anchors.fill: parent
                 focus: snd.popupOpen
@@ -1789,14 +1850,14 @@ Scope {
             anchor.window: pp.parentBar
             anchor.item: pp
             anchor.edges: Edges.Bottom
-            anchor.gravity: Edges.Bottom | Edges.Left
+            anchor.gravity: Edges.Bottom
             anchor.margins.top: 0
             implicitWidth: 220
             implicitHeight: ppCol.implicitHeight + 16
             visible: pp.popupOpen
             color: "transparent"
 
-            SproutBg { anchors.fill: parent; fillColor: "#1c1917"; borderColor: "#78716c" }
+            SproutBg { anchors.fill: parent; fillColor: "#292524"; borderColor: "#78716c" }
             Item {
                 anchors.fill: parent
                 focus: pp.popupOpen
@@ -2020,14 +2081,14 @@ Scope {
             anchor.window: bt.parentBar
             anchor.item: bt
             anchor.edges: Edges.Bottom
-            anchor.gravity: Edges.Bottom | Edges.Left
+            anchor.gravity: Edges.Bottom
             anchor.margins.top: 0
             implicitWidth: 300
             implicitHeight: contentCol.implicitHeight + 24
             visible: bt.popupOpen
             color: "transparent"
 
-            SproutBg { anchors.fill: parent; fillColor: "#1c1917"; borderColor: "#44403c" }
+            SproutBg { anchors.fill: parent; fillColor: "#292524"; borderColor: "#44403c"; tailX: width / 2 }
             Item {
                 anchors.fill: parent
                 focus: bt.popupOpen
@@ -2281,10 +2342,16 @@ Scope {
         }
 
         IconImage {
+            id: trayIcon
             anchors.centerIn: parent
             implicitSize: 18
             source: tray.item ? tray.item.icon : ""
             asynchronous: true
+            layer.enabled: true
+            layer.effect: MultiEffect {
+                brightness: 0.6
+                saturation: -0.6
+            }
         }
 
         QsMenuAnchor {

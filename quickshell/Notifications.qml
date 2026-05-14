@@ -78,9 +78,8 @@ Scope {
             id: stackWindow
             required property var modelData
             screen: modelData
-            anchors { top: true; right: true }
-            margins { top: 40; right: 4 }
-            implicitWidth: 380
+            anchors { top: true; left: true; right: true }
+            margins { top: 40 }
             implicitHeight: Math.max(1, stackCol.implicitHeight)
             color: "transparent"
             WlrLayershell.layer: WlrLayer.Overlay
@@ -89,9 +88,9 @@ Scope {
 
             ColumnLayout {
                 id: stackCol
+                width: 380
                 anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
+                anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 0
                 Repeater {
                     model: root.activeList

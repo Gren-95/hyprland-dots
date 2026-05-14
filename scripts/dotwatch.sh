@@ -55,13 +55,6 @@ reload_hypridle() {
     hypridle >/dev/null 2>&1 &
 }
 
-reload_swayosd() {
-    can_reload swayosd || return
-    log "swayosd → restarting"
-    killall swayosd-server 2>/dev/null
-    swayosd-server >/dev/null 2>&1 &
-}
-
 notify_hyprlock() {
     can_reload hyprlock || return
     log "hyprlock.conf → saved"
@@ -90,7 +83,6 @@ inotifywait -m -r -e close_write,moved_to,create \
         hypr/hyprland.conf|hypr/modules/*) reload_hyprland ;;
         hypr/hypridle.conf)                reload_hypridle ;;
         hypr/hyprlock.conf)                notify_hyprlock ;;
-        swayosd/style.css)                 reload_swayosd ;;
         gtk-3.0/gtk.css)                   notify_gtk ;;
     esac
 done
