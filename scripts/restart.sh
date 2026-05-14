@@ -28,16 +28,14 @@ else
     echo "FAILED"
 fi
 
-# Restart Waybar
-echo -n "Running: waybar ... "
+# Restart Quickshell (bar + notifications + OSDs)
+echo -n "Running: quickshell ... "
 killall waybar 2>/dev/null
-WAYBAR_CONF="$HOME/.config/waybar/config-active"
-WAYBAR_CSS="$HOME/.config/waybar/style-active.css"
-[[ ! -L "$WAYBAR_CONF" ]] && WAYBAR_CONF="$HOME/.config/waybar/config"
-[[ ! -L "$WAYBAR_CSS" ]] && WAYBAR_CSS="$HOME/.config/waybar/style.css"
-waybar -c "$WAYBAR_CONF" -s "$WAYBAR_CSS" >/dev/null 2>&1 &
+pkill -f "qs -p" 2>/dev/null
 sleep 0.2
-if pgrep -x waybar >/dev/null; then echo "OK"; else echo "FAILED"; fi
+QT_QPA_PLATFORMTHEME=hyprqt6engine qs -p "$HOME/.config/quickshell/shell.qml" -d >/dev/null 2>&1
+sleep 0.3
+if pgrep -f "qs -p" >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
 # Generate hyprpaper config from all wallpapers in ~/Pictures/wallpapers/
 mkdir -p "$CACHE_DIR"
@@ -63,12 +61,8 @@ hypridle >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -x hypridle >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
-# Restart SwayNC (notification daemon)
-echo -n "Running: swaync ... "
+# swaync replaced by quickshell's NotificationServer; stop any stale instance
 killall swaync 2>/dev/null
-swaync >/dev/null 2>&1 &
-sleep 0.2
-if pgrep -x swaync >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
 # Restart SwayOSD server
 echo -n "Running: swayosd-server ... "
