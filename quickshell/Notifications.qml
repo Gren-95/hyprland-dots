@@ -14,6 +14,7 @@ Scope {
     property var historyList: []
     property int maxHistory: 50
     property bool dnd: false
+    property bool pinned: false
     property int unreadCount: 0
     property bool centerOpen: false
 
@@ -78,7 +79,7 @@ Scope {
             required property var modelData
             screen: modelData
             anchors { top: true; right: true }
-            margins { top: 44; right: 4 }
+            margins { top: 40; right: 4 }
             implicitWidth: 380
             implicitHeight: Math.max(1, stackCol.implicitHeight)
             color: "transparent"
