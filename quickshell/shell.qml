@@ -15,6 +15,7 @@ import Quickshell.Services.UPower
 
 Scope {
     Notifications { id: notifs }
+    IcsCalendar { id: cal }
 
     Variants {
         model: Quickshell.screens
@@ -45,20 +46,61 @@ Scope {
                     }
                 }
 
+                Timer {
+                    id: clockTimer
+                    property date now: new Date()
+                    interval: 1000; running: true; repeat: true
+                    onTriggered: now = new Date()
+                }
+                Process { id: ppmenu; command: ["rofi", "-show", "drun", "-show-icons", "-theme",
+                    Quickshell.env("HOME") + "/.config/rofi/launcher.rasi"] }
+
+                // ============ CENTER (absolute, anchored to monitor center) ============
+                Item {
+                    id: clockAnchor
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.verticalCenter: parent.verticalCenter
+                    implicitWidth: clockRow.implicitWidth + 12
+                    implicitHeight: clockRow.implicitHeight + 4
+
+                    RowLayout {
+                        id: clockRow
+                        anchors.centerIn: parent
+                        spacing: 8
+                        Text {
+                            text: "  " + Qt.formatDate(clockTimer.now, "ddd, dd MMM")
+                            color: "#a8a29e"
+                            font { family: "FiraCode Nerd Font"; pixelSize: 13 }
+                        }
+                        Text {
+                            text: Qt.formatTime(clockTimer.now, "HH:mm")
+                            color: "#f5f5f4"
+                            font { family: "FiraCode Nerd Font"; pixelSize: 14; bold: true }
+                        }
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            cal.anchorBar = bar;
+                            cal.anchorItem = clockAnchor;
+                            cal.toggle();
+                        }
+                    }
+                }
+
+                // ============ LEFT ============
                 RowLayout {
-                    anchors.fill: parent
+                    anchors.left: parent.left
                     anchors.leftMargin: 8
-                    anchors.rightMargin: 8
+                    anchors.verticalCenter: parent.verticalCenter
                     spacing: 0
 
-                    // ============ LEFT ============
                     BarIcon {
                         glyph: "󰀻"
                         pixelSize: 18
                         tooltip: "Open app menu"
                         onClicked: ppmenu.startDetached()
-                        Process { id: ppmenu; command: ["rofi", "-show", "drun", "-show-icons", "-theme",
-                            Quickshell.env("HOME") + "/.config/rofi/launcher.rasi"] }
                     }
                     BarSep {}
 
@@ -92,36 +134,14 @@ Scope {
                         font.family: "FiraCode Nerd Font"
                         font.pixelSize: 13
                     }
+                }
 
-                    Item { Layout.fillWidth: true }
-
-                    // ============ CENTER ============
-                    Text {
-                        text: "  " + Qt.formatDate(clockTimer.now, "ddd, dd MMM")
-                        color: "#a8a29e"
-                        font { family: "FiraCode Nerd Font"; pixelSize: 13 }
-                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-                            onClicked: calProc.startDetached() }
-                    }
-                    Item { width: 8 }
-                    Text {
-                        text: Qt.formatTime(clockTimer.now, "HH:mm")
-                        color: "#f5f5f4"
-                        font { family: "FiraCode Nerd Font"; pixelSize: 14; bold: true }
-                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-                            onClicked: calProc.startDetached() }
-                    }
-                    Process { id: calProc; command: ["gnome-calendar"] }
-                    Timer {
-                        id: clockTimer
-                        property date now: new Date()
-                        interval: 1000; running: true; repeat: true
-                        onTriggered: now = new Date()
-                    }
-
-                    Item { Layout.fillWidth: true }
-
-                    // ============ RIGHT ============
+                // ============ RIGHT ============
+                RowLayout {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 8
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 0
                     RowLayout {
                         spacing: 10
                         Repeater {
