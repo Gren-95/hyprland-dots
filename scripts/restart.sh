@@ -61,22 +61,11 @@ hypridle >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -x hypridle >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
-# swaync replaced by quickshell's NotificationServer; stop any stale instance
+# swaync and swayosd replaced by quickshell's NotificationServer and Osd.qml;
+# stop any stale instances.
 killall swaync 2>/dev/null
-
-# Restart SwayOSD server
-echo -n "Running: swayosd-server ... "
 killall swayosd-server 2>/dev/null
-swayosd-server >/dev/null 2>&1 &
-sleep 0.2
-if pgrep -x swayosd-server >/dev/null; then echo "OK"; else echo "FAILED"; fi
-
-# Restart SwayOSD monitor
-echo -n "Running: swayosd-monitor ... "
 pkill -f swayosd-monitor.sh 2>/dev/null
-bash "$HOME/.config/scripts/swayosd-monitor.sh" >/dev/null 2>&1 &
-sleep 0.2
-if pgrep -f swayosd-monitor.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
 # Restart battery notifier
 echo -n "Running: battery-notify ... "

@@ -120,11 +120,18 @@ Scope {
     function hasEvents(day) {
         return eventsOnDay(day).length > 0;
     }
+    signal navigateNext()
+    signal navigatePrev()
+
     function toggle() {
         open = !open;
         if (open) selectedDate = new Date();
     }
     function close() { open = false; }
+    function openAt(idx) {
+        open = true;
+        selectedDate = new Date();
+    }
     function prevMonth() {
         const d = new Date(selectedDate);
         d.setDate(1);
@@ -153,12 +160,19 @@ Scope {
         implicitWidth: 320
         implicitHeight: gridCol.implicitHeight + 24
 
-        SproutBg { anchors.fill: parent; fillColor: "#1c1917"; borderColor: "#78716c" }
+        SproutBg { anchors.fill: parent; fillColor: "#292524"; borderColor: "#78716c"; tailX: width / 2 }
         Item {
             anchors.fill: parent
             focus: root.open
             Keys.onPressed: (e) => {
+                const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
                 if (e.key === Qt.Key_Escape) { root.close(); e.accepted = true; }
+                else if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
+                    root.navigateNext(); e.accepted = true;
+                }
+                else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
+                    root.navigatePrev(); e.accepted = true;
+                }
                 else if (e.key === Qt.Key_Left) { root.prevMonth(); e.accepted = true; }
                 else if (e.key === Qt.Key_Right) { root.nextMonth(); e.accepted = true; }
                 else if (e.key === Qt.Key_T) { root.today(); e.accepted = true; }
