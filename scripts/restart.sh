@@ -121,34 +121,12 @@ echo -n "Running: nmcli radio wifi on ... "
 nmcli radio wifi on >/dev/null 2>&1
 if [[ $? -eq 0 ]]; then echo "OK"; else echo "FAILED"; fi
 
-# Restart polkit agent
-echo -n "Running: polkit agent ... "
-if systemctl --user list-units --full --all 2>/dev/null | grep -q "hyprpolkitagent.service"; then
-    systemctl --user restart hyprpolkitagent >/dev/null 2>&1
-    sleep 0.2
-    if systemctl --user is-active hyprpolkitagent >/dev/null 2>&1; then
-        echo "OK (hyprpolkitagent via systemd)"
-    else
-        echo "FAILED"
-    fi
-elif command -v hyprpolkitagent >/dev/null 2>&1; then
-    pkill -x hyprpolkitagent 2>/dev/null
-    hyprpolkitagent >/dev/null 2>&1 &
-    sleep 0.2
-    if pgrep -x hyprpolkitagent >/dev/null; then echo "OK (hyprpolkitagent)"; else echo "FAILED"; fi
-elif command -v lxpolkit >/dev/null 2>&1; then
-    pkill -x lxpolkit 2>/dev/null
-    lxpolkit >/dev/null 2>&1 &
-    sleep 0.2
-    if pgrep -x lxpolkit >/dev/null; then echo "OK (lxpolkit)"; else echo "FAILED"; fi
-elif command -v xfce-polkit >/dev/null 2>&1; then
-    pkill -x xfce-polkit 2>/dev/null
-    xfce-polkit >/dev/null 2>&1 &
-    sleep 0.2
-    if pgrep -x xfce-polkit >/dev/null; then echo "OK (xfce-polkit)"; else echo "FAILED"; fi
-else
-    echo "SKIPPED (install: sudo dnf install hyprpolkitagent)"
-fi
+# Polkit agent is provided by Quickshell (quickshell/PolkitPrompt.qml).
+# Stop hyprpolkitagent if it's still running from a previous session.
+systemctl --user stop hyprpolkitagent 2>/dev/null
+pkill -x hyprpolkitagent 2>/dev/null
+pkill -x lxpolkit 2>/dev/null
+pkill -x xfce-polkit 2>/dev/null
 
 # Run wallpaper script
 echo -n "Running: wallpaper.sh ... "
