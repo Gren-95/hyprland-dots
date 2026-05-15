@@ -25,6 +25,7 @@ Scope {
     PowerMenu { id: powerMenu }
     WorkspaceOverview { id: workspaceOverview }
     ScreenRecorder { id: recorder }
+    PolkitPrompt { id: polkit }
 
     Variants {
         model: Quickshell.screens

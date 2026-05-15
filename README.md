@@ -22,7 +22,6 @@
 - `firefox` — browser
 - `brightnessctl` `playerctl` — brightness and media control (Quickshell OSD watches `/sys` for changes)
 - `pavucontrol` — audio mixer
-- `hyprpolkitagent` — polkit agent
 - `gnome-calendar` `gnome-keyring` — calendar, secrets
 - `powerprofilesctl` — power profiles
 - `python3` + `python3-pillow` — avatar generation
