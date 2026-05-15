@@ -291,6 +291,18 @@ Scope {
                     description: "Toggle power menu"
                     onPressed: powerMenu.toggle()
                 }
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "bluetooth"
+                    description: "Toggle bluetooth menu"
+                    onPressed: btMod.popupOpen = !btMod.popupOpen
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "notifications"
+                    description: "Toggle notification center"
+                    onPressed: notifs.toggleCenter()
+                }
             }
         }
     }
