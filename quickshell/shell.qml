@@ -23,6 +23,8 @@ Scope {
     Osd { id: osd }
     Keybinds { id: keybinds }
     PowerMenu { id: powerMenu }
+    AltTab { id: altTab }
+    WorkspaceOverview { id: workspaceOverview }
 
     Variants {
         model: Quickshell.screens
@@ -302,6 +304,24 @@ Scope {
                     name: "notifications"
                     description: "Toggle notification center"
                     onPressed: notifs.toggleCenter()
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "alttab"
+                    description: "Show window switcher (next window)"
+                    onPressed: altTab.openForward()
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "alttab-prev"
+                    description: "Show window switcher (previous window)"
+                    onPressed: altTab.openBackward()
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "overview"
+                    description: "Toggle workspace overview"
+                    onPressed: workspaceOverview.toggle()
                 }
             }
         }
