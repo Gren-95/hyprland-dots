@@ -17,14 +17,11 @@ NC='\033[0m' # No Color
 # Configuration directories to symlink
 CONFIG_ITEMS=(
     "hypr"
+    "quickshell"
     "kitty"
-    "waybar"
-    "swaync"
-    "swayosd"
     "swappy"
     "scripts"
     "wayvnc"
-    "rofi"
     "fish"
     "nvim"
     "ranger"
@@ -57,9 +54,9 @@ check_dependencies() {
 
     local missing_deps=()
     local required_deps=(
-        "hyprland" "kitty" "nautilus" "hyprpaper" "hyprpicker"
-        "hypridle" "swaync" "grim" "slurp" "swappy"
-        "tesseract" "convert" "rofi" "cliphist" "wl-copy" "wl-paste" "swayosd-server" "waybar"
+        "hyprland" "qs" "kitty" "nautilus" "hyprpaper" "hyprpicker"
+        "hypridle" "grim" "slurp" "swappy"
+        "tesseract" "convert" "cliphist" "wl-copy" "wl-paste"
         "firefox" "brightnessctl" "playerctl" "pavucontrol"
         "gnome-keyring-daemon" "jq" "pactl" "wpctl" "python3" "fish" "nvim" "ranger"
     )
@@ -88,14 +85,14 @@ install_dependencies() {
 
     print_info "Adding required COPR repositories..."
     sudo dnf copr enable -y lionheartp/Hyprland
-    sudo dnf copr enable -y erikreider/SwayNotificationCenter
-    sudo dnf copr enable -y washkinazy/wayland-wm-extras
+    sudo dnf copr enable -y errornointernet/quickshell || \
+        print_warning "Quickshell COPR not available — build from source: https://quickshell.outfoxxed.me"
 
     print_info "Installing dependencies..."
     sudo dnf install -y \
-        hyprland hyprland-devel kitty nautilus cliphist \
-        hyprpaper hyprpicker hypridle swaync grim slurp \
-        swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard swayosd waybar firefox rofi \
+        hyprland hyprland-devel quickshell kitty nautilus cliphist \
+        hyprpaper hyprpicker hypridle grim slurp \
+        swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard firefox \
         brightnessctl playerctl pavucontrol hyprpolkitagent network-manager-applet \
         gnome-calendar gnome-keyring jq \
         powerprofilesctl hyprlock gpu-screen-recorder \
@@ -162,15 +159,6 @@ create_symlinks() {
         ln -sf "$source" "$target"
         print_success "Symlinked $item"
     done
-
-    # Waybar active config symlinks — default to floating style
-    local waybar_dir="$HOME/.config/waybar"
-    [[ ! -e "$waybar_dir/config-active" ]] && \
-        ln -sf "$waybar_dir/config" "$waybar_dir/config-active" && \
-        print_success "Waybar config-active -> config (floating)"
-    [[ ! -e "$waybar_dir/style-active.css" ]] && \
-        ln -sf "$waybar_dir/style.css" "$waybar_dir/style-active.css" && \
-        print_success "Waybar style-active.css -> style.css (floating)"
 
     # Avatar symlink: point ~/.config/hypr/avatar.png to AccountsService icon
     local avatar_link="$HOME/.config/hypr/avatar.png"
@@ -341,13 +329,6 @@ setup_scripts() {
 system_setup() {
     print_info "Running initial system setup..."
 
-    # Enable SwayOSD service
-    if command_exists swayosd-server; then
-        print_info "Enabling SwayOSD libinput backend..."
-        sudo systemctl enable --now swayosd-libinput-backend.service 2>/dev/null || true
-        print_success "SwayOSD service enabled"
-    fi
-
     # Set GTK dark theme
     if command_exists gsettings; then
         print_info "Setting GTK dark theme..."
@@ -457,7 +438,7 @@ main() {
 
     # System setup
     echo ""
-    read -p "Run initial system setup (GTK theme, SwayOSD)? (Y/n) " -n 1 -r
+    read -p "Run initial system setup (GTK theme)? (Y/n) " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Nn]$ ]]; then
         system_setup

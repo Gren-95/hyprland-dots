@@ -11,19 +11,16 @@
 ## Dependencies
 
 - `hyprland` + `hyprland-devel` — compositor
+- `quickshell` — bar, OSD, notifications, launcher, clipboard, power menu, keybinds viewer, workspace overview
 - `kitty` — terminal
 - `nautilus` — file manager
-- `cliphist` + `wl-clipboard` — clipboard history
+- `cliphist` + `wl-clipboard` — clipboard history (Quickshell shows the picker)
 - `hyprpaper` `hyprpicker` `hypridle` `hyprlock` — wallpaper, color picker, idle daemon, lock screen
-- `swaync` — notification center
 - `grim` `slurp` `swappy` — screenshots
 - `tesseract` — OCR from screenshots
 - `gpu-screen-recorder` — screen recording
-- `swayosd` — OSD for volume/brightness
-- `waybar` — status bar
-- `rofi` — app launcher, menus
 - `firefox` — browser
-- `brightnessctl` `playerctl` — brightness and media control
+- `brightnessctl` `playerctl` — brightness and media control (Quickshell OSD watches `/sys` for changes)
 - `pavucontrol` — audio mixer
 - `hyprpolkitagent` — polkit agent
 - `gnome-calendar` `gnome-keyring` — calendar, secrets
@@ -37,17 +34,16 @@
 ### External repositories
 
 ```bash
-sudo dnf copr enable lionheartp/Hyprland                    # hyprland
-sudo dnf copr enable erikreider/SwayNotificationCenter      # swaync
-sudo dnf copr enable washkinazy/wayland-wm-extras           # swayosd
+sudo dnf copr enable lionheartp/Hyprland       # hyprland
+sudo dnf copr enable errornointernet/quickshell  # quickshell (or build from source)
 ```
 
 ### Install all dependencies
 
 ```bash
-sudo dnf install hyprland hyprland-devel kitty nautilus cliphist \
-  hyprpaper hyprpicker hypridle hyprlock swaync grim slurp swappy tesseract \
-  wl-clipboard swayosd waybar firefox rofi brightnessctl playerctl \
+sudo dnf install hyprland hyprland-devel quickshell kitty nautilus cliphist \
+  hyprpaper hyprpicker hypridle hyprlock grim slurp swappy tesseract \
+  wl-clipboard firefox brightnessctl playerctl \
   pavucontrol polkit-gnome gnome-calendar gnome-keyring jq \
   powerprofilesctl gpu-screen-recorder inotify-tools \
   fish neovim ranger python3 python3-pillow
@@ -77,7 +73,7 @@ The setup script will:
 - Create symlinks for all config directories
 - Create required user directories (`~/Pictures/Screenshots`, `~/Music`, etc.)
 - Set up script permissions
-- Configure GTK theme and SwayOSD
+- Configure GTK theme
 - Optionally generate an initials avatar for the lock screen
 
 ### Wallpapers
@@ -100,21 +96,23 @@ Press `Super+F1` in session to view all active keybinds.
 
 ### OSD
 
-```bash
-sudo systemctl enable --now swayosd-libinput-backend.service
-```
+Volume, brightness, and keyboard-backlight OSDs are rendered by Quickshell
+(`quickshell/Osd.qml`). It polls `/sys/class/backlight` and `/sys/class/leds`
+so any process changing brightness — key, `brightnessctl`, `hypridle` —
+triggers the OSD automatically. No daemon to enable.
 
 ### Screen Recording
 
-`Super+Ctrl+R` — toggles screen recording. Recordings are saved to `~/Videos/Recordings/`.
+`Super+Shift+R` — toggles screen recording. Recordings are saved to `~/Videos/Recordings/`.
 
-Requires `gpu-screen-recorder`.
+Requires `gpu-screen-recorder`. A brief toast appears top-right on start/stop
+(it auto-hides during recording so it doesn't appear in the captured video).
 
 ### Remote Access (wayvnc)
 
 wayvnc is an optional VNC server for remote desktop access.
 
-**Start/stop:** `Super+Shift+R` — toggles wayvnc on/off.
+**Start/stop:** `Super+Ctrl+R` — toggles wayvnc on/off.
 
 **Connect:** Use any VNC viewer and connect to `<local-ip>:5900`.
 
@@ -138,7 +136,6 @@ These run automatically on login via `restart.sh` and restart cleanly on each se
 | `dotwatch.sh` | Watches dotfiles for changes and hot-reloads affected services |
 | `media-inhibit.sh` | Prevents screen sleep during media playback |
 | `network-notify.sh` | Notifies on network connect/disconnect |
-| `swayosd-monitor.sh` | Monitors input events for OSD triggers |
 
 ### dotwatch — hot-reload
 
@@ -146,14 +143,11 @@ Edits to dotfiles are picked up automatically without restarting your session:
 
 | File changed | Action |
 |---|---|
-| `waybar/style*.css`, `waybar/config*` | Restart waybar |
-| `swaync/style.css` | Reload swaync CSS |
-| `swaync/config.json` | Reload swaync config |
 | `hypr/hyprland.conf`, `hypr/modules/*` | `hyprctl reload` |
 | `hypr/hypridle.conf` | Restart hypridle |
 | `hypr/hyprlock.conf` | Notification (applies on next lock) |
-| `swayosd/style.css` | Restart swayosd-server |
 | `gtk-3.0/gtk.css` | Notification (restart GTK apps to apply) |
+| `quickshell/*` | Quickshell auto-reloads on file changes |
 
 ## Optional Services
 
