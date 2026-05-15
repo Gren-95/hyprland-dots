@@ -23,8 +23,8 @@ Scope {
     Osd { id: osd }
     Keybinds { id: keybinds }
     PowerMenu { id: powerMenu }
-    AltTab { id: altTab }
     WorkspaceOverview { id: workspaceOverview }
+    ScreenRecorder { id: recorder }
 
     Variants {
         model: Quickshell.screens
@@ -305,23 +305,26 @@ Scope {
                     description: "Toggle notification center"
                     onPressed: notifs.toggleCenter()
                 }
+                // Classic Super+Tab: open + cycle on Tab presses, release Super commits.
                 GlobalShortcut {
                     appid: "quickshell"
-                    name: "alttab"
-                    description: "Show window switcher (next window)"
-                    onPressed: altTab.openForward()
+                    name: "overview-cycle"
+                    description: "Open overview / cycle next workspace"
+                    onPressed: workspaceOverview.cycleOrOpen(1)
                 }
                 GlobalShortcut {
                     appid: "quickshell"
-                    name: "alttab-prev"
-                    description: "Show window switcher (previous window)"
-                    onPressed: altTab.openBackward()
+                    name: "overview-cycle-prev"
+                    description: "Open overview / cycle previous workspace"
+                    onPressed: workspaceOverview.cycleOrOpen(-1)
                 }
+                // Listens to Super press/release via bindi. Press is a no-op,
+                // release commits the highlighted workspace if overview is open.
                 GlobalShortcut {
                     appid: "quickshell"
-                    name: "overview"
-                    description: "Toggle workspace overview"
-                    onPressed: workspaceOverview.toggle()
+                    name: "supertap"
+                    description: "Commit overview selection on Super release"
+                    onReleased: workspaceOverview.commitIfOpen()
                 }
             }
         }

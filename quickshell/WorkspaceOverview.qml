@@ -22,19 +22,20 @@ Scope {
     readonly property string thumbDir: "/tmp/qsthumbs"
     readonly property real cardWidth: 320
 
-    function toggle() {
-        if (open) close();
-        else openOverview();
-    }
-    function openOverview() {
+    // Super+Tab cycling: opens overlay on first press, cycles on each subsequent
+    // Super+Tab. The held-Super tracker commits on Super release.
+    function cycleOrOpen(direction) {
+        if (open) { cycle(direction); return; }
         refresh(() => {
+            const n = root.workspaces.length;
+            if (n === 0) return;
             const idx = root.workspaces.findIndex(w => w.id === root.activeWs);
-            root.focusedIndex = Math.max(0, idx);
-            // Snapshot first while the screen is still visible, then show the overlay.
+            root.focusedIndex = ((idx + direction) % n + n) % n;
             snapProc._openAfter = true;
             snapshot();
         });
     }
+    function commitIfOpen() { if (open) activate(focusedIndex); }
     function close() { open = false }
     function activate(idx) {
         const ws = root.workspaces[idx];

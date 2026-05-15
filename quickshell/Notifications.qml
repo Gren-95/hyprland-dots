@@ -43,10 +43,6 @@ Scope {
     function _remove(id) {
         activeList = activeList.filter(e => e.id !== id);
     }
-    function dismissAll() {
-        for (const e of activeList) if (e.ref) e.ref.dismiss();
-        activeList = [];
-    }
     function clearHistory() { historyList = []; }
 
     NotificationServer {
