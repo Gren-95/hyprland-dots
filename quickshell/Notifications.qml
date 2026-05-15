@@ -105,6 +105,224 @@ Scope {
         }
     }
 
+    // ============ Notification center: full-screen overlay listing history ============
+    Variants {
+        model: Quickshell.screens
+        PanelWindow {
+            id: centerWindow
+            required property var modelData
+            screen: modelData
+            visible: root.centerOpen
+            color: "transparent"
+            anchors { top: true; bottom: true; left: true; right: true }
+            WlrLayershell.exclusionMode: ExclusionMode.Ignore
+            WlrLayershell.layer: WlrLayer.Overlay
+            WlrLayershell.keyboardFocus: root.centerOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+
+            Rectangle {
+                anchors.fill: parent
+                color: "#000000"
+                opacity: 0.45
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: root.closeCenter()
+                }
+            }
+
+            Rectangle {
+                id: panel
+                anchors.right: parent.right
+                anchors.rightMargin: 12
+                anchors.top: parent.top
+                anchors.topMargin: 48
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 12
+                width: 420
+                radius: 14
+                color: "#292524"
+                border.color: "#78716c"
+                border.width: 1
+                focus: root.centerOpen
+                Keys.onPressed: (e) => {
+                    if (e.key === Qt.Key_Escape) { root.closeCenter(); e.accepted = true; }
+                }
+
+                ColumnLayout {
+                    id: centerHeader
+                    anchors { top: parent.top; left: parent.left; right: parent.right }
+                    anchors.margins: 14
+                    spacing: 8
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 10
+                        Text {
+                            text: "󰂚"
+                            color: "#a8a29e"
+                            font.family: "FiraCode Nerd Font"
+                            font.pixelSize: 20
+                        }
+                        Text {
+                            text: "Notifications"
+                            color: "#fafaf9"
+                            font.family: "FiraCode Nerd Font"
+                            font.pixelSize: 14
+                            font.bold: true
+                        }
+                        Text {
+                            text: root.historyList.length + " items"
+                            color: "#78716c"
+                            font.family: "FiraCode Nerd Font"
+                            font.pixelSize: 10
+                        }
+                        Item { Layout.fillWidth: true }
+                        Rectangle {
+                            visible: root.historyList.length > 0
+                            implicitWidth: clearText.implicitWidth + 16
+                            implicitHeight: 22
+                            radius: 4
+                            color: clearMouse.containsMouse ? "#7f1d1d" : "transparent"
+                            border.color: "#7f1d1d"
+                            border.width: 1
+                            Text {
+                                id: clearText
+                                anchors.centerIn: parent
+                                text: "Clear all"
+                                color: clearMouse.containsMouse ? "#fafaf9" : "#f87171"
+                                font.family: "FiraCode Nerd Font"
+                                font.pixelSize: 10
+                            }
+                            MouseArea {
+                                id: clearMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.clearHistory()
+                            }
+                        }
+                    }
+                    Rectangle { Layout.fillWidth: true; height: 1; color: "#44403c" }
+                }
+
+                Flickable {
+                    id: historyView
+                    anchors {
+                        top: centerHeader.bottom
+                        left: parent.left
+                        right: parent.right
+                        bottom: parent.bottom
+                        topMargin: 6
+                        leftMargin: 8
+                        rightMargin: 8
+                        bottomMargin: 8
+                    }
+                    contentHeight: historyCol.implicitHeight
+                    clip: true
+                    ColumnLayout {
+                        id: historyCol
+                        width: parent.width
+                        spacing: 4
+                        Repeater {
+                            model: root.historyList
+                            delegate: HistoryRow {
+                                required property var modelData
+                                entry: modelData
+                                Layout.fillWidth: true
+                                onDismissed: root.dismissHistoryEntry(modelData.id)
+                            }
+                        }
+                        Text {
+                            visible: root.historyList.length === 0
+                            text: "No notifications"
+                            color: "#78716c"
+                            font.family: "FiraCode Nerd Font"
+                            font.pixelSize: 12
+                            Layout.alignment: Qt.AlignHCenter
+                            Layout.topMargin: 32
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    component HistoryRow: Rectangle {
+        id: hist
+        property var entry
+        signal dismissed()
+        implicitHeight: histCol.implicitHeight + 16
+        radius: 8
+        color: histHover.containsMouse ? "#231f1d" : "#1c1917"
+        border.color: "#3a3633"
+        border.width: 1
+
+        ColumnLayout {
+            id: histCol
+            anchors.fill: parent
+            anchors.margins: 10
+            spacing: 4
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+                IconImage {
+                    visible: hist.entry && (hist.entry.image || hist.entry.appIcon)
+                    source: hist.entry ? (hist.entry.image || hist.entry.appIcon) : ""
+                    implicitSize: 18
+                }
+                Text {
+                    Layout.fillWidth: true
+                    text: hist.entry ? (hist.entry.summary || hist.entry.appName) : ""
+                    color: "#fafaf9"
+                    font.family: "FiraCode Nerd Font"
+                    font.pixelSize: 12
+                    font.bold: true
+                    elide: Text.ElideRight
+                }
+                Text {
+                    text: hist.entry ? Qt.formatTime(hist.entry.time, "hh:mm") : ""
+                    color: "#78716c"
+                    font.family: "FiraCode Nerd Font"
+                    font.pixelSize: 9
+                }
+                Rectangle {
+                    implicitWidth: 20; implicitHeight: 20; radius: 10
+                    color: dismissMouse.containsMouse ? "#44403c" : "transparent"
+                    Text {
+                        anchors.centerIn: parent
+                        text: "×"
+                        color: "#a8a29e"
+                        font.family: "FiraCode Nerd Font"
+                        font.pixelSize: 16
+                    }
+                    MouseArea {
+                        id: dismissMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: hist.dismissed()
+                    }
+                }
+            }
+            Text {
+                visible: hist.entry && hist.entry.body
+                Layout.fillWidth: true
+                text: hist.entry ? hist.entry.body : ""
+                color: "#d6d3d1"
+                font.family: "FiraCode Nerd Font"
+                font.pixelSize: 11
+                wrapMode: Text.WordWrap
+                textFormat: Text.PlainText
+                maximumLineCount: 3
+                elide: Text.ElideRight
+            }
+        }
+        MouseArea {
+            id: histHover
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.NoButton
+        }
+    }
+
     component NotificationCard: Item {
         id: card
         property var entry
