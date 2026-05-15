@@ -18,22 +18,24 @@ Scope {
     readonly property var flow: agent.flow
     readonly property bool active: agent.isActive
 
+    // Buffered password input — owned at root so the submit/cancel functions
+    // can read it without poking into the per-screen delegate.
+    property string password: ""
+
     function _submit() {
         if (!flow) return;
-        flow.submit(passwordField.text);
-        passwordField.text = "";
+        flow.submit(root.password);
+        root.password = "";
     }
     function _cancel() {
         if (flow) flow.cancelAuthenticationRequest();
-        passwordField.text = "";
+        root.password = "";
     }
 
-    // Clear the password input whenever a new request comes in
     Connections {
         target: agent
         function onAuthenticationRequestStarted() {
-            passwordField.text = "";
-            passwordField.forceActiveFocus();
+            root.password = "";
         }
     }
 
@@ -57,22 +59,24 @@ Scope {
                 opacity: 0.65
             }
 
-            Rectangle {
-                id: card
+            FocusScope {
+                id: cardFocus
                 anchors.centerIn: parent
                 width: 440
                 height: cardCol.implicitHeight + 32
-                radius: 14
-                color: "#1c1917"
-                border.color: "#78716c"
-                border.width: 1
                 focus: root.active
 
                 Keys.onPressed: (e) => {
                     if (e.key === Qt.Key_Escape) { root._cancel(); e.accepted = true; }
-                    else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
-                        root._submit(); e.accepted = true;
-                    }
+                }
+
+                Rectangle {
+                    id: card
+                    anchors.fill: parent
+                    radius: 14
+                    color: "#1c1917"
+                    border.color: "#78716c"
+                    border.width: 1
                 }
 
                 ColumnLayout {
@@ -177,7 +181,22 @@ Scope {
                             passwordCharacter: "•"
                             selectByMouse: true
                             focus: true
+                            text: root.password
+                            onTextChanged: if (text !== root.password) root.password = text
                             onAccepted: root._submit()
+                        }
+                        // Re-focus this field whenever the prompt becomes visible
+                        Connections {
+                            target: root
+                            function onActiveChanged() {
+                                if (root.active) focusDelay.restart();
+                            }
+                        }
+                        Timer {
+                            id: focusDelay
+                            interval: 80
+                            repeat: false
+                            onTriggered: passwordField.forceActiveFocus()
                         }
                         Text {
                             anchors.fill: parent
