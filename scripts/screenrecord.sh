@@ -10,10 +10,10 @@ if [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
     # Stop recording
     kill -SIGINT "$(cat "$PIDFILE")"
     rm -f "$PIDFILE"
-    notify-send "Screen Recording" "Saved to $RECORDING_DIR" -i video-x-generic -t 4000
 else
-    # Start recording
+    # Start recording. `-w screen` uses DRM/KMS direct capture which captures
+    # everything on the framebuffer (including overlays). The Quickshell HUD
+    # hides itself while `recording = true` so it doesn't appear in the video.
     gpu-screen-recorder -w screen -c mp4 -f 60 -o "$FILE" &
     echo $! > "$PIDFILE"
-    notify-send "Screen Recording" "Recording started" -i media-record -t 2000
 fi
