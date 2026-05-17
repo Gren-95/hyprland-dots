@@ -79,12 +79,19 @@ Scope {
                     }
 
                     Flickable {
+                        id: flick
                         Layout.fillWidth: true
                         Layout.preferredHeight: 440
                         contentWidth: width
                         contentHeight: grid.implicitHeight
                         clip: true
                         boundsBehavior: Flickable.StopAtBounds
+                        // Reset to the top whenever the picker reopens, so
+                        // users don't reappear at their last scroll position.
+                        Connections {
+                            target: root
+                            function onOpenChanged() { if (root.open) flick.contentY = 0; }
+                        }
 
                         GridLayout {
                             id: grid

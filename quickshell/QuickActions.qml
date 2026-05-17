@@ -188,7 +188,9 @@ Item {
             "  hypridle & disown && notify low hypridle system-suspend-uninhibited 'Sleep Mode' 'Idle enabled'; " +
             "fi"]
         running: false
-        onExited: daemonCheckProc.running = true
+        // No onExited: startDetached() forks the child off — onExited never
+        // fires for detached processes. State reconciliation happens via the
+        // clearInFlightTimer below.
     }
     // Immich + Jellyfin sync state is managed via cron entries; the
     // sync-toggle.sh helper installs/comments/uncomments the relevant

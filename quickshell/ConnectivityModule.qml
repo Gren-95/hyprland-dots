@@ -232,7 +232,10 @@ Item {
                     (bt.selectedIndex + 1 < n ? bt.tabIndex + 1 : 2);
                 e.accepted = true;
             } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
-                if (n > 0) bt.tabIndex = bt.tabIndex < 2 ? 2 :
+                // From the toggle row (tabIndex 0/1), Up wraps to the LAST
+                // list item rather than diving into the first one (which is
+                // what Down does). Was previously identical to Down.
+                if (n > 0) bt.tabIndex = bt.tabIndex < 2 ? (1 + n) :
                     (bt.selectedIndex > 0 ? bt.tabIndex - 1 : 1 + n);
                 e.accepted = true;
             } else if (e.key === Qt.Key_Delete || e.key === Qt.Key_Backspace) {

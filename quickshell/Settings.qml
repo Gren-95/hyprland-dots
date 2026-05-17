@@ -15,17 +15,30 @@ Scope {
 
     // ===== Internals =====
     // Saving is skipped while `loaded` is false so the initial assignment
-    // from the file watcher doesn't bounce back through Process.
+    // from the file watcher doesn't bounce back through Process. Toggles
+    // that happen during the boot window get queued and flushed when
+    // `loaded` flips true, so a fast Quick Actions click after login isn't
+    // lost.
     property bool loaded: false
+    property var _pending: ({})
+
+    onLoadedChanged: if (loaded) {
+        for (const k in _pending) _write(k, _pending[k]);
+        _pending = ({});
+    }
 
     Process { id: saveProc; command: [] }
 
-    function _save(filename, val) {
-        if (!loaded) return;
+    function _write(filename, val) {
         const v = val ? "1" : "0";
         saveProc.command = ["sh", "-c",
             "mkdir -p ~/.cache/quickshell && echo " + v + " > ~/.cache/quickshell/" + filename];
         saveProc.startDetached();
+    }
+
+    function _save(filename, val) {
+        if (!loaded) { _pending[filename] = val; return; }
+        _write(filename, val);
     }
 
     onMediaKeysVisibleChanged: _save("media-keys.enabled", mediaKeysVisible)
