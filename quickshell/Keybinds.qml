@@ -4,7 +4,6 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
 
 Scope {
     id: root
@@ -148,102 +147,67 @@ Scope {
         }
     }
 
-    Variants {
-        model: Quickshell.screens
-        PanelWindow {
-            id: win
-            required property var modelData
-            screen: modelData
-            visible: root.open
-            color: "transparent"
-
-            anchors { top: true; bottom: true; left: true; right: true }
-            WlrLayershell.exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: root.open ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
-
-            Rectangle {
-                anchors.fill: parent
-                color: "#000000"
-                opacity: 0.45
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: root.close()
-                }
+    PopupCard {
+        open: root.open
+        cardWidth: 900
+        cardHeight: 620
+        onClosed: root.close()
+        onKeyPressed: (e) => {
+            const n = root.filtered.length;
+            if (e.key === Qt.Key_Down) {
+                if (n > 0) root.selectedIndex = Math.min(n - 1, root.selectedIndex + 1);
+                e.accepted = true;
+            } else if (e.key === Qt.Key_Up) {
+                root.selectedIndex = Math.max(0, root.selectedIndex - 1);
+                e.accepted = true;
+            } else if (e.key === Qt.Key_PageDown) {
+                if (n > 0) root.selectedIndex = Math.min(n - 1, root.selectedIndex + 10);
+                e.accepted = true;
+            } else if (e.key === Qt.Key_PageUp) {
+                root.selectedIndex = Math.max(0, root.selectedIndex - 10);
+                e.accepted = true;
+            } else if (e.key === Qt.Key_F5) {
+                root.refresh(); e.accepted = true;
+            } else if (e.key === Qt.Key_Backspace) {
+                root.query = root.query.slice(0, -1);
+                root.selectedIndex = 0;
+                e.accepted = true;
+            } else if (e.text && e.text.length > 0 && e.text.charCodeAt(0) >= 32) {
+                root.query += e.text;
+                root.selectedIndex = 0;
+                e.accepted = true;
             }
-
-            Rectangle {
-                id: card
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: Math.round(parent.height * 0.12)
-                width: 900
-                height: Math.min(parent.height * 0.78, headerCol.implicitHeight + resultsCol.implicitHeight + 56)
-                radius: 14
-                color: Theme.bgAlt
-                border.color: Theme.mutedDeep
-                border.width: 1
-                scale: root.open ? 1.0 : 0.96
-                opacity: root.open ? 1.0 : 0.0
-                Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-                Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-                focus: root.open
-
-                Keys.onPressed: (e) => {
-                    const n = root.filtered.length;
-                    if (e.key === Qt.Key_Escape) { root.close(); e.accepted = true; }
-                    else if (e.key === Qt.Key_Down) {
-                        if (n > 0) root.selectedIndex = Math.min(n - 1, root.selectedIndex + 1);
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_Up) {
-                        root.selectedIndex = Math.max(0, root.selectedIndex - 1);
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_PageDown) {
-                        if (n > 0) root.selectedIndex = Math.min(n - 1, root.selectedIndex + 10);
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_PageUp) {
-                        root.selectedIndex = Math.max(0, root.selectedIndex - 10);
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_F5) {
-                        root.refresh(); e.accepted = true;
-                    } else if (e.key === Qt.Key_Backspace) {
-                        root.query = root.query.slice(0, -1);
-                        root.selectedIndex = 0;
-                        e.accepted = true;
-                    } else if (e.text && e.text.length > 0 && e.text.charCodeAt(0) >= 32) {
-                        root.query += e.text;
-                        root.selectedIndex = 0;
-                        e.accepted = true;
-                    }
-                }
-
+        }
+        contentComponent: Component {
+            Item {
                 ColumnLayout {
                     id: headerCol
                     anchors { top: parent.top; left: parent.left; right: parent.right }
-                    anchors.margins: 14
-                    spacing: 8
+                    anchors.margins: Theme.spacing.lg
+                    spacing: Theme.spacing.md
 
                     RowLayout {
                         Layout.fillWidth: true
-                        spacing: 14
+                        spacing: Theme.spacing.lg
                         Text {
                             text: "󰌌"
                             color: Theme.muted
                             font.family: Theme.font
-                            font.pixelSize: 28
+                            font.pixelSize: Theme.fontSize.hero
                         }
                         Text {
                             Layout.fillWidth: true
                             text: root.query || "Search keybinds"
                             color: root.query ? Theme.fg : Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 22
+                            font.pixelSize: Theme.fontSize.xxl
                             elide: Text.ElideRight
                         }
                         Text {
                             text: root.filtered.length + " / " + root.entries.length
                             color: Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 13
+                            font.pixelSize: Theme.fontSize.base
                         }
                     }
                     Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderStrong }
@@ -284,7 +248,7 @@ Scope {
                             text: "Loading binds…"
                             color: Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 15
+                            font.pixelSize: Theme.fontSize.md
                             Layout.alignment: Qt.AlignHCenter
                             Layout.topMargin: 24
                         }
@@ -293,9 +257,24 @@ Scope {
                             text: "No matches"
                             color: Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 15
+                            font.pixelSize: Theme.fontSize.md
                             Layout.alignment: Qt.AlignHCenter
                             Layout.topMargin: 24
+                        }
+                    }
+
+                    // Auto-scroll selected row into view
+                    Connections {
+                        target: root
+                        function onSelectedIndexChanged() {
+                            const rowH = 40;
+                            const top = root.selectedIndex * rowH;
+                            const bottom = top + rowH;
+                            if (top < results.contentY) results.contentY = top;
+                            else if (bottom > results.contentY + results.height) {
+                                const max = Math.max(0, results.contentHeight - results.height);
+                                results.contentY = Math.min(max, bottom - results.height);
+                            }
                         }
                     }
                 }
@@ -309,26 +288,11 @@ Scope {
                         anchors.fill: parent
                         anchors.leftMargin: 14
                         anchors.rightMargin: 14
-                        spacing: 14
-                        Text { text: "↑↓ Navigate"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: 11 }
-                        Text { text: "F5 Refresh"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: 11 }
-                        Text { text: "Esc Close"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: 11 }
+                        spacing: Theme.spacing.lg
+                        Text { text: "↑↓ Navigate"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
+                        Text { text: "F5 Refresh"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
+                        Text { text: "Esc Close"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
                         Item { Layout.fillWidth: true }
-                    }
-                }
-
-                // Auto-scroll selected row into view
-                Connections {
-                    target: root
-                    function onSelectedIndexChanged() {
-                        const rowH = 40;
-                        const top = root.selectedIndex * rowH;
-                        const bottom = top + rowH;
-                        if (top < results.contentY) results.contentY = top;
-                        else if (bottom > results.contentY + results.height) {
-                            const max = Math.max(0, results.contentHeight - results.height);
-                            results.contentY = Math.min(max, bottom - results.height);
-                        }
                     }
                 }
             }
@@ -358,7 +322,7 @@ Scope {
             anchors.fill: parent
             anchors.leftMargin: 12
             anchors.rightMargin: 12
-            spacing: 10
+            spacing: Theme.spacing.md
 
             // Category icon (symbolic, monochrome-tinted)
             Text {
@@ -369,7 +333,7 @@ Scope {
                 color: row.entry ? row.entry.catColor : Theme.mutedDeep
                 opacity: row.highlighted ? 1.0 : 0.75
                 font.family: Theme.font
-                font.pixelSize: 16
+                font.pixelSize: Theme.fontSize.lg
             }
 
             // Unified kbd pill: one rounded outline, segments inside separated by hairlines
@@ -407,7 +371,7 @@ Scope {
                                 text: modelData
                                 color: row.highlighted ? Theme.fg : Theme.fgMuted
                                 font.family: Theme.font
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize.sm
                                 font.bold: row.highlighted
                             }
                         }
@@ -422,7 +386,7 @@ Scope {
                 text: row.entry ? row.entry.action : ""
                 color: row.highlighted ? Theme.fgMuted : "#8d8985"
                 font.family: Theme.font
-                font.pixelSize: 13
+                font.pixelSize: Theme.fontSize.base
                 elide: Text.ElideRight
             }
         }

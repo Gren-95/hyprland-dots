@@ -4,7 +4,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Wayland
 import Quickshell.Services.Polkit
 
 Scope {
@@ -39,50 +38,15 @@ Scope {
         }
     }
 
-    Variants {
-        model: Quickshell.screens
-        PanelWindow {
-            id: win
-            required property var modelData
-            screen: modelData
-            visible: root.active
-            color: "transparent"
-
-            anchors { top: true; bottom: true; left: true; right: true }
-            WlrLayershell.exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: root.active ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
-
-            Rectangle {
-                anchors.fill: parent
-                color: "#000000"
-                opacity: 0.65
-            }
-
-            FocusScope {
-                id: cardFocus
-                anchors.centerIn: parent
-                width: 500
-                height: cardCol.implicitHeight + 32
-                focus: root.active
-                scale: root.active ? 1.0 : 0.96
-                opacity: root.active ? 1.0 : 0.0
-                Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-                Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-
-                Keys.onPressed: (e) => {
-                    if (e.key === Qt.Key_Escape) { root._cancel(); e.accepted = true; }
-                }
-
-                Rectangle {
-                    id: card
-                    anchors.fill: parent
-                    radius: 14
-                    color: Theme.bg
-                    border.color: Theme.mutedDeep
-                    border.width: 1
-                }
-
+    PopupCard {
+        open: root.active
+        cardWidth: 500
+        cardHeight: 320
+        backdropOpacity: 0.65
+        exclusiveKeyboard: true
+        onClosed: root._cancel()
+        contentComponent: Component {
+            Item {
                 ColumnLayout {
                     id: cardCol
                     anchors {
@@ -91,17 +55,17 @@ Scope {
                         verticalCenter: parent.verticalCenter
                         margins: 20
                     }
-                    spacing: 14
+                    spacing: Theme.spacing.lg
 
                     // Header: icon + title
                     RowLayout {
                         Layout.fillWidth: true
-                        spacing: 12
+                        spacing: Theme.spacing.lg
                         Text {
                             text: "󰒃"
                             color: Theme.accent.purple
                             font.family: Theme.font
-                            font.pixelSize: 30
+                            font.pixelSize: Theme.fontSize.hero
                         }
                         ColumnLayout {
                             Layout.fillWidth: true
@@ -110,7 +74,7 @@ Scope {
                                 text: "Authentication required"
                                 color: Theme.fg
                                 font.family: Theme.font
-                                font.pixelSize: 15
+                                font.pixelSize: Theme.fontSize.md
                                 font.bold: true
                             }
                             Text {
@@ -118,7 +82,7 @@ Scope {
                                 text: root.flow ? root.flow.actionId : ""
                                 color: Theme.mutedDeep
                                 font.family: Theme.font
-                                font.pixelSize: 10
+                                font.pixelSize: Theme.fontSize.xs
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
                             }
@@ -133,20 +97,20 @@ Scope {
                         text: root.flow ? root.flow.message : ""
                         color: Theme.fgMuted
                         font.family: Theme.font
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontSize.md
                         wrapMode: Text.WordWrap
                     }
 
                     // Identity selector (only when multiple identities)
                     RowLayout {
                         Layout.fillWidth: true
-                        spacing: 8
+                        spacing: Theme.spacing.md
                         visible: root.flow && root.flow.identities && root.flow.identities.length > 1
                         Text {
                             text: "Identity"
                             color: Theme.muted
                             font.family: Theme.font
-                            font.pixelSize: 11
+                            font.pixelSize: Theme.fontSize.sm
                         }
                         Text {
                             Layout.fillWidth: true
@@ -155,7 +119,7 @@ Scope {
                                 : ""
                             color: Theme.fg
                             font.family: Theme.font
-                            font.pixelSize: 13
+                            font.pixelSize: Theme.fontSize.base
                             elide: Text.ElideRight
                         }
                     }
@@ -178,7 +142,7 @@ Scope {
                             verticalAlignment: TextInput.AlignVCenter
                             color: Theme.fg
                             font.family: Theme.font
-                            font.pixelSize: 15
+                            font.pixelSize: Theme.fontSize.md
                             echoMode: root.flow && root.flow.responseVisible
                                 ? TextInput.Normal
                                 : TextInput.Password
@@ -202,6 +166,7 @@ Scope {
                             repeat: false
                             onTriggered: passwordField.forceActiveFocus()
                         }
+                        Component.onCompleted: if (root.active) focusDelay.restart()
                         Text {
                             anchors.fill: parent
                             anchors.leftMargin: 12
@@ -214,7 +179,7 @@ Scope {
                             }
                             color: Theme.disabled
                             font.family: Theme.font
-                            font.pixelSize: 15
+                            font.pixelSize: Theme.fontSize.md
                         }
                     }
 
@@ -225,14 +190,14 @@ Scope {
                         text: root.flow ? root.flow.supplementaryMessage : ""
                         color: root.flow && root.flow.supplementaryIsError ? "#f87171" : Theme.muted
                         font.family: Theme.font
-                        font.pixelSize: 11
+                        font.pixelSize: Theme.fontSize.sm
                         wrapMode: Text.WordWrap
                     }
 
                     RowLayout {
                         Layout.fillWidth: true
                         Layout.topMargin: 4
-                        spacing: 10
+                        spacing: Theme.spacing.md
 
                         Item { Layout.fillWidth: true }
 
@@ -249,7 +214,7 @@ Scope {
                                 text: "Cancel"
                                 color: Theme.fgMuted
                                 font.family: Theme.font
-                                font.pixelSize: 13
+                                font.pixelSize: Theme.fontSize.base
                             }
                             MouseArea {
                                 id: cancelMouse
@@ -271,7 +236,7 @@ Scope {
                                 text: "Authenticate"
                                 color: "#0a0a0a"
                                 font.family: Theme.font
-                                font.pixelSize: 13
+                                font.pixelSize: Theme.fontSize.base
                                 font.bold: true
                             }
                             MouseArea {

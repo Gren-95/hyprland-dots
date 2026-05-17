@@ -74,16 +74,16 @@ Scope {
                     RowLayout {
                         id: clockRow
                         anchors.centerIn: parent
-                        spacing: 8
+                        spacing: Theme.spacing.md
                         Text {
                             text: "  " + Qt.formatDate(clockTimer.now, "ddd, dd MMM")
                             color: Theme.muted
-                            font { family: Theme.font; pixelSize: 13 }
+                            font { family: Theme.font; pixelSize: Theme.fontSize.base }
                         }
                         Text {
                             text: Qt.formatTime(clockTimer.now, "HH:mm")
                             color: "#f5f5f4"
-                            font { family: Theme.font; pixelSize: 14; bold: true }
+                            font { family: Theme.font; pixelSize: Theme.fontSize.md; bold: true }
                         }
                     }
                     MouseArea {
@@ -107,14 +107,14 @@ Scope {
                     BarIcon {
                         id: launcherIcon
                         glyph: "󰀻"
-                        pixelSize: 18
+                        pixelSize: Theme.fontSize.xl
                         tooltip: "Open app launcher"
                         onClicked: spotlight.toggle()
                     }
                     BarSep {}
 
                     RowLayout {
-                        spacing: 8
+                        spacing: Theme.spacing.md
                         Repeater {
                             model: Hyprland.workspaces
                             delegate: Text {
@@ -122,7 +122,7 @@ Scope {
                                 text: workspaceGlyph(modelData.id)
                                 color: modelData.active ? "#f5f5f4" : Theme.mutedDeep
                                 font.family: Theme.font
-                                font.pixelSize: 16
+                                font.pixelSize: Theme.fontSize.lg
                                 MouseArea {
                                     anchors.fill: parent
                                     cursorShape: Qt.PointingHandCursor
@@ -141,7 +141,7 @@ Scope {
                         text: Hyprland.activeToplevel ? Hyprland.activeToplevel.title : ""
                         color: Theme.muted
                         font.family: Theme.font
-                        font.pixelSize: 13
+                        font.pixelSize: Theme.fontSize.base
                     }
                 }
 
@@ -152,7 +152,7 @@ Scope {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 0
                     RowLayout {
-                        spacing: 10
+                        spacing: Theme.spacing.md
                         Repeater {
                             model: SystemTray.items
                             delegate: TrayItem {
@@ -189,7 +189,7 @@ Scope {
                         color: !enabled ? Theme.mutedDeep
                             : connected ? Theme.accent.green
                             : Theme.muted
-                        pixelSize: 14
+                        pixelSize: Theme.fontSize.md
                         tooltip: !enabled ? "Wi-Fi off"
                             : connected && btMod.activeNetwork ? btMod.activeNetwork.name
                             : "Wi-Fi"
@@ -209,7 +209,7 @@ Scope {
                         visible: TailscaleService.running
                         glyph: "󰒃"
                         color: Theme.accent.purple
-                        pixelSize: 14
+                        pixelSize: Theme.fontSize.md
                         tooltip: TailscaleService.tailnet || "VPN"
                         onClicked: {
                             if (btMod.popupOpen && btMod.activeTab === "vpn") {
@@ -387,7 +387,7 @@ Scope {
             text: bc.glyph
             color: bc.color
             font.family: Theme.font
-            font.pixelSize: 14
+            font.pixelSize: Theme.fontSize.md
         }
         MouseArea {
             anchors.fill: parent

@@ -127,7 +127,7 @@ Scope {
                 RowLayout {
                     id: hudRow
                     anchors.centerIn: parent
-                    spacing: 12
+                    spacing: Theme.spacing.lg
 
                     Rectangle {
                         Layout.preferredWidth: 12
@@ -140,7 +140,7 @@ Scope {
                         text: root._justStarted ? "Recording started" : "Recording saved"
                         color: Theme.fg
                         font.family: Theme.font
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fontSize.base
                         font.bold: true
                     }
 
@@ -167,7 +167,7 @@ Scope {
                             text: "󰓛  Stop"
                             color: stopMouse.containsMouse ? Theme.fg : "#f87171"
                             font.family: Theme.font
-                            font.pixelSize: 11
+                            font.pixelSize: Theme.fontSize.sm
                             font.bold: true
                         }
                         MouseArea {

@@ -5,7 +5,6 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
 
 Scope {
     id: root
@@ -117,107 +116,72 @@ Scope {
     Process { id: delProc; command: [] }
     Process { id: wipeProc; command: [] }
 
-    Variants {
-        model: Quickshell.screens
-        PanelWindow {
-            id: win
-            required property var modelData
-            screen: modelData
-            visible: root.open
-            color: "transparent"
-
-            anchors { top: true; bottom: true; left: true; right: true }
-            WlrLayershell.exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: root.open ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
-
-            Rectangle {
-                anchors.fill: parent
-                color: "#000000"
-                opacity: 0.45
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: root.close()
-                }
+    PopupCard {
+        open: root.open
+        cardWidth: 800
+        cardHeight: 620
+        onClosed: root.close()
+        onKeyPressed: (e) => {
+            const n = root.filtered.length;
+            const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
+            if (e.key === Qt.Key_Down) {
+                if (n > 0) root.selectedIndex = Math.min(n - 1, root.selectedIndex + 1);
+                e.accepted = true;
+            } else if (e.key === Qt.Key_Up) {
+                root.selectedIndex = Math.max(0, root.selectedIndex - 1);
+                e.accepted = true;
+            } else if (e.key === Qt.Key_PageDown) {
+                if (n > 0) root.selectedIndex = Math.min(n - 1, root.selectedIndex + 8);
+                e.accepted = true;
+            } else if (e.key === Qt.Key_PageUp) {
+                root.selectedIndex = Math.max(0, root.selectedIndex - 8);
+                e.accepted = true;
+            } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
+                root.activate(root.selectedIndex); e.accepted = true;
+            } else if (ctrl && (e.modifiers & Qt.ShiftModifier) && (e.key === Qt.Key_D || e.key === Qt.Key_Delete)) {
+                root.deleteAll(); e.accepted = true;
+            } else if (ctrl && (e.key === Qt.Key_D || e.key === Qt.Key_Delete)) {
+                root.deleteEntry(root.selectedIndex); e.accepted = true;
+            } else if (e.key === Qt.Key_Backspace) {
+                root.query = root.query.slice(0, -1);
+                root.selectedIndex = 0;
+                e.accepted = true;
+            } else if (e.text && e.text.length > 0 && e.text.charCodeAt(0) >= 32) {
+                root.query += e.text;
+                root.selectedIndex = 0;
+                e.accepted = true;
             }
-
-            Rectangle {
-                id: card
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: Math.round(parent.height * 0.18)
-                width: 800
-                height: Math.min(620, headerCol.implicitHeight + resultsCol.implicitHeight + 28)
-                radius: 14
-                color: Theme.bgAlt
-                border.color: Theme.mutedDeep
-                border.width: 1
-                scale: root.open ? 1.0 : 0.96
-                opacity: root.open ? 1.0 : 0.0
-                Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-                Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-                focus: root.open
-                Keys.onPressed: (e) => {
-                    const n = root.filtered.length;
-                    const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
-                    if (e.key === Qt.Key_Escape) {
-                        root.close(); e.accepted = true;
-                    } else if (e.key === Qt.Key_Down) {
-                        if (n > 0) root.selectedIndex = Math.min(n - 1, root.selectedIndex + 1);
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_Up) {
-                        root.selectedIndex = Math.max(0, root.selectedIndex - 1);
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_PageDown) {
-                        if (n > 0) root.selectedIndex = Math.min(n - 1, root.selectedIndex + 8);
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_PageUp) {
-                        root.selectedIndex = Math.max(0, root.selectedIndex - 8);
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
-                        root.activate(root.selectedIndex); e.accepted = true;
-                    } else if (ctrl && (e.modifiers & Qt.ShiftModifier) && (e.key === Qt.Key_D || e.key === Qt.Key_Delete)) {
-                        root.deleteAll(); e.accepted = true;
-                    } else if (ctrl && (e.key === Qt.Key_D || e.key === Qt.Key_Delete)) {
-                        root.deleteEntry(root.selectedIndex); e.accepted = true;
-                    } else if (e.key === Qt.Key_Backspace) {
-                        root.query = root.query.slice(0, -1);
-                        root.selectedIndex = 0;
-                        e.accepted = true;
-                    } else if (e.text && e.text.length > 0 && e.text.charCodeAt(0) >= 32) {
-                        root.query += e.text;
-                        root.selectedIndex = 0;
-                        e.accepted = true;
-                    }
-                }
-
+        }
+        contentComponent: Component {
+            Item {
                 ColumnLayout {
                     id: headerCol
                     anchors { top: parent.top; left: parent.left; right: parent.right }
-                    anchors.margins: 14
-                    spacing: 8
+                    anchors.margins: Theme.spacing.lg
+                    spacing: Theme.spacing.md
 
                     RowLayout {
                         Layout.fillWidth: true
-                        spacing: 14
+                        spacing: Theme.spacing.lg
                         Text {
                             text: "󰅍"
                             color: Theme.muted
                             font.family: Theme.font
-                            font.pixelSize: 30
+                            font.pixelSize: Theme.fontSize.hero
                         }
                         Text {
                             Layout.fillWidth: true
                             text: root.query || "Clipboard history"
                             color: root.query ? Theme.fg : Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 24
+                            font.pixelSize: Theme.fontSize.xxl
                             elide: Text.ElideRight
                         }
                         Text {
                             text: root.filtered.length + " items"
                             color: Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 13
+                            font.pixelSize: Theme.fontSize.base
                         }
                     }
                     Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderStrong }
@@ -273,7 +237,7 @@ Scope {
                             text: root.items.length === 0 ? "Clipboard is empty" : "No matches"
                             color: Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 15
+                            font.pixelSize: Theme.fontSize.md
                             Layout.alignment: Qt.AlignHCenter
                             Layout.topMargin: 24
                         }
@@ -289,24 +253,24 @@ Scope {
                         anchors.fill: parent
                         anchors.leftMargin: 14
                         anchors.rightMargin: 14
-                        spacing: 14
+                        spacing: Theme.spacing.lg
                         Text {
                             text: "↵ Copy"
                             color: Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 11
+                            font.pixelSize: Theme.fontSize.sm
                         }
                         Text {
                             text: "Ctrl+D Delete"
                             color: Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 11
+                            font.pixelSize: Theme.fontSize.sm
                         }
                         Text {
                             text: "Esc Close"
                             color: Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 11
+                            font.pixelSize: Theme.fontSize.sm
                         }
                         Item { Layout.fillWidth: true }
                         Rectangle {
@@ -323,7 +287,7 @@ Scope {
                                 text: "󰩺  Delete all"
                                 color: wipeMouse.containsMouse ? Theme.fg : "#f87171"
                                 font.family: Theme.font
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize.sm
                             }
                             MouseArea {
                                 id: wipeMouse
@@ -374,12 +338,12 @@ Scope {
             anchors.fill: parent
             anchors.leftMargin: 12
             anchors.rightMargin: 12
-            spacing: 12
+            spacing: Theme.spacing.lg
             Text {
                 text: row.entry ? row.entry.id : ""
                 color: Theme.mutedDeep
                 font.family: Theme.font
-                font.pixelSize: 11
+                font.pixelSize: Theme.fontSize.sm
                 Layout.preferredWidth: 36
                 horizontalAlignment: Text.AlignRight
                 verticalAlignment: Text.AlignVCenter
@@ -425,7 +389,7 @@ Scope {
                     text: row.entry ? row.entry.preview : ""
                     color: Theme.fg
                     font.family: Theme.font
-                    font.pixelSize: 15
+                    font.pixelSize: Theme.fontSize.md
                     font.bold: row.highlighted
                     elide: Text.ElideRight
                     wrapMode: Text.NoWrap
@@ -439,7 +403,7 @@ Scope {
                         : ""
                     color: Theme.muted
                     font.family: Theme.font
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fontSize.sm
                     elide: Text.ElideRight
                 }
             }
@@ -448,7 +412,7 @@ Scope {
                 text: "↵"
                 color: Theme.mutedDeep
                 font.family: Theme.font
-                font.pixelSize: 14
+                font.pixelSize: Theme.fontSize.md
             }
         }
         MouseArea {

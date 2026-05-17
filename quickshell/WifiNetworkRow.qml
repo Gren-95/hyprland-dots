@@ -9,7 +9,7 @@ Rectangle {
     signal picked()
     signal forgetRequested()
     Layout.fillWidth: true
-    implicitHeight: 36
+    implicitHeight: Theme.height.rowSm
     radius: 6
     color: wr.highlighted ? "#3b3531" : (wHover.containsMouse ? Theme.bgAlt : "transparent")
     Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
@@ -22,12 +22,12 @@ Rectangle {
         anchors.fill: parent
         anchors.leftMargin: 8
         anchors.rightMargin: 8
-        spacing: 8
+        spacing: Theme.spacing.md
         Text {
             text: wr.isConnected ? "󰖩" : (wr.isKnown ? "󰤨" : "󰖪")
             color: wr.isConnected ? Theme.accent.green : (wr.isKnown ? Theme.muted : Theme.mutedDeep)
             font.family: Theme.font
-            font.pixelSize: 14
+            font.pixelSize: Theme.fontSize.md
         }
         Text {
             Layout.fillWidth: true
@@ -35,7 +35,7 @@ Rectangle {
             color: "#f5f5f4"
             elide: Text.ElideRight
             font.family: Theme.font
-            font.pixelSize: 12
+            font.pixelSize: Theme.fontSize.base
             font.bold: wr.isConnected
         }
         Text {
@@ -43,21 +43,21 @@ Rectangle {
             text: "…"
             color: Theme.accent.yellow
             font.family: Theme.font
-            font.pixelSize: 12
+            font.pixelSize: Theme.fontSize.base
         }
         Text {
             visible: wr.isKnown && !wr.isConnected && !wr.isBusy
             text: "saved"
             color: Theme.mutedDeep
             font.family: Theme.font
-            font.pixelSize: 10
+            font.pixelSize: Theme.fontSize.xs
         }
         Text {
             visible: wr.isConnected
             text: "✓"
             color: Theme.accent.green
             font.family: Theme.font
-            font.pixelSize: 12
+            font.pixelSize: Theme.fontSize.base
         }
     }
 

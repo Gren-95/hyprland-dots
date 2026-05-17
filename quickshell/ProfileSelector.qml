@@ -13,7 +13,7 @@ ColumnLayout {
     property int highlightedIndex: -1
     signal picked(int index)
     signal hovered(int index)
-    spacing: 6
+    spacing: Theme.spacing.sm
 
     function _glyph(p)  { return p === PowerProfile.Performance ? "󱐋"          : p === PowerProfile.Balanced ? "󰾅" : "󰌪" }
     function _label(p)  { return p === PowerProfile.Performance ? "Performance" : p === PowerProfile.Balanced ? "Balanced" : "Power Saver" }
@@ -33,7 +33,7 @@ ColumnLayout {
             readonly property color accent: ps._accent(modelData)
 
             Layout.fillWidth: true
-            implicitHeight: 56
+            implicitHeight: Theme.height.card
             radius: 10
             color: isActive
                 ? Qt.rgba(accent.r, accent.g, accent.b, 0.10)
@@ -47,7 +47,7 @@ ColumnLayout {
                 anchors.fill: parent
                 anchors.leftMargin: 14
                 anchors.rightMargin: 14
-                spacing: 14
+                spacing: Theme.spacing.lg
 
                 // Icon column with tinted background
                 Rectangle {
@@ -61,7 +61,7 @@ ColumnLayout {
                         text: ps._glyph(card.modelData)
                         color: card.accent
                         font.family: Theme.font
-                        font.pixelSize: 18
+                        font.pixelSize: Theme.fontSize.xl
                     }
                 }
 
@@ -74,7 +74,7 @@ ColumnLayout {
                         text: ps._label(card.modelData)
                         color: card.isActive ? Theme.fg : Theme.fgDim
                         font.family: Theme.font
-                        font.pixelSize: 13
+                        font.pixelSize: Theme.fontSize.base
                         font.bold: card.isActive
                     }
                     Text {
@@ -82,7 +82,7 @@ ColumnLayout {
                         text: ps._desc(card.modelData)
                         color: Theme.mutedDeep
                         font.family: Theme.font
-                        font.pixelSize: 10
+                        font.pixelSize: Theme.fontSize.xs
                         elide: Text.ElideRight
                     }
                 }

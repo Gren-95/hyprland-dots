@@ -12,16 +12,16 @@ ColumnLayout {
     signal launchMixer()
     signal deviceHovered(int idx)
     signal toggleHovered()
-    spacing: 6
+    spacing: Theme.spacing.sm
 
     RowLayout {
         Layout.fillWidth: true
-        spacing: 8
+        spacing: Theme.spacing.md
         Text {
             text: section.title
             color: "#f5f5f4"
             font.family: Theme.font
-            font.pixelSize: 13
+            font.pixelSize: Theme.fontSize.base
             font.bold: true
         }
         Item { Layout.fillWidth: true }
@@ -40,7 +40,7 @@ ColumnLayout {
 
     RowLayout {
         Layout.fillWidth: true
-        spacing: 8
+        spacing: Theme.spacing.md
         visible: !!(section.node && section.node.audio)
         VolumeSlider {
             Layout.fillWidth: true
@@ -54,7 +54,7 @@ ColumnLayout {
                 ? Math.round(section.node.audio.volume * 100) + "%" : ""
             color: "#f5f5f4"
             font.family: Theme.font
-            font.pixelSize: 11
+            font.pixelSize: Theme.fontSize.sm
             Layout.preferredWidth: 40
             horizontalAlignment: Text.AlignRight
         }

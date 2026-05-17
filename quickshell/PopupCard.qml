@@ -1,19 +1,22 @@
 // Centered modal overlay: full-screen dim backdrop + a centered Rectangle.
-// Esc closes, click-outside closes, opacity/scale animates on open/close.
+// Esc closes, click-outside closes, scale+opacity animates on open/close.
+//
+// Pass content via `contentComponent: Component { ... }` (not default-alias
+// — that doesn't work across the per-screen Variants delegate).
 import QtQuick
-import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 
 Scope {
     id: root
     property bool open: false
-    default property alias content: contentSlot.data
     property int cardWidth: 640
     property int cardHeight: 480
     property real backdropOpacity: 0.45
-    property bool exclusiveKeyboard: false   // Polkit wants this; most don't
+    property bool exclusiveKeyboard: false
+    property Component contentComponent: null
     signal closed()
+    signal keyPressed(var event)
 
     function close() { open = false; root.closed(); }
 
@@ -40,17 +43,19 @@ Scope {
             }
 
             FocusScope {
+                id: focusWrap
                 anchors.fill: parent
                 focus: root.open
                 Keys.onPressed: (e) => {
-                    if (e.key === Qt.Key_Escape) { root.close(); e.accepted = true; }
+                    if (e.key === Qt.Key_Escape) { root.close(); e.accepted = true; return; }
+                    root.keyPressed(e);
                 }
 
                 Rectangle {
                     anchors.centerIn: parent
                     width: root.cardWidth
                     height: root.cardHeight
-                    radius: 14
+                    radius: Theme.radius.lg
                     color: Theme.bgAlt
                     border.color: Theme.borderStrong
                     border.width: 1
@@ -59,9 +64,10 @@ Scope {
                     Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
                     Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
 
-                    Item {
-                        id: contentSlot
+                    Loader {
                         anchors.fill: parent
+                        active: root.open
+                        sourceComponent: root.contentComponent
                     }
                 }
             }

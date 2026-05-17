@@ -7,7 +7,7 @@ Item {
     property string label: ""
     property string tooltip: ""
     property color color: "#f5f5f4"
-    property int pixelSize: 14
+    property int pixelSize: Theme.fontSize.md
     signal clicked()
     signal wheel(bool up)
     Layout.fillHeight: true
@@ -15,7 +15,7 @@ Item {
     RowLayout {
         id: row
         anchors.centerIn: parent
-        spacing: 4
+        spacing: Theme.spacing.xs
         Text {
             text: bi.glyph
             color: bi.color
@@ -27,7 +27,7 @@ Item {
             text: bi.label
             color: bi.color
             font.family: Theme.font
-            font.pixelSize: 13
+            font.pixelSize: Theme.fontSize.base
         }
     }
     MouseArea {

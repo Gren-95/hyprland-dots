@@ -7,7 +7,7 @@ Rectangle {
     property bool highlighted: false
     signal hovered()
     Layout.fillWidth: true
-    implicitHeight: 36
+    implicitHeight: Theme.height.rowSm
     radius: 6
     color: dr.highlighted ? "#3b3531" : (hover.containsMouse ? Theme.bgAlt : "transparent")
     Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
@@ -16,12 +16,12 @@ Rectangle {
         anchors.fill: parent
         anchors.leftMargin: 8
         anchors.rightMargin: 8
-        spacing: 8
+        spacing: Theme.spacing.md
         Text {
             text: dr.device && dr.device.connected ? "󰂱" : "󰂯"
             color: dr.device && dr.device.connected ? "#60a5fa" : Theme.mutedDeep
             font.family: Theme.font
-            font.pixelSize: 14
+            font.pixelSize: Theme.fontSize.md
         }
         Text {
             Layout.fillWidth: true
@@ -29,21 +29,21 @@ Rectangle {
             color: "#f5f5f4"
             elide: Text.ElideRight
             font.family: Theme.font
-            font.pixelSize: 12
+            font.pixelSize: Theme.fontSize.base
         }
         Text {
             visible: dr.device && dr.device.batteryAvailable
             text: dr.device ? Math.round(dr.device.battery * 100) + "%" : ""
             color: Theme.muted
             font.family: Theme.font
-            font.pixelSize: 11
+            font.pixelSize: Theme.fontSize.sm
         }
         Text {
             visible: dr.device && dr.device.pairing
             text: "pairing…"
             color: Theme.accent.yellow
             font.family: Theme.font
-            font.pixelSize: 11
+            font.pixelSize: Theme.fontSize.sm
         }
     }
 

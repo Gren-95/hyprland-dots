@@ -190,16 +190,16 @@ Scope {
                 ColumnLayout {
                     id: cardCol
                     anchors.centerIn: parent
-                    spacing: 8
+                    spacing: Theme.spacing.md
 
                     RowLayout {
                         Layout.alignment: Qt.AlignHCenter
-                        spacing: 12
+                        spacing: Theme.spacing.lg
                         Text {
                             text: root.osdIcon
                             color: root.osdMuted ? Theme.mutedDeep : root.osdAccent
                             font.family: Theme.font
-                            font.pixelSize: 28
+                            font.pixelSize: Theme.fontSize.hero
                         }
                         ColumnLayout {
                             spacing: 0
@@ -207,13 +207,13 @@ Scope {
                                 text: root.osdLabel
                                 color: Theme.muted
                                 font.family: Theme.font
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize.sm
                             }
                             Text {
                                 text: root.osdMuted ? "Muted" : Math.round(root.osdLevel * 100) + "%"
                                 color: Theme.fg
                                 font.family: Theme.font
-                                font.pixelSize: 18
+                                font.pixelSize: Theme.fontSize.xl
                                 font.bold: true
                             }
                         }

@@ -154,19 +154,19 @@ Item {
     RowLayout {
         id: row
         anchors.centerIn: parent
-        spacing: 6
+        spacing: Theme.spacing.sm
         Text {
             text: !bt.powered ? "󰂲" : (bt.connectedDevices.length ? "󰂱" : "󰂯")
             color: !bt.powered ? Theme.mutedDeep : "#60a5fa"
             font.family: Theme.font
-            font.pixelSize: 14
+            font.pixelSize: Theme.fontSize.md
         }
         Text {
             visible: bt.powered && bt.connectedDevices.length > 0
             text: bt.connectedDevices.length
             color: "#60a5fa"
             font.family: Theme.font
-            font.pixelSize: 13
+            font.pixelSize: Theme.fontSize.base
         }
     }
 
@@ -245,13 +245,13 @@ Item {
             ColumnLayout {
                 id: contentCol
                 anchors.fill: parent
-                anchors.margins: 12
-                spacing: 8
+                anchors.margins: Theme.spacing.lg
+                spacing: Theme.spacing.md
 
                 // ===== Header with pin + tab strip =====
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 8
+                    spacing: Theme.spacing.md
                     PinButton {
                         pinned: bt.pinned
                         onToggled: bt.pinned = !bt.pinned
@@ -318,11 +318,11 @@ Item {
                 Component {
                     id: btPane
                     ColumnLayout {
-                        spacing: 8
+                        spacing: Theme.spacing.md
 
                         RowLayout {
                             Layout.fillWidth: true
-                            spacing: 8
+                            spacing: Theme.spacing.md
                             Text {
                                 text: !bt.adapter ? "No adapter"
                                     : bt.powered
@@ -330,7 +330,7 @@ Item {
                                         : "Bluetooth is off"
                                 color: Theme.muted
                                 font.family: Theme.font
-                                font.pixelSize: 12
+                                font.pixelSize: Theme.fontSize.base
                             }
                             Item { Layout.fillWidth: true }
                             BtToggle {
@@ -356,7 +356,7 @@ Item {
                             text: "No known devices"
                             color: Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontSize.base
                             horizontalAlignment: Text.AlignHCenter
                         }
 
@@ -381,11 +381,11 @@ Item {
                 Component {
                     id: wifiPane
                     ColumnLayout {
-                        spacing: 8
+                        spacing: Theme.spacing.md
 
                         RowLayout {
                             Layout.fillWidth: true
-                            spacing: 8
+                            spacing: Theme.spacing.md
                             Text {
                                 text: !bt.wifiDevice ? "No wireless adapter"
                                     : !bt.wifiEnabled ? "Wi-Fi is off"
@@ -393,7 +393,7 @@ Item {
                                     : (bt.visibleNetworks.length + " networks")
                                 color: Theme.muted
                                 font.family: Theme.font
-                                font.pixelSize: 12
+                                font.pixelSize: Theme.fontSize.base
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
                             }
@@ -420,7 +420,7 @@ Item {
                             text: "Scanning for networks…"
                             color: Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontSize.base
                             horizontalAlignment: Text.AlignHCenter
                         }
                         Text {
@@ -429,7 +429,7 @@ Item {
                             text: "Turn on Wi-Fi to see networks"
                             color: Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontSize.base
                             horizontalAlignment: Text.AlignHCenter
                         }
 
@@ -456,11 +456,11 @@ Item {
                 Component {
                     id: vpnPane
                     ColumnLayout {
-                        spacing: 8
+                        spacing: Theme.spacing.md
 
                         RowLayout {
                             Layout.fillWidth: true
-                            spacing: 8
+                            spacing: Theme.spacing.md
                             Text {
                                 Layout.fillWidth: true
                                 text: !TailscaleService.daemonOk ? "tailscaled is not running"
@@ -469,7 +469,7 @@ Item {
                                     : "Connected"
                                 color: Theme.muted
                                 font.family: Theme.font
-                                font.pixelSize: 12
+                                font.pixelSize: Theme.fontSize.base
                                 elide: Text.ElideRight
                             }
                             BtToggle {
@@ -499,14 +499,14 @@ Item {
                                 text: TailscaleService.host
                                 color: Theme.fg
                                 font.family: Theme.font
-                                font.pixelSize: 12
+                                font.pixelSize: Theme.fontSize.base
                                 font.bold: true
                             }
                             Text {
                                 text: TailscaleService.selfIPs.join("  ·  ")
                                 color: Theme.mutedDeep
                                 font.family: Theme.font
-                                font.pixelSize: 10
+                                font.pixelSize: Theme.fontSize.xs
                             }
                         }
 
@@ -516,7 +516,7 @@ Item {
                             text: "sudo systemctl enable --now tailscaled"
                             color: Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 10
+                            font.pixelSize: Theme.fontSize.xs
                             horizontalAlignment: Text.AlignHCenter
                         }
 
@@ -526,7 +526,7 @@ Item {
                             text: "No peers"
                             color: Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontSize.base
                             horizontalAlignment: Text.AlignHCenter
                         }
 
