@@ -63,7 +63,7 @@ Item {
         text: "󰍝"
         color: actions.popupOpen ? Theme.accent.blue : Theme.fgMuted
         font.family: Theme.font
-        font.pixelSize: 18
+        font.pixelSize: Theme.fontSize.xl
         rotation: actions.popupOpen ? 180 : 0
         Behavior on rotation { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
     }
@@ -190,14 +190,14 @@ Item {
                     top: parent.top
                     left: parent.left
                     right: parent.right
-                    margins: 14
+                    margins: Theme.spacing.lg
                 }
-                spacing: 12
+                spacing: Theme.spacing.lg
 
                 // Header
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 8
+                    spacing: Theme.spacing.md
                     PinButton {
                         pinned: actions.pinned
                         onToggled: actions.pinned = !actions.pinned
@@ -206,7 +206,7 @@ Item {
                         text: "Quick actions"
                         color: Theme.fg
                         font.family: Theme.font
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontSize.md
                         font.bold: true
                     }
                     Item { Layout.fillWidth: true }
@@ -215,7 +215,7 @@ Item {
                 // Toggle row: full-width pills with explicit on/off state
                 ColumnLayout {
                     Layout.fillWidth: true
-                    spacing: 6
+                    spacing: Theme.spacing.sm
                     Repeater {
                         model: actions.toggles
                         delegate: ToggleRow {
@@ -237,8 +237,8 @@ Item {
                 GridLayout {
                     Layout.fillWidth: true
                     columns: 3
-                    columnSpacing: 6
-                    rowSpacing: 6
+                    columnSpacing: Theme.spacing.sm
+                    rowSpacing: Theme.spacing.sm
                     Repeater {
                         model: actions.oneShots
                         delegate: ActionTile {
@@ -286,7 +286,7 @@ Item {
             anchors.fill: parent
             anchors.leftMargin: 12
             anchors.rightMargin: 12
-            spacing: 12
+            spacing: Theme.spacing.lg
 
             // Icon square
             Rectangle {
@@ -302,7 +302,7 @@ Item {
                         : (row.entry ? row.entry.offGlyph : "")
                     color: row.on ? row.accent : Theme.muted
                     font.family: Theme.font
-                    font.pixelSize: 18
+                    font.pixelSize: Theme.fontSize.xl
                 }
             }
 
@@ -315,7 +315,7 @@ Item {
                     text: row.entry ? row.entry.label : ""
                     color: row.on ? Theme.fg : Theme.fgDim
                     font.family: Theme.font
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fontSize.base
                     font.bold: row.on
                 }
                 Text {
@@ -323,7 +323,7 @@ Item {
                     text: row.entry ? row.entry.description : ""
                     color: Theme.mutedDeep
                     font.family: Theme.font
-                    font.pixelSize: 10
+                    font.pixelSize: Theme.fontSize.xs
                     elide: Text.ElideRight
                 }
             }
@@ -368,7 +368,7 @@ Item {
         signal picked()
         signal hovered()
         readonly property color accent: tile.entry ? tile.entry.accent : Theme.fg
-        implicitHeight: 78
+        implicitHeight: Theme.height.tile
         radius: 10
         color: tile.highlighted
             ? Qt.rgba(accent.r, accent.g, accent.b, 0.12)
@@ -382,7 +382,7 @@ Item {
 
         ColumnLayout {
             anchors.centerIn: parent
-            spacing: 5
+            spacing: Theme.spacing.xs
             Rectangle {
                 Layout.alignment: Qt.AlignHCenter
                 Layout.preferredWidth: 36
@@ -394,7 +394,7 @@ Item {
                     text: tile.entry ? tile.entry.glyph : ""
                     color: tile.accent
                     font.family: Theme.font
-                    font.pixelSize: 18
+                    font.pixelSize: Theme.fontSize.xl
                 }
             }
             Text {
@@ -403,7 +403,7 @@ Item {
                 text: tile.entry ? tile.entry.label : ""
                 color: tile.highlighted ? Theme.fg : Theme.fgMuted
                 font.family: Theme.font
-                font.pixelSize: 10
+                font.pixelSize: Theme.fontSize.xs
                 font.bold: tile.highlighted
                 elide: Text.ElideRight
                 horizontalAlignment: Text.AlignHCenter

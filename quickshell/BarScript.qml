@@ -25,7 +25,7 @@ Item {
         text: bs.display
         color: bs.colorForClass(bs.klass)
         font.family: Theme.font
-        font.pixelSize: 14
+        font.pixelSize: Theme.fontSize.md
     }
 
     MouseArea {

@@ -8,7 +8,7 @@ Rectangle {
     property bool highlighted: false
     signal picked()
     signal hovered()
-    implicitHeight: 26
+    implicitHeight: Theme.height.control
     radius: 4
     color: arow.highlighted ? "#3b3531"
          : arow.isActive ? Theme.bgHover
@@ -19,12 +19,12 @@ Rectangle {
         anchors.fill: parent
         anchors.leftMargin: 8
         anchors.rightMargin: 8
-        spacing: 6
+        spacing: Theme.spacing.sm
         Text {
             text: arow.isActive ? "●" : "○"
             color: arow.isActive ? "#60a5fa" : Theme.mutedDeep
             font.family: Theme.font
-            font.pixelSize: 11
+            font.pixelSize: Theme.fontSize.sm
         }
         Text {
             Layout.fillWidth: true
@@ -32,7 +32,7 @@ Rectangle {
             color: "#f5f5f4"
             elide: Text.ElideRight
             font.family: Theme.font
-            font.pixelSize: 11
+            font.pixelSize: Theme.fontSize.sm
             font.bold: arow.isActive
         }
     }

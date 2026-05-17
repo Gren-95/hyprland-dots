@@ -10,7 +10,7 @@ Rectangle {
     signal exitToggled()
     signal hovered()
     Layout.fillWidth: true
-    implicitHeight: 40
+    implicitHeight: Theme.height.row
     radius: 6
     color: vrow.highlighted ? "#3b3531" : (vrowMa.containsMouse ? Theme.bgAlt : "transparent")
     border.color: vrow.isExitNode ? Theme.accent.purple : "transparent"
@@ -22,7 +22,7 @@ Rectangle {
         anchors.fill: parent
         anchors.leftMargin: 8
         anchors.rightMargin: 8
-        spacing: 8
+        spacing: Theme.spacing.md
 
         Rectangle {
             Layout.preferredWidth: 8
@@ -39,7 +39,7 @@ Rectangle {
                 text: vrow.entry ? vrow.entry.host : ""
                 color: Theme.fg
                 font.family: Theme.font
-                font.pixelSize: 12
+                font.pixelSize: Theme.fontSize.base
                 font.bold: vrow.entry && vrow.entry.online
                 elide: Text.ElideRight
             }
@@ -48,7 +48,7 @@ Rectangle {
                 text: vrow.entry && vrow.entry.ips.length > 0 ? vrow.entry.ips[0] : ""
                 color: Theme.mutedDeep
                 font.family: Theme.font
-                font.pixelSize: 9
+                font.pixelSize: Theme.fontSize.xs
                 elide: Text.ElideRight
             }
         }
@@ -65,7 +65,7 @@ Rectangle {
                 text: "↗"
                 color: vrow.isExitNode ? "#0a0a0a" : Theme.muted
                 font.family: Theme.font
-                font.pixelSize: 11
+                font.pixelSize: Theme.fontSize.sm
                 font.bold: true
             }
             MouseArea {
@@ -78,7 +78,7 @@ Rectangle {
             text: "󰆏"
             color: vrowMa.containsMouse ? Theme.muted : Theme.border
             font.family: Theme.font
-            font.pixelSize: 12
+            font.pixelSize: Theme.fontSize.base
         }
     }
 

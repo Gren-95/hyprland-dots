@@ -195,18 +195,18 @@ Scope {
 
             RowLayout {
                 anchors.fill: parent
-                anchors.margins: 16
-                spacing: 16
+                anchors.margins: Theme.spacing.xl
+                spacing: Theme.spacing.xl
 
                 // ====== Left pane: month grid ======
                 ColumnLayout {
                     Layout.preferredWidth: 280
                     Layout.fillHeight: true
-                    spacing: 10
+                    spacing: Theme.spacing.md
 
                     RowLayout {
                         Layout.fillWidth: true
-                        spacing: 8
+                        spacing: Theme.spacing.md
                         PinButton {
                             pinned: root.pinned
                             onToggled: root.pinned = !root.pinned
@@ -216,7 +216,7 @@ Scope {
                             text: Qt.formatDate(root.selectedDate, "MMMM yyyy")
                             color: Theme.fg
                             font.family: Theme.font
-                            font.pixelSize: 20
+                            font.pixelSize: Theme.fontSize.xl
                             font.bold: true
                             elide: Text.ElideRight
                         }
@@ -241,7 +241,7 @@ Scope {
                                 text: modelData
                                 color: index >= 5 ? Theme.disabled : Theme.mutedDeep
                                 font.family: Theme.font
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize.sm
                                 font.bold: true
                                 horizontalAlignment: Text.AlignHCenter
                             }
@@ -288,7 +288,7 @@ Scope {
                         text: "←/→ day · ↑/↓ week · PgUp/PgDn month · T today · Esc close"
                         color: Theme.disabled
                         font.family: Theme.font
-                        font.pixelSize: 10
+                        font.pixelSize: Theme.fontSize.xs
                     }
                 }
 
@@ -303,20 +303,20 @@ Scope {
                 ColumnLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    spacing: 10
+                    spacing: Theme.spacing.md
 
                     Text {
                         text: Qt.formatDate(root.selectedDate, "dddd")
                         color: Theme.fg
                         font.family: Theme.font
-                        font.pixelSize: 16
+                        font.pixelSize: Theme.fontSize.lg
                         font.bold: true
                     }
                     Text {
                         text: Qt.formatDate(root.selectedDate, "d MMMM yyyy")
                         color: Theme.muted
                         font.family: Theme.font
-                        font.pixelSize: 13
+                        font.pixelSize: Theme.fontSize.base
                     }
 
                     Flickable {
@@ -331,7 +331,7 @@ Scope {
                         ColumnLayout {
                             id: eventsCol
                             width: eventsFlick.width
-                            spacing: 6
+                            spacing: Theme.spacing.sm
 
                             Text {
                                 Layout.fillWidth: true
@@ -341,7 +341,7 @@ Scope {
                                     : "No events"
                                 color: Theme.disabled
                                 font.family: Theme.font
-                                font.pixelSize: 13
+                                font.pixelSize: Theme.fontSize.base
                                 horizontalAlignment: Text.AlignHCenter
                                 Layout.topMargin: 16
                                 wrapMode: Text.WordWrap
@@ -365,7 +365,7 @@ Scope {
                                 text: "Upcoming"
                                 color: Theme.mutedDeep
                                 font.family: Theme.font
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize.sm
                                 font.bold: true
                             }
                             Repeater {
@@ -408,7 +408,7 @@ Scope {
             text: nav.glyph
             color: Theme.fgMuted
             font.family: Theme.font
-            font.pixelSize: nav.wide ? 11 : 16
+            font.pixelSize: nav.wide ? Theme.fontSize.sm : Theme.fontSize.lg
             font.bold: nav.wide
         }
         MouseArea {
@@ -452,7 +452,7 @@ Scope {
                  : cell.isWeekend ? Theme.muted
                  : Theme.fgDim
             font.family: Theme.font
-            font.pixelSize: 16
+            font.pixelSize: Theme.fontSize.lg
             font.bold: cell.isToday || cell.isSelected
         }
         // Event indicator dots (up to 3, then "+N")
@@ -503,11 +503,11 @@ Scope {
         ColumnLayout {
             id: erCol
             anchors.fill: parent
-            anchors.margins: 8
+            anchors.margins: Theme.spacing.md
             spacing: 3
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 8
+                spacing: Theme.spacing.md
                 Rectangle {
                     Layout.preferredWidth: 3
                     Layout.preferredHeight: 18
@@ -524,14 +524,14 @@ Scope {
                     maximumLineCount: 2
                     elide: Text.ElideRight
                     font.family: Theme.font
-                    font.pixelSize: 14
+                    font.pixelSize: Theme.fontSize.md
                     font.bold: true
                 }
             }
             RowLayout {
                 Layout.fillWidth: true
                 Layout.leftMargin: 11
-                spacing: 8
+                spacing: Theme.spacing.md
                 Text {
                     text: {
                         if (!er.event) return "";
@@ -542,7 +542,7 @@ Scope {
                     }
                     color: Theme.accent.blue
                     font.family: Theme.font
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fontSize.sm
                     font.bold: true
                 }
                 Text {
@@ -550,7 +550,7 @@ Scope {
                     text: er.event ? Qt.formatDate(er.event.start, "ddd d MMM") : ""
                     color: Theme.muted
                     font.family: Theme.font
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fontSize.sm
                 }
                 Item { Layout.fillWidth: true }
             }
@@ -561,7 +561,7 @@ Scope {
                 text: er.event && er.event.location ? "󰍎  " + er.event.location : ""
                 color: Theme.muted
                 font.family: Theme.font
-                font.pixelSize: 11
+                font.pixelSize: Theme.fontSize.sm
                 elide: Text.ElideRight
             }
         }

@@ -83,91 +83,54 @@ Scope {
 
     Process { id: copyProc; command: [] }
 
-    Variants {
-        model: Quickshell.screens
-        PanelWindow {
-            id: win
-            required property var modelData
-            screen: modelData
-            visible: root.open
-            color: "transparent"
-
-            anchors { top: true; bottom: true; left: true; right: true }
-            WlrLayershell.exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: root.open ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
-
-            // Dim backdrop
-            Rectangle {
-                anchors.fill: parent
-                color: "#000000"
-                opacity: 0.45
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: root.close()
-                }
+    PopupCard {
+        open: root.open
+        cardWidth: 640
+        cardHeight: 560
+        onClosed: root.open = false
+        onKeyPressed: (e) => {
+            const n = root.totalRows;
+            if (e.key === Qt.Key_Down) {
+                if (n > 0) root.selectedIndex = Math.min(n - 1, root.selectedIndex + 1);
+                e.accepted = true;
+            } else if (e.key === Qt.Key_Up) {
+                root.selectedIndex = Math.max(0, root.selectedIndex - 1);
+                e.accepted = true;
+            } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
+                root.activate(root.selectedIndex); e.accepted = true;
+            } else if (e.key === Qt.Key_Backspace) {
+                root.query = root.query.slice(0, -1);
+                root.selectedIndex = 0;
+                e.accepted = true;
+            } else if (e.text && e.text.length > 0 && e.text.charCodeAt(0) >= 32) {
+                root.query += e.text;
+                root.selectedIndex = 0;
+                e.accepted = true;
             }
-
-            // Centered search card
-            Rectangle {
-                id: card
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: Math.round(parent.height * 0.22)
-                width: 640
-                height: Math.min(560, headerCol.implicitHeight + resultsCol.implicitHeight + 28)
-                radius: 14
-                color: Theme.bgAlt
-                border.color: Theme.mutedDeep
-                border.width: 1
-                scale: root.open ? 1.0 : 0.96
-                opacity: root.open ? 1.0 : 0.0
-                Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-                Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-                focus: root.open
-                Keys.onPressed: (e) => {
-                    const n = root.totalRows;
-                    if (e.key === Qt.Key_Escape) {
-                        root.close(); e.accepted = true;
-                    } else if (e.key === Qt.Key_Down) {
-                        if (n > 0) root.selectedIndex = Math.min(n - 1, root.selectedIndex + 1);
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_Up) {
-                        root.selectedIndex = Math.max(0, root.selectedIndex - 1);
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
-                        root.activate(root.selectedIndex); e.accepted = true;
-                    } else if (e.key === Qt.Key_Backspace) {
-                        root.query = root.query.slice(0, -1);
-                        root.selectedIndex = 0;
-                        e.accepted = true;
-                    } else if (e.text && e.text.length > 0 && e.text.charCodeAt(0) >= 32) {
-                        root.query += e.text;
-                        root.selectedIndex = 0;
-                        e.accepted = true;
-                    }
-                }
-
+        }
+        contentComponent: Component {
+            Item {
                 ColumnLayout {
                     id: headerCol
                     anchors { top: parent.top; left: parent.left; right: parent.right }
-                    anchors.margins: 14
-                    spacing: 8
+                    anchors.margins: Theme.spacing.lg
+                    spacing: Theme.spacing.md
 
                     RowLayout {
                         Layout.fillWidth: true
-                        spacing: 14
+                        spacing: Theme.spacing.lg
                         Text {
                             text: "󰍉"
                             color: Theme.muted
                             font.family: Theme.font
-                            font.pixelSize: 30
+                            font.pixelSize: Theme.fontSize.hero
                         }
                         Text {
                             Layout.fillWidth: true
                             text: root.query || "Spotlight Search"
                             color: root.query ? Theme.fg : Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 24
+                            font.pixelSize: Theme.fontSize.xxl
                             elide: Text.ElideRight
                         }
                     }
@@ -238,7 +201,7 @@ Scope {
             anchors.fill: parent
             anchors.leftMargin: 14
             anchors.rightMargin: 14
-            spacing: 14
+            spacing: Theme.spacing.lg
             Rectangle {
                 Layout.preferredWidth: 32
                 Layout.preferredHeight: 32
@@ -249,7 +212,7 @@ Scope {
                     text: "="
                     color: Theme.fg
                     font.family: Theme.font
-                    font.pixelSize: 20
+                    font.pixelSize: Theme.fontSize.xl
                     font.bold: true
                 }
             }
@@ -260,7 +223,7 @@ Scope {
                     text: crow.result
                     color: Theme.fg
                     font.family: Theme.font
-                    font.pixelSize: 20
+                    font.pixelSize: Theme.fontSize.xl
                     font.bold: true
                     elide: Text.ElideRight
                     Layout.fillWidth: true
@@ -269,7 +232,7 @@ Scope {
                     text: crow.expr + " ="
                     color: Theme.muted
                     font.family: Theme.font
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fontSize.base
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
@@ -278,7 +241,7 @@ Scope {
                 text: "↵ Copy"
                 color: Theme.mutedDeep
                 font.family: Theme.font
-                font.pixelSize: 13
+                font.pixelSize: Theme.fontSize.base
             }
         }
         MouseArea {
@@ -304,7 +267,7 @@ Scope {
             anchors.fill: parent
             anchors.leftMargin: 12
             anchors.rightMargin: 12
-            spacing: 14
+            spacing: Theme.spacing.lg
             IconImage {
                 implicitSize: 36
                 source: row.entry ? Quickshell.iconPath(row.entry.icon, "application-x-executable") : ""
@@ -317,7 +280,7 @@ Scope {
                     text: row.entry ? row.entry.name : ""
                     color: Theme.fg
                     font.family: Theme.font
-                    font.pixelSize: 16
+                    font.pixelSize: Theme.fontSize.lg
                     font.bold: row.highlighted
                     elide: Text.ElideRight
                     Layout.fillWidth: true
@@ -327,7 +290,7 @@ Scope {
                     text: row.entry ? row.entry.comment : ""
                     color: Theme.muted
                     font.family: Theme.font
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fontSize.base
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
@@ -337,7 +300,7 @@ Scope {
                 text: "↵"
                 color: Theme.mutedDeep
                 font.family: Theme.font
-                font.pixelSize: 14
+                font.pixelSize: Theme.fontSize.md
             }
         }
         MouseArea {

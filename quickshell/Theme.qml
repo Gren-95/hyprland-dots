@@ -47,6 +47,7 @@ Singleton {
         readonly property int xl:   18
         readonly property int xxl:  22
         readonly property int hero: 28
+        readonly property int huge: 32
     }
 
     // Geometry
@@ -63,6 +64,14 @@ Singleton {
         readonly property int md: 8
         readonly property int lg: 12
         readonly property int xl: 16
+    }
+    readonly property QtObject height: QtObject {
+        readonly property int chip:    22    // tiny pill (BtToggle, badges)
+        readonly property int control: 28    // toggle pills, tab pills
+        readonly property int row:     40    // list rows (notifications, devices, networks)
+        readonly property int rowSm:   36    // dense rows (peers)
+        readonly property int tile:    78    // QuickActions tile
+        readonly property int card:    56    // ProfileSelector cards
     }
 
     // Animation

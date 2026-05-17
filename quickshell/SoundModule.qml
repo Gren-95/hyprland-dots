@@ -80,7 +80,7 @@ Item {
     RowLayout {
         id: row
         anchors.centerIn: parent
-        spacing: 4
+        spacing: Theme.spacing.xs
         Text {
             text: {
                 if (!snd.sink || !snd.sink.audio) return "󰕾";
@@ -92,7 +92,7 @@ Item {
             }
             color: snd.sink && snd.sink.audio && snd.sink.audio.muted ? Theme.mutedDeep : "#f5f5f4"
             font.family: Theme.font
-            font.pixelSize: 14
+            font.pixelSize: Theme.fontSize.md
         }
         Text {
             text: {
@@ -102,7 +102,7 @@ Item {
             }
             color: snd.sink && snd.sink.audio && snd.sink.audio.muted ? Theme.mutedDeep : "#f5f5f4"
             font.family: Theme.font
-            font.pixelSize: 13
+            font.pixelSize: Theme.fontSize.base
         }
     }
 
@@ -180,12 +180,12 @@ Item {
             ColumnLayout {
                 id: sndCol
                 anchors.fill: parent
-                anchors.margins: 12
-                spacing: 8
+                anchors.margins: Theme.spacing.lg
+                spacing: Theme.spacing.md
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 8
+                    spacing: Theme.spacing.md
                     PinButton {
                         pinned: snd.pinned
                         onToggled: snd.pinned = !snd.pinned
@@ -194,7 +194,7 @@ Item {
                         text: "Sound"
                         color: "#f5f5f4"
                         font.family: Theme.font
-                        font.pixelSize: 13
+                        font.pixelSize: Theme.fontSize.base
                         font.bold: true
                     }
                     Item { Layout.fillWidth: true }

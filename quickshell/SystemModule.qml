@@ -75,7 +75,7 @@ Item {
         text: "⏻"
         color: Theme.accent.red
         font.family: Theme.font
-        font.pixelSize: 16
+        font.pixelSize: Theme.fontSize.lg
     }
 
     MouseArea {
@@ -177,12 +177,12 @@ Item {
             ColumnLayout {
                 id: sysCol
                 anchors.fill: parent
-                anchors.margins: 14
-                spacing: 14
+                anchors.margins: Theme.spacing.lg
+                spacing: Theme.spacing.lg
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 8
+                    spacing: Theme.spacing.md
                     PinButton {
                         pinned: sys.pinned
                         onToggled: sys.pinned = !sys.pinned
@@ -204,14 +204,14 @@ Item {
                     text: "BACKLIGHT"
                     color: Theme.mutedDeep
                     font.family: Theme.font
-                    font.pixelSize: 9
+                    font.pixelSize: Theme.fontSize.xs
                     font.letterSpacing: 1
                     font.bold: true
                 }
                 ColumnLayout {
                     Layout.fillWidth: true
                     Layout.topMargin: -8
-                    spacing: 8
+                    spacing: Theme.spacing.md
                     BrightnessRow {
                         Layout.fillWidth: true
                         glyph: "󰃞"

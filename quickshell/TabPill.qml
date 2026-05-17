@@ -20,18 +20,18 @@ Rectangle {
 
     RowLayout {
         anchors.centerIn: parent
-        spacing: 6
+        spacing: Theme.spacing.sm
         Text {
             text: tp.glyph
             color: tp.active ? tp.accent : Theme.muted
             font.family: Theme.font
-            font.pixelSize: 14
+            font.pixelSize: Theme.fontSize.md
         }
         Text {
             text: tp.label
             color: tp.active ? Theme.fg : Theme.muted
             font.family: Theme.font
-            font.pixelSize: 12
+            font.pixelSize: Theme.fontSize.base
             font.bold: tp.active
         }
     }

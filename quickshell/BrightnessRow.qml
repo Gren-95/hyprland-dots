@@ -9,12 +9,12 @@ RowLayout {
     property bool highlighted: false
     signal moved(real v)
     signal hovered()
-    spacing: 10
+    spacing: Theme.spacing.md
     Text {
         text: br.glyph
         color: br.highlighted ? Theme.fg : Theme.fgMuted
         font.family: Theme.font
-        font.pixelSize: 16
+        font.pixelSize: Theme.fontSize.lg
         Layout.preferredWidth: 20
         horizontalAlignment: Text.AlignHCenter
     }
@@ -22,7 +22,7 @@ RowLayout {
         text: br.label
         color: br.highlighted ? Theme.fg : Theme.muted
         font.family: Theme.font
-        font.pixelSize: 11
+        font.pixelSize: Theme.fontSize.sm
         font.bold: br.highlighted
         Layout.preferredWidth: 70
     }
@@ -38,7 +38,7 @@ RowLayout {
         text: Math.round(br.value * 100) + "%"
         color: br.highlighted ? Theme.fg : Theme.fgMuted
         font.family: Theme.font
-        font.pixelSize: 11
+        font.pixelSize: Theme.fontSize.sm
         font.bold: br.highlighted
         Layout.preferredWidth: 38
         horizontalAlignment: Text.AlignRight

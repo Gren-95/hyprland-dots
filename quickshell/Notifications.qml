@@ -153,29 +153,29 @@ Scope {
                 ColumnLayout {
                     id: centerHeader
                     anchors { top: parent.top; left: parent.left; right: parent.right }
-                    anchors.margins: 14
-                    spacing: 8
+                    anchors.margins: Theme.spacing.lg
+                    spacing: Theme.spacing.md
                     RowLayout {
                         Layout.fillWidth: true
-                        spacing: 10
+                        spacing: Theme.spacing.md
                         Text {
                             text: "󰂚"
                             color: Theme.muted
                             font.family: Theme.font
-                            font.pixelSize: 22
+                            font.pixelSize: Theme.fontSize.xxl
                         }
                         Text {
                             text: "Notifications"
                             color: Theme.fg
                             font.family: Theme.font
-                            font.pixelSize: 16
+                            font.pixelSize: Theme.fontSize.lg
                             font.bold: true
                         }
                         Text {
                             text: root.historyList.length + " items"
                             color: Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 11
+                            font.pixelSize: Theme.fontSize.sm
                         }
                         Item { Layout.fillWidth: true }
                         Rectangle {
@@ -192,7 +192,7 @@ Scope {
                                 text: "Clear all"
                                 color: clearMouse.containsMouse ? Theme.fg : "#f87171"
                                 font.family: Theme.font
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize.sm
                             }
                             MouseArea {
                                 id: clearMouse
@@ -223,7 +223,7 @@ Scope {
                     ColumnLayout {
                         id: historyCol
                         width: parent.width
-                        spacing: 4
+                        spacing: Theme.spacing.xs
                         Repeater {
                             model: root.historyList
                             delegate: HistoryRow {
@@ -238,7 +238,7 @@ Scope {
                             text: "No notifications"
                             color: Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: 14
+                            font.pixelSize: Theme.fontSize.md
                             Layout.alignment: Qt.AlignHCenter
                             Layout.topMargin: 32
                         }
@@ -261,11 +261,11 @@ Scope {
         ColumnLayout {
             id: histCol
             anchors.fill: parent
-            anchors.margins: 10
-            spacing: 4
+            anchors.margins: Theme.spacing.md
+            spacing: Theme.spacing.xs
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 8
+                spacing: Theme.spacing.md
                 IconImage {
                     visible: hist.entry && (hist.entry.image || hist.entry.appIcon)
                     source: hist.entry ? (hist.entry.image || hist.entry.appIcon) : ""
@@ -276,7 +276,7 @@ Scope {
                     text: hist.entry ? (hist.entry.summary || hist.entry.appName) : ""
                     color: Theme.fg
                     font.family: Theme.font
-                    font.pixelSize: 14
+                    font.pixelSize: Theme.fontSize.md
                     font.bold: true
                     elide: Text.ElideRight
                 }
@@ -284,7 +284,7 @@ Scope {
                     text: hist.entry ? Qt.formatTime(hist.entry.time, "hh:mm") : ""
                     color: Theme.mutedDeep
                     font.family: Theme.font
-                    font.pixelSize: 10
+                    font.pixelSize: Theme.fontSize.xs
                 }
                 Rectangle {
                     implicitWidth: 20; implicitHeight: 20; radius: 10
@@ -294,7 +294,7 @@ Scope {
                         text: "×"
                         color: Theme.muted
                         font.family: Theme.font
-                        font.pixelSize: 18
+                        font.pixelSize: Theme.fontSize.xl
                     }
                     MouseArea {
                         id: dismissMouse
@@ -311,7 +311,7 @@ Scope {
                 text: hist.entry ? hist.entry.body : ""
                 color: Theme.fgMuted
                 font.family: Theme.font
-                font.pixelSize: 13
+                font.pixelSize: Theme.fontSize.base
                 wrapMode: Text.WordWrap
                 textFormat: Text.PlainText
                 maximumLineCount: 3
@@ -365,12 +365,12 @@ Scope {
         ColumnLayout {
             id: cardCol
             anchors.fill: cardBg
-            anchors.margins: 12
-            spacing: 6
+            anchors.margins: Theme.spacing.lg
+            spacing: Theme.spacing.sm
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 8
+                spacing: Theme.spacing.md
                 IconImage {
                     visible: card.entry && (card.entry.image || card.entry.appIcon)
                     source: card.entry ? (card.entry.image || card.entry.appIcon) : ""
@@ -384,7 +384,7 @@ Scope {
                         text: card.entry ? (card.entry.summary || card.entry.appName) : ""
                         color: "#f5f5f4"
                         font.family: Theme.font
-                        font.pixelSize: 15
+                        font.pixelSize: Theme.fontSize.md
                         font.bold: true
                         elide: Text.ElideRight
                         wrapMode: Text.NoWrap
@@ -395,7 +395,7 @@ Scope {
                         text: card.entry ? card.entry.appName : ""
                         color: Theme.muted
                         font.family: Theme.font
-                        font.pixelSize: 11
+                        font.pixelSize: Theme.fontSize.sm
                         elide: Text.ElideRight
                     }
                 }
@@ -406,7 +406,7 @@ Scope {
                         anchors.centerIn: parent
                         text: "×"; color: Theme.muted
                         font.family: Theme.font
-                        font.pixelSize: 24
+                        font.pixelSize: Theme.fontSize.xxl
                     }
                     MouseArea {
                         id: closeMouse
@@ -423,7 +423,7 @@ Scope {
                 text: card.entry ? card.entry.body : ""
                 color: Theme.fgMuted
                 font.family: Theme.font
-                font.pixelSize: 13
+                font.pixelSize: Theme.fontSize.base
                 wrapMode: Text.WordWrap
                 textFormat: Text.PlainText
                 maximumLineCount: 4
@@ -431,7 +431,7 @@ Scope {
             }
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 6
+                spacing: Theme.spacing.sm
                 visible: card.entry && card.entry.ref && card.entry.ref.actions && card.entry.ref.actions.length > 0
                 Repeater {
                     model: card.entry && card.entry.ref ? card.entry.ref.actions : []
@@ -448,7 +448,7 @@ Scope {
                             text: modelData.text
                             color: "#f5f5f4"
                             font.family: Theme.font
-                            font.pixelSize: 13
+                            font.pixelSize: Theme.fontSize.base
                         }
                         MouseArea {
                             id: actMouse

@@ -201,7 +201,7 @@ Scope {
                 ColumnLayout {
                     anchors.fill: parent
                     anchors.margins: 56
-                    spacing: 18
+                    spacing: Theme.spacing.xxl
 
                     Rectangle {
                         Layout.alignment: Qt.AlignHCenter
@@ -215,18 +215,18 @@ Scope {
                             anchors.fill: parent
                             anchors.leftMargin: 18
                             anchors.rightMargin: 18
-                            spacing: 10
+                            spacing: Theme.spacing.md
                             Text {
                                 text: "󰍹"
                                 color: Theme.accent.purple
                                 font.family: Theme.font
-                                font.pixelSize: 20
+                                font.pixelSize: Theme.fontSize.xl
                             }
                             Text {
                                 text: "Workspaces"
                                 color: Theme.fg
                                 font.family: Theme.font
-                                font.pixelSize: 16
+                                font.pixelSize: Theme.fontSize.lg
                                 font.bold: true
                             }
                             Item { Layout.fillWidth: true }
@@ -234,7 +234,7 @@ Scope {
                                 text: root.workspaces.length + " active"
                                 color: Theme.mutedDeep
                                 font.family: Theme.font
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize.sm
                             }
                         }
                     }
@@ -252,8 +252,8 @@ Scope {
                             anchors.horizontalCenter: parent.horizontalCenter
                             y: Math.max(0, (gridFlick.height - implicitHeight) / 2)
                             columns: Math.min(4, Math.max(1, root.workspaces.length))
-                            columnSpacing: 20
-                            rowSpacing: 20
+                            columnSpacing: Theme.spacing.xxl
+                            rowSpacing: Theme.spacing.xxl
                             Repeater {
                                 model: root.workspaces
                                 delegate: WsCard {
@@ -278,7 +278,7 @@ Scope {
                         text: "1-9 jump  •  ←/h →/l navigate  •  Enter switch  •  Esc cancel"
                         color: Theme.disabled
                         font.family: Theme.font
-                        font.pixelSize: 11
+                        font.pixelSize: Theme.fontSize.sm
                     }
                 }
             }
@@ -325,7 +325,7 @@ Scope {
                 text: ws.workspace ? ws.workspace.name.replace(/^#/, "") : ""
                 color: (ws.isActive || ws.highlighted) ? "#0a0a0a" : Theme.fgMuted
                 font.family: Theme.font
-                font.pixelSize: 13
+                font.pixelSize: Theme.fontSize.base
                 font.bold: true
             }
         }
@@ -423,7 +423,7 @@ Scope {
                 text: "empty"
                 color: Theme.border
                 font.family: Theme.font
-                font.pixelSize: 13
+                font.pixelSize: Theme.fontSize.base
             }
         }
 
@@ -436,14 +436,14 @@ Scope {
                 margins: 8
                 bottomMargin: 7
             }
-            spacing: 6
+            spacing: Theme.spacing.sm
 
             Text {
                 visible: ws.isActive
                 text: "●"
                 color: Theme.accent.blue
                 font.family: Theme.font
-                font.pixelSize: 10
+                font.pixelSize: Theme.fontSize.xs
             }
             Text {
                 Layout.fillWidth: true
@@ -452,7 +452,7 @@ Scope {
                     : ""
                 color: ws.highlighted ? Theme.fg : Theme.muted
                 font.family: Theme.font
-                font.pixelSize: 11
+                font.pixelSize: Theme.fontSize.sm
                 font.bold: ws.highlighted
             }
         }

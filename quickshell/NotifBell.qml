@@ -37,13 +37,13 @@ Item {
     RowLayout {
         id: row
         anchors.centerIn: parent
-        spacing: 4
+        spacing: Theme.spacing.xs
         Text {
             text: bell.notifs && bell.notifs.dnd ? "󰂛"
                 : (bell.notifs && bell.notifs.unreadCount > 0 ? "󰂞" : "󰂚")
             color: bell.notifs && bell.notifs.dnd ? Theme.accent.orange : "#f5f5f4"
             font.family: Theme.font
-            font.pixelSize: 14
+            font.pixelSize: Theme.fontSize.md
         }
         Rectangle {
             visible: bell.notifs && bell.notifs.unreadCount > 0 && !bell.notifs.dnd
@@ -57,7 +57,7 @@ Item {
                 text: bell.notifs ? String(bell.notifs.unreadCount) : "0"
                 color: "#f5f5f4"
                 font.family: Theme.font
-                font.pixelSize: 10
+                font.pixelSize: Theme.fontSize.xs
                 font.bold: true
             }
         }
@@ -142,12 +142,12 @@ Item {
             ColumnLayout {
                 id: centerCol
                 anchors.fill: parent
-                anchors.margins: 12
-                spacing: 8
+                anchors.margins: Theme.spacing.lg
+                spacing: Theme.spacing.md
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 8
+                    spacing: Theme.spacing.md
                     PinButton {
                         pinned: bell.notifs ? bell.notifs.pinned : false
                         onToggled: if (bell.notifs) bell.notifs.pinned = !bell.notifs.pinned
@@ -156,7 +156,7 @@ Item {
                         text: "󰂚  Notifications"
                         color: "#f5f5f4"
                         font.family: Theme.font
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontSize.md
                         font.bold: true
                     }
                     Item { Layout.fillWidth: true }
@@ -186,13 +186,13 @@ Item {
                     text: "No notifications"
                     color: Theme.mutedDeep
                     font.family: Theme.font
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontSize.base
                     horizontalAlignment: Text.AlignHCenter
                 }
 
                 ColumnLayout {
                     Layout.fillWidth: true
-                    spacing: 4
+                    spacing: Theme.spacing.xs
                     visible: bell.notifs && bell.notifs.historyList.length > 0
                     Repeater {
                         model: bell.notifs ? bell.notifs.historyList : []
@@ -210,12 +210,12 @@ Item {
                             ColumnLayout {
                                 id: hcol
                                 anchors.fill: parent
-                                anchors.margins: 8
+                                anchors.margins: Theme.spacing.md
                                 spacing: 2
 
                                 RowLayout {
                                     Layout.fillWidth: true
-                                    spacing: 6
+                                    spacing: Theme.spacing.sm
                                     IconImage {
                                         visible: hrow.entry && (hrow.entry.image || hrow.entry.appIcon)
                                         source: hrow.entry ? (hrow.entry.image || hrow.entry.appIcon) : ""
@@ -226,7 +226,7 @@ Item {
                                         text: hrow.entry ? (hrow.entry.summary || hrow.entry.appName) : ""
                                         color: "#f5f5f4"
                                         font.family: Theme.font
-                                        font.pixelSize: 12
+                                        font.pixelSize: Theme.fontSize.base
                                         font.bold: true
                                         elide: Text.ElideRight
                                     }
@@ -234,7 +234,7 @@ Item {
                                         text: hrow.entry ? Qt.formatTime(hrow.entry.time, "HH:mm") : ""
                                         color: Theme.muted
                                         font.family: Theme.font
-                                        font.pixelSize: 10
+                                        font.pixelSize: Theme.fontSize.xs
                                     }
                                     Rectangle {
                                         implicitWidth: 18; implicitHeight: 18; radius: 9
@@ -244,7 +244,7 @@ Item {
                                             text: "×"
                                             color: Theme.muted
                                             font.family: Theme.font
-                                            font.pixelSize: 14
+                                            font.pixelSize: Theme.fontSize.md
                                         }
                                         MouseArea {
                                             id: xMouse
@@ -261,7 +261,7 @@ Item {
                                     text: hrow.entry ? hrow.entry.body : ""
                                     color: Theme.fgMuted
                                     font.family: Theme.font
-                                    font.pixelSize: 11
+                                    font.pixelSize: Theme.fontSize.sm
                                     wrapMode: Text.WordWrap
                                     maximumLineCount: 2
                                     elide: Text.ElideRight
