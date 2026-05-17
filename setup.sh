@@ -45,9 +45,10 @@ check_dependencies() {
     local missing_deps=()
     local required_deps=(
         "hyprland" "qs" "kitty" "nautilus" "hyprpaper" "hyprpicker"
-        "hypridle" "grim" "slurp" "swappy"
+        "hypridle" "hyprlock" "grim" "slurp" "swappy"
         "tesseract" "convert" "cliphist" "wl-copy" "wl-paste"
-        "firefox" "brightnessctl" "playerctl"
+        "firefox" "brightnessctl" "playerctl" "powerprofilesctl"
+        "gpu-screen-recorder" "inotifywait"
         "gnome-keyring-daemon" "jq" "pactl" "wpctl" "python3" "fish" "ranger"
     )
 
@@ -81,11 +82,10 @@ install_dependencies() {
     print_info "Installing dependencies..."
     sudo dnf install -y \
         hyprland hyprland-devel quickshell kitty nautilus cliphist \
-        hyprpaper hyprpicker hypridle grim slurp \
+        hyprpaper hyprpicker hypridle hyprlock grim slurp \
         swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard firefox \
-        brightnessctl playerctl \
-        gnome-keyring jq \
-        powerprofilesctl hyprlock gpu-screen-recorder \
+        brightnessctl playerctl powerprofilesctl gpu-screen-recorder \
+        gnome-keyring jq inotify-tools \
         fish ranger python3 python3-pillow
 
     print_success "Dependencies installed"
