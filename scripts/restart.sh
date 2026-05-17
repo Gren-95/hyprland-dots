@@ -83,12 +83,9 @@ wl-paste --watch cliphist store >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -f "wl-paste.*cliphist" >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
-# Restart nm-applet (system tray network indicator)
-echo -n "Running: nm-applet ... "
-pkill -x nm-applet 2>/dev/null
-nm-applet --indicator >/dev/null 2>&1 &
-sleep 0.2
-if pgrep -x nm-applet >/dev/null; then echo "OK"; else echo "FAILED"; fi
+# nm-applet removed — Wi-Fi state is shown by the bar's Wi-Fi BarIcon
+# and managed via ConnectivityModule's Wi-Fi tab. Wi-Fi password prompts
+# now have to come from nm-connection-editor (launched on demand).
 
 # Restart network notifier
 echo -n "Running: network-notify ... "
