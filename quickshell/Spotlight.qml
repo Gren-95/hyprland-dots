@@ -63,6 +63,11 @@ Scope {
         open = !open;
         if (open) { query = ""; selectedIndex = 0; }
     }
+    function openAt(idx) {
+        if (!open) { open = true; query = ""; }
+        selectedIndex = idx < 0 ? Math.max(0, root.totalRows - 1)
+                                : Math.min(idx, Math.max(0, root.totalRows - 1));
+    }
     function close() { open = false; }
     function activate(i) {
         if (hasCalc && i === 0) {
@@ -111,8 +116,8 @@ Scope {
                 width: 640
                 height: Math.min(560, headerCol.implicitHeight + resultsCol.implicitHeight + 28)
                 radius: 14
-                color: "#292524"
-                border.color: "#78716c"
+                color: Theme.bgAlt
+                border.color: Theme.mutedDeep
                 border.width: 1
                 focus: root.open
                 Keys.onPressed: (e) => {
@@ -149,20 +154,20 @@ Scope {
                         spacing: 14
                         Text {
                             text: "󰍉"
-                            color: "#a8a29e"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 28
+                            color: Theme.muted
+                            font.family: Theme.font
+                            font.pixelSize: 30
                         }
                         Text {
                             Layout.fillWidth: true
                             text: root.query || "Spotlight Search"
-                            color: root.query ? "#fafaf9" : "#78716c"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 22
+                            color: root.query ? Theme.fg : Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: 24
                             elide: Text.ElideRight
                         }
                     }
-                    Rectangle { Layout.fillWidth: true; height: 1; color: "#44403c" }
+                    Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderStrong }
                 }
 
                 Flickable {
@@ -219,10 +224,10 @@ Scope {
         property bool highlighted: false
         signal picked()
         signal hovered()
-        implicitHeight: 56
+        implicitHeight: 60
         radius: 8
         color: crow.highlighted ? "#3b3531" : (cHover.containsMouse ? "#262220" : "transparent")
-        border.color: "#3b82f6"
+        border.color: Theme.accent.blue
         border.width: 1
 
         RowLayout {
@@ -238,9 +243,9 @@ Scope {
                 Text {
                     anchors.centerIn: parent
                     text: "="
-                    color: "#fafaf9"
-                    font.family: "FiraCode Nerd Font"
-                    font.pixelSize: 18
+                    color: Theme.fg
+                    font.family: Theme.font
+                    font.pixelSize: 20
                     font.bold: true
                 }
             }
@@ -249,27 +254,27 @@ Scope {
                 spacing: 0
                 Text {
                     text: crow.result
-                    color: "#fafaf9"
-                    font.family: "FiraCode Nerd Font"
-                    font.pixelSize: 18
+                    color: Theme.fg
+                    font.family: Theme.font
+                    font.pixelSize: 20
                     font.bold: true
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
                 Text {
                     text: crow.expr + " ="
-                    color: "#a8a29e"
-                    font.family: "FiraCode Nerd Font"
-                    font.pixelSize: 11
+                    color: Theme.muted
+                    font.family: Theme.font
+                    font.pixelSize: 13
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
             }
             Text {
                 text: "↵ Copy"
-                color: "#78716c"
-                font.family: "FiraCode Nerd Font"
-                font.pixelSize: 11
+                color: Theme.mutedDeep
+                font.family: Theme.font
+                font.pixelSize: 13
             }
         }
         MouseArea {
@@ -288,7 +293,7 @@ Scope {
         property bool highlighted: false
         signal picked()
         signal hovered()
-        implicitHeight: 48
+        implicitHeight: 52
         radius: 8
         color: row.highlighted ? "#3b3531" : (hover.containsMouse ? "#262220" : "transparent")
         RowLayout {
@@ -297,7 +302,7 @@ Scope {
             anchors.rightMargin: 12
             spacing: 14
             IconImage {
-                implicitSize: 32
+                implicitSize: 36
                 source: row.entry ? Quickshell.iconPath(row.entry.icon, "application-x-executable") : ""
                 asynchronous: true
             }
@@ -306,9 +311,9 @@ Scope {
                 spacing: 0
                 Text {
                     text: row.entry ? row.entry.name : ""
-                    color: "#fafaf9"
-                    font.family: "FiraCode Nerd Font"
-                    font.pixelSize: 14
+                    color: Theme.fg
+                    font.family: Theme.font
+                    font.pixelSize: 16
                     font.bold: row.highlighted
                     elide: Text.ElideRight
                     Layout.fillWidth: true
@@ -316,9 +321,9 @@ Scope {
                 Text {
                     visible: row.entry && row.entry.comment
                     text: row.entry ? row.entry.comment : ""
-                    color: "#a8a29e"
-                    font.family: "FiraCode Nerd Font"
-                    font.pixelSize: 11
+                    color: Theme.muted
+                    font.family: Theme.font
+                    font.pixelSize: 13
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
@@ -326,9 +331,9 @@ Scope {
             Text {
                 visible: row.highlighted
                 text: "↵"
-                color: "#78716c"
-                font.family: "FiraCode Nerd Font"
-                font.pixelSize: 12
+                color: Theme.mutedDeep
+                font.family: Theme.font
+                font.pixelSize: 14
             }
         }
         MouseArea {

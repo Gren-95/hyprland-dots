@@ -1,0 +1,67 @@
+import QtQuick
+import QtQuick.Effects
+import QtQuick.Layouts
+import Quickshell
+import Quickshell.Widgets
+import Quickshell.Services.SystemTray
+
+Item {
+    id: tray
+    property SystemTrayItem item
+    property var anchorWindow: null
+    Layout.fillHeight: true
+    implicitWidth: 28
+
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: 2
+        radius: 4
+        color: hoverArea.containsMouse ? Theme.bgAlt : "transparent"
+        opacity: tray.item && tray.item.status === Status.Passive ? 0.5 : 1.0
+    }
+
+    IconImage {
+        id: trayIcon
+        anchors.centerIn: parent
+        implicitSize: 18
+        source: tray.item ? tray.item.icon : ""
+        asynchronous: true
+        layer.enabled: true
+        layer.effect: MultiEffect {
+            brightness: 0.6
+            saturation: -0.6
+        }
+    }
+
+    QsMenuAnchor {
+        id: menuAnchor
+        anchor.window: tray.anchorWindow
+        anchor.item: tray
+        anchor.edges: Edges.Bottom
+        menu: tray.item ? tray.item.menu : null
+    }
+
+    MouseArea {
+        id: hoverArea
+        anchors.fill: parent
+        acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+        hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
+        onClicked: (e) => {
+            if (!tray.item) return;
+            if (e.button === Qt.LeftButton) {
+                if (tray.item.onlyMenu) menuAnchor.open();
+                else tray.item.activate();
+            } else if (e.button === Qt.MiddleButton) {
+                tray.item.secondaryActivate();
+            } else if (e.button === Qt.RightButton) {
+                if (tray.item.hasMenu) menuAnchor.open();
+            }
+        }
+        onWheel: (e) => {
+            if (!tray.item) return;
+            if (e.angleDelta.y !== 0) tray.item.scroll(e.angleDelta.y, false);
+            if (e.angleDelta.x !== 0) tray.item.scroll(e.angleDelta.x, true);
+        }
+    }
+}

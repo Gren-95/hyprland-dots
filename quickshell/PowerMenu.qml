@@ -1,5 +1,6 @@
-// Centered power menu: Lock / Suspend / Logout / Reboot / Shutdown.
-// Esc closes, ←/→ + h/l navigate, Enter confirms.
+// Centered modal power menu: Lock / Suspend / Logout / Reboot / Shutdown.
+// Triggered by Super+Shift+E.  Arrow/h-l/Tab/digits 1-5 navigate, Enter or
+// click commits, Esc cancels.  Destructive actions are visually offset.
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -11,15 +12,17 @@ Scope {
 
     property bool open: false
     property int selectedIndex: 0
-    property string uptime: ""
     property string hostname: ""
+    property string uptime: ""
 
+    // Five power actions. `destructive: true` shifts the tile into the warn
+    // colour group and adds a visual divider before it.
     readonly property var entries: [
-        { glyph: "󰌾", label: "Lock",     accent: "#3b82f6", cmd: ["loginctl", "lock-session"] },
-        { glyph: "󰒲", label: "Suspend",  accent: "#a78bfa", cmd: ["systemctl", "suspend"] },
-        { glyph: "󰗽", label: "Logout",   accent: "#eab308", cmd: ["hyprctl", "dispatch", "exit"] },
-        { glyph: "󰜉", label: "Reboot",   accent: "#f97316", cmd: ["systemctl", "reboot"] },
-        { glyph: "󰐥", label: "Shutdown", accent: "#ef4444", cmd: ["systemctl", "poweroff"] },
+        { glyph: "󰌾", label: "Lock",     hint: "Lock screen",            accent: Theme.accent.blue, cmd: ["loginctl", "lock-session"],          destructive: false },
+        { glyph: "󰒲", label: "Suspend",  hint: "Sleep to RAM",            accent: Theme.accent.purple, cmd: ["systemctl", "suspend"],              destructive: false },
+        { glyph: "󰗽", label: "Logout",   hint: "End Hyprland session",    accent: Theme.accent.yellow, cmd: ["hyprctl", "dispatch", "exit"],       destructive: false },
+        { glyph: "󰜉", label: "Reboot",   hint: "Restart the system",      accent: Theme.accent.orange, cmd: ["systemctl", "reboot"],                destructive: true  },
+        { glyph: "󰐥", label: "Shutdown", hint: "Power off",               accent: Theme.accent.red, cmd: ["systemctl", "poweroff"],              destructive: true  },
     ]
 
     function toggle() {
@@ -39,15 +42,19 @@ Scope {
         runProc.startDetached();
         close();
     }
+    function cycle(dir) {
+        const n = entries.length;
+        selectedIndex = (selectedIndex + dir + n) % n;
+    }
 
     Process { id: runProc; command: [] }
     Process {
         id: statProc
         running: false
-        command: ["sh", "-c", "echo \"$(hostname) | $(uptime -p)\""]
+        command: ["sh", "-c", "echo \"$(hostname)\"$'\\t'\"$(uptime -p)\""]
         stdout: StdioCollector {
             onStreamFinished: {
-                const parts = text.trim().split("|");
+                const parts = text.trim().split("\t");
                 root.hostname = (parts[0] || "").trim();
                 root.uptime = (parts[1] || "").trim();
             }
@@ -68,86 +75,120 @@ Scope {
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: root.open ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
+            // Dim backdrop
             Rectangle {
                 anchors.fill: parent
                 color: "#000000"
-                opacity: 0.5
+                opacity: 0.55
                 MouseArea {
                     anchors.fill: parent
                     onClicked: root.close()
                 }
             }
 
-            Rectangle {
-                id: card
-                anchors.centerIn: parent
-                width: tilesRow.implicitWidth + 56
-                height: header.implicitHeight + tilesRow.implicitHeight + 56
-                radius: 16
-                color: "#292524"
-                border.color: "#78716c"
-                border.width: 1
+            FocusScope {
+                anchors.fill: parent
                 focus: root.open
 
                 Keys.onPressed: (e) => {
                     const n = root.entries.length;
                     if (e.key === Qt.Key_Escape) { root.close(); e.accepted = true; }
                     else if (e.key === Qt.Key_Right || e.key === Qt.Key_L) {
-                        root.selectedIndex = (root.selectedIndex + 1) % n;
-                        e.accepted = true;
+                        root.cycle(1); e.accepted = true;
                     } else if (e.key === Qt.Key_Left || e.key === Qt.Key_H) {
-                        root.selectedIndex = (root.selectedIndex - 1 + n) % n;
-                        e.accepted = true;
+                        root.cycle(-1); e.accepted = true;
                     } else if (e.key === Qt.Key_Tab) {
-                        const dir = e.modifiers & Qt.ShiftModifier ? -1 : 1;
-                        root.selectedIndex = (root.selectedIndex + dir + n) % n;
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
+                        root.cycle(e.modifiers & Qt.ShiftModifier ? -1 : 1); e.accepted = true;
+                    } else if (e.key >= Qt.Key_1 && e.key <= Qt.Key_5) {
+                        root.selectedIndex = e.key - Qt.Key_1; e.accepted = true;
+                    } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter || e.key === Qt.Key_Space) {
                         root.activate(root.selectedIndex); e.accepted = true;
                     }
                 }
 
-                ColumnLayout {
-                    id: header
-                    anchors { top: parent.top; left: parent.left; right: parent.right }
-                    anchors.margins: 18
-                    spacing: 4
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "Power"
-                        color: "#fafaf9"
-                        font.family: "FiraCode Nerd Font"
-                        font.pixelSize: 16
-                        font.bold: true
-                    }
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: root.hostname && root.uptime
-                            ? root.hostname + "  •  " + root.uptime
-                            : (root.hostname || "")
-                        color: "#a8a29e"
-                        font.family: "FiraCode Nerd Font"
-                        font.pixelSize: 10
-                    }
-                }
+                Rectangle {
+                    id: card
+                    anchors.centerIn: parent
+                    width: 720
+                    height: cardCol.implicitHeight + 56
+                    radius: 18
+                    color: Theme.bg
+                    border.color: Theme.border
+                    border.width: 1
 
-                RowLayout {
-                    id: tilesRow
-                    anchors {
-                        top: header.bottom
-                        topMargin: 16
-                        horizontalCenter: parent.horizontalCenter
-                    }
-                    spacing: 10
-                    Repeater {
-                        model: root.entries
-                        delegate: PowerTile {
-                            required property var modelData
-                            required property int index
-                            entry: modelData
-                            highlighted: root.selectedIndex === index
-                            onPicked: root.activate(index)
-                            onHovered: root.selectedIndex = index
+                    ColumnLayout {
+                        id: cardCol
+                        anchors {
+                            top: parent.top
+                            left: parent.left
+                            right: parent.right
+                            margins: 28
+                        }
+                        spacing: 22
+
+                        // Header
+                        ColumnLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 4
+                            Text {
+                                Layout.alignment: Qt.AlignHCenter
+                                text: "Power"
+                                color: Theme.fg
+                                font.family: Theme.font
+                                font.pixelSize: 18
+                                font.bold: true
+                            }
+                            Text {
+                                Layout.alignment: Qt.AlignHCenter
+                                text: root.hostname && root.uptime
+                                    ? root.hostname + "  ·  " + root.uptime
+                                    : (root.hostname || " ")
+                                color: Theme.mutedDeep
+                                font.family: Theme.font
+                                font.pixelSize: 11
+                            }
+                        }
+
+                        // Tiles
+                        RowLayout {
+                            id: tilesRow
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 8
+                            Repeater {
+                                model: root.entries
+                                delegate: PowerTile {
+                                    required property var modelData
+                                    required property int index
+                                    entry: modelData
+                                    indexLabel: index + 1
+                                    highlighted: root.selectedIndex === index
+                                    // Add a visual divider before the first destructive tile.
+                                    showSeparator: modelData.destructive
+                                        && (index > 0 && !root.entries[index - 1].destructive)
+                                    onPicked: root.activate(index)
+                                    onHovered: root.selectedIndex = index
+                                }
+                            }
+                        }
+
+                        // Footer: hint for the currently focused tile
+                        Text {
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignHCenter
+                            text: root.entries[root.selectedIndex]
+                                ? root.entries[root.selectedIndex].hint
+                                : ""
+                            color: Theme.muted
+                            font.family: Theme.font
+                            font.pixelSize: 12
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                        Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: "1-5 jump  ·  ←/→ navigate  ·  Enter confirm  ·  Esc cancel"
+                            color: Theme.disabled
+                            font.family: Theme.font
+                            font.pixelSize: 9
                         }
                     }
                 }
@@ -155,51 +196,96 @@ Scope {
         }
     }
 
-    component PowerTile: Rectangle {
-        id: tile
+    component PowerTile: Item {
+        id: tileWrap
         property var entry
         property bool highlighted: false
+        property bool showSeparator: false
+        property int indexLabel: 0
         signal picked()
         signal hovered()
-        implicitWidth: 96
-        implicitHeight: 96
-        radius: 12
-        color: tile.highlighted ? "#3b3531" : (mouse.containsMouse ? "#262220" : "#1c1917")
-        border.color: tile.highlighted ? (tile.entry ? tile.entry.accent : "#fafaf9") : "#3a3633"
-        border.width: tile.highlighted ? 2 : 1
+        implicitWidth: tile.implicitWidth + (showSeparator ? 24 : 0)
+        implicitHeight: tile.implicitHeight
 
-        scale: tile.highlighted ? 1.04 : 1.0
-        Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-        Behavior on color { ColorAnimation { duration: 140 } }
-        Behavior on border.color { ColorAnimation { duration: 140 } }
-
-        ColumnLayout {
-            anchors.centerIn: parent
-            spacing: 8
-            Text {
-                Layout.alignment: Qt.AlignHCenter
-                text: tile.entry ? tile.entry.glyph : ""
-                color: tile.entry ? tile.entry.accent : "#fafaf9"
-                font.family: "FiraCode Nerd Font"
-                font.pixelSize: 32
+        // Divider between safe and destructive groups
+        Rectangle {
+            visible: tileWrap.showSeparator
+            anchors {
+                left: parent.left
+                leftMargin: 11
+                verticalCenter: parent.verticalCenter
             }
-            Text {
-                Layout.alignment: Qt.AlignHCenter
-                text: tile.entry ? tile.entry.label : ""
-                color: "#e7e5e4"
-                font.family: "FiraCode Nerd Font"
-                font.pixelSize: 11
-                font.bold: tile.highlighted
-            }
+            width: 1
+            height: tile.height - 24
+            color: Theme.border
         }
 
-        MouseArea {
-            id: mouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: tile.picked()
-            onContainsMouseChanged: if (containsMouse) tile.hovered()
+        Rectangle {
+            id: tile
+            anchors {
+                right: parent.right
+                top: parent.top
+                bottom: parent.bottom
+            }
+            implicitWidth: 108
+            implicitHeight: 124
+            radius: 14
+            color: tileWrap.highlighted ? "#262220" : Theme.bgHover
+            border.color: tileWrap.highlighted
+                ? (tileWrap.entry ? tileWrap.entry.accent : Theme.fg)
+                : Theme.border
+            border.width: tileWrap.highlighted ? 2 : 1
+            scale: tileWrap.highlighted ? 1.05 : 1.0
+            Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+            Behavior on color { ColorAnimation { duration: 140 } }
+            Behavior on border.color { ColorAnimation { duration: 140 } }
+
+            ColumnLayout {
+                anchors.centerIn: parent
+                spacing: 8
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: tileWrap.entry ? tileWrap.entry.glyph : ""
+                    color: tileWrap.entry ? tileWrap.entry.accent : Theme.fg
+                    font.family: Theme.font
+                    font.pixelSize: 34
+                }
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: tileWrap.entry ? tileWrap.entry.label : ""
+                    color: tileWrap.highlighted ? Theme.fg : Theme.fgMuted
+                    font.family: Theme.font
+                    font.pixelSize: 11
+                    font.bold: tileWrap.highlighted
+                }
+            }
+
+            // Number badge top-left
+            Rectangle {
+                anchors { top: parent.top; left: parent.left; margins: 8 }
+                implicitWidth: 18
+                implicitHeight: 18
+                radius: 9
+                color: tileWrap.highlighted
+                    ? (tileWrap.entry ? tileWrap.entry.accent : Theme.fg)
+                    : Theme.border
+                Text {
+                    anchors.centerIn: parent
+                    text: tileWrap.indexLabel
+                    color: tileWrap.highlighted ? "#0a0a0a" : Theme.muted
+                    font.family: Theme.font
+                    font.pixelSize: 10
+                    font.bold: true
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: tileWrap.picked()
+                onContainsMouseChanged: if (containsMouse) tileWrap.hovered()
+            }
         }
     }
 }

@@ -118,8 +118,8 @@ Scope {
                 implicitWidth: hudRow.implicitWidth + 24
                 implicitHeight: hudRow.implicitHeight + 14
                 radius: 18
-                color: "#1c1917"
-                border.color: root._justStarted ? "#7f1d1d" : "#3a3633"
+                color: Theme.bg
+                border.color: root._justStarted ? "#7f1d1d" : Theme.border
                 border.width: 1
                 opacity: root._showHud ? 1.0 : 0.0
                 Behavior on opacity { NumberAnimation { duration: 180 } }
@@ -133,13 +133,13 @@ Scope {
                         Layout.preferredWidth: 12
                         Layout.preferredHeight: 12
                         radius: 6
-                        color: root._justStarted ? "#ef4444" : "#22c55e"
+                        color: root._justStarted ? Theme.accent.red : Theme.accent.green
                     }
 
                     Text {
                         text: root._justStarted ? "Recording started" : "Recording saved"
-                        color: "#fafaf9"
-                        font.family: "FiraCode Nerd Font"
+                        color: Theme.fg
+                        font.family: Theme.font
                         font.pixelSize: 12
                         font.bold: true
                     }
@@ -147,7 +147,7 @@ Scope {
                     Rectangle {
                         Layout.preferredWidth: 1
                         Layout.preferredHeight: 18
-                        color: "#3a3633"
+                        color: Theme.border
                         visible: root._justStarted
                     }
 
@@ -165,8 +165,8 @@ Scope {
                             id: stopText
                             anchors.centerIn: parent
                             text: "󰓛  Stop"
-                            color: stopMouse.containsMouse ? "#fafaf9" : "#f87171"
-                            font.family: "FiraCode Nerd Font"
+                            color: stopMouse.containsMouse ? Theme.fg : "#f87171"
+                            font.family: Theme.font
                             font.pixelSize: 11
                             font.bold: true
                         }
