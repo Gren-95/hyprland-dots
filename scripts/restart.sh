@@ -97,19 +97,8 @@ bash "$HOME/.config/scripts/network-notify.sh" >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -f network-notify.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
-# Restart immich sync daemon
-echo -n "Running: immich-sync ... "
-pkill -f immich-sync.sh 2>/dev/null
-bash -c 'command -v immich >/dev/null 2>&1 || [[ -x ~/.npm-global/bin/immich ]] && exec bash ~/.config/scripts/immich-sync.sh' >/dev/null 2>&1 &
-sleep 0.2
-if pgrep -f immich-sync.sh >/dev/null; then echo "OK"; else echo "SKIPPED (immich not installed)"; fi
-
-# Restart jellyfin sync daemon
-echo -n "Running: jellyfin-sync ... "
-pkill -f jellyfin-music-sync.sh 2>/dev/null
-bash -c '[[ -f ~/.config/jellyfin/sync.conf ]] && exec bash ~/.config/scripts/jellyfin-music-sync.sh --daemon' >/dev/null 2>&1 &
-sleep 0.2
-if pgrep -f jellyfin-music-sync.sh >/dev/null; then echo "OK"; else echo "SKIPPED (no config)"; fi
+# Immich + Jellyfin sync are scheduled via cron now; toggle from Quick Actions
+# or run scripts/sync-toggle.sh directly. No daemon to (re)start here.
 
 # Enable WiFi
 echo -n "Running: nmcli radio wifi on ... "
