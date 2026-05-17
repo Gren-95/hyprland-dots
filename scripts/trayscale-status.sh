@@ -1,5 +1,6 @@
 #!/bin/bash
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 
 ACTION="${1:-status}"
 MODE_FILE="/tmp/waybar-trayscale-mode"
@@ -42,14 +43,14 @@ case "$ACTION" in
             1)
                 bin=$(immich_bin)
                 if [[ -n "$bin" ]]; then
-                    notify-send -u low -i camera-photo "Immich" "Starting sync..."
+                    notify low immich-sync camera-photo "Immich" "Starting sync..."
                     "$bin" upload --recursive "$PICTURES_DIR" --ignore "**/ocr/**" &
                 else
-                    notify-send -u critical "Immich" "immich CLI not found"
+                    notify critical immich-sync dialog-error "Immich" "immich CLI not found"
                 fi
                 ;;
             2)
-                notify-send -u low -i audio-x-generic "Jellyfin" "Starting sync..."
+                notify low jellyfin-sync audio-x-generic "Jellyfin" "Starting sync..."
                 bash "$SCRIPTS_DIR/jellyfin-music-sync.sh" &
                 ;;
             3)
@@ -58,10 +59,10 @@ case "$ACTION" in
             4)
                 if pgrep -x hypridle > /dev/null; then
                     pkill hypridle
-                    notify-send -u low 'Stay Awake' 'Idle management disabled' -i caffeine-on
+                    notify low hypridle caffeine-on 'Stay Awake' 'Idle management disabled'
                 else
                     hypridle &
-                    notify-send -u low 'Sleep Mode' 'Idle management enabled' -i caffeine-off
+                    notify low hypridle caffeine-off 'Sleep Mode' 'Idle management enabled'
                 fi
                 pkill -RTMIN+9 waybar
                 ;;

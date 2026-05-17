@@ -1,5 +1,6 @@
 #!/bin/bash
 # Battery low notification daemon
+source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 
 WARNED_20=false
 WARNED_10=false
@@ -20,10 +21,10 @@ while true; do
         WARNED_10=false
     elif [[ -n "$CAPACITY" ]]; then
         if [[ "$CAPACITY" -le 10 && "$WARNED_10" == false ]]; then
-            notify-send -u critical -i battery-caution "Battery Critical" "${CAPACITY}% remaining — plug in now!"
+            notify critical battery battery-caution "Battery Critical" "${CAPACITY}% remaining — plug in now!"
             WARNED_10=true
         elif [[ "$CAPACITY" -le 20 && "$WARNED_20" == false ]]; then
-            notify-send -u normal -i battery-low "Battery Low" "${CAPACITY}% remaining"
+            notify normal battery battery-low "Battery Low" "${CAPACITY}% remaining"
             WARNED_20=true
         fi
     fi

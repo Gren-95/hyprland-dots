@@ -5,6 +5,7 @@
 # Also called from restart.sh
 
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 
 DOTS_DIR="$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")"
 COOLDOWN=2
@@ -58,13 +59,13 @@ reload_hypridle() {
 notify_hyprlock() {
     can_reload hyprlock || return
     log "hyprlock.conf → saved"
-    notify-send -u low -i system-lock-screen "Hyprlock updated" "Changes apply on next lock"
+    notify low dotwatch-hyprlock system-lock-screen "Hyprlock updated" "Changes apply on next lock"
 }
 
 notify_gtk() {
     can_reload gtk || return
     log "gtk-3.0/gtk.css → updated (restart GTK apps to apply)"
-    notify-send -u low -i preferences-desktop-theme "GTK CSS updated" "Restart GTK apps to apply changes"
+    notify low dotwatch-gtk preferences-desktop-theme "GTK CSS updated" "Restart GTK apps to apply changes"
 }
 
 log "Watching $DOTS_DIR"

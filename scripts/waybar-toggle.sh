@@ -1,5 +1,6 @@
 #!/bin/bash
 # Toggle waybar between floating and docked mode
+source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 
 FLOATING_CONF="$HOME/.config/waybar/config"
 DOCKED_CONF="$HOME/.config/waybar/config-docked"
@@ -12,11 +13,11 @@ ACTIVE_CSS="$HOME/.config/waybar/style-active.css"
 if [[ -L "$ACTIVE_CONF" ]] && [[ "$(readlink "$ACTIVE_CONF")" == "$DOCKED_CONF" ]]; then
     ln -sf "$FLOATING_CONF" "$ACTIVE_CONF"
     ln -sf "$FLOATING_CSS" "$ACTIVE_CSS"
-    notify-send -i preferences-desktop "Waybar" "Switched to floating mode"
+    notify normal waybar preferences-desktop "Waybar" "Switched to floating mode"
 else
     ln -sf "$DOCKED_CONF" "$ACTIVE_CONF"
     ln -sf "$DOCKED_CSS" "$ACTIVE_CSS"
-    notify-send -i preferences-desktop "Waybar" "Switched to docked mode"
+    notify normal waybar preferences-desktop "Waybar" "Switched to docked mode"
 fi
 
 killall waybar
