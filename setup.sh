@@ -83,7 +83,7 @@ install_dependencies() {
         hyprland hyprland-devel quickshell kitty nautilus cliphist \
         hyprpaper hyprpicker hypridle grim slurp \
         swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard firefox \
-        brightnessctl playerctl network-manager-applet \
+        brightnessctl playerctl \
         gnome-keyring jq \
         powerprofilesctl hyprlock gpu-screen-recorder \
         fish neovim ranger python3 python3-pillow
