@@ -18,7 +18,10 @@ Scope {
     signal closed()
     signal keyPressed(var event)
 
-    function close() { open = false; root.closed(); }
+    // Only emit the signal — assigning `open = false` here would clobber
+    // any `open: <consumerState>` binding and the modal couldn't reopen.
+    // Consumers must reset their own state in onClosed.
+    function close() { root.closed(); }
 
     Variants {
         model: Quickshell.screens

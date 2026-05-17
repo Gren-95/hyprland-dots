@@ -189,6 +189,7 @@ Scope {
                         }
 
                         Repeater {
+                            id: appsRepeater
                             model: root.filtered.slice(0, 60)
                             delegate: SpotlightRow {
                                 required property var modelData
@@ -200,6 +201,36 @@ Scope {
                                 onHovered: root.selectedIndex = index + root.calcOffset
                             }
                         }
+                    }
+                }
+
+                // Keep the highlighted row in view as arrows move selection.
+                Connections {
+                    target: root
+                    function onSelectedIndexChanged() { Qt.callLater(ensureVisible) }
+                }
+                function ensureVisible() {
+                    const idx = root.selectedIndex;
+                    // Calc row sits at the very top; pin to start.
+                    if (root.hasCalc && idx === 0) {
+                        results.contentY = 0;
+                        return;
+                    }
+                    const repIdx = idx - root.calcOffset;
+                    const item = appsRepeater.itemAt(repIdx);
+                    if (!item) return;
+                    const top = item.y;
+                    const bot = top + item.height;
+                    const viewTop = results.contentY;
+                    const viewBot = viewTop + results.height;
+                    const pad = 8;
+                    if (top < viewTop + pad) {
+                        results.contentY = Math.max(0, top - pad);
+                    } else if (bot > viewBot - pad) {
+                        results.contentY = Math.min(
+                            Math.max(0, results.contentHeight - results.height),
+                            bot - results.height + pad
+                        );
                     }
                 }
             }
