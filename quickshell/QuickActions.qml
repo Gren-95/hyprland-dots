@@ -65,7 +65,7 @@ Item {
         font.family: Theme.font
         font.pixelSize: 18
         rotation: actions.popupOpen ? 180 : 0
-        Behavior on rotation { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+        Behavior on rotation { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
     }
 
     MouseArea {
@@ -161,8 +161,8 @@ Item {
             scale: actions.popupOpen ? 1.0 : 0.95
             opacity: actions.popupOpen ? 1.0 : 0.0
             transformOrigin: Item.Center
-            Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-            Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+            Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+            Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
 
             Keys.onPressed: (e) => {
                 const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
@@ -279,8 +279,8 @@ Item {
             : (rowMa.containsMouse ? Theme.bgHover : "#1a1716")
         border.color: row.on ? accent : (row.highlighted ? Theme.mutedDeep : Theme.borderSubtle)
         border.width: row.on ? 2 : 1
-        Behavior on color { ColorAnimation { duration: 140 } }
-        Behavior on border.color { ColorAnimation { duration: 140 } }
+        Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
+        Behavior on border.color { ColorAnimation { duration: Theme.duration.normal } }
 
         RowLayout {
             anchors.fill: parent
@@ -337,7 +337,7 @@ Item {
                 color: row.on ? row.accent : Theme.borderSubtle
                 border.color: row.on ? row.accent : Theme.border
                 border.width: 1
-                Behavior on color { ColorAnimation { duration: 140 } }
+                Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
                 Rectangle {
                     width: 14
                     height: 14
@@ -345,7 +345,7 @@ Item {
                     color: Theme.fg
                     anchors.verticalCenter: parent.verticalCenter
                     x: row.on ? parent.width - width - 3 : 3
-                    Behavior on x { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                    Behavior on x { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
                 }
             }
         }
@@ -376,9 +376,9 @@ Item {
         border.color: tile.highlighted ? accent : Theme.borderSubtle
         border.width: tile.highlighted ? 2 : 1
         scale: tile.highlighted ? 1.03 : 1.0
-        Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-        Behavior on color { ColorAnimation { duration: 140 } }
-        Behavior on border.color { ColorAnimation { duration: 140 } }
+        Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+        Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
+        Behavior on border.color { ColorAnimation { duration: Theme.duration.normal } }
 
         ColumnLayout {
             anchors.centerIn: parent

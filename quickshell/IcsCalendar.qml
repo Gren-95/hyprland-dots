@@ -439,8 +439,8 @@ Scope {
                     : "transparent"
         border.width: (cell.isSelected || cell.isToday) ? 2 : 0
         scale: cell.isSelected ? 1.04 : 1.0
-        Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
-        Behavior on border.color { ColorAnimation { duration: 120 } }
+        Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
+        Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }
 
         Text {
             anchors.horizontalCenter: parent.horizontalCenter

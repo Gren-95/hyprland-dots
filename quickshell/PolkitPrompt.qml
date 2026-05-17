@@ -65,6 +65,10 @@ Scope {
                 width: 500
                 height: cardCol.implicitHeight + 32
                 focus: root.active
+                scale: root.active ? 1.0 : 0.96
+                opacity: root.active ? 1.0 : 0.0
+                Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+                Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
 
                 Keys.onPressed: (e) => {
                     if (e.key === Qt.Key_Escape) { root._cancel(); e.accepted = true; }

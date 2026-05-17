@@ -10,6 +10,7 @@ Rectangle {
     implicitHeight: 36
     radius: 6
     color: dr.highlighted ? "#3b3531" : (hover.containsMouse ? Theme.bgAlt : "transparent")
+    Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
 
     RowLayout {
         anchors.fill: parent

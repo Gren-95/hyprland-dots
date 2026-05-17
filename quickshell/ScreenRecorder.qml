@@ -122,7 +122,7 @@ Scope {
                 border.color: root._justStarted ? "#7f1d1d" : Theme.border
                 border.width: 1
                 opacity: root._showHud ? 1.0 : 0.0
-                Behavior on opacity { NumberAnimation { duration: 180 } }
+                Behavior on opacity { NumberAnimation { duration: Theme.duration.normal } }
 
                 RowLayout {
                     id: hudRow

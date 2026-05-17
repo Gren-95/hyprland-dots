@@ -160,6 +160,10 @@ Scope {
             Item {
                 anchors.fill: parent
                 focus: root.open
+                scale: root.open ? 1.0 : 0.96
+                opacity: root.open ? 1.0 : 0.0
+                Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+                Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
                 Keys.onPressed: (e) => {
                     const n = root.workspaces.length;
                     if (e.key === Qt.Key_Escape) { root.close(); e.accepted = true; }
@@ -301,8 +305,8 @@ Scope {
         border.color: ws.highlighted ? Theme.accent.purple : (ws.isActive ? Theme.accent.blue : Theme.border)
         border.width: (ws.highlighted || ws.isActive) ? 2 : 1
         scale: ws.highlighted ? 1.04 : 1.0
-        Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-        Behavior on border.color { ColorAnimation { duration: 140 } }
+        Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+        Behavior on border.color { ColorAnimation { duration: Theme.duration.normal } }
 
         // Workspace ID badge
         Rectangle {

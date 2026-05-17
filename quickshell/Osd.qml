@@ -183,9 +183,9 @@ Scope {
                 opacity: hideTimer.running ? 1.0 : 0.0
                 transform: Translate {
                     y: hideTimer.running ? 0 : 16
-                    Behavior on y { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                    Behavior on y { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
                 }
-                Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+                Behavior on opacity { NumberAnimation { duration: Theme.duration.slow; easing.type: Theme.easing.standard } }
 
                 ColumnLayout {
                     id: cardCol
@@ -229,7 +229,7 @@ Scope {
                             height: parent.height
                             radius: 3
                             color: root.osdAccent
-                            Behavior on width { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                            Behavior on width { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
                         }
                     }
                 }

@@ -182,6 +182,10 @@ Scope {
                 color: Theme.bgAlt
                 border.color: Theme.mutedDeep
                 border.width: 1
+                scale: root.open ? 1.0 : 0.96
+                opacity: root.open ? 1.0 : 0.0
+                Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+                Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
                 focus: root.open
 
                 Keys.onPressed: (e) => {
@@ -347,7 +351,7 @@ Scope {
             radius: 2
             color: row.entry ? row.entry.catColor : "transparent"
             opacity: row.highlighted ? 1 : 0
-            Behavior on opacity { NumberAnimation { duration: 120 } }
+            Behavior on opacity { NumberAnimation { duration: Theme.duration.fast } }
         }
 
         RowLayout {
