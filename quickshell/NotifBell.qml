@@ -196,7 +196,17 @@ Item {
                 }
 
                 Text {
+                    text: "HISTORY"
+                    color: Theme.mutedDeep
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.xs
+                    font.letterSpacing: 1
+                    font.bold: true
+                }
+
+                Text {
                     Layout.fillWidth: true
+                    Layout.topMargin: -8
                     visible: bell.notifs && bell.notifs.historyList.length === 0
                     text: "No notifications"
                     color: Theme.mutedDeep
@@ -207,6 +217,7 @@ Item {
 
                 ColumnLayout {
                     Layout.fillWidth: true
+                    Layout.topMargin: -8
                     spacing: Theme.spacing.xs
                     visible: bell.notifs && bell.notifs.historyList.length > 0
                     Repeater {
