@@ -3,9 +3,7 @@
 // with the Power tab pre-selected via openAt("power").
 import QtQuick
 import QtQuick.Layouts
-import Quickshell
 import Quickshell.Io
-import Quickshell.Hyprland
 import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
 
@@ -113,6 +111,12 @@ Item {
         if (tab) setTab(tab);
         popupOpen = true;
     }
+    // Toggle the popup; if it's already on this tab, close it. Otherwise
+    // switch to the tab and open. Called from the per-tab bar icons.
+    function openTab(name) {
+        if (popupOpen && activeTab === name) { popupOpen = false; }
+        else { setTab(name); popupOpen = true; }
+    }
 
     onPopupOpenChanged: if (popupOpen) {
         if (activeTab === "sound") {
@@ -169,12 +173,7 @@ Item {
                 if (ap.sink && ap.sink.audio) ap.sink.audio.muted = !ap.sink.audio.muted;
                 return;
             }
-            if (ap.popupOpen && ap.activeTab === "sound") {
-                ap.popupOpen = false;
-            } else {
-                ap.setTab("sound");
-                ap.popupOpen = true;
-            }
+            ap.openTab("sound");
         }
         onWheel: (e) => {
             if (!ap.sink || !ap.sink.audio) return;
@@ -222,84 +221,63 @@ Item {
     Process { id: pavuProc; command: ["pavucontrol"] }
 
     // ===== Popup =====
-    PopupWindow {
+    BarPopupCard {
         id: apPopup
-        anchor.window: ap.parentBar
-        anchor.rect.x: (ap.parentBar.width - implicitWidth) / 2
-        anchor.rect.y: (ap.parentBar.screen.height - implicitHeight) / 2
-        implicitWidth: 380
+        parentBar: ap.parentBar
+        open: ap.popupOpen
+        cardWidth: 380
         // Fixed height sized for the larger tab content so the popup surface
         // doesn't resize when switching tabs (which causes visible jitter).
-        implicitHeight: 480
-        visible: ap.popupOpen
-        color: "transparent"
-
-        SproutBg {
-            anchors.fill: parent
-            fillColor: Theme.bgAlt
-            borderColor: Theme.mutedDeep
-            showTail: false
-            scale: ap.popupOpen ? 1.0 : 0.94
-            opacity: ap.popupOpen ? 1.0 : 0.0
-            transformOrigin: Item.Center
-            Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-            Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-        }
-        FocusScope {
-            anchors.fill: parent
-            focus: ap.popupOpen
-            scale: ap.popupOpen ? 1.0 : 0.94
-            opacity: ap.popupOpen ? 1.0 : 0.0
-            transformOrigin: Item.Center
-            Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-            Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-            Keys.onPressed: (e) => {
-                const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
-                if (e.key === Qt.Key_Escape) { ap.popupOpen = false; e.accepted = true; }
-                else if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
-                    ap.navigateNext(); e.accepted = true;
-                } else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
-                    ap.navigatePrev(); e.accepted = true;
-                } else if (e.key === Qt.Key_Tab) {
-                    ap.setTab(ap.activeTab === "sound" ? "power" : "sound");
+        cardHeight: 480
+        pinned: ap.pinned
+        onDismissed: ap.popupOpen = false
+        onKeyPressed: (e) => {
+            const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
+            if (e.key === Qt.Key_Escape) { ap.popupOpen = false; e.accepted = true; }
+            else if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
+                ap.navigateNext(); e.accepted = true;
+            } else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
+                ap.navigatePrev(); e.accepted = true;
+            } else if (e.key === Qt.Key_Tab) {
+                ap.setTab(ap.activeTab === "sound" ? "power" : "sound");
+                e.accepted = true;
+            } else if (ap.activeTab === "sound") {
+                if (e.key === Qt.Key_Down || e.key === Qt.Key_J || e.key === Qt.Key_Right || e.key === Qt.Key_L) {
+                    ap.cycleSnd(1); e.accepted = true;
+                } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K || e.key === Qt.Key_Left || e.key === Qt.Key_H) {
+                    ap.cycleSnd(-1); e.accepted = true;
+                } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
+                    ap.activateSndIndex(); e.accepted = true;
+                } else if (e.key === Qt.Key_M) {
+                    if (ap.sink && ap.sink.audio) ap.sink.audio.muted = !ap.sink.audio.muted;
                     e.accepted = true;
-                } else if (ap.activeTab === "sound") {
-                    if (e.key === Qt.Key_Down || e.key === Qt.Key_J || e.key === Qt.Key_Right || e.key === Qt.Key_L) {
-                        ap.cycleSnd(1); e.accepted = true;
-                    } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K || e.key === Qt.Key_Left || e.key === Qt.Key_H) {
-                        ap.cycleSnd(-1); e.accepted = true;
-                    } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
-                        ap.activateSndIndex(); e.accepted = true;
-                    } else if (e.key === Qt.Key_M) {
-                        if (ap.sink && ap.sink.audio) ap.sink.audio.muted = !ap.sink.audio.muted;
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_Plus || e.key === Qt.Key_Equal) {
-                        ap.adjustVolume(0.05); e.accepted = true;
-                    } else if (e.key === Qt.Key_Minus) {
-                        ap.adjustVolume(-0.05); e.accepted = true;
-                    }
-                } else if (ap.activeTab === "power") {
-                    if (e.key === Qt.Key_Down || e.key === Qt.Key_J) {
-                        ap.cyclePwr(1); e.accepted = true;
-                    } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
-                        ap.cyclePwr(-1); e.accepted = true;
-                    } else if (e.key === Qt.Key_Right || e.key === Qt.Key_L) {
-                        if (ap.pwrIndex === 3) ap.setScreen(ap.screenLevel + 0.05);
-                        else if (ap.pwrIndex === 4) ap.setKb(ap.kbLevel + 1 / Math.max(1, ap.kbMax));
-                        else ap.cyclePwr(1);
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_Left || e.key === Qt.Key_H) {
-                        if (ap.pwrIndex === 3) ap.setScreen(ap.screenLevel - 0.05);
-                        else if (ap.pwrIndex === 4) ap.setKb(ap.kbLevel - 1 / Math.max(1, ap.kbMax));
-                        else ap.cyclePwr(-1);
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
-                        ap.activatePwr(); e.accepted = true;
-                    }
+                } else if (e.key === Qt.Key_Plus || e.key === Qt.Key_Equal) {
+                    ap.adjustVolume(0.05); e.accepted = true;
+                } else if (e.key === Qt.Key_Minus) {
+                    ap.adjustVolume(-0.05); e.accepted = true;
+                }
+            } else if (ap.activeTab === "power") {
+                if (e.key === Qt.Key_Down || e.key === Qt.Key_J) {
+                    ap.cyclePwr(1); e.accepted = true;
+                } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
+                    ap.cyclePwr(-1); e.accepted = true;
+                } else if (e.key === Qt.Key_Right || e.key === Qt.Key_L) {
+                    if (ap.pwrIndex === 3) ap.setScreen(ap.screenLevel + 0.05);
+                    else if (ap.pwrIndex === 4) ap.setKb(ap.kbLevel + 1 / Math.max(1, ap.kbMax));
+                    else ap.cyclePwr(1);
+                    e.accepted = true;
+                } else if (e.key === Qt.Key_Left || e.key === Qt.Key_H) {
+                    if (ap.pwrIndex === 3) ap.setScreen(ap.screenLevel - 0.05);
+                    else if (ap.pwrIndex === 4) ap.setKb(ap.kbLevel - 1 / Math.max(1, ap.kbMax));
+                    else ap.cyclePwr(-1);
+                    e.accepted = true;
+                } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
+                    ap.activatePwr(); e.accepted = true;
                 }
             }
+        }
 
-            ColumnLayout {
+        ColumnLayout {
                 id: contentCol
                 anchors.fill: parent
                 anchors.margins: Theme.spacing.lg
@@ -313,36 +291,14 @@ Item {
                         pinned: ap.pinned
                         onToggled: ap.pinned = !ap.pinned
                     }
-                    Rectangle {
+                    TabStrip {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: Theme.height.control
-                        radius: 15
-                        color: Theme.bgDeep
-                        border.color: Theme.border
-                        border.width: 1
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.margins: 2
-                            spacing: 0
-                            TabPill {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                glyph: "󰕾"
-                                label: "Sound"
-                                active: ap.activeTab === "sound"
-                                accent: Theme.accent.blue
-                                onPicked: ap.setTab("sound")
-                            }
-                            TabPill {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                glyph: "⏻"
-                                label: "Power"
-                                active: ap.activeTab === "power"
-                                accent: Theme.accent.red
-                                onPicked: ap.setTab("power")
-                            }
-                        }
+                        activeId: ap.activeTab
+                        onPicked: (id) => ap.setTab(id)
+                        tabs: [
+                            { glyph: "󰕾", label: "Sound", accent: Theme.accent.blue, id: "sound" },
+                            { glyph: "⏻", label: "Power", accent: Theme.accent.red,  id: "power" }
+                        ]
                     }
                 }
 
@@ -442,10 +398,3 @@ Item {
             }
         }
     }
-
-    HyprlandFocusGrab {
-        active: ap.popupOpen && !ap.pinned
-        windows: [apPopup]
-        onCleared: ap.popupOpen = false
-    }
-}

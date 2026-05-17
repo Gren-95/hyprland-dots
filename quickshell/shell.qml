@@ -113,25 +113,8 @@ Scope {
                     }
                     BarSep {}
 
-                    RowLayout {
-                        spacing: Theme.spacing.md
-                        Repeater {
-                            model: Hyprland.workspaces
-                            delegate: Text {
-                                required property var modelData
-                                text: workspaceGlyph(modelData.id)
-                                color: modelData.active ? "#f5f5f4" : Theme.mutedDeep
-                                font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.lg
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: Hyprland.dispatch("workspace " + modelData.id)
-                                    onWheel: (e) => Hyprland.dispatch(
-                                        "workspace " + (e.angleDelta.y > 0 ? "e+1" : "e-1"))
-                                }
-                            }
-                        }
+                    WorkspaceStrip {
+                        glyphFn: workspaceGlyph
                     }
 
                     Item { width: 8 }
@@ -193,14 +176,7 @@ Scope {
                         tooltip: !enabled ? "Wi-Fi off"
                             : connected && btMod.activeNetwork ? btMod.activeNetwork.name
                             : "Wi-Fi"
-                        onClicked: {
-                            if (btMod.popupOpen && btMod.activeTab === "wifi") {
-                                btMod.popupOpen = false;
-                            } else {
-                                btMod.setTab("wifi");
-                                btMod.popupOpen = true;
-                            }
-                        }
+                        onClicked: btMod.openTab("wifi")
                     }
 
                     // VPN indicator — only visible when Tailscale is up.
@@ -211,14 +187,7 @@ Scope {
                         color: Theme.accent.purple
                         pixelSize: Theme.fontSize.md
                         tooltip: TailscaleService.tailnet || "VPN"
-                        onClicked: {
-                            if (btMod.popupOpen && btMod.activeTab === "vpn") {
-                                btMod.popupOpen = false;
-                            } else {
-                                btMod.setTab("vpn");
-                                btMod.popupOpen = true;
-                            }
-                        }
+                        onClicked: btMod.openTab("vpn")
                     }
 
                     BarSep {}
@@ -233,13 +202,7 @@ Scope {
                     // Battery: opens AudioPowerModule on the Power tab.
                     BarIcon {
                         id: batteryIcon
-                        onClicked: {
-                            if (apMod.popupOpen && apMod.activeTab === "power") {
-                                apMod.popupOpen = false;
-                            } else {
-                                apMod.openAt("power");
-                            }
-                        }
+                        onClicked: apMod.openTab("power")
                         readonly property var dev: UPower.displayDevice
                         readonly property int pct: dev ? Math.round(dev.percentage * 100) : 0
                         readonly property bool charging: dev && (dev.state === UPowerDeviceState.Charging
