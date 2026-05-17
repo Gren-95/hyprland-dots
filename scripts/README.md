@@ -21,6 +21,7 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | `battery-notify.sh` | `restart.sh` | Polls `/sys/class/power_supply/BAT*` every 60s. Sends critical/normal notifications at 10% / 20% (replace-key `battery`). |
 | `network-notify.sh` | `restart.sh` | `nmcli monitor` pipe. Emits a notification on connect/disconnect (replace-key `network`). |
 | `media-inhibit.sh` | `restart.sh` | Polls `playerctl status` every 3s. Inhibits `org.freedesktop.ScreenSaver` while a player is `Playing` so hypridle doesn't lock during playback. |
+| `power-auto.sh` | `restart.sh` + autostart | Listens to `upower --monitor-detail`. Sets `performance` on AC, `balanced` on battery ≥30%, `power-saver` <30% via `powerprofilesctl`. Idempotent (skips if already at target). |
 | `dotwatch.sh` | `restart.sh` | `inotifywait` on the dots repo. Reloads Hyprland / hypridle config in-place when their files change. Hot-reloads `gtk-3.0/gtk.css` notify and hyprlock config notify. |
 | `immich-sync.sh` | cron (via `sync-toggle.sh`) | Runs once by default. `--daemon` flag for legacy loop mode (unused by current setup). Uses the `immich` CLI to upload `$PICTURES_DIR` (excluding `**/ocr/**`). |
 | `jellyfin-music-sync.sh` | cron (via `sync-toggle.sh`) | Same shape — single run by default, `--daemon` for the loop. Mirrors Jellyfin music library to `$MUSIC_DIR`, deleting local files no longer on the server. |
@@ -36,10 +37,11 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 
 | File | Keybind / invocation | What it does |
 |---|---|---|
-| `screenshot.sh` | `Super+Shift+S` | `slurp` region → `grim` → save to `$SCREENSHOTS_DIR` → `wl-copy` → notify with file path as icon. |
-| `screenshot-ocr.sh` | `Super+Ctrl+Shift+S` | Region screenshot → ImageMagick preprocess (3× upscale, optional invert, contrast stretch) → `tesseract` (eng+est) → `wl-copy` text + notify with preview. |
+| `screenshot.sh` | Quickshell `RegionSelector` (`Super+Shift+S`) | Accepts a pre-computed `"X,Y WxH"` region as `$1` (falls back to `slurp -d` if no arg). `grim` → save to `$SCREENSHOTS_DIR` → `wl-copy` → notify → echo the saved path on stdout (RegionSelector reads it to open ScreenshotActions). |
+| `screenshot-ocr.sh` | `Super+Ctrl+Shift+S` or ScreenshotActions "OCR" | Accepts a pre-captured image file as `$1` (falls back to `slurp+grim` otherwise). ImageMagick preprocess (3× upscale, optional invert, contrast stretch) → `tesseract` (eng+est) → `wl-copy` text + notify with preview. |
 | `screenrecord.sh` | `Super+Shift+R` (or Quick Actions Record) | Toggles `gpu-screen-recorder` with `-w screen` (DRM capture). PID stored in `/tmp/screenrecord.pid`. |
-| `wallpaper.sh` | `Super+Shift+N` | Picks a random wallpaper from `$WALLPAPER_DIR`, applies to all monitors via `hyprctl hyprpaper`. |
+| `wallpaper.sh` | `Super+Shift+N`, WallpaperPicker tile | Accepts an absolute path as `$1` to set a specific wallpaper; no arg picks a random one from `$WALLPAPER_DIR`. Applies via `hyprctl hyprpaper` to every monitor. |
+| `sysinfo.sh` | Quickshell `SystemMonitor` (`Super+M`) | Emits a single JSON line: `cpu_pct`, per-core `cpu_cores[]`, `cpu_temp`, `ram_*`, `nvme_temp`, `fan1/2`, `disks[]` (one per real local FS), `uptime`. CPU uses a 200 ms `/proc/stat` sampling window; hwmon paths discovered by name so they survive reboot reordering. |
 | `hyprlock-art.sh` | hypridle pre-lock hook (and direct call) | Copies the current MPRIS album art to `$LOCK_ART` so hyprlock can display it. Also picks a random wallpaper for the lock background. |
 | `restart.sh` | `Super+B` | Sequentially restarts every userspace service: xdg-desktop-portal, gnome-keyring, Quickshell, hyprpaper, hypridle, battery-notify, media-inhibit, cliphist, nm-applet, network-notify, dotwatch. Sets GTK theme, fallback monitor. Logs OK/FAILED per step to stdout. |
 | `generate-avatar.sh` | `setup.sh` | Python+Pillow renders a circular initials avatar from `$USER`, installs to `/var/lib/AccountsService/icons/$USER` (used as lockscreen avatar). |
