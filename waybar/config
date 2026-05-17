@@ -163,7 +163,7 @@
         "exec": "if pgrep -x hypridle > /dev/null; then echo '󰒳'; else echo '󰒲'; fi",
         "tooltip": true,
         "tooltip-format": "Click to toggle idle management",
-        "on-click": "if pgrep -x hypridle > /dev/null; then pkill hypridle && notify-send -u low 'Stay Awake' 'Idle management disabled' -i caffeine-on; else hypridle & notify-send -u low 'Sleep Mode' 'Idle management enabled' -i caffeine-off; fi"
+        "on-click": "if pgrep -x hypridle > /dev/null; then pkill hypridle && notify-send -u low 'Stay Awake' 'Idle management disabled' -i system-suspend-inhibited; else hypridle & notify-send -u low 'Sleep Mode' 'Idle management enabled' -i system-suspend-uninhibited; fi"
     },
     "custom/powerprofile": {
         "format": "{}",

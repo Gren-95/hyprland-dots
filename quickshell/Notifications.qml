@@ -134,18 +134,19 @@ Scope {
 
             Rectangle {
                 id: panel
-                anchors.right: parent.right
-                anchors.rightMargin: 12
-                anchors.top: parent.top
-                anchors.topMargin: 48
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 12
-                width: 420
-                radius: 14
+                anchors.centerIn: parent
+                width: 560
+                height: 620
+                radius: Theme.radius.lg
                 color: Theme.bgAlt
-                border.color: Theme.mutedDeep
+                border.color: Theme.borderStrong
                 border.width: 1
                 focus: root.centerOpen
+                scale: root.centerOpen ? 1.0 : 0.96
+                opacity: root.centerOpen ? 1.0 : 0.0
+                transformOrigin: Item.Center
+                Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+                Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
                 Keys.onPressed: (e) => {
                     if (e.key === Qt.Key_Escape) { root.closeCenter(); e.accepted = true; }
                 }

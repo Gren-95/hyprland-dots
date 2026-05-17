@@ -13,7 +13,13 @@ Item {
     property var parentBar
     property bool popupOpen: false
     property bool pinned: false
-    property bool idleOn: true   // best-guess; refreshed from `pgrep hypridle`
+    property bool idleOn: true       // best-guess; refreshed from `pgrep hypridle`
+    property bool immichOn: false    // immich cron entry enabled
+    property bool jellyfinOn: false  // jellyfin cron entry enabled
+    // When a toggle is mid-flight (script not yet committed), skip the
+    // periodic daemonCheck so its stale read doesn't briefly revert the
+    // optimistic UI flip.
+    property bool toggleInFlight: false
     signal navigateNext()
     signal navigatePrev()
 
@@ -36,16 +42,30 @@ Item {
             description: actions.idleOn ? "Idle sleep enabled" : "Idle sleep disabled",
             action:   "idle",
         },
+        {
+            glyph:    "󰋩", offGlyph: "󰋩",
+            label:    "Immich sync",
+            accent:   "#f59e0b",
+            on:       actions.immichOn,
+            description: actions.immichOn ? "Uploading photos hourly" : "Background sync stopped",
+            action:   "immich",
+        },
+        {
+            glyph:    "󰝚", offGlyph: "󰝚",
+            label:    "Jellyfin sync",
+            accent:   "#818cf8",
+            on:       actions.jellyfinOn,
+            description: actions.jellyfinOn ? "Syncing music every 2h" : "Background sync stopped",
+            action:   "jellyfin",
+        },
     ]
 
     // ============ One-shot actions ============
     readonly property var oneShots: [
-        { glyph: "󰅍", label: "Clipboard",     accent: Theme.accent.slate, action: "clipboard" },
-        { glyph: "󰹑", label: "Screenshot",    accent: "#60a5fa", cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenshot.sh"] },
-        { glyph: "󰕧", label: "Record",        accent: Theme.accent.red, cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenrecord.sh"] },
-        { glyph: "󰈊", label: "Color picker",  accent: "#e879f9", cmd: ["hyprpicker", "-a"] },
-        { glyph: "󰋩", label: "Immich sync",   accent: "#f59e0b", cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/immich-sync.sh", "--now"] },
-        { glyph: "󰝚", label: "Jellyfin sync", accent: "#818cf8", cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/jellyfin-music-sync.sh"] },
+        { glyph: "󰅍", label: "Clipboard",    accent: Theme.accent.slate, action: "clipboard" },
+        { glyph: "󰹑", label: "Screenshot",   accent: "#60a5fa", cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenshot.sh"] },
+        { glyph: "󰕧", label: "Record",       accent: Theme.accent.red, cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenrecord.sh"] },
+        { glyph: "󰈊", label: "Color picker", accent: "#e879f9", cmd: ["hyprpicker", "-a"] },
     ]
 
     // Single flat index across both sections for keyboard nav:
@@ -87,7 +107,21 @@ Item {
         if (entry.action === "dnd") {
             notifService.dnd = !notifService.dnd;
         } else if (entry.action === "idle") {
+            // Optimistic: flip UI immediately; daemonCheck reconciles later.
+            actions.idleOn = !actions.idleOn;
+            actions.toggleInFlight = true;
+            clearInFlightTimer.restart();
             idleToggleProc.startDetached();
+        } else if (entry.action === "immich") {
+            actions.immichOn = !actions.immichOn;
+            actions.toggleInFlight = true;
+            clearInFlightTimer.restart();
+            immichToggleProc.startDetached();
+        } else if (entry.action === "jellyfin") {
+            actions.jellyfinOn = !actions.jellyfinOn;
+            actions.toggleInFlight = true;
+            clearInFlightTimer.restart();
+            jellyfinToggleProc.startDetached();
         } else if (entry.action === "clipboard") {
             actions.popupOpen = false;
             clipboard.openMenu();
@@ -108,7 +142,7 @@ Item {
     }
     onPopupOpenChanged: if (popupOpen) {
         selectedIndex = 0;
-        idleCheckProc.running = true;
+        daemonCheckProc.running = true;
     }
 
     Process { id: runProc; command: [] }
@@ -117,27 +151,74 @@ Item {
         command: ["sh", "-c",
             "source ~/.config/scripts/lib/notify.sh && " +
             "if pgrep -x hypridle >/dev/null; then " +
-            "  pkill hypridle && notify low hypridle caffeine-on 'Stay Awake' 'Idle disabled'; " +
+            "  pkill hypridle && notify low hypridle system-suspend-inhibited 'Stay Awake' 'Idle disabled'; " +
             "else " +
-            "  hypridle & disown && notify low hypridle caffeine-off 'Sleep Mode' 'Idle enabled'; " +
+            "  hypridle & disown && notify low hypridle system-suspend-uninhibited 'Sleep Mode' 'Idle enabled'; " +
             "fi"]
         running: false
-        onExited: idleCheckProc.running = true
+        onExited: daemonCheckProc.running = true
+    }
+    // Immich + Jellyfin sync state is managed via cron entries; the
+    // sync-toggle.sh helper installs/comments/uncomments the relevant
+    // crontab lines. "On" = the cron line is uncommented. `toggle` emits
+    // the resulting state ("0" or "1") so the notification can be sent
+    // in the same shell invocation without a second crontab read.
+    Process {
+        id: immichToggleProc
+        command: ["sh", "-c",
+            "state=$(bash ~/.config/scripts/sync-toggle.sh toggle immich); " +
+            "source ~/.config/scripts/lib/notify.sh; " +
+            "[[ \"$state\" == \"1\" ]] " +
+            "  && notify low immich-sync camera-photo 'Immich sync' 'Hourly schedule enabled' " +
+            "  || notify low immich-sync camera-photo 'Immich sync' 'Schedule disabled'"]
+        running: false
     }
     Process {
-        id: idleCheckProc
-        command: ["sh", "-c", "pgrep -x hypridle >/dev/null && echo 1 || echo 0"]
+        id: jellyfinToggleProc
+        command: ["sh", "-c",
+            "state=$(bash ~/.config/scripts/sync-toggle.sh toggle jellyfin); " +
+            "source ~/.config/scripts/lib/notify.sh; " +
+            "[[ \"$state\" == \"1\" ]] " +
+            "  && notify low jellyfin-sync audio-x-generic 'Jellyfin sync' 'Schedule enabled (every 2h)' " +
+            "  || notify low jellyfin-sync audio-x-generic 'Jellyfin sync' 'Schedule disabled'"]
+        running: false
+    }
+    // Clears the in-flight flag a beat after the toggle starts so periodic
+    // daemonCheck can resume and reconcile state. 800ms is enough for the
+    // sync-toggle.sh write + a daemonCheck round-trip.
+    Timer {
+        id: clearInFlightTimer
+        interval: 800
+        repeat: false
+        onTriggered: { actions.toggleInFlight = false; daemonCheckProc.running = true }
+    }
+    Process {
+        // Combined probe: hypridle process + immich/jellyfin cron schedule state.
+        // Output format: "idle=0|1 immich=0|1 jellyfin=0|1"
+        id: daemonCheckProc
+        command: ["sh", "-c",
+            "printf 'idle=%s ' $(pgrep -x hypridle >/dev/null && echo 1 || echo 0); " +
+            "bash ~/.config/scripts/sync-toggle.sh status all"]
         running: false
         stdout: StdioCollector {
-            onStreamFinished: actions.idleOn = text.trim() === "1"
+            onStreamFinished: {
+                const m = {};
+                for (const kv of text.trim().split(/\s+/)) {
+                    const [k, v] = kv.split("=");
+                    m[k] = v === "1";
+                }
+                if (m.idle !== undefined)     actions.idleOn = m.idle;
+                if (m.immich !== undefined)   actions.immichOn = m.immich;
+                if (m.jellyfin !== undefined) actions.jellyfinOn = m.jellyfin;
+            }
         }
     }
     Timer {
-        running: actions.popupOpen
+        running: actions.popupOpen && !actions.toggleInFlight
         interval: 1500
         repeat: true
         triggeredOnStart: true
-        onTriggered: idleCheckProc.running = true
+        onTriggered: daemonCheckProc.running = true
     }
 
     PopupWindow {
