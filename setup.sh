@@ -14,18 +14,8 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration directories to symlink
-CONFIG_ITEMS=(
-    "hypr"
-    "quickshell"
-    "kitty"
-    "swappy"
-    "scripts"
-    "wayvnc"
-    "fish"
-    "nvim"
-    "ranger"
-)
+# Config directories to symlink are owned by dotfiles-manager.sh — single
+# source of truth. setup.sh shells out to it.
 
 # Print colored output
 print_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
@@ -101,57 +91,12 @@ install_dependencies() {
     print_success "Dependencies installed"
 }
 
-# Create backup of existing config
-backup_config() {
-    local item="$1"
-    local target="$CONFIG_DIR/$item"
-
-    if [[ -e "$target" ]] && [[ ! -L "$target" ]]; then
-        local backup_name="${item}_backup_$(date +%Y%m%d_%H%M%S)"
-        print_info "Backing up existing $item to $backup_name"
-        mv "$target" "$CONFIG_DIR/$backup_name"
-        print_success "Backed up $item"
-    fi
-}
-
-# Create symlinks
+# Create symlinks via the single-source dotfiles-manager.sh.
 create_symlinks() {
-    print_info "Creating symlinks..."
+    print_info "Creating symlinks via dotfiles-manager.sh..."
+    bash "$SCRIPT_DIR/dotfiles-manager.sh" backup --force
 
-    for item in "${CONFIG_ITEMS[@]}"; do
-        local source="$SCRIPT_DIR/$item"
-        local target="$CONFIG_DIR/$item"
-
-        # Check if source exists
-        if [[ ! -e "$source" ]]; then
-            print_warning "Skipping $item (not found in dotfiles)"
-            continue
-        fi
-
-        # Handle existing target
-        if [[ -L "$target" ]]; then
-            # Already a symlink
-            local current_target=$(readlink -f "$target")
-            local expected_target=$(readlink -f "$source")
-
-            if [[ "$current_target" == "$expected_target" ]]; then
-                print_success "$item already correctly symlinked"
-                continue
-            else
-                print_info "Updating symlink for $item"
-                rm "$target"
-            fi
-        elif [[ -e "$target" ]]; then
-            # Exists but not a symlink - backup first
-            backup_config "$item"
-        fi
-
-        # Create symlink
-        ln -sf "$source" "$target"
-        print_success "Symlinked $item"
-    done
-
-    # Avatar symlink: point ~/.config/hypr/avatar.png to AccountsService icon
+    # Avatar symlink: point ~/.config/hypr/avatar.png to AccountsService icon.
     local avatar_link="$HOME/.config/hypr/avatar.png"
     local avatar_source="/var/lib/AccountsService/icons/$(whoami)"
     ln -sf "$avatar_source" "$avatar_link"
@@ -244,8 +189,6 @@ setup_immich_cli() {
 setup_jellyfin_sync() {
     print_info "Setting up Jellyfin music sync..."
 
-    local autostart="$CONFIG_DIR/hypr/modules/autostart.conf"
-
     # Prompt for sync interval
     echo ""
     print_info "How often should music sync run?"
@@ -272,11 +215,8 @@ setup_jellyfin_sync() {
         print_success "Sync interval set to $sleep_secs seconds"
     fi
 
-    # Add to autostart if not already present
-    if [[ -f "$autostart" ]] && ! grep -q "jellyfin-music-sync" "$autostart"; then
-        echo "exec-once = bash ~/.config/scripts/jellyfin-music-sync.sh --daemon" >> "$autostart"
-        print_success "Added Jellyfin sync to Hyprland autostart"
-    fi
+    # Background sync is scheduled via cron (Quick Actions toggle); nothing
+    # to add to autostart.
 
     # Prompt for credentials now
     local conf="$HOME/.config/jellyfin/sync.conf"
