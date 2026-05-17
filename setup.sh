@@ -48,7 +48,7 @@ check_dependencies() {
         "hypridle" "grim" "slurp" "swappy"
         "tesseract" "convert" "cliphist" "wl-copy" "wl-paste"
         "firefox" "brightnessctl" "playerctl"
-        "gnome-keyring-daemon" "jq" "pactl" "wpctl" "python3" "fish" "nvim" "ranger"
+        "gnome-keyring-daemon" "jq" "pactl" "wpctl" "python3" "fish" "ranger"
     )
 
     for dep in "${required_deps[@]}"; do
@@ -86,9 +86,19 @@ install_dependencies() {
         brightnessctl playerctl \
         gnome-keyring jq \
         powerprofilesctl hyprlock gpu-screen-recorder \
-        fish neovim ranger python3 python3-pillow
+        fish ranger python3 python3-pillow
 
     print_success "Dependencies installed"
+
+    # ranger devicons plugin — provides file-type glyphs in the listing.
+    local plug_dir="$CONFIG_DIR/ranger/plugins/ranger_devicons"
+    if [[ ! -d "$plug_dir" ]]; then
+        print_info "Installing ranger devicons plugin..."
+        mkdir -p "$(dirname "$plug_dir")"
+        git clone --depth 1 https://github.com/alexanderjeurissen/ranger_devicons "$plug_dir" >/dev/null 2>&1 && \
+            print_success "ranger_devicons installed" || \
+            print_warning "Failed to install ranger_devicons (network?)"
+    fi
 }
 
 # Create symlinks via the single-source dotfiles-manager.sh.

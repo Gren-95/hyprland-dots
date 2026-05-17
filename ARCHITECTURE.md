@@ -53,7 +53,7 @@ Bird's-eye view of how the pieces fit together. For widget-level detail see
 ## Dotfiles plumbing
 
 `~/.config/<dir>` is a symlink into this repo for every managed directory
-(hypr, kitty, quickshell, swappy, scripts, wayvnc, fish, nvim, ranger,
+(hypr, kitty, quickshell, swappy, scripts, wayvnc, fish, ranger,
 gtk-3.0, immich, jellyfin). Two entry points:
 
 - `setup.sh` — first-time install on a fresh machine. Installs Fedora
