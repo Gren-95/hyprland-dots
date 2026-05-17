@@ -24,6 +24,7 @@ for setup time.
 | `Super+R` / `Alt+Space` | App launcher (Spotlight) |
 | `Super+V` | Clipboard history |
 | `Super+N` | Toggle notification center |
+| `Super+A` | Quick actions panel |
 | `Super+Shift+B` | Bluetooth menu (Network modal, BT tab) |
 | `Super+F1` | This keybinds viewer |
 | `Super+M` | System monitor (CPU / RAM / temps / fans / uptime) |
