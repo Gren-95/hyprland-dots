@@ -332,6 +332,24 @@ Scope {
                 }
                 GlobalShortcut {
                     appid: "quickshell"
+                    name: "audiopower"
+                    description: "Toggle audio & power panel (Sound tab)"
+                    onPressed: apMod.openTab("sound")
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "calendar"
+                    description: "Toggle calendar popup"
+                    onPressed: { cal.anchorBar = bar; cal.anchorItem = clockAnchor; cal.toggle() }
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "wallpaper"
+                    description: "Toggle wallpaper picker"
+                    onPressed: wallpaperPicker.toggle()
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
                     name: "screenshot-region"
                     description: "Pick a region with the Quickshell region selector"
                     onPressed: regionSelector.start()

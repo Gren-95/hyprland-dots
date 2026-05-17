@@ -28,6 +28,9 @@ for setup time.
 | `Super+Shift+B` | Bluetooth menu (Network modal, BT tab) |
 | `Super+F1` | This keybinds viewer |
 | `Super+M` | System monitor (CPU / RAM / temps / fans / uptime) |
+| `Super+S` | Audio & Power panel (Sound tab) |
+| `Super+D` | Calendar (with ICS sync) |
+| `Super+W` | Wallpaper picker |
 | `Super+Tab` | Workspace overview (cycle next while held) |
 | `Super+Shift+Tab` | Workspace overview (cycle previous) |
 

@@ -18,12 +18,17 @@ Modals reachable from keybindings or the bar:
   </tr>
   <tr>
     <td align="center"><img src="screenshots/gallery/network.png" width="100%"/><br><strong>Network</strong><br><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></td>
+    <td align="center"><img src="screenshots/gallery/audiopower.png" width="100%"/><br><strong>Audio &amp; Power</strong><br><kbd>Super</kbd>+<kbd>S</kbd></td>
     <td align="center"><img src="screenshots/gallery/systemmonitor.png" width="100%"/><br><strong>System Monitor</strong><br><kbd>Super</kbd>+<kbd>M</kbd></td>
-    <td align="center"><img src="screenshots/gallery/notifications.png" width="100%"/><br><strong>Notification Center</strong><br><kbd>Super</kbd>+<kbd>N</kbd></td>
   </tr>
   <tr>
+    <td align="center"><img src="screenshots/gallery/notifications.png" width="100%"/><br><strong>Notification Center</strong><br><kbd>Super</kbd>+<kbd>N</kbd></td>
     <td align="center"><img src="screenshots/gallery/powermenu.png" width="100%"/><br><strong>Power Menu</strong><br><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd></td>
     <td align="center"><img src="screenshots/gallery/keybinds.png" width="100%"/><br><strong>Keybinds Viewer</strong><br><kbd>Super</kbd>+<kbd>F1</kbd></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="screenshots/gallery/calendar.png" width="100%"/><br><strong>Calendar</strong><br><kbd>Super</kbd>+<kbd>D</kbd></td>
+    <td align="center"><img src="screenshots/gallery/wallpaper.png" width="100%"/><br><strong>Wallpaper Picker</strong><br><kbd>Super</kbd>+<kbd>W</kbd></td>
     <td align="center"><img src="screenshots/gallery/toast.png" width="100%"/><br><strong>Notification Toast</strong><br>auto-shown on incoming notification</td>
   </tr>
 </table>
