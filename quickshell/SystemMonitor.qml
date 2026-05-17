@@ -209,6 +209,7 @@ Scope {
     // ───── Reusable: a stat card with glyph, title, headline number, ─────
     // ───── subtitle line, percent bar, and optional nested content. ─────
     component StatCard: Rectangle {
+        id: stat
         property string glyph: ""
         property string title: ""
         property string headline: ""
@@ -239,13 +240,13 @@ Scope {
                 Layout.fillWidth: true
                 spacing: 8
                 Text {
-                    text: parent.parent.parent.glyph
-                    color: parent.parent.parent.headlineColor
+                    text: stat.glyph
+                    color: stat.headlineColor
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.lg
                 }
                 Text {
-                    text: parent.parent.parent.title
+                    text: stat.title
                     color: Theme.mutedDeep
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.xs
@@ -261,8 +262,8 @@ Scope {
                 Layout.topMargin: -2
                 spacing: 8
                 Text {
-                    text: parent.parent.parent.headline
-                    color: parent.parent.parent.headlineColor
+                    text: stat.headline
+                    color: stat.headlineColor
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.xl
                     font.bold: true
@@ -270,7 +271,7 @@ Scope {
                 Text {
                     Layout.alignment: Qt.AlignBottom
                     Layout.bottomMargin: 4
-                    text: parent.parent.parent.subtitle
+                    text: stat.subtitle
                     color: Theme.muted
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.xs
@@ -281,6 +282,7 @@ Scope {
 
             // Percent bar
             Rectangle {
+                id: barBg
                 Layout.fillWidth: true
                 Layout.topMargin: 4
                 implicitHeight: 8
@@ -293,9 +295,9 @@ Scope {
                         bottom: parent.bottom
                         margins: 1
                     }
-                    width: (parent.width - 2) * Math.min(1, parent.parent.parent.parent.pct / 100)
+                    width: (barBg.width - 2) * Math.min(1, stat.pct / 100)
                     radius: 3
-                    color: parent.parent.parent.parent.barColor
+                    color: stat.barColor
                     Behavior on width { NumberAnimation { duration: Theme.duration.fast } }
                 }
             }
@@ -304,8 +306,8 @@ Scope {
             Loader {
                 Layout.fillWidth: true
                 Layout.topMargin: 6
-                active: parent.parent.parent.contentLoader !== null
-                sourceComponent: parent.parent.parent.contentLoader
+                active: stat.contentLoader !== null
+                sourceComponent: stat.contentLoader
             }
         }
     }
@@ -314,6 +316,7 @@ Scope {
     // One per mounted filesystem. Glyph + mount path + used/total + pct + bar.
     // Used in the STORAGE section; lays out horizontally with a bar below.
     component DiskRow: Rectangle {
+        id: dr
         property string mount: ""
         property real usedGb: 0
         property real totalGb: 0
@@ -324,7 +327,7 @@ Scope {
         border.color: Theme.borderSubtle
         border.width: 1
 
-        // Format GB as "62" if < 1000, else "1.0 TB" to keep the row tight.
+        // Format GB as "62 GB" if < 1000, else "1.0 TB" to keep the row tight.
         function fmt(gb) {
             return gb >= 1000 ? (gb / 1000).toFixed(1) + " TB"
                               : gb.toFixed(0) + " GB";
@@ -346,12 +349,12 @@ Scope {
                 spacing: 8
                 Text {
                     text: "󰋊"
-                    color: root.pctColor(parent.parent.parent.pct)
+                    color: root.pctColor(dr.pct)
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.md
                 }
                 Text {
-                    text: parent.parent.parent.mount
+                    text: dr.mount
                     color: Theme.fg
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.sm
@@ -359,15 +362,14 @@ Scope {
                 }
                 Item { Layout.fillWidth: true }
                 Text {
-                    text: parent.parent.parent.fmt(parent.parent.parent.usedGb)
-                        + " / " + parent.parent.parent.fmt(parent.parent.parent.totalGb)
-                        + " · " + parent.parent.parent.pct.toFixed(0) + "%"
+                    text: dr.fmt(dr.usedGb) + " / " + dr.fmt(dr.totalGb) + " · " + dr.pct.toFixed(0) + "%"
                     color: Theme.muted
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.xs
                 }
             }
             Rectangle {
+                id: drBarBg
                 Layout.fillWidth: true
                 implicitHeight: 6
                 radius: 3
@@ -379,9 +381,9 @@ Scope {
                         bottom: parent.bottom
                         margins: 1
                     }
-                    width: (parent.width - 2) * Math.min(1, parent.parent.parent.pct / 100)
+                    width: (drBarBg.width - 2) * Math.min(1, dr.pct / 100)
                     radius: 2
-                    color: root.pctColor(parent.parent.parent.pct)
+                    color: root.pctColor(dr.pct)
                     Behavior on width { NumberAnimation { duration: Theme.duration.fast } }
                 }
             }
@@ -390,6 +392,7 @@ Scope {
 
     // ───── Reusable thermal/fan chip ─────
     component ThermalChip: Rectangle {
+        id: chip
         property string glyph: ""
         property string label: ""
         property string value: ""
@@ -409,21 +412,21 @@ Scope {
                 Layout.alignment: Qt.AlignHCenter
                 spacing: 6
                 Text {
-                    text: parent.parent.parent.glyph
-                    color: parent.parent.parent.accent
+                    text: chip.glyph
+                    color: chip.accent
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.md
                 }
                 Text {
-                    text: parent.parent.parent.value
+                    text: chip.value
                     color: Theme.fg
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.md
                     font.bold: true
                 }
                 Text {
-                    visible: parent.parent.parent.suffix !== ""
-                    text: parent.parent.parent.suffix
+                    visible: chip.suffix !== ""
+                    text: chip.suffix
                     color: Theme.muted
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.xs
@@ -431,7 +434,7 @@ Scope {
             }
             Text {
                 Layout.alignment: Qt.AlignHCenter
-                text: parent.parent.label
+                text: chip.label
                 color: Theme.mutedDeep
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSize.xs
