@@ -1,8 +1,9 @@
 #!/bin/bash
+set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 
 if pgrep -x wayvnc > /dev/null; then
-    pkill wayvnc
+    pkill wayvnc || true
     notify normal wayvnc network-vpn "WayVNC" "Remote access stopped"
 else
     wayvnc &>/dev/null &

@@ -1,6 +1,7 @@
 #!/bin/bash
 # Bluetooth status script for waybar
 # Shows connected device count, scrolling cycles through devices
+set -euo pipefail
 
 INDEX_FILE="/tmp/bt-scroll-index"
 
@@ -8,19 +9,19 @@ INDEX_FILE="/tmp/bt-scroll-index"
 mapfile -t DEVICES < <(bluetoothctl devices Connected 2>/dev/null | sed 's/Device [0-9A-F:]*[[:space:]]*//')
 COUNT=${#DEVICES[@]}
 
-case "$1" in
+case "${1:-}" in
     scroll-up)
         idx=$(cat "$INDEX_FILE" 2>/dev/null || echo "0")
         idx=$(( (idx + 1) % (COUNT + 1) ))
         echo "$idx" > "$INDEX_FILE"
-        pkill -RTMIN+8 waybar
+        pkill -RTMIN+8 waybar || true
         exit 0
         ;;
     scroll-down)
         idx=$(cat "$INDEX_FILE" 2>/dev/null || echo "0")
         idx=$(( (idx - 1 + COUNT + 1) % (COUNT + 1) ))
         echo "$idx" > "$INDEX_FILE"
-        pkill -RTMIN+8 waybar
+        pkill -RTMIN+8 waybar || true
         exit 0
         ;;
 esac

@@ -1,5 +1,6 @@
 #!/bin/bash
 # Toggle waybar between floating and docked mode
+set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 
 FLOATING_CONF="$HOME/.config/waybar/config"
@@ -20,5 +21,5 @@ else
     notify normal waybar preferences-desktop "Waybar" "Switched to docked mode"
 fi
 
-killall waybar
+killall waybar 2>/dev/null || true
 waybar -c "$ACTIVE_CONF" -s "$ACTIVE_CSS" >/dev/null 2>&1 &

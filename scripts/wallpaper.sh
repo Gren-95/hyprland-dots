@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # List your monitor names here (as seen in hyprctl monitors)
 # Dynamically detect connected monitor names using hyprctl

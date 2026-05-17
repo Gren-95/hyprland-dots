@@ -1,6 +1,7 @@
 #!/bin/bash
 # media-inhibit.sh - Inhibit screen sleep/lock while media is playing
 # Uses the org.freedesktop.ScreenSaver D-Bus interface (supported by hypridle)
+set -uo pipefail
 
 COOKIE=""
 

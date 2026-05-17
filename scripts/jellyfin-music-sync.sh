@@ -2,6 +2,7 @@
 # Syncs music from Jellyfin to ~/Music
 # Jellyfin is the master — files removed from Jellyfin are deleted locally
 # Config is saved to ~/.config/jellyfin/sync.conf on first run
+set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 
@@ -162,7 +163,7 @@ sync_music() {
     # Remove local files not on the server
     local removed=0
     while IFS= read -r local_file; do
-        if [[ -z "${expected_files[$local_file]}" ]]; then
+        if [[ -z "${expected_files[$local_file]:-}" ]]; then
             print_warning "Removing (not on server): ${local_file#$MUSIC_DIR/}"
             rm -f "$local_file"
             ((removed++)) || true
@@ -182,13 +183,13 @@ sync_music() {
     notify normal jellyfin-sync audio-x-generic "Jellyfin Sync" "$body"
 }
 
-if [[ "$1" == "--daemon" ]] && [[ ! -f "$CONFIG" ]]; then
+if [[ "${1:-}" == "--daemon" ]] && [[ ! -f "$CONFIG" ]]; then
     exit 0
 fi
 
 load_config
 
-if [[ "$1" == "--daemon" ]]; then
+if [[ "${1:-}" == "--daemon" ]]; then
     while true; do
         sync_music
         sleep 7200

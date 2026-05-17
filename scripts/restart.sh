@@ -1,6 +1,8 @@
 #!/bin/bash
 # Hyprland services restart script
 # Restarts all services started via exec-once in hyprland.conf
+# Uses -uo pipefail (no -e): we want every restart step to run even if some fail.
+set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 
 echo "======================================"
@@ -20,8 +22,8 @@ if pgrep -f xdg-desktop-portal >/dev/null; then echo "OK"; else echo "FAILED"; f
 # Restart gnome-keyring-daemon
 echo -n "Running: gnome-keyring-daemon ... "
 pkill -x gnome-keyring-daemon 2>/dev/null
-eval $(/usr/bin/gnome-keyring-daemon --start --components=pkcs11,secrets,ssh,gpg) >/dev/null 2>&1
-if [[ $? -eq 0 ]] && [[ -n "$SSH_AUTH_SOCK" ]]; then
+eval "$(/usr/bin/gnome-keyring-daemon --start --components=pkcs11,secrets,ssh,gpg)" >/dev/null 2>&1
+if [[ $? -eq 0 ]] && [[ -n "${SSH_AUTH_SOCK:-}" ]]; then
     export SSH_AUTH_SOCK
     echo "OK"
 else

@@ -1,6 +1,7 @@
 #!/bin/bash
 # Copies current MPRIS album art to a fixed path for hyprlock to read
 # Also updates the lock screen background from the current wallpaper
+set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 DEST="$LOCK_ART"
 
