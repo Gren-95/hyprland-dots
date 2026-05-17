@@ -15,6 +15,8 @@ Rectangle {
     color: vrow.highlighted ? "#3b3531" : (vrowMa.containsMouse ? Theme.bgAlt : "transparent")
     border.color: vrow.isExitNode ? Theme.accent.purple : "transparent"
     border.width: vrow.isExitNode ? 1 : 0
+    Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+    Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }
 
     RowLayout {
         anchors.fill: parent

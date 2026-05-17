@@ -40,8 +40,8 @@ ColumnLayout {
                 : (cardMa.containsMouse ? Theme.bgHover : "#1a1716")
             border.color: isActive ? accent : (isHighlighted ? Theme.mutedDeep : Theme.borderSubtle)
             border.width: isActive ? 2 : 1
-            Behavior on color { ColorAnimation { duration: 140 } }
-            Behavior on border.color { ColorAnimation { duration: 140 } }
+            Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
+            Behavior on border.color { ColorAnimation { duration: Theme.duration.normal } }
 
             RowLayout {
                 anchors.fill: parent

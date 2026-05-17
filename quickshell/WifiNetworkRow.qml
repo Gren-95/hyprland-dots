@@ -12,6 +12,7 @@ Rectangle {
     implicitHeight: 36
     radius: 6
     color: wr.highlighted ? "#3b3531" : (wHover.containsMouse ? Theme.bgAlt : "transparent")
+    Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
 
     readonly property bool isConnected: wr.network && wr.network.connected
     readonly property bool isKnown: wr.network && wr.network.known

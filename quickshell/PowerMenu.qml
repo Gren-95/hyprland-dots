@@ -115,6 +115,10 @@ Scope {
                     color: Theme.bg
                     border.color: Theme.border
                     border.width: 1
+                    scale: root.open ? 1.0 : 0.96
+                    opacity: root.open ? 1.0 : 0.0
+                    Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+                    Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
 
                     ColumnLayout {
                         id: cardCol
@@ -236,9 +240,9 @@ Scope {
                 : Theme.border
             border.width: tileWrap.highlighted ? 2 : 1
             scale: tileWrap.highlighted ? 1.05 : 1.0
-            Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-            Behavior on color { ColorAnimation { duration: 140 } }
-            Behavior on border.color { ColorAnimation { duration: 140 } }
+            Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+            Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
+            Behavior on border.color { ColorAnimation { duration: Theme.duration.normal } }
 
             ColumnLayout {
                 anchors.centerIn: parent

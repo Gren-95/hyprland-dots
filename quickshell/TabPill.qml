@@ -15,7 +15,8 @@ Rectangle {
         : (tpMa.containsMouse ? "#262220" : "transparent")
     border.color: tp.active ? tp.accent : "transparent"
     border.width: tp.active ? 1 : 0
-    Behavior on color { ColorAnimation { duration: 140 } }
+    Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
+    Behavior on border.color { ColorAnimation { duration: Theme.duration.normal } }
 
     RowLayout {
         anchors.centerIn: parent

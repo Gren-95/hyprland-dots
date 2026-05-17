@@ -13,6 +13,7 @@ Rectangle {
     color: arow.highlighted ? "#3b3531"
          : arow.isActive ? Theme.bgHover
          : (rowMa.containsMouse ? Theme.bgAlt : "transparent")
+    Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
 
     RowLayout {
         anchors.fill: parent

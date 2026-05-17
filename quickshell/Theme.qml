@@ -64,4 +64,16 @@ Singleton {
         readonly property int lg: 12
         readonly property int xl: 16
     }
+
+    // Animation
+    readonly property QtObject duration: QtObject {
+        readonly property int fast:   120   // micro: hover/colour ticks
+        readonly property int normal: 180   // standard: popup open/close, scale snaps
+        readonly property int slow:   240   // deliberate: workspace switches, big morphs
+    }
+    readonly property QtObject easing: QtObject {
+        readonly property int standard:    Easing.OutCubic      // most things
+        readonly property int emphasized:  Easing.OutBack       // playful pops (chips)
+        readonly property int decelerated: Easing.OutQuad       // long, gentle settles
+    }
 }
