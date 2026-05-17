@@ -76,6 +76,7 @@ Item {
         { glyph: "󰕧", label: "Record",       accent: Theme.accent.red, cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenrecord.sh"] },
         { glyph: "󰈊", label: "Color picker", accent: "#e879f9", cmd: ["hyprpicker", "-a"] },
         { glyph: "󰋖", label: "Keybinds",     accent: Theme.accent.blue, action: "keybinds" },
+        { glyph: "󰸉", label: "Wallpaper",    accent: Theme.accent.green, action: "wallpaper" },
     ]
 
     // Single flat index across both sections for keyboard nav:
@@ -140,6 +141,9 @@ Item {
         } else if (entry.action === "keybinds") {
             actions.popupOpen = false;
             keybinds.toggle();
+        } else if (entry.action === "wallpaper") {
+            actions.popupOpen = false;
+            wallpaperPicker.toggle();
         } else if (entry.action === "clipboard") {
             actions.popupOpen = false;
             clipboard.openMenu();

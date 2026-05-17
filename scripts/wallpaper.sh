@@ -20,11 +20,18 @@ if [ -z "$SOCKET" ]; then
     exit 1
 fi
 
-# Pick a single random wallpaper for all monitors
-wp=$(find "$WALLPAPER_DIR" -type f | shuf -n 1)
+# If a path is given as $1, apply that exact wallpaper. Otherwise pick a
+# random one from $WALLPAPER_DIR. The file must already be preloaded by
+# hyprpaper (restart.sh generates the preload list for everything in the
+# wallpapers directory at startup).
+if [[ $# -ge 1 && -f "$1" ]]; then
+    wp="$1"
+else
+    wp=$(find "$WALLPAPER_DIR" -type f | shuf -n 1)
+fi
+
 for monitor in "${MONITORS[@]}"; do
     hyprctl hyprpaper wallpaper "$monitor,$wp"
 done
 
-
-echo "Wallpaper set"
+echo "Wallpaper set: $wp"

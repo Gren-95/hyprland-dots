@@ -21,6 +21,7 @@ Scope {
     ScreenRecorder { id: recorder }
     PolkitPrompt { id: polkit }
     SystemMonitor { id: sysmon }
+    WallpaperPicker { id: wallpaperPicker }
 
     Variants {
         model: Quickshell.screens
