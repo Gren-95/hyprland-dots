@@ -89,10 +89,25 @@ Item {
         visible: bell.notifs ? bell.notifs.centerOpen : false
         color: "transparent"
 
-        SproutBg { anchors.fill: parent; fillColor: Theme.bgAlt; borderColor: Theme.mutedDeep; tailX: width / 2 }
+        SproutBg {
+            anchors.fill: parent
+            fillColor: Theme.bgAlt
+            borderColor: Theme.mutedDeep
+            tailX: width / 2
+            scale: bell.notifs && bell.notifs.centerOpen ? 1.0 : 0.94
+            opacity: bell.notifs && bell.notifs.centerOpen ? 1.0 : 0.0
+            transformOrigin: Item.Center
+            Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+            Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+        }
         Item {
             anchors.fill: parent
             focus: bell.notifs ? bell.notifs.centerOpen : false
+            scale: bell.notifs && bell.notifs.centerOpen ? 1.0 : 0.94
+            opacity: bell.notifs && bell.notifs.centerOpen ? 1.0 : 0.0
+            transformOrigin: Item.Center
+            Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+            Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
             Keys.onPressed: (e) => {
                 if (!bell.notifs) return;
                 const n = bell.notifs.historyList.length;
