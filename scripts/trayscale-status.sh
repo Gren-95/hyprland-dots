@@ -60,10 +60,10 @@ case "$ACTION" in
             4)
                 if pgrep -x hypridle > /dev/null; then
                     pkill hypridle
-                    notify low hypridle caffeine-on 'Stay Awake' 'Idle management disabled'
+                    notify low hypridle system-suspend-inhibited 'Stay Awake' 'Idle management disabled'
                 else
                     hypridle &
-                    notify low hypridle caffeine-off 'Sleep Mode' 'Idle management enabled'
+                    notify low hypridle system-suspend-uninhibited 'Sleep Mode' 'Idle management enabled'
                 fi
                 pkill -RTMIN+9 waybar
                 ;;

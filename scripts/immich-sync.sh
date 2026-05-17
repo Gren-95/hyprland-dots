@@ -34,7 +34,13 @@ run_upload() {
     fi
 }
 
-while true; do
+# --daemon: loop every hour (legacy mode).
+# (no args): run once and exit (used by cron entries managed via sync-toggle.sh).
+if [[ "${1:-}" == "--daemon" ]]; then
+    while true; do
+        run_upload
+        sleep 3600
+    done
+else
     run_upload
-    sleep 3600
-done
+fi
