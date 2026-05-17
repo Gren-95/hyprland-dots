@@ -238,6 +238,7 @@ Item {
             } else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
                 ap.navigatePrev(); e.accepted = true;
             } else if (e.key === Qt.Key_Tab) {
+                // Only two tabs; Shift has no extra direction here.
                 ap.setTab(ap.activeTab === "sound" ? "power" : "sound");
                 e.accepted = true;
             } else if (ap.activeTab === "sound") {
