@@ -26,6 +26,7 @@ for setup time.
 | `Super+N` | Toggle notification center |
 | `Super+Shift+B` | Bluetooth menu (Network modal, BT tab) |
 | `Super+F1` | This keybinds viewer |
+| `Super+M` | System monitor (CPU / RAM / temps / fans / uptime) |
 | `Super+Tab` | Workspace overview (cycle next while held) |
 | `Super+Shift+Tab` | Workspace overview (cycle previous) |
 

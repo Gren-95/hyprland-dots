@@ -20,6 +20,7 @@ Scope {
     WorkspaceOverview { id: workspaceOverview }
     ScreenRecorder { id: recorder }
     PolkitPrompt { id: polkit }
+    SystemMonitor { id: sysmon }
 
     Variants {
         model: Quickshell.screens
@@ -293,6 +294,12 @@ Scope {
                     name: "powermenu"
                     description: "Toggle power menu"
                     onPressed: powerMenu.toggle()
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "sysmon"
+                    description: "Toggle system monitor"
+                    onPressed: sysmon.toggle()
                 }
                 GlobalShortcut {
                     appid: "quickshell"
