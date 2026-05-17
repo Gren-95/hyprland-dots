@@ -160,6 +160,16 @@ Scope {
                     anchors.margins: Theme.spacing.lg
                     spacing: Theme.spacing.md
 
+                    Text {
+                        Layout.fillWidth: true
+                        text: "Clipboard"
+                        color: Theme.fg
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize.md
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.spacing.lg
@@ -216,6 +226,19 @@ Scope {
                         id: resultsCol
                         width: parent.width
                         spacing: 2
+
+                        Text {
+                            Layout.leftMargin: 6
+                            Layout.topMargin: 2
+                            Layout.bottomMargin: 2
+                            visible: root.filtered.length > 0
+                            text: "HISTORY"
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.xs
+                            font.letterSpacing: 1
+                            font.bold: true
+                        }
 
                         Repeater {
                             model: root.filtered.slice(0, 100)

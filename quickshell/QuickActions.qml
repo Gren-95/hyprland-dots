@@ -213,9 +213,19 @@ Item {
                     Item { Layout.fillWidth: true }
                 }
 
+                Text {
+                    text: "TOGGLES"
+                    color: Theme.mutedDeep
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.xs
+                    font.letterSpacing: 1
+                    font.bold: true
+                }
+
                 // Toggle row: full-width pills with explicit on/off state
                 ColumnLayout {
                     Layout.fillWidth: true
+                    Layout.topMargin: -8
                     spacing: Theme.spacing.sm
                     Repeater {
                         model: actions.toggles
@@ -234,9 +244,19 @@ Item {
                 // Section divider
                 Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderSubtle }
 
+                Text {
+                    text: "ACTIONS"
+                    color: Theme.mutedDeep
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.xs
+                    font.letterSpacing: 1
+                    font.bold: true
+                }
+
                 // Actions grid: 3-column tiles, larger than before
                 GridLayout {
                     Layout.fillWidth: true
+                    Layout.topMargin: -8
                     columns: 3
                     columnSpacing: Theme.spacing.sm
                     rowSpacing: Theme.spacing.sm

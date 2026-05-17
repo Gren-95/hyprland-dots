@@ -57,6 +57,9 @@ PopupWindow {
     HyprlandFocusGrab {
         active: card.open && !card.pinned
         windows: [card]
-        onCleared: { card.open = false; card.dismissed(); }
+        // Don't assign to card.open here — it would break the consumer's
+        // `open: <state>` binding, leaving the popup permanently unable to
+        // reopen. Let the consumer reset its own state via onDismissed.
+        onCleared: card.dismissed()
     }
 }

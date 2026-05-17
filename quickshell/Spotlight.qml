@@ -116,6 +116,16 @@ Scope {
                     anchors.margins: Theme.spacing.lg
                     spacing: Theme.spacing.md
 
+                    Text {
+                        Layout.fillWidth: true
+                        text: "Launcher"
+                        color: Theme.fg
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize.md
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.spacing.lg
@@ -164,6 +174,18 @@ Scope {
                             Layout.fillWidth: true
                             onPicked: root.activate(0)
                             onHovered: root.selectedIndex = 0
+                        }
+
+                        Text {
+                            Layout.leftMargin: 6
+                            Layout.topMargin: 4
+                            visible: root.filtered.length > 0
+                            text: "APPLICATIONS"
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.xs
+                            font.letterSpacing: 1
+                            font.bold: true
                         }
 
                         Repeater {

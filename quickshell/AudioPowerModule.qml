@@ -283,6 +283,16 @@ Item {
                 anchors.margins: Theme.spacing.lg
                 spacing: Theme.spacing.md
 
+                Text {
+                    Layout.fillWidth: true
+                    text: "Audio & Power"
+                    color: Theme.fg
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.md
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
+                }
+
                 // ===== Header: pin + tab strip =====
                 RowLayout {
                     Layout.fillWidth: true
@@ -321,7 +331,7 @@ Item {
                         spacing: Theme.spacing.md
                         AudioSection {
                             Layout.fillWidth: true
-                            title: "󰕾  Output"
+                            title: "OUTPUT"
                             node: ap.sink
                             isSink: true
                             selectedIndex: ap.outSelectedIndex !== undefined ? ap.outSelectedIndex : -1
@@ -333,7 +343,7 @@ Item {
                         Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderStrong }
                         AudioSection {
                             Layout.fillWidth: true
-                            title: "󰍬  Input"
+                            title: "INPUT"
                             node: ap.source
                             isSink: false
                             selectedIndex: ap.inSelectedIndex !== undefined ? ap.inSelectedIndex : -1
@@ -351,8 +361,17 @@ Item {
                     id: powerPane
                     ColumnLayout {
                         spacing: Theme.spacing.lg
+                        Text {
+                            text: "POWER PROFILE"
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.xs
+                            font.letterSpacing: 1
+                            font.bold: true
+                        }
                         ProfileSelector {
                             Layout.fillWidth: true
+                            Layout.topMargin: -8
                             profiles: ap.profiles
                             activeIndex: Math.max(0, ap.profiles.indexOf(PowerProfiles.profile))
                             highlightedIndex: ap.pwrIndex

@@ -243,6 +243,16 @@ Item {
                 anchors.margins: Theme.spacing.lg
                 spacing: Theme.spacing.md
 
+                Text {
+                    Layout.fillWidth: true
+                    text: "Network"
+                    color: Theme.fg
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.md
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
+                }
+
                 // ===== Header with pin + tab strip =====
                 RowLayout {
                     Layout.fillWidth: true
@@ -325,8 +335,19 @@ Item {
                             horizontalAlignment: Text.AlignHCenter
                         }
 
+                        Text {
+                            visible: bt.powered
+                            text: "PAIRED DEVICES"
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.xs
+                            font.letterSpacing: 1
+                            font.bold: true
+                        }
+
                         ColumnLayout {
                             Layout.fillWidth: true
+                            Layout.topMargin: -8
                             spacing: 2
                             visible: bt.powered
                             Repeater {
@@ -399,8 +420,19 @@ Item {
                             horizontalAlignment: Text.AlignHCenter
                         }
 
+                        Text {
+                            visible: bt.wifiEnabled
+                            text: "AVAILABLE NETWORKS"
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.xs
+                            font.letterSpacing: 1
+                            font.bold: true
+                        }
+
                         ColumnLayout {
                             Layout.fillWidth: true
+                            Layout.topMargin: -8
                             spacing: 2
                             visible: bt.wifiEnabled
                             Repeater {
@@ -457,9 +489,20 @@ Item {
 
                         Rectangle { Layout.fillWidth: true; height: 1; color: Theme.border }
 
+                        Text {
+                            visible: TailscaleService.daemonOk && TailscaleService.running && TailscaleService.selfIPs.length > 0
+                            text: "THIS DEVICE"
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.xs
+                            font.letterSpacing: 1
+                            font.bold: true
+                        }
+
                         // Self info + daemon hint
                         ColumnLayout {
                             Layout.fillWidth: true
+                            Layout.topMargin: -8
                             spacing: 2
                             visible: TailscaleService.daemonOk && TailscaleService.running && TailscaleService.selfIPs.length > 0
                             Text {
@@ -497,8 +540,19 @@ Item {
                             horizontalAlignment: Text.AlignHCenter
                         }
 
+                        Text {
+                            visible: TailscaleService.daemonOk && TailscaleService.running && TailscaleService.peers.length > 0
+                            text: "PEERS"
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.xs
+                            font.letterSpacing: 1
+                            font.bold: true
+                        }
+
                         ColumnLayout {
                             Layout.fillWidth: true
+                            Layout.topMargin: -8
                             spacing: 2
                             visible: TailscaleService.daemonOk && TailscaleService.running
                             Repeater {

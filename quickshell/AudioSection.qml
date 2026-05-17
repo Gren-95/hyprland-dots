@@ -19,9 +19,10 @@ ColumnLayout {
         spacing: Theme.spacing.md
         Text {
             text: section.title
-            color: "#f5f5f4"
+            color: Theme.mutedDeep
             font.family: Theme.font
-            font.pixelSize: Theme.fontSize.base
+            font.pixelSize: Theme.fontSize.xs
+            font.letterSpacing: 1
             font.bold: true
         }
         Item { Layout.fillWidth: true }

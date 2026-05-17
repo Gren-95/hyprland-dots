@@ -115,10 +115,21 @@ Scope {
                         }
                     }
 
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: "ACTIONS"
+                        color: Theme.mutedDeep
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize.xs
+                        font.letterSpacing: 1
+                        font.bold: true
+                    }
+
                     // Tiles
                     RowLayout {
                         id: tilesRow
                         Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: -8
                         spacing: Theme.spacing.md
                         Repeater {
                             model: root.entries

@@ -184,9 +184,24 @@ Scope {
             else if (e.key === Qt.Key_T || e.key === Qt.Key_Home) { root.today(); e.accepted = true; }
         }
 
-            RowLayout {
+            ColumnLayout {
                 anchors.fill: parent
                 anchors.margins: Theme.spacing.xl
+                spacing: Theme.spacing.md
+
+                Text {
+                    Layout.fillWidth: true
+                    text: "Calendar"
+                    color: Theme.fg
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.md
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
+                }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
                 spacing: Theme.spacing.xl
 
                 // ====== Left pane: month grid ======
@@ -216,8 +231,18 @@ Scope {
                         NavBtn { glyph: "›"; onClicked: root.nextMonth() }
                     }
 
+                    Text {
+                        text: "CALENDAR"
+                        color: Theme.mutedDeep
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize.xs
+                        font.letterSpacing: 1
+                        font.bold: true
+                    }
+
                     GridLayout {
                         Layout.fillWidth: true
+                        Layout.topMargin: -8
                         columns: 7
                         columnSpacing: 2
                         rowSpacing: 2
@@ -353,10 +378,11 @@ Scope {
                                 Layout.fillWidth: true
                                 Layout.topMargin: 12
                                 visible: root.icsUrl !== "" && upcomingRepeater.count > 0
-                                text: "Upcoming"
+                                text: "UPCOMING"
                                 color: Theme.mutedDeep
                                 font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.sm
+                                font.pixelSize: Theme.fontSize.xs
+                                font.letterSpacing: 1
                                 font.bold: true
                             }
                             Repeater {
@@ -372,6 +398,7 @@ Scope {
                         }
                     }
                 }
+            }
             }
         }
 
