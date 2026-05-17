@@ -67,6 +67,14 @@ Item {
             description: actions.wayvncOn ? "WayVNC server running on :5900" : "Remote access stopped",
             action:   "wayvnc",
         },
+        {
+            glyph:    "󰎈", offGlyph: "󰎈",
+            label:    "Media keys",
+            accent:   Theme.accent.purple,
+            on:       Settings.mediaKeysVisible,
+            description: Settings.mediaKeysVisible ? "Prev / play / next in bar" : "Hidden",
+            action:   "mediakeys",
+        },
     ]
 
     // ============ One-shot actions ============
@@ -138,6 +146,8 @@ Item {
             actions.toggleInFlight = true;
             clearInFlightTimer.restart();
             wayvncToggleProc.startDetached();
+        } else if (entry.action === "mediakeys") {
+            Settings.mediaKeysVisible = !Settings.mediaKeysVisible;
         } else if (entry.action === "keybinds") {
             actions.popupOpen = false;
             keybinds.toggle();

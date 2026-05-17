@@ -117,6 +117,25 @@ Scope {
                     }
                 }
 
+                // Slot for the media transport cluster — fills the gap
+                // between the clock (centered) and the right systray, and
+                // centers MediaKeys inside that slot. Visibility toggled
+                // from Quick Actions.
+                Item {
+                    id: mediaKeysSlot
+                    anchors.left: clockAnchor.right
+                    anchors.right: rightGroup.left
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.leftMargin: Theme.spacing.lg
+                    anchors.rightMargin: Theme.spacing.lg
+
+                    MediaKeys {
+                        id: mediaKeys
+                        anchors.centerIn: parent
+                    }
+                }
+
                 // ============ LEFT ============
                 RowLayout {
                     anchors.left: parent.left
@@ -150,6 +169,7 @@ Scope {
 
                 // ============ RIGHT ============
                 RowLayout {
+                    id: rightGroup
                     anchors.right: parent.right
                     anchors.rightMargin: 8
                     anchors.verticalCenter: parent.verticalCenter
