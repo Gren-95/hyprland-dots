@@ -164,6 +164,10 @@ Scope {
             WlrLayershell.exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+            // Empty input region — the panel is always mapped (so we can fade
+            // the card in/out without recreating the surface) but clicks pass
+            // straight through to whatever's below it.
+            mask: Region {}
 
             Rectangle {
                 id: card
