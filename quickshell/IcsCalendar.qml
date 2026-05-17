@@ -2,8 +2,6 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
-import Quickshell.Hyprland
 
 Scope {
     id: root
@@ -159,54 +157,32 @@ Scope {
     }
 
     // ====== Popup ======
-    PopupWindow {
+    BarPopupCard {
         id: popup
-        visible: root.open && root.anchorBar !== null
-        color: "transparent"
-        anchor.window: root.anchorBar
-        anchor.rect.x: root.anchorBar ? (root.anchorBar.width - implicitWidth) / 2 : 0
-        anchor.rect.y: root.anchorBar && root.anchorBar.screen
-            ? (root.anchorBar.screen.height - implicitHeight) / 2
-            : 0
-        implicitWidth: 1000
-        implicitHeight: 560
-
-        SproutBg {
-            anchors.fill: parent
-            fillColor: Theme.bg
-            borderColor: Theme.mutedDeep
-            showTail: false
-            scale: root.open ? 1.0 : 0.94
-            opacity: root.open ? 1.0 : 0.0
-            transformOrigin: Item.Center
-            Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-            Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-        }
-        FocusScope {
-            anchors.fill: parent
-            focus: root.open
-            scale: root.open ? 1.0 : 0.94
-            opacity: root.open ? 1.0 : 0.0
-            transformOrigin: Item.Center
-            Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-            Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-            Keys.onPressed: (e) => {
-                const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
-                if (e.key === Qt.Key_Escape) { root.close(); e.accepted = true; }
-                else if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
-                    root.navigateNext(); e.accepted = true;
-                }
-                else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
-                    root.navigatePrev(); e.accepted = true;
-                }
-                else if (e.key === Qt.Key_PageDown) { root.nextMonth(); e.accepted = true; }
-                else if (e.key === Qt.Key_PageUp) { root.prevMonth(); e.accepted = true; }
-                else if (e.key === Qt.Key_Left)  { root.shiftDay(-1); e.accepted = true; }
-                else if (e.key === Qt.Key_Right) { root.shiftDay(1);  e.accepted = true; }
-                else if (e.key === Qt.Key_Up)    { root.shiftDay(-7); e.accepted = true; }
-                else if (e.key === Qt.Key_Down)  { root.shiftDay(7);  e.accepted = true; }
-                else if (e.key === Qt.Key_T || e.key === Qt.Key_Home) { root.today(); e.accepted = true; }
+        parentBar: root.anchorBar
+        open: root.open && root.anchorBar !== null
+        cardWidth: 1000
+        cardHeight: 560
+        pinned: root.pinned
+        borderColor: Theme.mutedDeep
+        onDismissed: root.close()
+        onKeyPressed: (e) => {
+            const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
+            if (e.key === Qt.Key_Escape) { root.close(); e.accepted = true; }
+            else if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
+                root.navigateNext(); e.accepted = true;
             }
+            else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
+                root.navigatePrev(); e.accepted = true;
+            }
+            else if (e.key === Qt.Key_PageDown) { root.nextMonth(); e.accepted = true; }
+            else if (e.key === Qt.Key_PageUp) { root.prevMonth(); e.accepted = true; }
+            else if (e.key === Qt.Key_Left)  { root.shiftDay(-1); e.accepted = true; }
+            else if (e.key === Qt.Key_Right) { root.shiftDay(1);  e.accepted = true; }
+            else if (e.key === Qt.Key_Up)    { root.shiftDay(-7); e.accepted = true; }
+            else if (e.key === Qt.Key_Down)  { root.shiftDay(7);  e.accepted = true; }
+            else if (e.key === Qt.Key_T || e.key === Qt.Key_Home) { root.today(); e.accepted = true; }
+        }
 
             RowLayout {
                 anchors.fill: parent
@@ -398,13 +374,6 @@ Scope {
                 }
             }
         }
-    }
-
-    HyprlandFocusGrab {
-        active: root.open && !root.pinned
-        windows: [popup]
-        onCleared: root.close()
-    }
 
     component NavBtn: Rectangle {
         id: nav

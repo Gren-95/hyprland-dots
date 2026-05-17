@@ -1,7 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Bluetooth
 import Quickshell.Networking
 
@@ -80,6 +78,12 @@ Item {
         tabIndex = 0;
         if (name === "wifi" && wifiDevice) wifiDevice.scannerEnabled = true;
         if (name === "vpn") TailscaleService.refresh();
+    }
+    // Toggle the popup; if it's already on this tab, close it. Otherwise
+    // switch to the tab and open. Called from the per-tab bar icons.
+    function openTab(name) {
+        if (popupOpen && activeTab === name) { popupOpen = false; }
+        else { setTab(name); popupOpen = true; }
     }
 
     onPopupOpenChanged: {
@@ -181,84 +185,59 @@ Item {
             }
             // Open / close the popup, but always land on the Bluetooth tab
             // when clicking the Bluetooth bar icon.
-            if (bt.popupOpen && bt.activeTab === "bluetooth") {
-                bt.popupOpen = false;
-            } else {
-                bt.setTab("bluetooth");
-                bt.popupOpen = true;
-            }
+            bt.openTab("bluetooth");
         }
     }
 
-    PopupWindow {
+    BarPopupCard {
         id: popup
-        anchor.window: bt.parentBar
-        anchor.rect.x: (bt.parentBar.width - implicitWidth) / 2
-        anchor.rect.y: (bt.parentBar.screen.height - implicitHeight) / 2
-        implicitWidth: 360
+        parentBar: bt.parentBar
+        open: bt.popupOpen
+        cardWidth: 360
         // Fixed height so switching tabs doesn't resize the Wayland surface.
-        implicitHeight: 460
-        visible: bt.popupOpen
-        color: "transparent"
-
-        SproutBg {
-            anchors.fill: parent
-            fillColor: Theme.bgAlt
-            borderColor: Theme.borderStrong
-            showTail: false
-            scale: bt.popupOpen ? 1.0 : 0.94
-            opacity: bt.popupOpen ? 1.0 : 0.0
-            transformOrigin: Item.Center
-            Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-            Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-        }
-        Item {
-            anchors.fill: parent
-            focus: bt.popupOpen
-            scale: bt.popupOpen ? 1.0 : 0.94
-            opacity: bt.popupOpen ? 1.0 : 0.0
-            transformOrigin: Item.Center
-            Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-            Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-            Keys.onPressed: (e) => {
-                const n = bt.currentItems.length;
-                const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
-                if (e.key === Qt.Key_Escape) {
-                    bt.popupOpen = false;
-                    e.accepted = true;
-                } else if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
-                    bt.navigateNext();
-                    e.accepted = true;
-                } else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
-                    bt.navigatePrev();
-                    e.accepted = true;
-                } else if (e.key === Qt.Key_Tab) {
-                    // Tab cycles between Bluetooth / Wifi tabs
-                    bt.setTab(bt.activeTab === "wifi" ? "bluetooth" : "wifi");
-                    e.accepted = true;
-                } else if (e.key === Qt.Key_Right || e.key === Qt.Key_L) {
-                    bt.cycleTab(1); e.accepted = true;
-                } else if (e.key === Qt.Key_Left || e.key === Qt.Key_H) {
-                    bt.cycleTab(-1); e.accepted = true;
-                } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
-                    if (bt.tabIndex === 0) bt.togglePrimary();
-                    else if (bt.tabIndex === 1) bt.toggleSecondary();
-                    else bt.activateCurrent(bt.selectedIndex);
-                    e.accepted = true;
-                } else if (e.key === Qt.Key_Down || e.key === Qt.Key_J) {
-                    if (n > 0) bt.tabIndex = bt.tabIndex < 2 ? 2 :
-                        (bt.selectedIndex + 1 < n ? bt.tabIndex + 1 : 2);
-                    e.accepted = true;
-                } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
-                    if (n > 0) bt.tabIndex = bt.tabIndex < 2 ? 2 :
-                        (bt.selectedIndex > 0 ? bt.tabIndex - 1 : 1 + n);
-                    e.accepted = true;
-                } else if (e.key === Qt.Key_Delete || e.key === Qt.Key_Backspace) {
-                    bt.forgetCurrent(bt.selectedIndex); e.accepted = true;
-                }
+        cardHeight: 460
+        pinned: bt.pinned
+        borderColor: Theme.borderStrong
+        onDismissed: bt.popupOpen = false
+        onKeyPressed: (e) => {
+            const n = bt.currentItems.length;
+            const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
+            if (e.key === Qt.Key_Escape) {
+                bt.popupOpen = false;
+                e.accepted = true;
+            } else if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
+                bt.navigateNext();
+                e.accepted = true;
+            } else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
+                bt.navigatePrev();
+                e.accepted = true;
+            } else if (e.key === Qt.Key_Tab) {
+                // Tab cycles between Bluetooth / Wifi tabs
+                bt.setTab(bt.activeTab === "wifi" ? "bluetooth" : "wifi");
+                e.accepted = true;
+            } else if (e.key === Qt.Key_Right || e.key === Qt.Key_L) {
+                bt.cycleTab(1); e.accepted = true;
+            } else if (e.key === Qt.Key_Left || e.key === Qt.Key_H) {
+                bt.cycleTab(-1); e.accepted = true;
+            } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
+                if (bt.tabIndex === 0) bt.togglePrimary();
+                else if (bt.tabIndex === 1) bt.toggleSecondary();
+                else bt.activateCurrent(bt.selectedIndex);
+                e.accepted = true;
+            } else if (e.key === Qt.Key_Down || e.key === Qt.Key_J) {
+                if (n > 0) bt.tabIndex = bt.tabIndex < 2 ? 2 :
+                    (bt.selectedIndex + 1 < n ? bt.tabIndex + 1 : 2);
+                e.accepted = true;
+            } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
+                if (n > 0) bt.tabIndex = bt.tabIndex < 2 ? 2 :
+                    (bt.selectedIndex > 0 ? bt.tabIndex - 1 : 1 + n);
+                e.accepted = true;
+            } else if (e.key === Qt.Key_Delete || e.key === Qt.Key_Backspace) {
+                bt.forgetCurrent(bt.selectedIndex); e.accepted = true;
             }
+        }
 
-            ColumnLayout {
+        ColumnLayout {
                 id: contentCol
                 anchors.fill: parent
                 anchors.margins: Theme.spacing.lg
@@ -273,46 +252,16 @@ Item {
                         onToggled: bt.pinned = !bt.pinned
                     }
 
-                    // Tab strip: two pills sharing a single rounded container
-                    Rectangle {
+                    // Tab strip: pills sharing a single rounded container
+                    TabStrip {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 30
-                        radius: 15
-                        color: Theme.bg
-                        border.color: Theme.border
-                        border.width: 1
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.margins: 2
-                            spacing: 0
-                            TabPill {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                glyph: "󰂯"
-                                label: "Bluetooth"
-                                active: bt.activeTab === "bluetooth"
-                                accent: Theme.accent.blue
-                                onPicked: bt.setTab("bluetooth")
-                            }
-                            TabPill {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                glyph: bt.wifiEnabled ? "󰖩" : "󰖪"
-                                label: "Wi-Fi"
-                                active: bt.activeTab === "wifi"
-                                accent: Theme.accent.green
-                                onPicked: bt.setTab("wifi")
-                            }
-                            TabPill {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                glyph: "󰒃"
-                                label: "VPN"
-                                active: bt.activeTab === "vpn"
-                                accent: Theme.accent.purple
-                                onPicked: bt.setTab("vpn")
-                            }
-                        }
+                        activeId: bt.activeTab
+                        onPicked: (id) => bt.setTab(id)
+                        tabs: [
+                            { glyph: "󰂯", label: "Bluetooth", accent: Theme.accent.blue,   id: "bluetooth" },
+                            { glyph: bt.wifiEnabled ? "󰖩" : "󰖪", label: "Wi-Fi", accent: Theme.accent.green, id: "wifi" },
+                            { glyph: "󰒃", label: "VPN", accent: Theme.accent.purple, id: "vpn" }
+                        ]
                     }
                 }
 
@@ -572,10 +521,3 @@ Item {
             }
         }
     }
-
-    HyprlandFocusGrab {
-        active: bt.popupOpen && !bt.pinned
-        windows: [popup]
-        onCleared: bt.popupOpen = false
-    }
-}
