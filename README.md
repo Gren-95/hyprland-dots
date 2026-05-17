@@ -8,6 +8,14 @@
 > [!NOTE]
 > Built on Nobara 43. Some commands are Fedora/Nobara specific.
 
+## Documentation
+
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — how Hyprland, Quickshell, scripts, and cron fit together
+- [`KEYBINDS.md`](KEYBINDS.md) — flat keybind reference (live viewer: `Super+F1`)
+- [`quickshell/DESIGN.md`](quickshell/DESIGN.md) — QML widget conventions and recipes
+- [`scripts/README.md`](scripts/README.md) — per-script breakdown (what runs when)
+- [`hypr/MODULES.md`](hypr/MODULES.md) — what each `hypr/modules/*.conf` owns
+
 ## Dependencies
 
 - `hyprland` + `hyprland-devel` — compositor
