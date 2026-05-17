@@ -251,16 +251,6 @@ Scope {
                         Process { id: brightProc; command: [] }
                     }
 
-                    // WayVNC (only when running)
-                    BarConditional {
-                        intervalMs: 3000
-                        checkCmd: ["pgrep", "-x", "wayvnc"]
-                        glyph: "󰢹"
-                        color: Theme.accent.orange
-                        tooltip: "WayVNC active — click to stop"
-                        onClickCmd: ["pkill", "wayvnc"]
-                    }
-
                     // Microphone (only when unmuted)
                     BarIcon {
                         readonly property var src: Pipewire.defaultAudioSource
@@ -346,49 +336,4 @@ Scope {
         return m[id] || "";
     }
 
-    // BarConditional remains inline as it isn't reused elsewhere.
-    component BarConditional: Item {
-        id: bc
-        property int intervalMs: 3000
-        property var checkCmd: []
-        property string glyph: ""
-        property color color: "#f5f5f4"
-        property string tooltip: ""
-        property var onClickCmd: null
-        property bool _present: false
-        Layout.fillHeight: true
-        visible: _present
-        implicitWidth: visible ? (label.implicitWidth + 16) : 0
-        Text {
-            id: label
-            anchors.centerIn: parent
-            text: bc.glyph
-            color: bc.color
-            font.family: Theme.font
-            font.pixelSize: Theme.fontSize.md
-        }
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            hoverEnabled: true
-            onClicked: {
-                if (bc.onClickCmd) {
-                    const p = Qt.createQmlObject(
-                        "import Quickshell.Io; Process {}", bc);
-                    p.command = bc.onClickCmd;
-                    p.startDetached();
-                }
-            }
-        }
-        Process {
-            id: probe
-            command: bc.checkCmd
-            running: false
-            onExited: (code) => bc._present = (code === 0)
-        }
-        Timer {
-            interval: bc.intervalMs; running: true; repeat: true; triggeredOnStart: true
-            onTriggered: { if (!probe.running) probe.running = true; }
-        }
-    }
 }

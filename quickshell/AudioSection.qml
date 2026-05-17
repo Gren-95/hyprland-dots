@@ -9,7 +9,6 @@ ColumnLayout {
     property bool isSink: true
     property int selectedIndex: -1
     property bool toggleHighlighted: false
-    signal launchMixer()
     signal deviceHovered(int idx)
     signal toggleHovered()
     spacing: Theme.spacing.sm

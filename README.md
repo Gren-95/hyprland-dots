@@ -21,8 +21,7 @@
 - `gpu-screen-recorder` — screen recording
 - `firefox` — browser
 - `brightnessctl` `playerctl` — brightness and media control (Quickshell OSD watches `/sys` for changes)
-- `pavucontrol` — audio mixer
-- `gnome-calendar` `gnome-keyring` — calendar, secrets
+- `gnome-keyring` — secrets store
 - `powerprofilesctl` — power profiles
 - `python3` + `python3-pillow` — avatar generation
 - `jq` — JSON parsing
@@ -43,7 +42,7 @@ sudo dnf copr enable errornointernet/quickshell  # quickshell (or build from sou
 sudo dnf install hyprland hyprland-devel quickshell kitty nautilus cliphist \
   hyprpaper hyprpicker hypridle hyprlock grim slurp swappy tesseract \
   wl-clipboard firefox brightnessctl playerctl \
-  pavucontrol polkit-gnome gnome-calendar gnome-keyring jq \
+  gnome-keyring jq \
   powerprofilesctl gpu-screen-recorder inotify-tools \
   fish neovim ranger python3 python3-pillow
 ```
