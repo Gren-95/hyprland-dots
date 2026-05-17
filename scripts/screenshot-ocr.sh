@@ -1,5 +1,6 @@
 #!/bin/bash
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 
 mkdir -p "$OCR_DIR"
 SCREENSHOT="$OCR_DIR/ocr-$(date +%Y%m%d-%H%M%S).png"
@@ -20,7 +21,7 @@ TEXT=$(tesseract "$PROC" stdout -l eng+est --oem 1 2>/dev/null)
 rm -f "$PROC"
 
 if [[ -z "${TEXT//[[:space:]]/}" ]]; then
-    notify-send "Screenshot OCR" "No text found" -u normal
+    notify normal screenshot-ocr edit-find "Screenshot OCR" "No text found"
     rm -f "$SCREENSHOT"
     exit 0
 fi
@@ -28,6 +29,6 @@ fi
 
 PREVIEW="${TEXT:0:100}"
 [[ ${#TEXT} -gt 100 ]] && PREVIEW+="..."
-notify-send "Screenshot OCR" "Copied: $PREVIEW" -t 5000
+notify normal screenshot-ocr edit-find "Screenshot OCR" "Copied: $PREVIEW" 5000
 
 printf '%s' "$TEXT" | wl-copy

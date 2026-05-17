@@ -119,10 +119,11 @@ Item {
     Process {
         id: idleToggleProc
         command: ["sh", "-c",
+            "source ~/.config/scripts/lib/notify.sh && " +
             "if pgrep -x hypridle >/dev/null; then " +
-            "  pkill hypridle && notify-send -u low -i caffeine-on 'Stay Awake' 'Idle disabled'; " +
+            "  pkill hypridle && notify low hypridle caffeine-on 'Stay Awake' 'Idle disabled'; " +
             "else " +
-            "  hypridle & disown && notify-send -u low -i caffeine-off 'Sleep Mode' 'Idle enabled'; " +
+            "  hypridle & disown && notify low hypridle caffeine-off 'Sleep Mode' 'Idle enabled'; " +
             "fi"]
         running: false
         onExited: idleCheckProc.running = true

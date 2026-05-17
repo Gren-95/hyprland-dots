@@ -3,6 +3,7 @@
 # Jellyfin is the master — files removed from Jellyfin are deleted locally
 # Config is saved to ~/.config/jellyfin/sync.conf on first run
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 
 CONFIG="$JELLYFIN_CONF"
 LOG="$JELLYFIN_LOG"
@@ -79,7 +80,7 @@ sanitize() {
 sync_music() {
     local user_id
     if ! user_id=$(get_user_id); then
-        notify-send -u critical -i dialog-error "Jellyfin Sync Failed" "Could not reach server — check URL and API key"
+        notify critical jellyfin-sync dialog-error "Jellyfin Sync Failed" "Could not reach server — check URL and API key"
         return 1
     fi
 
@@ -92,7 +93,7 @@ sync_music() {
 
     if [[ -z "$raw_items" ]]; then
         print_error "No response from Jellyfin — check server URL and API key"
-        notify-send -u critical -i dialog-error "Jellyfin Sync Failed" "No response from server"
+        notify critical jellyfin-sync dialog-error "Jellyfin Sync Failed" "No response from server"
         return 1
     fi
 
@@ -178,7 +179,7 @@ sync_music() {
 
     local body="${downloaded} downloaded · ${skipped} up to date · ${removed} removed"
     [[ "$failed" -gt 0 ]] && body+=" · ${failed} failed"
-    notify-send -u normal -i audio-x-generic "Jellyfin Sync" "$body"
+    notify normal jellyfin-sync audio-x-generic "Jellyfin Sync" "$body"
 }
 
 if [[ "$1" == "--daemon" ]] && [[ ! -f "$CONFIG" ]]; then

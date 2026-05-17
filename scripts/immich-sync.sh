@@ -1,6 +1,7 @@
 #!/bin/bash
 # Runs immich upload every hour in the background
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 
 IMMICH_BIN="$HOME/.npm-global/bin/immich"
 
@@ -20,7 +21,7 @@ run_upload() {
     echo "$output" >> "$IMMICH_LOG"
 
     if [[ "$exit_code" -ne 0 ]]; then
-        notify-send -u critical -i dialog-error "Immich Sync Failed" "$(echo "$output" | tail -1)"
+        notify critical immich-sync dialog-error "Immich Sync Failed" "$(echo "$output" | tail -1)"
         return
     fi
 
@@ -28,7 +29,7 @@ run_upload() {
     new_count=$(echo "$output" | grep -oP 'Found \K\d+(?= new)' | head -1)
 
     if [[ -n "$new_count" && "$new_count" -gt 0 ]]; then
-        notify-send -u normal -i camera-photo "Immich Sync" "Uploaded $new_count new photo(s)"
+        notify normal immich-sync camera-photo "Immich Sync" "Uploaded $new_count new photo(s)"
     fi
 }
 
