@@ -27,11 +27,13 @@ if status is-interactive
     # System
     abbr -a sdn shutdown now
 
-    # linux-sysutil shortcuts (util is a function in functions/util.fish)
-    abbr -a ipa    util net ip
-    abbr -a st     util net st
-    abbr -a backup util system backup
-    abbr -a mvup   util file mvup
+    # System shortcuts
+    abbr -a backup sudo timeshift --create
+    abbr -a st     speedtest-cli --simple
+    abbr -a mstart mpv --no-video --shuffle ~/Music/*
+    abbr -a mstop  pkill mpv
+    abbr -a rpgmd  xdg-open \$RPGMDECRYPT_PATH
+    # ipa, mvup live in functions/ (multi-token pipes don't read well inline)
 
     # Random
     abbr -a nf  fastfetch

@@ -23,6 +23,7 @@ Thumbs.db
 immich/auth.yml
 jellyfin/sync.conf
 quickshell/calendar.url
+scripts/util.env
 
 # Runtime artifacts
 hypr/avatar.png

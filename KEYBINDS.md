@@ -92,4 +92,4 @@ for setup time.
 
 | Key | Action |
 |---|---|
-| `Super+Shift+M` / `Super+Shift+K` | linux-sysutil media start / stop (needs the repo cloned at `~/Documents/Code/linux-sysutil/`) |
+| `Super+Shift+M` / `Super+Shift+K` | mpv shuffle `~/Music` start / stop |
