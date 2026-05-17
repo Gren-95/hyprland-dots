@@ -18,7 +18,6 @@ MUSIC_DIR="$HOME/Music"
 CONFIG_DIR="$HOME/.config"
 SCRIPTS_DIR="$HOME/.config/scripts"
 HYPR_DIR="$HOME/.config/hypr"
-WAYBAR_DIR="$HOME/.config/waybar"
 
 # Cache / runtime
 CACHE_DIR="$HOME/.cache"

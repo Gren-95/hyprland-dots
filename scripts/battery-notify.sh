@@ -15,9 +15,8 @@ while true; do
     STATUS=$(cat "/sys/class/power_supply/$BATTERY/status" 2>/dev/null)
 
     if [[ "$STATUS" == "Charging" || "$STATUS" == "Full" ]]; then
-        if [[ "$WARNED_10" == true || "$WARNED_20" == true ]]; then
-            swaync-client --close-latest
-        fi
+        # Reset latch so the next discharge cycle can re-warn. Past warnings
+        # auto-replace via notify-send's x-canonical-private-synchronous key.
         WARNED_20=false
         WARNED_10=false
     elif [[ -n "$CAPACITY" ]]; then

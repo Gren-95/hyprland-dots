@@ -245,7 +245,7 @@ Scope {
                             return "";
                         }
                         onWheel: (up) => {
-                            brightProc.command = ["swayosd-client", "--brightness", up ? "raise" : "lower"];
+                            brightProc.command = ["brightnessctl", "set", up ? "+5%" : "5%-"];
                             brightProc.startDetached();
                         }
                         Process { id: brightProc; command: [] }
