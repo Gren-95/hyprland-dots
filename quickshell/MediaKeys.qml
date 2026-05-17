@@ -16,8 +16,10 @@ Item {
     height: implicitHeight
 
     // All controllable players (Spotify, Firefox, mpv, …).
+    // Guard both Mpris.players AND .values — the service can have the
+    // outer object before values is populated, .filter() would crash.
     readonly property var controllable: {
-        const list = Mpris.players ? Mpris.players.values : [];
+        const list = (Mpris.players && Mpris.players.values) || [];
         return list.filter(p => p && p.canControl);
     }
     // -1 = auto (prefer Playing); otherwise the user has scrolled to pick one.
