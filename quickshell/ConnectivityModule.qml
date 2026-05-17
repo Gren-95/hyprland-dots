@@ -196,14 +196,30 @@ Item {
         anchor.rect.x: (bt.parentBar.width - implicitWidth) / 2
         anchor.rect.y: (bt.parentBar.screen.height - implicitHeight) / 2
         implicitWidth: 360
-        implicitHeight: contentCol.implicitHeight + 24
+        // Fixed height so switching tabs doesn't resize the Wayland surface.
+        implicitHeight: 460
         visible: bt.popupOpen
         color: "transparent"
 
-        SproutBg { anchors.fill: parent; fillColor: Theme.bgAlt; borderColor: Theme.borderStrong; showTail: false }
+        SproutBg {
+            anchors.fill: parent
+            fillColor: Theme.bgAlt
+            borderColor: Theme.borderStrong
+            showTail: false
+            scale: bt.popupOpen ? 1.0 : 0.94
+            opacity: bt.popupOpen ? 1.0 : 0.0
+            transformOrigin: Item.Center
+            Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+            Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+        }
         Item {
             anchors.fill: parent
             focus: bt.popupOpen
+            scale: bt.popupOpen ? 1.0 : 0.94
+            opacity: bt.popupOpen ? 1.0 : 0.0
+            transformOrigin: Item.Center
+            Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+            Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
             Keys.onPressed: (e) => {
                 const n = bt.currentItems.length;
                 const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
@@ -307,7 +323,7 @@ Item {
                 Loader {
                     id: paneLoader
                     Layout.fillWidth: true
-                    Layout.preferredHeight: implicitHeight
+                    Layout.fillHeight: true
                     active: bt.popupOpen
                     sourceComponent: !bt.popupOpen ? null
                                    : bt.activeTab === "wifi" ? wifiPane
@@ -375,6 +391,7 @@ Item {
                                 }
                             }
                         }
+                        Item { Layout.fillHeight: true }
                     }
                 }
 
@@ -450,6 +467,7 @@ Item {
                                 }
                             }
                         }
+                        Item { Layout.fillHeight: true }
                     }
                 }
 
@@ -548,6 +566,7 @@ Item {
                                 }
                             }
                         }
+                        Item { Layout.fillHeight: true }
                     }
                 }
             }

@@ -172,7 +172,7 @@ Scope {
                     ConnectivityModule {
                         id: btMod
                         parentBar: bar
-                        onNavigateNext: { popupOpen = false; sndMod.openAt(0) }
+                        onNavigateNext: { popupOpen = false; apMod.openAt("sound") }
                         onNavigatePrev: { popupOpen = false; cal.openAt(0) }
                     }
 
@@ -223,17 +223,23 @@ Scope {
 
                     BarSep {}
 
-                    SoundModule {
-                        id: sndMod
+                    AudioPowerModule {
+                        id: apMod
                         parentBar: bar
-                        onNavigateNext: { popupOpen = false; sysMod.openAt(0) }
+                        onNavigateNext: { popupOpen = false; spotlight.openAt(0) }
                         onNavigatePrev: { popupOpen = false; btMod.openAt(-1) }
                     }
 
-                    // Battery (also toggles the System popup)
+                    // Battery: opens AudioPowerModule on the Power tab.
                     BarIcon {
                         id: batteryIcon
-                        onClicked: sysMod.popupOpen = !sysMod.popupOpen
+                        onClicked: {
+                            if (apMod.popupOpen && apMod.activeTab === "power") {
+                                apMod.popupOpen = false;
+                            } else {
+                                apMod.openAt("power");
+                            }
+                        }
                         readonly property var dev: UPower.displayDevice
                         readonly property int pct: dev ? Math.round(dev.percentage * 100) : 0
                         readonly property bool charging: dev && (dev.state === UPowerDeviceState.Charging
@@ -288,13 +294,6 @@ Scope {
                         PwObjectTracker { objects: [Pipewire.defaultAudioSource] }
                     }
 
-                    SystemModule {
-                        id: sysMod
-                        parentBar: bar
-                        triggerItem: batteryIcon
-                        onNavigateNext: { popupOpen = false; spotlight.openAt(0) }
-                        onNavigatePrev: { popupOpen = false; sndMod.openAt(-1) }
-                    }
                 }
 
                 Connections {

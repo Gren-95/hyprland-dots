@@ -171,10 +171,25 @@ Scope {
         implicitWidth: 1000
         implicitHeight: 560
 
-        SproutBg { anchors.fill: parent; fillColor: Theme.bg; borderColor: Theme.mutedDeep; showTail: false }
+        SproutBg {
+            anchors.fill: parent
+            fillColor: Theme.bg
+            borderColor: Theme.mutedDeep
+            showTail: false
+            scale: root.open ? 1.0 : 0.94
+            opacity: root.open ? 1.0 : 0.0
+            transformOrigin: Item.Center
+            Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+            Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+        }
         FocusScope {
             anchors.fill: parent
             focus: root.open
+            scale: root.open ? 1.0 : 0.94
+            opacity: root.open ? 1.0 : 0.0
+            transformOrigin: Item.Center
+            Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+            Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
             Keys.onPressed: (e) => {
                 const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
                 if (e.key === Qt.Key_Escape) { root.close(); e.accepted = true; }
