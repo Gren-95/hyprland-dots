@@ -7,11 +7,11 @@ add a new modal" or "where do I change X" — not a tutorial.
 
 | Layer | Lives in | Examples |
 |---|---|---|
-| **Singletons** | `Theme.qml`, `Hypr.qml`, `TailscaleService.qml` | Design tokens, hyprctl dispatch helper, Tailscale CLI wrapper |
+| **Singletons** | `Theme.qml`, `Hypr.qml`, `TailscaleService.qml`, `Settings.qml` | Design tokens, hyprctl dispatch helper, Tailscale CLI wrapper, persisted user flags |
 | **Primitives** | `BarPopupCard.qml`, `PopupCard.qml`, `TabStrip.qml`, `SproutBg.qml` | Reusable popup envelopes + the speech-bubble shape |
-| **Bar items** | `BarIcon.qml`, `BarSep.qml`, `WorkspaceStrip.qml` | Leaf widgets that sit on the top bar |
+| **Bar items** | `BarIcon.qml`, `BarSep.qml`, `WorkspaceStrip.qml`, `MediaKeys.qml` | Leaf widgets that sit on the top bar |
 | **Bar modules** | `ConnectivityModule.qml`, `AudioPowerModule.qml`, `NotifBell.qml`, `QuickActions.qml` | Bar entry points that open their own popup |
-| **Modals** | `Spotlight.qml`, `Clipboard.qml`, `Keybinds.qml`, `PowerMenu.qml`, `PolkitPrompt.qml`, `IcsCalendar.qml`, `Notifications.qml`, `WorkspaceOverview.qml`, `ScreenRecorder.qml`, `Osd.qml` | Centered or bar-anchored overlays |
+| **Modals** | `Spotlight.qml`, `Clipboard.qml`, `Keybinds.qml`, `PowerMenu.qml`, `PolkitPrompt.qml`, `IcsCalendar.qml`, `Notifications.qml`, `WorkspaceOverview.qml`, `ScreenRecorder.qml`, `Osd.qml`, `SystemMonitor.qml`, `WallpaperPicker.qml`, `RegionSelector.qml`, `ScreenshotActions.qml` | Centered or bar-anchored overlays |
 | **Reusable widgets** | `TabPill`, `PinButton`, `BtToggle`, `VolumeSlider`, `BrightnessRow`, `ProfileSelector`, `*Row` files | Pieces composed into modules |
 
 Entry point is `shell.qml`. It instantiates every modal and the per-screen bar
@@ -43,6 +43,12 @@ Wraps the `tailscale` CLI. Properties: `state`, `tailnet`, `host`, `selfIPs`,
 `peers`, `exitNodeId`, `daemonOk`, `running`. Methods: `refresh()`, `toggle()`,
 `setExitNode(id)`, `copyIp(ip)`. Background poll every 15s, fast poll every 4s
 while the VPN tab is open.
+
+### `Settings.qml`
+Persists user flags as one tiny file per flag under `~/.cache/quickshell/`
+(plain `"0"` or `"1"`, no JSON dance). Pattern: declare `property bool fooBar`
+plus `onFooBarChanged: _save("foo-bar.enabled", fooBar)` and a `FileView`
+that reads the same path. Currently only owns `mediaKeysVisible`.
 
 ## Primitives
 
@@ -108,8 +114,18 @@ Pattern:
 - Exposes `openTab(name)` for tab-switching consumers
 
 `QuickActions` is the catch-all overflow panel: stateful toggles (DnD, Stay
-Awake, Immich/Jellyfin sync, Remote access) + a 3-column grid of one-shots
-(Clipboard, Screenshot, Record, Color picker, Keybinds).
+Awake, Immich/Jellyfin sync, Remote access, Media keys) + a 3-column grid of
+one-shots (Clipboard, Screenshot, Record, Color picker, Keybinds, Wallpaper).
+Bound to `Super+A`.
+
+`MediaKeys` is a special bar item — it sits in the gap between the centered
+clock and the right systray (positioned via a wrapper Item with anchors
+`left: clockAnchor.right, right: rightGroup.left`, MediaKeys `anchors.centerIn`).
+Compact MPRIS-driven chip with optional track title + prev/play-pause/next
+buttons. Visibility bound to `Settings.mediaKeysVisible` (toggled from
+Quick Actions). Auto-prefers Playing player when multiple exist; wheel-scroll
+on the chip cycles through controllable players; inline `N/M` counter shown
+when >1 player.
 
 ## Modals
 
@@ -123,6 +139,22 @@ Each modal exposes:
 
 Cross-modal Ctrl+Left/Right navigation is wired in `shell.qml` via
 `navigateNext` / `navigatePrev` signals on each module.
+
+### Notable modals (post-initial-doc additions)
+
+- **`SystemMonitor`** (`Super+M`) — CPU + per-core grid, RAM, all mounted
+  filesystems, CPU/NVMe temps, fans, uptime. Backed by `scripts/sysinfo.sh`
+  emitting a single JSON line every 1.5s.
+- **`WallpaperPicker`** — 3-column scrolling grid of thumbnails from
+  `~/Pictures/wallpapers`. Click sets via `scripts/wallpaper.sh <path>`.
+  Opened from Quick Actions' Wallpaper tile.
+- **`RegionSelector`** (`Super+Shift+S`) — full-screen dim overlay with
+  click-drag region selection, live dimensions readout, multi-monitor-aware
+  coordinate translation. Pipes the resulting `"X,Y WxH"` to
+  `scripts/screenshot.sh` and chains into ScreenshotActions.
+- **`ScreenshotActions`** — post-capture action sheet that opens once
+  `screenshot.sh` echoes the saved path. Buttons: Edit (swappy), OCR
+  (screenshot-ocr.sh), Reveal (nautilus), Done. Keys `E/O/R`, `Enter`=Edit.
 
 ## Conventions
 
