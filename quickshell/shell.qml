@@ -22,6 +22,8 @@ Scope {
     PolkitPrompt { id: polkit }
     SystemMonitor { id: sysmon }
     WallpaperPicker { id: wallpaperPicker }
+    RegionSelector { id: regionSelector }
+    ScreenshotActions { id: screenshotActions }
 
     Variants {
         model: Quickshell.screens
@@ -307,6 +309,12 @@ Scope {
                     name: "quickactions"
                     description: "Toggle quick actions panel"
                     onPressed: quickMod.popupOpen = !quickMod.popupOpen
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "screenshot-region"
+                    description: "Pick a region with the Quickshell region selector"
+                    onPressed: regionSelector.start()
                 }
                 GlobalShortcut {
                     appid: "quickshell"

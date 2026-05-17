@@ -6,7 +6,13 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 mkdir -p "$OCR_DIR"
 SCREENSHOT="$OCR_DIR/ocr-$(date +%Y%m%d-%H%M%S).png"
 
-grim -g "$(slurp)" "$SCREENSHOT" || exit 0
+# If a file path is given as $1, OCR that image instead of grabbing a new
+# region. Used by the Screenshot Actions modal to re-OCR a captured shot.
+if [[ $# -ge 1 && -f "$1" ]]; then
+    cp "$1" "$SCREENSHOT"
+else
+    grim -g "$(slurp)" "$SCREENSHOT" || exit 0
+fi
 
 # Preprocess: upscale 3x for better diacritic recognition,
 # auto-invert if background is dark (mean brightness < 0.5)
