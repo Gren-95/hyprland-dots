@@ -2,6 +2,32 @@
 
 ![Desktop Screenshot](screenshots/desktop.png)
 
+## Gallery
+
+The top bar (always visible):
+
+![Bar](screenshots/gallery/bar.png)
+
+Modals reachable from keybindings or the bar:
+
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="screenshots/gallery/spotlight.png" width="100%"/><br><strong>Spotlight</strong><br><kbd>Super</kbd>+<kbd>R</kbd></td>
+    <td align="center" width="33%"><img src="screenshots/gallery/clipboard.png" width="100%"/><br><strong>Clipboard</strong><br><kbd>Super</kbd>+<kbd>V</kbd></td>
+    <td align="center" width="33%"><img src="screenshots/gallery/quickactions.png" width="100%"/><br><strong>Quick Actions</strong><br><kbd>Super</kbd>+<kbd>A</kbd></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="screenshots/gallery/network.png" width="100%"/><br><strong>Network</strong><br><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></td>
+    <td align="center"><img src="screenshots/gallery/systemmonitor.png" width="100%"/><br><strong>System Monitor</strong><br><kbd>Super</kbd>+<kbd>M</kbd></td>
+    <td align="center"><img src="screenshots/gallery/notifications.png" width="100%"/><br><strong>Notification Center</strong><br><kbd>Super</kbd>+<kbd>N</kbd></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="screenshots/gallery/powermenu.png" width="100%"/><br><strong>Power Menu</strong><br><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd></td>
+    <td align="center"><img src="screenshots/gallery/keybinds.png" width="100%"/><br><strong>Keybinds Viewer</strong><br><kbd>Super</kbd>+<kbd>F1</kbd></td>
+    <td align="center"><img src="screenshots/gallery/toast.png" width="100%"/><br><strong>Notification Toast</strong><br>auto-shown on incoming notification</td>
+  </tr>
+</table>
+
 > [!TIP]
 > Use `setup.sh` for automated installation, or `dotfiles-manager.sh` for managing symlinks.
 
