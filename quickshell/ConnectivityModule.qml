@@ -212,8 +212,11 @@ Item {
                 bt.navigatePrev();
                 e.accepted = true;
             } else if (e.key === Qt.Key_Tab) {
-                // Tab cycles between Bluetooth / Wifi tabs
-                bt.setTab(bt.activeTab === "wifi" ? "bluetooth" : "wifi");
+                // Cycle bluetooth → wifi → vpn → bluetooth (Shift reverses).
+                const order = ["bluetooth", "wifi", "vpn"];
+                const dir = (e.modifiers & Qt.ShiftModifier) ? -1 : 1;
+                const i = order.indexOf(bt.activeTab);
+                bt.setTab(order[(i + dir + order.length) % order.length]);
                 e.accepted = true;
             } else if (e.key === Qt.Key_Right || e.key === Qt.Key_L) {
                 bt.cycleTab(1); e.accepted = true;
