@@ -293,9 +293,13 @@ Item {
                 } else if (e.key === Qt.Key_Left || e.key === Qt.Key_H) {
                     actions.cycle(-1); e.accepted = true;
                 } else if (e.key === Qt.Key_Down || e.key === Qt.Key_J) {
-                    actions.cycle(3); e.accepted = true;
+                    // Toggles are a single column → step 1. Action grid is
+                    // 3 columns → step 3. Branch on which section we're in.
+                    actions.cycle(actions.selectedIndex < actions.toggles.length ? 1 : 3);
+                    e.accepted = true;
                 } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
-                    actions.cycle(-3); e.accepted = true;
+                    actions.cycle(actions.selectedIndex < actions.toggles.length ? -1 : -3);
+                    e.accepted = true;
                 } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
                     actions.activate(actions.selectedIndex); e.accepted = true;
                 }

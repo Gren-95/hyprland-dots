@@ -30,6 +30,11 @@ else
     wp=$(find "$WALLPAPER_DIR" -type f | shuf -n 1)
 fi
 
+# hyprpaper requires the wallpaper be preloaded; restart.sh's preload pass
+# only covers files present at startup. Idempotent — preloading an already
+# loaded file is a no-op.
+hyprctl hyprpaper preload "$wp" >/dev/null 2>&1 || true
+
 for monitor in "${MONITORS[@]}"; do
     hyprctl hyprpaper wallpaper "$monitor,$wp"
 done

@@ -34,6 +34,9 @@ current_pct() {
 
 decide() {
     local on_bat=$1 pct=$2
+    # UPower can emit fractional percentages (e.g. "85.6"). Bash arithmetic
+    # would error on the decimal — truncate to the integer part.
+    pct=${pct%%.*}
     if [[ "$on_bat" != "yes" ]]; then
         echo performance
     elif [[ -n "$pct" && "$pct" -lt "$LOW_THRESHOLD" ]]; then
