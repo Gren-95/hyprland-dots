@@ -115,10 +115,10 @@ create_symlinks() {
 
 # Check optional external dependencies
 check_optional_deps() {
-    if [[ ! -f "$HOME/Documents/Code/linux-sysutil/cli_tool.py" ]]; then
-        print_warning "linux-sysutil not found at ~/Documents/Code/linux-sysutil/"
-        print_warning "Super+Shift+M/K keybinds will not work without it"
-        print_warning "Clone it from: https://github.com/Gren-95/linux-sysutil"
+    local env_target="$HOME/.config/scripts/util.env"
+    if [[ ! -f "$env_target" ]]; then
+        print_warning "scripts/util.env not present — copy util.env.example to populate"
+        print_warning "  cp $HOME/.config/scripts/util.env.example $env_target"
     fi
 }
 

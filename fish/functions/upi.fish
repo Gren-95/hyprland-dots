@@ -1,6 +1,6 @@
 function upi --description "Update everything: backup, dnf, flatpak, fisher"
     echo "Updating system..."
-    util system backup
+    sudo timeshift --create
     and sudo dnf update
     and flatpak update
     and sudo dnf autoremove
