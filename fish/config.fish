@@ -1,48 +1,48 @@
 if status is-interactive
 
-    # Fish greeter
+    # Quiet greeter.
     set fish_greeting ""
 
-    alias util="python3 $HOME/Documents/Code/linux-sysutil/cli_tool.py"
+    # ===== Abbreviations =====
+    # Expand inline on <space> so you see the real command before running it
+    # (better for screen-sharing, screencasts, and muscle memory). Complex
+    # chains live in functions/ where abbr expansion doesn't apply.
 
-    # Basic dnf commands
-    alias upi='echo "Updating system... Commands run: backup, up, fup, are, fare, fishup"; backup; and up; and fup; and are; and fare; and fishup'
-    alias up="sudo dnf update"
-    alias in="sudo dnf install"
-    alias are="sudo dnf autoremove"
-    alias re="sudo dnf remove"
-    alias dls="sudo dnf list"
+    # DNF
+    abbr -a up   sudo dnf update
+    abbr -a in   sudo dnf install
+    abbr -a are  sudo dnf autoremove
+    abbr -a re   sudo dnf remove
+    abbr -a dls  sudo dnf list
 
-    # Basic Flatpak commands
-    alias fup="flatpak update"
-    alias fin="flatpak install"
-    alias fare="flatpak remove --unused"
-    alias fre="flatpak remove"
+    # Flatpak
+    abbr -a fup  flatpak update
+    abbr -a fin  flatpak install
+    abbr -a fare flatpak remove --unused
+    abbr -a fre  flatpak remove
 
-    # Basic Fisher commands
-    alias fishup="fisher update"
+    # Fisher
+    abbr -a fishup fisher update
 
-    # System actions
-    alias sdn="shutdown now"
+    # System
+    abbr -a sdn shutdown now
 
-    # Utils
-    ## Networking
-    alias ipa="util net ip"
-    alias st="util net st"
+    # linux-sysutil shortcuts (util is a function in functions/util.fish)
+    abbr -a ipa    util net ip
+    abbr -a st     util net st
+    abbr -a backup util system backup
+    abbr -a mvup   util file mvup
 
     # Random
-    alias nf="fastfetch"
-    alias cls="clear"
-    alias backup="util system backup"
+    abbr -a nf  fastfetch
+    abbr -a cls clear
 
-    # File operations
-    alias mvup="util file mvup"
-    alias reload="fish -c 'source ~/.config/fish/config.fish'"
+    # Reload (full restart, not just source — clears stale state).
+    alias reload 'exec fish'
 
 end
 
-# Outside the is-interactive block: scripts and Claude Code spawn
-# non-interactive shells, and these need to be set there too.
+# Outside is-interactive: scripts + non-interactive shells (Claude Code,
+# editor terminals) inherit these.
 set -gx PATH $HOME/.local/bin $HOME/bin $HOME/.nix-profile/bin ~/.npm-global/bin $PATH
-# Cache rustc invocations across cargo clean / branch switches.
 set -gx RUSTC_WRAPPER sccache
