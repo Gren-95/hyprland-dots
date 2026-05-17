@@ -159,7 +159,7 @@ setup_immich_cli() {
         print_success "Logged in to Immich" || \
         print_error "Login failed — check your URL and API key"
 
-    # Prompt for sync interval
+    # Prompt for sync interval and write it to the crontab via sync-toggle.sh.
     echo ""
     print_info "How often should Immich sync run?"
     echo "  1) Every 30 minutes"
@@ -169,19 +169,22 @@ setup_immich_cli() {
     read -p "  Choose [1-4] (default: 2): " interval_choice
     echo
 
-    local sleep_secs=3600
+    local cron_expr="0 * * * *"
     case "$interval_choice" in
-        1) sleep_secs=1800  ;;
-        2) sleep_secs=3600  ;;
-        3) sleep_secs=7200  ;;
-        4) sleep_secs=21600 ;;
-        *) sleep_secs=3600  ;;
+        1) cron_expr="*/30 * * * *" ;;
+        2) cron_expr="0 * * * *"    ;;
+        3) cron_expr="0 */2 * * *"  ;;
+        4) cron_expr="0 */6 * * *"  ;;
     esac
 
-    local sync_script="$CONFIG_DIR/scripts/immich-sync.sh"
-    if [[ -f "$sync_script" ]]; then
-        sed -i "s/sleep [0-9]*/sleep $sleep_secs/" "$sync_script"
-        print_success "Immich sync interval set to $sleep_secs seconds"
+    bash "$SCRIPT_DIR/scripts/sync-toggle.sh" schedule immich "$cron_expr"
+    print_success "Immich cron schedule: $cron_expr"
+
+    read -p "Enable Immich background sync now? (Y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+        bash "$SCRIPT_DIR/scripts/sync-toggle.sh" enable immich
+        print_success "Immich background sync enabled"
     fi
 }
 
@@ -189,7 +192,7 @@ setup_immich_cli() {
 setup_jellyfin_sync() {
     print_info "Setting up Jellyfin music sync..."
 
-    # Prompt for sync interval
+    # Prompt for sync interval and write it to the crontab via sync-toggle.sh.
     echo ""
     print_info "How often should music sync run?"
     echo "  1) Every 30 minutes"
@@ -199,24 +202,16 @@ setup_jellyfin_sync() {
     read -p "  Choose [1-4] (default: 3): " interval_choice
     echo
 
-    local sleep_secs=7200
+    local cron_expr="0 */2 * * *"
     case "$interval_choice" in
-        1) sleep_secs=1800  ;;
-        2) sleep_secs=3600  ;;
-        3) sleep_secs=7200  ;;
-        4) sleep_secs=21600 ;;
-        *) sleep_secs=7200  ;;
+        1) cron_expr="*/30 * * * *" ;;
+        2) cron_expr="0 * * * *"    ;;
+        3) cron_expr="0 */2 * * *"  ;;
+        4) cron_expr="0 */6 * * *"  ;;
     esac
 
-    # Write the interval into the sync script
-    local sync_script="$CONFIG_DIR/scripts/jellyfin-music-sync.sh"
-    if [[ -f "$sync_script" ]]; then
-        sed -i "s/sleep [0-9]*/sleep $sleep_secs/" "$sync_script"
-        print_success "Sync interval set to $sleep_secs seconds"
-    fi
-
-    # Background sync is scheduled via cron (Quick Actions toggle); nothing
-    # to add to autostart.
+    bash "$SCRIPT_DIR/scripts/sync-toggle.sh" schedule jellyfin "$cron_expr"
+    print_success "Jellyfin cron schedule: $cron_expr"
 
     # Prompt for credentials now
     local conf="$HOME/.config/jellyfin/sync.conf"
@@ -241,6 +236,13 @@ EOF
         print_success "Jellyfin credentials saved"
     else
         print_success "Jellyfin credentials already configured"
+    fi
+
+    read -p "Enable Jellyfin background sync now? (Y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+        bash "$SCRIPT_DIR/scripts/sync-toggle.sh" enable jellyfin
+        print_success "Jellyfin background sync enabled"
     fi
 }
 
