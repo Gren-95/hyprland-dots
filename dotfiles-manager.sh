@@ -20,7 +20,6 @@ CONFIG_ITEMS=(
     "scripts"
     "wayvnc"
     "fish"
-    "nvim"
     "ranger"
     "gtk-3.0"
     "immich"

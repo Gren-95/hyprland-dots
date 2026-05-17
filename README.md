@@ -83,7 +83,7 @@ sudo dnf install hyprland hyprland-devel quickshell kitty nautilus cliphist \
   wl-clipboard firefox brightnessctl playerctl \
   gnome-keyring jq \
   powerprofilesctl gpu-screen-recorder inotify-tools \
-  fish neovim ranger python3 python3-pillow
+  fish ranger python3 python3-pillow
 ```
 
 ## Setup
