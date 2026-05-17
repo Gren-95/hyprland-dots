@@ -1,5 +1,6 @@
 #!/bin/bash
 # Runs immich upload every hour in the background
+set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 

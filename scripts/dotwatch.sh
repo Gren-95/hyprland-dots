@@ -3,6 +3,7 @@
 #
 # Add to hyprland.conf:  exec-once = bash ~/.config/scripts/dotwatch.sh
 # Also called from restart.sh
+set -uo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"

@@ -1,5 +1,6 @@
 #!/bin/bash
 # Battery low notification daemon
+set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 
 WARNED_20=false

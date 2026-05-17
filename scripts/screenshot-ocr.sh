@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 

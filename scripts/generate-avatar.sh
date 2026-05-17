@@ -1,6 +1,6 @@
 #!/bin/bash
 # Generates an initials avatar and installs it to AccountsService
-set -e
+set -euo pipefail
 
 USER_NAME=$(whoami)
 INITIAL="${USER_NAME:0:1}"
