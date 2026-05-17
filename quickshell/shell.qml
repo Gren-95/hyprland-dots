@@ -10,7 +10,7 @@ import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
 
 Scope {
-    Notifications { id: notifs }
+    Notifications { id: notifService }
     IcsCalendar { id: cal }
     Spotlight { id: spotlight }
     Clipboard { id: clipboard }
@@ -75,24 +75,40 @@ Scope {
                         id: clockRow
                         anchors.centerIn: parent
                         spacing: Theme.spacing.md
-                        Text {
-                            text: "  " + Qt.formatDate(clockTimer.now, "ddd, dd MMM")
-                            color: Theme.muted
-                            font { family: Theme.font; pixelSize: Theme.fontSize.base }
+
+                        // Date + time wrapper — owns the calendar click region.
+                        Item {
+                            Layout.preferredWidth: dateTimeRow.implicitWidth
+                            Layout.preferredHeight: dateTimeRow.implicitHeight
+                            RowLayout {
+                                id: dateTimeRow
+                                anchors.centerIn: parent
+                                spacing: Theme.spacing.md
+                                Text {
+                                    text: "  " + Qt.formatDate(clockTimer.now, "ddd, dd MMM")
+                                    color: Theme.muted
+                                    font { family: Theme.font; pixelSize: Theme.fontSize.base }
+                                }
+                                Text {
+                                    text: Qt.formatTime(clockTimer.now, "HH:mm")
+                                    color: "#f5f5f4"
+                                    font { family: Theme.font; pixelSize: Theme.fontSize.md; bold: true }
+                                }
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    cal.anchorBar = bar;
+                                    cal.anchorItem = clockAnchor;
+                                    cal.toggle();
+                                }
+                            }
                         }
-                        Text {
-                            text: Qt.formatTime(clockTimer.now, "HH:mm")
-                            color: "#f5f5f4"
-                            font { family: Theme.font; pixelSize: Theme.fontSize.md; bold: true }
-                        }
-                    }
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            cal.anchorBar = bar;
-                            cal.anchorItem = clockAnchor;
-                            cal.toggle();
+
+                        NotifBell {
+                            parentBar: bar
+                            notifs: notifService
                         }
                     }
                 }
@@ -298,7 +314,7 @@ Scope {
                     appid: "quickshell"
                     name: "notifications"
                     description: "Toggle notification center"
-                    onPressed: notifs.toggleCenter()
+                    onPressed: notifService.toggleCenter()
                 }
                 // Classic Super+Tab: open + cycle on Tab presses, release Super commits.
                 GlobalShortcut {

@@ -24,8 +24,8 @@ Item {
             glyph:    "󰂛", offGlyph: "󰂚",
             label:    "Do Not Disturb",
             accent:   Theme.accent.orange,
-            on:       notifs.dnd,
-            description: notifs.dnd ? "Notifications muted" : "Notifications enabled",
+            on:       notifService.dnd,
+            description: notifService.dnd ? "Notifications muted" : "Notifications enabled",
             action:   "dnd",
         },
         {
@@ -40,9 +40,8 @@ Item {
 
     // ============ One-shot actions ============
     readonly property var oneShots: [
-        { glyph: "󰂚", label: "Notifications", accent: Theme.accent.blue, action: "notifs" },
         { glyph: "󰅍", label: "Clipboard",     accent: Theme.accent.slate, action: "clipboard" },
-        { glyph: "", label: "Screenshot",    accent: "#60a5fa", cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenshot.sh"] },
+        { glyph: "󰹑", label: "Screenshot",    accent: "#60a5fa", cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenshot.sh"] },
         { glyph: "󰕧", label: "Record",        accent: Theme.accent.red, cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenrecord.sh"] },
         { glyph: "󰈊", label: "Color picker",  accent: "#e879f9", cmd: ["hyprpicker", "-a"] },
         { glyph: "󰋩", label: "Immich sync",   accent: "#f59e0b", cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/immich-sync.sh", "--now"] },
@@ -86,12 +85,9 @@ Item {
             entry = oneShots[idx - toggles.length];
         }
         if (entry.action === "dnd") {
-            notifs.dnd = !notifs.dnd;
+            notifService.dnd = !notifService.dnd;
         } else if (entry.action === "idle") {
             idleToggleProc.startDetached();
-        } else if (entry.action === "notifs") {
-            actions.popupOpen = false;
-            notifs.openCenter();
         } else if (entry.action === "clipboard") {
             actions.popupOpen = false;
             clipboard.openMenu();
