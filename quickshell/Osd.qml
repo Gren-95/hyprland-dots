@@ -1,6 +1,6 @@
 // On-screen display for volume, mic, screen brightness, and keyboard backlight.
 // Volume/mic react to Pipewire property changes. Brightness/keyboard-backlight
-// are detected by polling sysfs files (libudev-style behaviour, matches swayosd):
+// are detected by polling sysfs files (libudev-style behaviour):
 // any process that changes brightness — key, brightnessctl, hypridle — triggers
 // the OSD.
 import QtQuick

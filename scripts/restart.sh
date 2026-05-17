@@ -32,7 +32,6 @@ fi
 
 # Restart Quickshell (bar + notifications + OSDs)
 echo -n "Running: quickshell ... "
-killall waybar 2>/dev/null
 pkill -f "qs -p" 2>/dev/null
 sleep 0.2
 QT_QPA_PLATFORMTHEME=hyprqt6engine qs -p "$HOME/.config/quickshell/shell.qml" -d >/dev/null 2>&1
@@ -62,12 +61,6 @@ killall hypridle 2>/dev/null
 hypridle >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -x hypridle >/dev/null; then echo "OK"; else echo "FAILED"; fi
-
-# swaync and swayosd replaced by quickshell's NotificationServer and Osd.qml;
-# stop any stale instances.
-killall swaync 2>/dev/null
-killall swayosd-server 2>/dev/null
-pkill -f swayosd-monitor.sh 2>/dev/null
 
 # Restart battery notifier
 echo -n "Running: battery-notify ... "
