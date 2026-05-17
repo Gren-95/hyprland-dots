@@ -62,7 +62,7 @@ Scope {
             FocusScope {
                 id: cardFocus
                 anchors.centerIn: parent
-                width: 440
+                width: 500
                 height: cardCol.implicitHeight + 32
                 focus: root.active
 
@@ -74,8 +74,8 @@ Scope {
                     id: card
                     anchors.fill: parent
                     radius: 14
-                    color: "#1c1917"
-                    border.color: "#78716c"
+                    color: Theme.bg
+                    border.color: Theme.mutedDeep
                     border.width: 1
                 }
 
@@ -95,41 +95,41 @@ Scope {
                         spacing: 12
                         Text {
                             text: "󰒃"
-                            color: "#a78bfa"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 28
+                            color: Theme.accent.purple
+                            font.family: Theme.font
+                            font.pixelSize: 30
                         }
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 0
                             Text {
                                 text: "Authentication required"
-                                color: "#fafaf9"
-                                font.family: "FiraCode Nerd Font"
-                                font.pixelSize: 13
+                                color: Theme.fg
+                                font.family: Theme.font
+                                font.pixelSize: 15
                                 font.bold: true
                             }
                             Text {
                                 visible: root.flow && root.flow.actionId
                                 text: root.flow ? root.flow.actionId : ""
-                                color: "#78716c"
-                                font.family: "FiraCode Nerd Font"
-                                font.pixelSize: 9
+                                color: Theme.mutedDeep
+                                font.family: Theme.font
+                                font.pixelSize: 10
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
                             }
                         }
                     }
 
-                    Rectangle { Layout.fillWidth: true; height: 1; color: "#3a3633" }
+                    Rectangle { Layout.fillWidth: true; height: 1; color: Theme.border }
 
                     // Action message
                     Text {
                         Layout.fillWidth: true
                         text: root.flow ? root.flow.message : ""
-                        color: "#d6d3d1"
-                        font.family: "FiraCode Nerd Font"
-                        font.pixelSize: 12
+                        color: Theme.fgMuted
+                        font.family: Theme.font
+                        font.pixelSize: 14
                         wrapMode: Text.WordWrap
                     }
 
@@ -140,18 +140,18 @@ Scope {
                         visible: root.flow && root.flow.identities && root.flow.identities.length > 1
                         Text {
                             text: "Identity"
-                            color: "#a8a29e"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 10
+                            color: Theme.muted
+                            font.family: Theme.font
+                            font.pixelSize: 11
                         }
                         Text {
                             Layout.fillWidth: true
                             text: root.flow && root.flow.selectedIdentity
                                 ? (root.flow.selectedIdentity.pretty || root.flow.selectedIdentity.toString())
                                 : ""
-                            color: "#fafaf9"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 11
+                            color: Theme.fg
+                            font.family: Theme.font
+                            font.pixelSize: 13
                             elide: Text.ElideRight
                         }
                     }
@@ -159,10 +159,10 @@ Scope {
                     // Password input
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 38
+                        Layout.preferredHeight: 42
                         radius: 8
                         color: "#0c0a09"
-                        border.color: passwordField.activeFocus ? "#a78bfa" : "#3a3633"
+                        border.color: passwordField.activeFocus ? Theme.accent.purple : Theme.border
                         border.width: 1
                         visible: root.flow && root.flow.isResponseRequired
 
@@ -172,9 +172,9 @@ Scope {
                             anchors.leftMargin: 12
                             anchors.rightMargin: 12
                             verticalAlignment: TextInput.AlignVCenter
-                            color: "#fafaf9"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 13
+                            color: Theme.fg
+                            font.family: Theme.font
+                            font.pixelSize: 15
                             echoMode: root.flow && root.flow.responseVisible
                                 ? TextInput.Normal
                                 : TextInput.Password
@@ -208,9 +208,9 @@ Scope {
                                 const p = (root.flow.inputPrompt || "").trim();
                                 return p.endsWith(":") ? p.slice(0, -1) : (p || "Password");
                             }
-                            color: "#57534e"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 13
+                            color: Theme.disabled
+                            font.family: Theme.font
+                            font.pixelSize: 15
                         }
                     }
 
@@ -219,9 +219,9 @@ Scope {
                         Layout.fillWidth: true
                         visible: root.flow && root.flow.supplementaryMessage
                         text: root.flow ? root.flow.supplementaryMessage : ""
-                        color: root.flow && root.flow.supplementaryIsError ? "#f87171" : "#a8a29e"
-                        font.family: "FiraCode Nerd Font"
-                        font.pixelSize: 10
+                        color: root.flow && root.flow.supplementaryIsError ? "#f87171" : Theme.muted
+                        font.family: Theme.font
+                        font.pixelSize: 11
                         wrapMode: Text.WordWrap
                     }
 
@@ -237,15 +237,15 @@ Scope {
                             Layout.preferredWidth: 90
                             Layout.preferredHeight: 32
                             radius: 8
-                            color: cancelMouse.containsMouse ? "#3a3633" : "transparent"
-                            border.color: "#3a3633"
+                            color: cancelMouse.containsMouse ? Theme.border : "transparent"
+                            border.color: Theme.border
                             border.width: 1
                             Text {
                                 anchors.centerIn: parent
                                 text: "Cancel"
-                                color: "#d6d3d1"
-                                font.family: "FiraCode Nerd Font"
-                                font.pixelSize: 11
+                                color: Theme.fgMuted
+                                font.family: Theme.font
+                                font.pixelSize: 13
                             }
                             MouseArea {
                                 id: cancelMouse
@@ -261,13 +261,13 @@ Scope {
                             Layout.preferredWidth: 110
                             Layout.preferredHeight: 32
                             radius: 8
-                            color: okMouse.containsMouse ? "#7c3aed" : "#a78bfa"
+                            color: okMouse.containsMouse ? "#7c3aed" : Theme.accent.purple
                             Text {
                                 anchors.centerIn: parent
                                 text: "Authenticate"
                                 color: "#0a0a0a"
-                                font.family: "FiraCode Nerd Font"
-                                font.pixelSize: 11
+                                font.family: Theme.font
+                                font.pixelSize: 13
                                 font.bold: true
                             }
                             MouseArea {

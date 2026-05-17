@@ -145,11 +145,11 @@ Scope {
                 id: card
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: Math.round(parent.height * 0.18)
-                width: 720
+                width: 800
                 height: Math.min(620, headerCol.implicitHeight + resultsCol.implicitHeight + 28)
                 radius: 14
-                color: "#292524"
-                border.color: "#78716c"
+                color: Theme.bgAlt
+                border.color: Theme.mutedDeep
                 border.width: 1
                 focus: root.open
                 Keys.onPressed: (e) => {
@@ -197,26 +197,26 @@ Scope {
                         spacing: 14
                         Text {
                             text: "󰅍"
-                            color: "#a8a29e"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 28
+                            color: Theme.muted
+                            font.family: Theme.font
+                            font.pixelSize: 30
                         }
                         Text {
                             Layout.fillWidth: true
                             text: root.query || "Clipboard history"
-                            color: root.query ? "#fafaf9" : "#78716c"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 22
+                            color: root.query ? Theme.fg : Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: 24
                             elide: Text.ElideRight
                         }
                         Text {
                             text: root.filtered.length + " items"
-                            color: "#78716c"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 11
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: 13
                         }
                     }
-                    Rectangle { Layout.fillWidth: true; height: 1; color: "#44403c" }
+                    Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderStrong }
                 }
 
                 Flickable {
@@ -267,9 +267,9 @@ Scope {
                         Text {
                             visible: root.filtered.length === 0
                             text: root.items.length === 0 ? "Clipboard is empty" : "No matches"
-                            color: "#78716c"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 13
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: 15
                             Layout.alignment: Qt.AlignHCenter
                             Layout.topMargin: 24
                         }
@@ -288,21 +288,21 @@ Scope {
                         spacing: 14
                         Text {
                             text: "↵ Copy"
-                            color: "#78716c"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 10
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: 11
                         }
                         Text {
                             text: "Ctrl+D Delete"
-                            color: "#78716c"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 10
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: 11
                         }
                         Text {
                             text: "Esc Close"
-                            color: "#78716c"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 10
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: 11
                         }
                         Item { Layout.fillWidth: true }
                         Rectangle {
@@ -317,9 +317,9 @@ Scope {
                                 id: wipeText
                                 anchors.centerIn: parent
                                 text: "󰩺  Delete all"
-                                color: wipeMouse.containsMouse ? "#fafaf9" : "#f87171"
-                                font.family: "FiraCode Nerd Font"
-                                font.pixelSize: 10
+                                color: wipeMouse.containsMouse ? Theme.fg : "#f87171"
+                                font.family: Theme.font
+                                font.pixelSize: 11
                             }
                             MouseArea {
                                 id: wipeMouse
@@ -343,7 +343,7 @@ Scope {
         signal picked()
         signal hovered()
         signal removed()
-        implicitHeight: row.entry && row.entry.isImage ? 76 : 44
+        implicitHeight: row.entry && row.entry.isImage ? 76 : 48
         radius: 8
         color: row.highlighted ? "#3b3531" : (hover.containsMouse ? "#262220" : "transparent")
 
@@ -373,9 +373,9 @@ Scope {
             spacing: 12
             Text {
                 text: row.entry ? row.entry.id : ""
-                color: "#78716c"
-                font.family: "FiraCode Nerd Font"
-                font.pixelSize: 10
+                color: Theme.mutedDeep
+                font.family: Theme.font
+                font.pixelSize: 11
                 Layout.preferredWidth: 36
                 horizontalAlignment: Text.AlignRight
                 verticalAlignment: Text.AlignVCenter
@@ -387,8 +387,8 @@ Scope {
                 Layout.preferredWidth: 84
                 Layout.preferredHeight: 60
                 radius: 4
-                color: "#1c1917"
-                border.color: "#44403c"
+                color: Theme.bg
+                border.color: Theme.borderStrong
                 border.width: 1
                 clip: true
                 Image {
@@ -409,7 +409,7 @@ Scope {
                 Layout.preferredHeight: 28
                 radius: 4
                 color: row.entry && row.entry.isColor ? row.entry.color : "transparent"
-                border.color: "#78716c"
+                border.color: Theme.mutedDeep
                 border.width: 1
             }
 
@@ -419,9 +419,9 @@ Scope {
                 Text {
                     Layout.fillWidth: true
                     text: row.entry ? row.entry.preview : ""
-                    color: "#fafaf9"
-                    font.family: "FiraCode Nerd Font"
-                    font.pixelSize: 13
+                    color: Theme.fg
+                    font.family: Theme.font
+                    font.pixelSize: 15
                     font.bold: row.highlighted
                     elide: Text.ElideRight
                     wrapMode: Text.NoWrap
@@ -433,18 +433,18 @@ Scope {
                     text: row.entry && row.entry.isImage
                         ? (row.entry.dims ? row.entry.dims + "  •  " + row.entry.size : row.entry.size)
                         : ""
-                    color: "#a8a29e"
-                    font.family: "FiraCode Nerd Font"
-                    font.pixelSize: 10
+                    color: Theme.muted
+                    font.family: Theme.font
+                    font.pixelSize: 11
                     elide: Text.ElideRight
                 }
             }
             Text {
                 visible: row.highlighted
                 text: "↵"
-                color: "#78716c"
-                font.family: "FiraCode Nerd Font"
-                font.pixelSize: 12
+                color: Theme.mutedDeep
+                font.family: Theme.font
+                font.pixelSize: 14
             }
         }
         MouseArea {

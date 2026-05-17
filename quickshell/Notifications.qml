@@ -74,19 +74,26 @@ Scope {
             id: stackWindow
             required property var modelData
             screen: modelData
-            anchors { top: true; left: true; right: true }
+            // Anchor only top so the surface width matches stackCol exactly
+            // (380 px) instead of spanning the screen. Clicks left/right of
+            // the toast pass through to underlying windows.
+            anchors { top: true }
             margins { top: 40 }
+            implicitWidth: 380
             implicitHeight: Math.max(1, stackCol.implicitHeight)
             color: "transparent"
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
             WlrLayershell.exclusionMode: ExclusionMode.Ignore
+            // When there are no active toasts, drop the input region entirely
+            // so the 1 px placeholder strip doesn't intercept clicks.
+            mask: root.activeList.length === 0 ? emptyRegion : null
+            Region { id: emptyRegion }
 
             ColumnLayout {
                 id: stackCol
                 width: 380
                 anchors.top: parent.top
-                anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 0
                 Repeater {
                     model: root.activeList
@@ -135,8 +142,8 @@ Scope {
                 anchors.bottomMargin: 12
                 width: 420
                 radius: 14
-                color: "#292524"
-                border.color: "#78716c"
+                color: Theme.bgAlt
+                border.color: Theme.mutedDeep
                 border.width: 1
                 focus: root.centerOpen
                 Keys.onPressed: (e) => {
@@ -153,28 +160,28 @@ Scope {
                         spacing: 10
                         Text {
                             text: "󰂚"
-                            color: "#a8a29e"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 20
+                            color: Theme.muted
+                            font.family: Theme.font
+                            font.pixelSize: 22
                         }
                         Text {
                             text: "Notifications"
-                            color: "#fafaf9"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 14
+                            color: Theme.fg
+                            font.family: Theme.font
+                            font.pixelSize: 16
                             font.bold: true
                         }
                         Text {
                             text: root.historyList.length + " items"
-                            color: "#78716c"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 10
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: 11
                         }
                         Item { Layout.fillWidth: true }
                         Rectangle {
                             visible: root.historyList.length > 0
                             implicitWidth: clearText.implicitWidth + 16
-                            implicitHeight: 22
+                            implicitHeight: 26
                             radius: 4
                             color: clearMouse.containsMouse ? "#7f1d1d" : "transparent"
                             border.color: "#7f1d1d"
@@ -183,9 +190,9 @@ Scope {
                                 id: clearText
                                 anchors.centerIn: parent
                                 text: "Clear all"
-                                color: clearMouse.containsMouse ? "#fafaf9" : "#f87171"
-                                font.family: "FiraCode Nerd Font"
-                                font.pixelSize: 10
+                                color: clearMouse.containsMouse ? Theme.fg : "#f87171"
+                                font.family: Theme.font
+                                font.pixelSize: 11
                             }
                             MouseArea {
                                 id: clearMouse
@@ -196,7 +203,7 @@ Scope {
                             }
                         }
                     }
-                    Rectangle { Layout.fillWidth: true; height: 1; color: "#44403c" }
+                    Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderStrong }
                 }
 
                 Flickable {
@@ -229,9 +236,9 @@ Scope {
                         Text {
                             visible: root.historyList.length === 0
                             text: "No notifications"
-                            color: "#78716c"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 12
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: 14
                             Layout.alignment: Qt.AlignHCenter
                             Layout.topMargin: 32
                         }
@@ -247,8 +254,8 @@ Scope {
         signal dismissed()
         implicitHeight: histCol.implicitHeight + 16
         radius: 8
-        color: histHover.containsMouse ? "#231f1d" : "#1c1917"
-        border.color: "#3a3633"
+        color: histHover.containsMouse ? Theme.bgHover : Theme.bg
+        border.color: Theme.border
         border.width: 1
 
         ColumnLayout {
@@ -267,27 +274,27 @@ Scope {
                 Text {
                     Layout.fillWidth: true
                     text: hist.entry ? (hist.entry.summary || hist.entry.appName) : ""
-                    color: "#fafaf9"
-                    font.family: "FiraCode Nerd Font"
-                    font.pixelSize: 12
+                    color: Theme.fg
+                    font.family: Theme.font
+                    font.pixelSize: 14
                     font.bold: true
                     elide: Text.ElideRight
                 }
                 Text {
                     text: hist.entry ? Qt.formatTime(hist.entry.time, "hh:mm") : ""
-                    color: "#78716c"
-                    font.family: "FiraCode Nerd Font"
-                    font.pixelSize: 9
+                    color: Theme.mutedDeep
+                    font.family: Theme.font
+                    font.pixelSize: 10
                 }
                 Rectangle {
                     implicitWidth: 20; implicitHeight: 20; radius: 10
-                    color: dismissMouse.containsMouse ? "#44403c" : "transparent"
+                    color: dismissMouse.containsMouse ? Theme.borderStrong : "transparent"
                     Text {
                         anchors.centerIn: parent
                         text: "×"
-                        color: "#a8a29e"
-                        font.family: "FiraCode Nerd Font"
-                        font.pixelSize: 16
+                        color: Theme.muted
+                        font.family: Theme.font
+                        font.pixelSize: 18
                     }
                     MouseArea {
                         id: dismissMouse
@@ -302,9 +309,9 @@ Scope {
                 visible: hist.entry && hist.entry.body
                 Layout.fillWidth: true
                 text: hist.entry ? hist.entry.body : ""
-                color: "#d6d3d1"
-                font.family: "FiraCode Nerd Font"
-                font.pixelSize: 11
+                color: Theme.fgMuted
+                font.family: Theme.font
+                font.pixelSize: 13
                 wrapMode: Text.WordWrap
                 textFormat: Text.PlainText
                 maximumLineCount: 3
@@ -335,7 +342,7 @@ Scope {
             implicitHeight: cardCol.implicitHeight + 24
             radius: 10
             color: card.entry && card.entry.urgency === NotificationUrgency.Critical
-                ? "#ef4444" : "#a8a29e"
+                ? Theme.accent.red : Theme.muted
             layer.enabled: true
             layer.effect: MultiEffect {
                 shadowEnabled: true
@@ -351,7 +358,7 @@ Scope {
                 anchors.fill: parent
                 anchors.margins: 2
                 radius: 8
-                color: "#1c1917"
+                color: Theme.bg
             }
         }
 
@@ -376,8 +383,8 @@ Scope {
                         Layout.fillWidth: true
                         text: card.entry ? (card.entry.summary || card.entry.appName) : ""
                         color: "#f5f5f4"
-                        font.family: "FiraCode Nerd Font"
-                        font.pixelSize: 13
+                        font.family: Theme.font
+                        font.pixelSize: 15
                         font.bold: true
                         elide: Text.ElideRight
                         wrapMode: Text.NoWrap
@@ -386,20 +393,20 @@ Scope {
                         Layout.fillWidth: true
                         visible: card.entry && card.entry.appName && card.entry.summary
                         text: card.entry ? card.entry.appName : ""
-                        color: "#a8a29e"
-                        font.family: "FiraCode Nerd Font"
-                        font.pixelSize: 10
+                        color: Theme.muted
+                        font.family: Theme.font
+                        font.pixelSize: 11
                         elide: Text.ElideRight
                     }
                 }
                 Rectangle {
                     implicitWidth: 26; implicitHeight: 26; radius: 13
-                    color: closeMouse.containsMouse ? "#44403c" : "transparent"
+                    color: closeMouse.containsMouse ? Theme.borderStrong : "transparent"
                     Text {
                         anchors.centerIn: parent
-                        text: "×"; color: "#a8a29e"
-                        font.family: "FiraCode Nerd Font"
-                        font.pixelSize: 22
+                        text: "×"; color: Theme.muted
+                        font.family: Theme.font
+                        font.pixelSize: 24
                     }
                     MouseArea {
                         id: closeMouse
@@ -414,9 +421,9 @@ Scope {
                 Layout.fillWidth: true
                 visible: card.entry && card.entry.body !== ""
                 text: card.entry ? card.entry.body : ""
-                color: "#d6d3d1"
-                font.family: "FiraCode Nerd Font"
-                font.pixelSize: 11
+                color: Theme.fgMuted
+                font.family: Theme.font
+                font.pixelSize: 13
                 wrapMode: Text.WordWrap
                 textFormat: Text.PlainText
                 maximumLineCount: 4
@@ -430,18 +437,18 @@ Scope {
                     model: card.entry && card.entry.ref ? card.entry.ref.actions : []
                     delegate: Rectangle {
                         required property var modelData
-                        implicitHeight: 22
+                        implicitHeight: 26
                         implicitWidth: actText.implicitWidth + 16
                         radius: 4
-                        color: actMouse.containsMouse ? "#3b3531" : "#292524"
-                        border.color: "#44403c"; border.width: 1
+                        color: actMouse.containsMouse ? "#3b3531" : Theme.bgAlt
+                        border.color: Theme.borderStrong; border.width: 1
                         Text {
                             id: actText
                             anchors.centerIn: parent
                             text: modelData.text
                             color: "#f5f5f4"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 11
+                            font.family: Theme.font
+                            font.pixelSize: 13
                         }
                         MouseArea {
                             id: actMouse

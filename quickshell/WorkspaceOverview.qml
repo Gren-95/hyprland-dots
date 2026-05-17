@@ -40,8 +40,7 @@ Scope {
     function activate(idx) {
         const ws = root.workspaces[idx];
         if (ws) {
-            dispatchProc.command = ["hyprctl", "dispatch", "workspace", String(ws.id)];
-            dispatchProc.startDetached();
+            Hypr.dispatch("workspace", String(ws.id));
         }
         close();
     }
@@ -134,8 +133,6 @@ Scope {
         return s;
     }
 
-    Process { id: dispatchProc; command: [] }
-
     Variants {
         model: Quickshell.screens
         PanelWindow {
@@ -205,10 +202,10 @@ Scope {
                     Rectangle {
                         Layout.alignment: Qt.AlignHCenter
                         Layout.preferredWidth: 360
-                        Layout.preferredHeight: 44
+                        Layout.preferredHeight: 48
                         radius: 22
-                        color: "#1c1917"
-                        border.color: "#3a3633"
+                        color: Theme.bg
+                        border.color: Theme.border
                         border.width: 1
                         RowLayout {
                             anchors.fill: parent
@@ -217,23 +214,23 @@ Scope {
                             spacing: 10
                             Text {
                                 text: "󰍹"
-                                color: "#a78bfa"
-                                font.family: "FiraCode Nerd Font"
-                                font.pixelSize: 18
+                                color: Theme.accent.purple
+                                font.family: Theme.font
+                                font.pixelSize: 20
                             }
                             Text {
                                 text: "Workspaces"
-                                color: "#fafaf9"
-                                font.family: "FiraCode Nerd Font"
-                                font.pixelSize: 14
+                                color: Theme.fg
+                                font.family: Theme.font
+                                font.pixelSize: 16
                                 font.bold: true
                             }
                             Item { Layout.fillWidth: true }
                             Text {
                                 text: root.workspaces.length + " active"
-                                color: "#78716c"
-                                font.family: "FiraCode Nerd Font"
-                                font.pixelSize: 10
+                                color: Theme.mutedDeep
+                                font.family: Theme.font
+                                font.pixelSize: 11
                             }
                         }
                     }
@@ -275,9 +272,9 @@ Scope {
                     Text {
                         Layout.alignment: Qt.AlignHCenter
                         text: "1-9 jump  •  ←/h →/l navigate  •  Enter switch  •  Esc cancel"
-                        color: "#57534e"
-                        font.family: "FiraCode Nerd Font"
-                        font.pixelSize: 10
+                        color: Theme.disabled
+                        font.family: Theme.font
+                        font.pixelSize: 11
                     }
                 }
             }
@@ -300,8 +297,8 @@ Scope {
         implicitWidth: root.cardWidth
         implicitHeight: previewH + 38
         radius: 12
-        color: ws.highlighted ? "#332e2b" : "#1c1917"
-        border.color: ws.highlighted ? "#a78bfa" : (ws.isActive ? "#3b82f6" : "#3a3633")
+        color: ws.highlighted ? Theme.bgActive : Theme.bg
+        border.color: ws.highlighted ? Theme.accent.purple : (ws.isActive ? Theme.accent.blue : Theme.border)
         border.width: (ws.highlighted || ws.isActive) ? 2 : 1
         scale: ws.highlighted ? 1.04 : 1.0
         Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
@@ -317,14 +314,14 @@ Scope {
             implicitWidth: 22
             implicitHeight: 22
             radius: 11
-            color: ws.isActive ? "#3b82f6" : (ws.highlighted ? "#a78bfa" : "#3a3633")
+            color: ws.isActive ? Theme.accent.blue : (ws.highlighted ? Theme.accent.purple : Theme.border)
             z: 5
             Text {
                 anchors.centerIn: parent
                 text: ws.workspace ? ws.workspace.name.replace(/^#/, "") : ""
-                color: (ws.isActive || ws.highlighted) ? "#0a0a0a" : "#d6d3d1"
-                font.family: "FiraCode Nerd Font"
-                font.pixelSize: 11
+                color: (ws.isActive || ws.highlighted) ? "#0a0a0a" : Theme.fgMuted
+                font.family: Theme.font
+                font.pixelSize: 13
                 font.bold: true
             }
         }
@@ -340,7 +337,7 @@ Scope {
             height: ws.previewH - 12
             radius: 6
             color: "#0c0a09"
-            border.color: "#3a3633"
+            border.color: Theme.border
             border.width: 1
             clip: true
 
@@ -358,8 +355,8 @@ Scope {
                     Rectangle {
                         anchors.fill: parent
                         radius: 3
-                        color: modelData.focused ? "#1e293b" : "#1c1917"
-                        border.color: modelData.focused ? "#3b82f6" : "#3a3633"
+                        color: modelData.focused ? "#1e293b" : Theme.bg
+                        border.color: modelData.focused ? Theme.accent.blue : Theme.border
                         border.width: 1
                         clip: true
 
@@ -406,8 +403,8 @@ Scope {
                                 id: lbl
                                 anchors.centerIn: parent
                                 text: modelData.klass
-                                color: "#fafaf9"
-                                font.family: "FiraCode Nerd Font"
+                                color: Theme.fg
+                                font.family: Theme.font
                                 font.pixelSize: 8
                                 elide: Text.ElideRight
                             }
@@ -420,9 +417,9 @@ Scope {
                 visible: ws.workspace && ws.workspace.windows.length === 0
                 anchors.centerIn: parent
                 text: "empty"
-                color: "#3a3633"
-                font.family: "FiraCode Nerd Font"
-                font.pixelSize: 11
+                color: Theme.border
+                font.family: Theme.font
+                font.pixelSize: 13
             }
         }
 
@@ -440,18 +437,18 @@ Scope {
             Text {
                 visible: ws.isActive
                 text: "●"
-                color: "#3b82f6"
-                font.family: "FiraCode Nerd Font"
-                font.pixelSize: 9
+                color: Theme.accent.blue
+                font.family: Theme.font
+                font.pixelSize: 10
             }
             Text {
                 Layout.fillWidth: true
                 text: ws.workspace
                     ? ws.workspace.windowCount + (ws.workspace.windowCount === 1 ? " window" : " windows")
                     : ""
-                color: ws.highlighted ? "#fafaf9" : "#a8a29e"
-                font.family: "FiraCode Nerd Font"
-                font.pixelSize: 10
+                color: ws.highlighted ? Theme.fg : Theme.muted
+                font.family: Theme.font
+                font.pixelSize: 11
                 font.bold: ws.highlighted
             }
         }

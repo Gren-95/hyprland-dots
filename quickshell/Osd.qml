@@ -17,7 +17,7 @@ Scope {
     property string osdLabel: ""
     property real osdLevel: 0
     property bool osdMuted: false
-    property color osdAccent: "#3b82f6"
+    property color osdAccent: Theme.accent.blue
     property int osdToken: 0
     property bool _ready: false
 
@@ -53,23 +53,23 @@ Scope {
         if (!a) return;
         const v = a.volume;
         const icon = a.muted ? "󰸈" : (v < 0.34 ? "󰕿" : v < 0.67 ? "󰖀" : "󰕾");
-        root.show(icon, v, "Volume", a.muted, "#3b82f6");
+        root.show(icon, v, "Volume", a.muted, Theme.accent.blue);
     }
     function showMic() {
         const a = Pipewire.defaultAudioSource && Pipewire.defaultAudioSource.audio;
         if (!a) return;
-        root.show(a.muted ? "󰍭" : "󰍬", a.volume, "Microphone", a.muted, "#22c55e");
+        root.show(a.muted ? "󰍭" : "󰍬", a.volume, "Microphone", a.muted, Theme.accent.green);
     }
     function showBrightness(cur) {
         if (root.blMax <= 0) return;
         const pct = cur / root.blMax;
         const icon = pct < 0.34 ? "󰃞" : pct < 0.67 ? "󰃟" : "󰃠";
-        root.show(icon, pct, "Brightness", false, "#eab308");
+        root.show(icon, pct, "Brightness", false, Theme.accent.yellow);
     }
     function showKbBacklight(cur) {
         if (root.kbMax <= 0) return;
         const pct = cur / root.kbMax;
-        root.show(cur === 0 ? "󰥻" : "󰌌", pct, "Keyboard backlight", false, "#a78bfa");
+        root.show(cur === 0 ? "󰥻" : "󰌌", pct, "Keyboard backlight", false, Theme.accent.purple);
     }
 
     PwObjectTracker { objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource] }
@@ -176,8 +176,8 @@ Scope {
                 implicitWidth: cardCol.implicitWidth + 28
                 implicitHeight: cardCol.implicitHeight + 20
                 radius: 14
-                color: "#1c1917"
-                border.color: "#44403c"
+                color: Theme.bg
+                border.color: Theme.borderStrong
                 border.width: 1
 
                 opacity: hideTimer.running ? 1.0 : 0.0
@@ -197,22 +197,22 @@ Scope {
                         spacing: 12
                         Text {
                             text: root.osdIcon
-                            color: root.osdMuted ? "#78716c" : root.osdAccent
-                            font.family: "FiraCode Nerd Font"
+                            color: root.osdMuted ? Theme.mutedDeep : root.osdAccent
+                            font.family: Theme.font
                             font.pixelSize: 28
                         }
                         ColumnLayout {
                             spacing: 0
                             Text {
                                 text: root.osdLabel
-                                color: "#a8a29e"
-                                font.family: "FiraCode Nerd Font"
+                                color: Theme.muted
+                                font.family: Theme.font
                                 font.pixelSize: 11
                             }
                             Text {
                                 text: root.osdMuted ? "Muted" : Math.round(root.osdLevel * 100) + "%"
-                                color: "#fafaf9"
-                                font.family: "FiraCode Nerd Font"
+                                color: Theme.fg
+                                font.family: Theme.font
                                 font.pixelSize: 18
                                 font.bold: true
                             }
@@ -223,7 +223,7 @@ Scope {
                         Layout.preferredWidth: 240
                         Layout.preferredHeight: 6
                         radius: 3
-                        color: "#292524"
+                        color: Theme.bgAlt
                         Rectangle {
                             width: parent.width * (root.osdMuted ? 0 : root.osdLevel)
                             height: parent.height

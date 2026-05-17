@@ -83,15 +83,15 @@ Scope {
     function _catColor(c) {
         switch (c) {
             case "audio":      return "#60a5fa";
-            case "brightness": return "#eab308";
-            case "capture":    return "#22c55e";
-            case "clipboard":  return "#94a3b8";
-            case "power":      return "#ef4444";
-            case "apps":       return "#f97316";
-            case "shell":      return "#a78bfa";
-            case "workspace":  return "#f472b6";
-            case "window":     return "#34d399";
-            default:           return "#78716c";
+            case "brightness": return Theme.accent.yellow;
+            case "capture":    return Theme.accent.green;
+            case "clipboard":  return Theme.accent.slate;
+            case "power":      return Theme.accent.red;
+            case "apps":       return Theme.accent.orange;
+            case "shell":      return Theme.accent.purple;
+            case "workspace":  return Theme.accent.pink;
+            case "window":     return Theme.accent.teal;
+            default:           return Theme.mutedDeep;
         }
     }
     function _action(bind) {
@@ -176,11 +176,11 @@ Scope {
                 id: card
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: Math.round(parent.height * 0.12)
-                width: 820
+                width: 900
                 height: Math.min(parent.height * 0.78, headerCol.implicitHeight + resultsCol.implicitHeight + 56)
                 radius: 14
-                color: "#292524"
-                border.color: "#78716c"
+                color: Theme.bgAlt
+                border.color: Theme.mutedDeep
                 border.width: 1
                 focus: root.open
 
@@ -223,26 +223,26 @@ Scope {
                         spacing: 14
                         Text {
                             text: "󰌌"
-                            color: "#a8a29e"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 26
+                            color: Theme.muted
+                            font.family: Theme.font
+                            font.pixelSize: 28
                         }
                         Text {
                             Layout.fillWidth: true
                             text: root.query || "Search keybinds"
-                            color: root.query ? "#fafaf9" : "#78716c"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 20
+                            color: root.query ? Theme.fg : Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: 22
                             elide: Text.ElideRight
                         }
                         Text {
                             text: root.filtered.length + " / " + root.entries.length
-                            color: "#78716c"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 11
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: 13
                         }
                     }
-                    Rectangle { Layout.fillWidth: true; height: 1; color: "#44403c" }
+                    Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderStrong }
                 }
 
                 Flickable {
@@ -278,18 +278,18 @@ Scope {
                         Text {
                             visible: root.entries.length === 0
                             text: "Loading binds…"
-                            color: "#78716c"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 13
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: 15
                             Layout.alignment: Qt.AlignHCenter
                             Layout.topMargin: 24
                         }
                         Text {
                             visible: root.entries.length > 0 && root.filtered.length === 0
                             text: "No matches"
-                            color: "#78716c"
-                            font.family: "FiraCode Nerd Font"
-                            font.pixelSize: 13
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: 15
                             Layout.alignment: Qt.AlignHCenter
                             Layout.topMargin: 24
                         }
@@ -306,9 +306,9 @@ Scope {
                         anchors.leftMargin: 14
                         anchors.rightMargin: 14
                         spacing: 14
-                        Text { text: "↑↓ Navigate"; color: "#78716c"; font.family: "FiraCode Nerd Font"; font.pixelSize: 10 }
-                        Text { text: "F5 Refresh"; color: "#78716c"; font.family: "FiraCode Nerd Font"; font.pixelSize: 10 }
-                        Text { text: "Esc Close"; color: "#78716c"; font.family: "FiraCode Nerd Font"; font.pixelSize: 10 }
+                        Text { text: "↑↓ Navigate"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: 11 }
+                        Text { text: "F5 Refresh"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: 11 }
+                        Text { text: "Esc Close"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: 11 }
                         Item { Layout.fillWidth: true }
                     }
                 }
@@ -317,7 +317,7 @@ Scope {
                 Connections {
                     target: root
                     function onSelectedIndexChanged() {
-                        const rowH = 36;
+                        const rowH = 40;
                         const top = root.selectedIndex * rowH;
                         const bottom = top + rowH;
                         if (top < results.contentY) results.contentY = top;
@@ -336,9 +336,9 @@ Scope {
         property var entry
         property bool highlighted: false
         signal hovered()
-        implicitHeight: 36
+        implicitHeight: 40
         radius: 6
-        color: row.highlighted ? "#332e2b" : (hover.containsMouse ? "#231f1d" : "transparent")
+        color: row.highlighted ? Theme.bgActive : (hover.containsMouse ? Theme.bgHover : "transparent")
 
         // Left accent strip — only visible when highlighted
         Rectangle {
@@ -362,21 +362,21 @@ Scope {
                 Layout.alignment: Qt.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
                 text: row.entry ? row.entry.catIcon : ""
-                color: row.entry ? row.entry.catColor : "#78716c"
+                color: row.entry ? row.entry.catColor : Theme.mutedDeep
                 opacity: row.highlighted ? 1.0 : 0.75
-                font.family: "FiraCode Nerd Font"
-                font.pixelSize: 14
+                font.family: Theme.font
+                font.pixelSize: 16
             }
 
             // Unified kbd pill: one rounded outline, segments inside separated by hairlines
             Rectangle {
                 id: kbdPill
                 Layout.preferredWidth: Math.min(240, kbdRow.implicitWidth)
-                Layout.preferredHeight: 22
+                Layout.preferredHeight: 26
                 Layout.alignment: Qt.AlignVCenter
                 radius: 5
-                color: row.highlighted ? "#1c1917" : "#1a1715"
-                border.color: row.highlighted ? "#57534e" : "#3a3633"
+                color: row.highlighted ? Theme.bg : "#1a1715"
+                border.color: row.highlighted ? Theme.disabled : Theme.border
                 border.width: 1
                 clip: true
 
@@ -395,15 +395,15 @@ Scope {
                                 width: 1
                                 height: parent.height
                                 anchors.left: parent.left
-                                color: row.highlighted ? "#3a3633" : "#2a2624"
+                                color: row.highlighted ? Theme.border : Theme.borderSubtle
                             }
                             Text {
                                 id: keyText
                                 anchors.centerIn: parent
                                 text: modelData
-                                color: row.highlighted ? "#fafaf9" : "#d6d3d1"
-                                font.family: "FiraCode Nerd Font"
-                                font.pixelSize: 10
+                                color: row.highlighted ? Theme.fg : Theme.fgMuted
+                                font.family: Theme.font
+                                font.pixelSize: 11
                                 font.bold: row.highlighted
                             }
                         }
@@ -416,9 +416,9 @@ Scope {
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
                 text: row.entry ? row.entry.action : ""
-                color: row.highlighted ? "#d6d3d1" : "#8d8985"
-                font.family: "FiraCode Nerd Font"
-                font.pixelSize: 11
+                color: row.highlighted ? Theme.fgMuted : "#8d8985"
+                font.family: Theme.font
+                font.pixelSize: 13
                 elide: Text.ElideRight
             }
         }
