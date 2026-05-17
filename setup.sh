@@ -57,7 +57,7 @@ check_dependencies() {
         "hyprland" "qs" "kitty" "nautilus" "hyprpaper" "hyprpicker"
         "hypridle" "grim" "slurp" "swappy"
         "tesseract" "convert" "cliphist" "wl-copy" "wl-paste"
-        "firefox" "brightnessctl" "playerctl" "pavucontrol"
+        "firefox" "brightnessctl" "playerctl"
         "gnome-keyring-daemon" "jq" "pactl" "wpctl" "python3" "fish" "nvim" "ranger"
     )
 
@@ -93,21 +93,12 @@ install_dependencies() {
         hyprland hyprland-devel quickshell kitty nautilus cliphist \
         hyprpaper hyprpicker hypridle grim slurp \
         swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard firefox \
-        brightnessctl playerctl pavucontrol network-manager-applet \
-        gnome-calendar gnome-keyring jq \
+        brightnessctl playerctl network-manager-applet \
+        gnome-keyring jq \
         powerprofilesctl hyprlock gpu-screen-recorder \
         fish neovim ranger python3 python3-pillow
 
     print_success "Dependencies installed"
-
-    # Install Trayscale (Tailscale GUI tray applet)
-    if command_exists flatpak; then
-        print_info "Installing Trayscale (Tailscale GUI)..."
-        flatpak install -y flathub dev.deedles.Trayscale
-        print_success "Trayscale installed"
-    else
-        print_warning "flatpak not found — skipping Trayscale install"
-    fi
 }
 
 # Create backup of existing config

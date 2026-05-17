@@ -218,7 +218,6 @@ Item {
         repeat: true
         onTriggered: ap.refreshBrightness()
     }
-    Process { id: pavuProc; command: ["pavucontrol"] }
 
     // ===== Popup =====
     BarPopupCard {
@@ -336,7 +335,6 @@ Item {
                             isSink: true
                             selectedIndex: ap.outSelectedIndex !== undefined ? ap.outSelectedIndex : -1
                             toggleHighlighted: ap.sndIndex === 0
-                            onLaunchMixer: { pavuProc.startDetached(); ap.popupOpen = false }
                             onDeviceHovered: (idx) => ap.sndIndex = idx + 1
                             onToggleHovered: ap.sndIndex = 0
                         }
@@ -348,7 +346,6 @@ Item {
                             isSink: false
                             selectedIndex: ap.inSelectedIndex !== undefined ? ap.inSelectedIndex : -1
                             toggleHighlighted: ap.sndIndex === ap.outCount + 1
-                            onLaunchMixer: { pavuProc.startDetached(); ap.popupOpen = false }
                             onDeviceHovered: (idx) => ap.sndIndex = ap.outCount + 2 + idx
                             onToggleHovered: ap.sndIndex = ap.outCount + 1
                         }

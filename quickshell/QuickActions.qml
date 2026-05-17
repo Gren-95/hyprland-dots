@@ -16,6 +16,7 @@ Item {
     property bool idleOn: true       // best-guess; refreshed from `pgrep hypridle`
     property bool immichOn: false    // immich cron entry enabled
     property bool jellyfinOn: false  // jellyfin cron entry enabled
+    property bool wayvncOn: false    // wayvnc daemon running
     // When a toggle is mid-flight (script not yet committed), skip the
     // periodic daemonCheck so its stale read doesn't briefly revert the
     // optimistic UI flip.
@@ -58,6 +59,14 @@ Item {
             description: actions.jellyfinOn ? "Syncing music every 2h" : "Background sync stopped",
             action:   "jellyfin",
         },
+        {
+            glyph:    "󰢹", offGlyph: "󰢹",
+            label:    "Remote access",
+            accent:   Theme.accent.orange,
+            on:       actions.wayvncOn,
+            description: actions.wayvncOn ? "WayVNC server running on :5900" : "Remote access stopped",
+            action:   "wayvnc",
+        },
     ]
 
     // ============ One-shot actions ============
@@ -66,6 +75,7 @@ Item {
         { glyph: "󰹑", label: "Screenshot",   accent: "#60a5fa", cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenshot.sh"] },
         { glyph: "󰕧", label: "Record",       accent: Theme.accent.red, cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenrecord.sh"] },
         { glyph: "󰈊", label: "Color picker", accent: "#e879f9", cmd: ["hyprpicker", "-a"] },
+        { glyph: "󰋖", label: "Keybinds",     accent: Theme.accent.blue, action: "keybinds" },
     ]
 
     // Single flat index across both sections for keyboard nav:
@@ -122,6 +132,14 @@ Item {
             actions.toggleInFlight = true;
             clearInFlightTimer.restart();
             jellyfinToggleProc.startDetached();
+        } else if (entry.action === "wayvnc") {
+            actions.wayvncOn = !actions.wayvncOn;
+            actions.toggleInFlight = true;
+            clearInFlightTimer.restart();
+            wayvncToggleProc.startDetached();
+        } else if (entry.action === "keybinds") {
+            actions.popupOpen = false;
+            keybinds.toggle();
         } else if (entry.action === "clipboard") {
             actions.popupOpen = false;
             clipboard.openMenu();
@@ -174,6 +192,11 @@ Item {
         running: false
     }
     Process {
+        id: wayvncToggleProc
+        command: ["bash", Quickshell.env("HOME") + "/.config/scripts/wayvnc-toggle.sh"]
+        running: false
+    }
+    Process {
         id: jellyfinToggleProc
         command: ["sh", "-c",
             "state=$(bash ~/.config/scripts/sync-toggle.sh toggle jellyfin); " +
@@ -198,6 +221,7 @@ Item {
         id: daemonCheckProc
         command: ["sh", "-c",
             "printf 'idle=%s ' $(pgrep -x hypridle >/dev/null && echo 1 || echo 0); " +
+            "printf 'wayvnc=%s ' $(pgrep -x wayvnc >/dev/null && echo 1 || echo 0); " +
             "bash ~/.config/scripts/sync-toggle.sh status all"]
         running: false
         stdout: StdioCollector {
@@ -208,6 +232,7 @@ Item {
                     m[k] = v === "1";
                 }
                 if (m.idle !== undefined)     actions.idleOn = m.idle;
+                if (m.wayvnc !== undefined)   actions.wayvncOn = m.wayvnc;
                 if (m.immich !== undefined)   actions.immichOn = m.immich;
                 if (m.jellyfin !== undefined) actions.jellyfinOn = m.jellyfin;
             }

@@ -52,7 +52,7 @@ Scope {
         const a = (arg || "").toLowerCase();
         const d = (disp || "").toLowerCase();
         if (d === "exec") {
-            if (/wpctl|pactl|playerctl|pavucontrol/.test(a)) return "audio";
+            if (/wpctl|pactl|playerctl/.test(a)) return "audio";
             if (/brightnessctl|backlight/.test(a)) return "brightness";
             if (/grim|slurp|swappy|screenshot|hyprshot|wf-recorder|screenrecord/.test(a)) return "capture";
             if (/wl-copy|cliphist|wofi|rofi/.test(a)) return "clipboard";
