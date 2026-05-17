@@ -76,9 +76,14 @@ bash "$HOME/.config/scripts/battery-notify.sh" >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -f battery-notify.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
-# Restart media inhibit (prevents screen sleep during playback)
+# Restart media inhibit (prevents screen sleep during playback).
+# Send SIGTERM, wait for the trap (uninhibit) to fire, then SIGKILL any
+# stragglers — otherwise repeated restarts accumulated multiple copies
+# each holding their own D-Bus inhibitor.
 echo -n "Running: media-inhibit ... "
-pkill -f media-inhibit.sh 2>/dev/null
+pkill -TERM -f media-inhibit.sh 2>/dev/null
+sleep 0.3
+pkill -KILL -f media-inhibit.sh 2>/dev/null
 bash "$HOME/.config/scripts/media-inhibit.sh" >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -f media-inhibit.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
