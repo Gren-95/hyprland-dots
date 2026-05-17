@@ -62,6 +62,13 @@ hypridle >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -x hypridle >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
+# Restart power-profile auto-switcher (AC ↔ battery)
+echo -n "Running: power-auto ... "
+pkill -f power-auto.sh 2>/dev/null
+bash "$HOME/.config/scripts/power-auto.sh" >/dev/null 2>&1 &
+sleep 0.2
+if pgrep -f power-auto.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
+
 # Restart battery notifier
 echo -n "Running: battery-notify ... "
 pkill -f battery-notify.sh 2>/dev/null
