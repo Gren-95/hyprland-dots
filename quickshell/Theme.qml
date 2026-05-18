@@ -38,27 +38,32 @@ Singleton {
         readonly property color pink:   "#f472b6"
         readonly property color teal:   "#34d399"
         readonly property color slate:  "#94a3b8"
-        // Wallpaper-driven — updated by accent-from-wallpaper.py via FileView.
-        property color primary:     "#3b82f6"
-        property color primarySoft: "#1e3a8a"
+        // Material 3 wallpaper-driven roles — written by
+        // scripts/accent-from-wallpaper.py and watched by the FileView below.
+        // Names match the M3 spec.
+        property color primary:            "#3b82f6"   // main accent
+        property color primaryContainer:   "#1e3a8a"   // softer accent surface
+        property color onPrimary:          "#ffffff"   // text on primary
+        property color onPrimaryContainer: "#dbeafe"   // text on primaryContainer
+        property color outline:            "#6b7280"   // accent-tinted divider
     }
 
-    // Watch ~/.cache/quickshell/accent.conf and refresh accent.primary/Soft.
-    // Format: key=value pairs ("primary=#xxxxxx", "soft=#xxxxxx").
+    // Watch ~/.cache/quickshell/accent.conf and update the wallpaper-driven
+    // accent roles. Format: key=value pairs, one per line.
     FileView {
         path: Quickshell.env("HOME") + "/.cache/quickshell/accent.conf"
         watchChanges: true
         onFileChanged: reload()
         onLoaded: {
-            const lines = text().split("\n");
-            for (const line of lines) {
+            const valid = ["primary", "primaryContainer", "onPrimary",
+                           "onPrimaryContainer", "outline"];
+            for (const line of text().split("\n")) {
                 const eq = line.indexOf("=");
                 if (eq <= 0) continue;
                 const key = line.slice(0, eq).trim();
                 const val = line.slice(eq + 1).trim();
                 if (!/^#[0-9a-fA-F]{6}$/.test(val)) continue;
-                if (key === "primary") theme.accent.primary = val;
-                else if (key === "soft") theme.accent.primarySoft = val;
+                if (valid.indexOf(key) >= 0) theme.accent[key] = val;
             }
         }
     }

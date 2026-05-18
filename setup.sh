@@ -90,6 +90,16 @@ install_dependencies() {
 
     print_success "Dependencies installed"
 
+    # materialyoucolor isn't packaged for Fedora — install user-level via pip.
+    # Used by scripts/accent-from-wallpaper.py for Material 3 color extraction.
+    if ! python3 -c "import materialyoucolor" 2>/dev/null; then
+        print_info "Installing materialyoucolor (pip --user)..."
+        pip install --user --quiet materialyoucolor >/dev/null 2>&1 \
+            || pip install --user --break-system-packages --quiet materialyoucolor >/dev/null 2>&1 \
+            && print_success "materialyoucolor installed" \
+            || print_warning "Failed to install materialyoucolor — wallpaper accent colors won't work"
+    fi
+
     # ranger devicons plugin — provides file-type glyphs in the listing.
     local plug_dir="$CONFIG_DIR/ranger/plugins/ranger_devicons"
     if [[ ! -d "$plug_dir" ]]; then
