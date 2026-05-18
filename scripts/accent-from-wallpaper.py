@@ -1,98 +1,85 @@
 #!/usr/bin/env python3
-"""Derive accent colors from a wallpaper and write the config files that
-Hyprland and Quickshell consume.
+"""Derive Material You colors from a wallpaper and write the config files
+that Hyprland and Quickshell consume.
 
-Picks the most-saturated quantized color in a legible lightness range, then
-emits a primary + soft variant normalized to look right on the dark theme.
+Uses Google's material-color-utilities algorithm (via the materialyoucolor
+PyPI package): Wu/CELEBI quantization → HCT-based seed scoring → Tonal Spot
+scheme. Result is a small slice of the Material 3 dark scheme — primary,
+primaryContainer, the matching `on*` foregrounds, and outline.
 
 Outputs:
-  ~/.config/hypr/colors.conf       -> $accent / $accentSoft (rgba)
-  ~/.cache/quickshell/accent.conf  -> primary=#... / soft=#...
+  ~/.config/hypr/modules/colors.conf  -> $accent / $accentSoft (rgba)
+  ~/.cache/quickshell/accent.conf     -> primary= / soft= / onPrimary= ...
 """
 
-import colorsys
 import os
 import sys
 from pathlib import Path
-from PIL import Image
 
-FALLBACK_PRIMARY = (0.60, 0.55, 0.55)   # H, L, S  — neutral blue-ish
+from PIL import Image
+from materialyoucolor.quantize import QuantizeCelebi
+from materialyoucolor.score.score import Score
+from materialyoucolor.hct import Hct
+from materialyoucolor.scheme.scheme_tonal_spot import SchemeTonalSpot
+from materialyoucolor.dynamiccolor.material_dynamic_colors import MaterialDynamicColors
+
 HOME = Path(os.environ["HOME"])
 HYPR_OUT = HOME / ".config/hypr/modules/colors.conf"
 QS_OUT   = HOME / ".cache/quickshell/accent.conf"
 
+# Material 3 roles we expose to the rest of the system. Names match the
+# spec so they're easy to look up; values are tones from the wallpaper's
+# tonal palettes at fixed positions for the dark scheme.
+ROLES = [
+    "primary",            # main accent (e.g. button bg, focus ring)
+    "onPrimary",          # text/icon over primary
+    "primaryContainer",   # softer accent surface (inactive border, chip bg)
+    "onPrimaryContainer", # text over primaryContainer
+    "outline",            # accent-tinted divider
+]
 
-def palette_colors(path, n=16):
+
+def hex_from_argb(c: int) -> str:
+    return "#{:02x}{:02x}{:02x}".format((c >> 16) & 0xff, (c >> 8) & 0xff, c & 0xff)
+
+
+def extract_scheme(path: str) -> dict:
     img = Image.open(path).convert("RGB")
-    img.thumbnail((200, 200))
-    q = img.quantize(colors=n)
-    palette = q.getpalette()
-    counts = q.getcolors() or []
-    out = []
-    for count, idx in counts:
-        r, g, b = palette[idx*3:idx*3+3]
-        out.append((count, r/255, g/255, b/255))
-    return out
+    img.thumbnail((128, 128))
+    quantized = QuantizeCelebi(list(img.getdata()), 128)
+    seed = Score.score(quantized)[0]
+    scheme = SchemeTonalSpot(Hct.from_int(seed), True, 0.0)
+    return {r: hex_from_argb(getattr(MaterialDynamicColors, r).get_hct(scheme).to_int())
+            for r in ROLES}
 
 
-def pick_accent(colors):
-    """Return (h, l, s) of the most-saturated color in a legible L band.
-    Falls back to most-saturated overall, then to FALLBACK_PRIMARY."""
-    scored = []
-    for count, r, g, b in colors:
-        h, l, s = colorsys.rgb_to_hls(r, g, b)
-        scored.append((s, count, h, l))
-
-    legible = [(s, c, h, l) for s, c, h, l in scored if 0.25 <= l <= 0.85 and s >= 0.20]
-    pool = legible or [x for x in scored if x[0] >= 0.05] or scored
-    pool.sort(key=lambda x: (x[0], x[1]), reverse=True)
-    s, _, h, l = pool[0]
-    return h, l, s
-
-
-def hex_of(h, l, s):
-    r, g, b = colorsys.hls_to_rgb(h, l, s)
-    return f"#{int(r*255):02x}{int(g*255):02x}{int(b*255):02x}"
-
-
-def normalize(h, l, s):
-    """Clamp into the band where the dark UI reads cleanly."""
-    primary_l = max(0.52, min(0.66, l))
-    primary_s = max(0.55, min(0.85, s))
-    soft_l    = max(0.28, min(0.38, l))
-    soft_s    = primary_s * 0.60
-    return (h, primary_l, primary_s), (h, soft_l, soft_s)
-
-
-def main():
+def main() -> None:
     if len(sys.argv) < 2:
         print("usage: accent-from-wallpaper.py <wallpaper>", file=sys.stderr)
         sys.exit(1)
     wp = sys.argv[1]
-    try:
-        h, l, s = pick_accent(palette_colors(wp))
-    except Exception as e:
-        print(f"accent extraction failed: {e} — using fallback", file=sys.stderr)
-        h, l, s = FALLBACK_PRIMARY
 
-    (ph, pl, ps), (sh, sl, ss) = normalize(h, l, s)
-    primary = hex_of(ph, pl, ps)
-    soft    = hex_of(sh, sl, ss)
+    try:
+        colors = extract_scheme(wp)
+    except Exception as e:
+        print(f"accent extraction failed: {e}", file=sys.stderr)
+        sys.exit(1)
 
     HYPR_OUT.parent.mkdir(parents=True, exist_ok=True)
     QS_OUT.parent.mkdir(parents=True, exist_ok=True)
 
-    # Hyprland: variables sourced by general.conf
+    # Hyprland: variables sourced by hyprland.conf. Soft uses primaryContainer
+    # since that's the Material-correct "softer surface tinted like the accent".
     HYPR_OUT.write_text(
         f"# Generated by accent-from-wallpaper.py — do not edit by hand.\n"
-        f"$accent     = rgba({primary[1:]}ee)\n"
-        f"$accentSoft = rgba({soft[1:]}ee)\n"
+        f"$accent     = rgba({colors['primary'][1:]}ee)\n"
+        f"$accentSoft = rgba({colors['primaryContainer'][1:]}ee)\n"
     )
 
-    # Quickshell: watched by Theme.qml's FileView
-    QS_OUT.write_text(f"primary={primary}\nsoft={soft}\n")
+    # Quickshell: watched by Theme.qml's FileView. Material role names.
+    QS_OUT.write_text("\n".join(f"{r}={colors[r]}" for r in ROLES) + "\n")
 
-    print(f"accent: primary={primary} soft={soft}")
+    print("accent:", " ".join(f"{r}={colors[r]}" for r in ROLES))
 
 
 if __name__ == "__main__":
