@@ -28,7 +28,7 @@ Singleton {
 
     // Accents
     readonly property QtObject accent: QtObject {
-        // Semantic accents — meaning is stable, do NOT change per wallpaper.
+        // Semantic — stable, don't change per wallpaper.
         readonly property color blue:   "#3b82f6"
         readonly property color green:  "#22c55e"
         readonly property color red:    "#ef4444"
@@ -38,32 +38,38 @@ Singleton {
         readonly property color pink:   "#f472b6"
         readonly property color teal:   "#34d399"
         readonly property color slate:  "#94a3b8"
-        // Material 3 wallpaper-driven roles — written by
-        // scripts/accent-from-wallpaper.py and watched by the FileView below.
-        // Names match the M3 spec.
-        property color primary:            "#3b82f6"   // main accent
-        property color primaryContainer:   "#1e3a8a"   // softer accent surface
-        property color onPrimary:          "#ffffff"   // text on primary
-        property color onPrimaryContainer: "#dbeafe"   // text on primaryContainer
-        property color outline:            "#6b7280"   // accent-tinted divider
     }
 
-    // Watch ~/.cache/quickshell/accent.conf and update the wallpaper-driven
-    // accent roles. Format: key=value pairs, one per line.
+    // Wallpaper-driven Material 3 roles. Live at the Theme root (not inside
+    // the readonly `accent` QtObject — that can't hold mutable properties).
+    // Updated by the FileView below from ~/.cache/quickshell/accent.conf,
+    // which scripts/accent-from-wallpaper.py writes after every wallpaper
+    // change. Components reference these directly: `Theme.accentPrimary`.
+    property color accentPrimary:            "#3b82f6"
+    property color accentPrimaryContainer:   "#1e3a8a"
+    property color accentFgPrimary:          "#ffffff"
+    property color accentFgPrimaryContainer: "#dbeafe"
+    property color accentOutline:            "#6b7280"
+
     FileView {
         path: Quickshell.env("HOME") + "/.cache/quickshell/accent.conf"
         watchChanges: true
         onFileChanged: reload()
         onLoaded: {
-            const valid = ["primary", "primaryContainer", "onPrimary",
-                           "onPrimaryContainer", "outline"];
+            const map = {
+                primary:            "accentPrimary",
+                primaryContainer:   "accentPrimaryContainer",
+                fgPrimary:          "accentFgPrimary",
+                fgPrimaryContainer: "accentFgPrimaryContainer",
+                outline:            "accentOutline",
+            };
             for (const line of text().split("\n")) {
                 const eq = line.indexOf("=");
                 if (eq <= 0) continue;
                 const key = line.slice(0, eq).trim();
                 const val = line.slice(eq + 1).trim();
                 if (!/^#[0-9a-fA-F]{6}$/.test(val)) continue;
-                if (valid.indexOf(key) >= 0) theme.accent[key] = val;
+                if (map[key]) theme[map[key]] = val;
             }
         }
     }
