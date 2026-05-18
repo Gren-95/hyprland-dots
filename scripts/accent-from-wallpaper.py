@@ -27,16 +27,22 @@ HOME = Path(os.environ["HOME"])
 HYPR_OUT = HOME / ".config/hypr/modules/colors.conf"
 QS_OUT   = HOME / ".cache/quickshell/accent.conf"
 
-# Material 3 roles we expose to the rest of the system. Names match the
-# spec so they're easy to look up; values are tones from the wallpaper's
-# tonal palettes at fixed positions for the dark scheme.
+# Material 3 roles we expose to the rest of the system. Internal names
+# match the M3 spec for clarity; on the QML side `onPrimary` and friends
+# are renamed to `fgPrimary` because QML treats identifiers starting with
+# `on` as signal handlers (see Theme.qml).
 ROLES = [
     "primary",            # main accent (e.g. button bg, focus ring)
-    "onPrimary",          # text/icon over primary
+    "onPrimary",          # -> fgPrimary in Theme.qml: text/icon over primary
     "primaryContainer",   # softer accent surface (inactive border, chip bg)
-    "onPrimaryContainer", # text over primaryContainer
+    "onPrimaryContainer", # -> fgPrimaryContainer in Theme.qml
     "outline",            # accent-tinted divider
 ]
+# QML can't have property names beginning with `on` — rewrite on output.
+QML_KEY = {
+    "onPrimary":          "fgPrimary",
+    "onPrimaryContainer": "fgPrimaryContainer",
+}
 
 
 def hex_from_argb(c: int) -> str:
@@ -76,8 +82,10 @@ def main() -> None:
         f"$accentSoft = rgba({colors['primaryContainer'][1:]}ee)\n"
     )
 
-    # Quickshell: watched by Theme.qml's FileView. Material role names.
-    QS_OUT.write_text("\n".join(f"{r}={colors[r]}" for r in ROLES) + "\n")
+    # Quickshell: watched by Theme.qml's FileView. Apply QML_KEY rename.
+    QS_OUT.write_text(
+        "\n".join(f"{QML_KEY.get(r, r)}={colors[r]}" for r in ROLES) + "\n"
+    )
 
     print("accent:", " ".join(f"{r}={colors[r]}" for r in ROLES))
 
