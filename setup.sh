@@ -111,6 +111,18 @@ create_symlinks() {
     local avatar_source="/var/lib/AccountsService/icons/$(whoami)"
     ln -sf "$avatar_source" "$avatar_link"
     print_success "Avatar symlink -> $avatar_source"
+
+    # Hyprland sources modules/colors.conf at startup; wallpaper.sh regenerates
+    # it from the current wallpaper, but it must exist on first launch.
+    local colors_conf="$HOME/.config/hypr/modules/colors.conf"
+    if [[ ! -f "$colors_conf" ]]; then
+        cat >"$colors_conf" <<'EOF'
+# Default accent — overwritten by accent-from-wallpaper.py on next wallpaper change.
+$accent     = rgba(3b82f6ee)
+$accentSoft = rgba(1e40afee)
+EOF
+        print_success "Default colors.conf created"
+    fi
 }
 
 # Check optional external dependencies
