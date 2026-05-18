@@ -247,7 +247,7 @@ Scope {
         implicitHeight: 60
         radius: 8
         color: crow.highlighted ? "#3b3531" : (cHover.containsMouse ? "#262220" : "transparent")
-        border.color: Theme.accent.blue
+        border.color: Theme.accent.primary
         border.width: 1
 
         RowLayout {

@@ -1,8 +1,11 @@
 pragma Singleton
 import QtQuick
 import Quickshell
+import Quickshell.Io
 
 Singleton {
+    id: theme
+
     // Surfaces
     readonly property color bg:        "#1c1917"   // primary background (cards)
     readonly property color bgAlt:     "#292524"   // secondary (popup body)
@@ -25,6 +28,7 @@ Singleton {
 
     // Accents
     readonly property QtObject accent: QtObject {
+        // Semantic accents — meaning is stable, do NOT change per wallpaper.
         readonly property color blue:   "#3b82f6"
         readonly property color green:  "#22c55e"
         readonly property color red:    "#ef4444"
@@ -34,6 +38,29 @@ Singleton {
         readonly property color pink:   "#f472b6"
         readonly property color teal:   "#34d399"
         readonly property color slate:  "#94a3b8"
+        // Wallpaper-driven — updated by accent-from-wallpaper.py via FileView.
+        property color primary:     "#3b82f6"
+        property color primarySoft: "#1e3a8a"
+    }
+
+    // Watch ~/.cache/quickshell/accent.conf and refresh accent.primary/Soft.
+    // Format: key=value pairs ("primary=#xxxxxx", "soft=#xxxxxx").
+    FileView {
+        path: Quickshell.env("HOME") + "/.cache/quickshell/accent.conf"
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: {
+            const lines = text().split("\n");
+            for (const line of lines) {
+                const eq = line.indexOf("=");
+                if (eq <= 0) continue;
+                const key = line.slice(0, eq).trim();
+                const val = line.slice(eq + 1).trim();
+                if (!/^#[0-9a-fA-F]{6}$/.test(val)) continue;
+                if (key === "primary") theme.accent.primary = val;
+                else if (key === "soft") theme.accent.primarySoft = val;
+            }
+        }
     }
 
     // Typography

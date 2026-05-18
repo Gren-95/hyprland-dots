@@ -40,3 +40,11 @@ for monitor in "${MONITORS[@]}"; do
 done
 
 echo "Wallpaper set: $wp"
+
+# Derive accent colors from the new wallpaper. Writes
+# ~/.config/hypr/modules/colors.conf (sourced by hyprland.conf) and
+# ~/.cache/quickshell/accent.conf (watched by Theme.qml's FileView).
+if python3 "$HOME/.config/scripts/accent-from-wallpaper.py" "$wp"; then
+    # Reload hyprland so the new $accent/$accentSoft take effect on borders.
+    hyprctl reload >/dev/null
+fi
