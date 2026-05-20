@@ -13,7 +13,7 @@ hl.config({
         repeat_delay = 300,
         touchpad = {
             natural_scroll          = true,
-            ["tap-to-click"]        = true,
+            tap_to_click            = true,
             clickfinger_behavior    = true,
             middle_button_emulation = true,
         },

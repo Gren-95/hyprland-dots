@@ -32,7 +32,7 @@ hl.window_rule({ name = "pip-no-blur",      match = pipMatch, no_blur = true })
 
 -- XWayland video bridge
 local xvbMatch = { class = "^(xwaylandvideobridge)$" }
-hl.window_rule({ name = "xvb-opacity",      match = xvbMatch, opacity = { value = 0.0, override = true } })
+hl.window_rule({ name = "xvb-opacity",      match = xvbMatch, opacity = "0.0 override" })
 hl.window_rule({ name = "xvb-no-anim",      match = xvbMatch, no_anim = true })
 hl.window_rule({ name = "xvb-no-focus",     match = xvbMatch, no_initial_focus = true })
 hl.window_rule({ name = "xvb-max-size",     match = xvbMatch, max_size = "1 1" })
