@@ -33,7 +33,9 @@ bind(mod .. " + J",                hl.dsp.layout("togglesplit"),  "Toggle split 
 bind(mod .. " + N",                global("quickshell:notifications"), "Notifications")
 bind(mod .. " + V",                global("quickshell:clipboard"),"Clipboard history")
 bind(mod .. " + C",                exec(p.colorpicker),           "Color picker")
-bind(mod .. " + F",                hl.dsp.window.fullscreen_state({ internal = 1, client = 1, action = "set" }), "Fullscreen")
+-- fullscreen_state Lua dispatcher is registered but a silent no-op when
+-- triggered (action="set" or "toggle" both ignored). Fall back to hyprctl.
+bind(mod .. " + F",                exec("hyprctl dispatch fullscreenstate 1"), "Fullscreen")
 bind(mod .. " + SHIFT + N",        exec(p.wallpaper),             "Cycle wallpaper")
 bind(mod .. " + SHIFT + S",        global("quickshell:screenshot-region"), "Screenshot region")
 bind(mod .. " + CTRL + SHIFT + S", exec(p.screenshotocr),         "Screenshot OCR")
