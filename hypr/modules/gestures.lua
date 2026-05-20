@@ -12,13 +12,13 @@ hl.config({
 
 hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
 
--- 4-finger up/down for fullscreen state. HL.GestureSpec in v0.55 doesn't
--- expose a generic `dispatcher` field the way the .conf format did, so
--- we use `action = "fullscreen"` with the appropriate `mode`. NOTE: this
--- regresses to toggle semantics, which previously caused Overwatch to
--- minimise when already fullscreen. If that comes back, revert this
--- module to the .conf via `mv hyprland.lua hyprland.lua.bak` and
--- restarting Hyprland (it'll pick the .conf back up).
-hl.gesture({ fingers = 4, direction = "up",    action = "fullscreen", mode = "2" })
-hl.gesture({ fingers = 4, direction = "down",  action = "fullscreen", mode = "0" })
+-- 4-finger up/down → set fullscreen state idempotently (2 = real fs, 0 = none).
+-- HL.GestureSpec's stub only lists string `action`, but Hyprland's binary
+-- ships a `CDispatcherTrackpadGesture` class — `action = "dispatcher"` is
+-- valid even though undocumented in the Lua stubs, and `dispatcher`/`args`
+-- fields are accepted dynamically. Falling back to plain "fullscreen"
+-- regressed to a toggle, which un-fullscreened Overwatch when already
+-- fullscreen.
+hl.gesture({ fingers = 4, direction = "up",    action = "dispatcher", dispatcher = "fullscreenstate", args = "2" })
+hl.gesture({ fingers = 4, direction = "down",  action = "dispatcher", dispatcher = "fullscreenstate", args = "0" })
 hl.gesture({ fingers = 2, direction = "pinch", action = "cursorZoom", scale = 1 })
