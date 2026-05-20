@@ -48,21 +48,21 @@ Scope {
             .replace(/Lower/, "-")
             .replace(/^Print$/, "PrtSc");
     }
-    function _classify(disp, arg, desc) {
-        // Lua binds report dispatcher="__lua" and arg=callback-id, so
-        // categorise by the user-supplied description when present.
+    function _classify(disp, arg) {
         const a = (arg || "").toLowerCase();
         const d = (disp || "").toLowerCase();
-        const t = ((desc || "") + " " + a).toLowerCase();
-        if (/wpctl|pactl|playerctl|volume|mute|microphone/.test(t)) return "audio";
-        if (/brightnessctl|backlight|brightness|keyboard light/.test(t)) return "brightness";
-        if (/grim|slurp|swappy|screenshot|hyprshot|wf-recorder|screenrecord|record/.test(t)) return "capture";
-        if (/wl-copy|cliphist|wofi|rofi|clipboard/.test(t)) return "clipboard";
-        if (/systemctl|loginctl|powermenu|hyprctl dispatch exit|suspend|shutdown|power menu|lock/.test(t)) return "power";
-        if (/firefox|kitty|nautilus|hyprpicker|terminal|file manager|color picker|browser/.test(t)) return "apps";
-        if (d === "global" || /quickshell|spotlight|notifications|calendar|wallpaper|sysmon|audiopower|bluetooth|overview/.test(t)) return "shell";
-        if (/workspace|movetoworkspace/.test(d) || /workspace/.test(t)) return "workspace";
-        if (/movewindow|movefocus|swapwindow|resizeactive|togglefloating|fullscreen|killactive|togglesplit|pseudo/.test(d) || /window|fullscreen|floating|focus|resize|close/.test(t)) return "window";
+        if (d === "exec") {
+            if (/wpctl|pactl|playerctl/.test(a)) return "audio";
+            if (/brightnessctl|backlight/.test(a)) return "brightness";
+            if (/grim|slurp|swappy|screenshot|hyprshot|wf-recorder|screenrecord/.test(a)) return "capture";
+            if (/wl-copy|cliphist|wofi|rofi/.test(a)) return "clipboard";
+            if (/systemctl|loginctl|powermenu|hyprctl dispatch exit/.test(a)) return "power";
+            if (/firefox|kitty|nautilus|hyprpicker/.test(a)) return "apps";
+            if (/quickshell/.test(a)) return "shell";
+        }
+        if (d === "global") return "shell";
+        if (/workspace|movetoworkspace/.test(d)) return "workspace";
+        if (/movewindow|movefocus|swapwindow|resizeactive|togglefloating|fullscreen|killactive|togglesplit|pseudo/.test(d)) return "window";
         return "other";
     }
     function _catIcon(c) {
@@ -94,12 +94,8 @@ Scope {
         }
     }
     function _action(bind) {
-        // Prefer the description (set explicitly in keys.lua); falls back to
-        // the dispatcher form for legacy .conf binds that lack a description.
-        if (bind.has_description && bind.description) return bind.description;
         if (bind.dispatcher === "exec") return bind.arg;
         if (bind.dispatcher === "global") return "→ " + bind.arg;
-        if (bind.dispatcher === "__lua") return "lua callback";
         return bind.dispatcher + (bind.arg ? " " + bind.arg : "");
     }
 
@@ -129,7 +125,7 @@ Scope {
                     const key = root._prettyKey(b.key);
                     const parts = mods.concat([key]);
                     const action = root._action(b);
-                    const cat = root._classify(b.dispatcher, b.arg, b.description);
+                    const cat = root._classify(b.dispatcher, b.arg);
                     out.push({
                         parts: parts,
                         combo: parts.join("+"),

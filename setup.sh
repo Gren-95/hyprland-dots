@@ -122,20 +122,9 @@ create_symlinks() {
     ln -sf "$avatar_source" "$avatar_link"
     print_success "Avatar symlink -> $avatar_source"
 
-    # Hyprland reads accent colors at startup; wallpaper.sh regenerates these
-    # on every wallpaper change. Seed both Lua + .conf formats so a fresh
-    # install boots cleanly whether or not the user picks Lua.
-    local colors_lua="$HOME/.config/hypr/modules/colors.lua"
+    # Hyprland sources modules/colors.conf at startup; wallpaper.sh regenerates
+    # it from the current wallpaper, but it must exist on first launch.
     local colors_conf="$HOME/.config/hypr/modules/colors.conf"
-    if [[ ! -f "$colors_lua" ]]; then
-        cat >"$colors_lua" <<'EOF'
--- Default accent — overwritten by accent-from-wallpaper.py on next wallpaper change.
-return {
-    accent     = "rgba(3b82f6ee)",
-    accentSoft = "rgba(1e40afee)",
-}
-EOF
-    fi
     if [[ ! -f "$colors_conf" ]]; then
         cat >"$colors_conf" <<'EOF'
 # Default accent — overwritten by accent-from-wallpaper.py on next wallpaper change.
