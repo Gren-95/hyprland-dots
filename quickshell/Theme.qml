@@ -3,7 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-Singleton {
+Scope {
     id: theme
 
     // Surfaces
