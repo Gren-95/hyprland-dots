@@ -90,16 +90,6 @@ install_dependencies() {
 
     print_success "Dependencies installed"
 
-    # materialyoucolor isn't packaged for Fedora — install user-level via pip.
-    # Used by scripts/accent-from-wallpaper.py for Material 3 color extraction.
-    if ! python3 -c "import materialyoucolor" 2>/dev/null; then
-        print_info "Installing materialyoucolor (pip --user)..."
-        pip install --user --quiet materialyoucolor >/dev/null 2>&1 \
-            || pip install --user --break-system-packages --quiet materialyoucolor >/dev/null 2>&1 \
-            && print_success "materialyoucolor installed" \
-            || print_warning "Failed to install materialyoucolor — wallpaper accent colors won't work"
-    fi
-
     # ranger devicons plugin — provides file-type glyphs in the listing.
     local plug_dir="$CONFIG_DIR/ranger/plugins/ranger_devicons"
     if [[ ! -d "$plug_dir" ]]; then
@@ -121,18 +111,6 @@ create_symlinks() {
     local avatar_source="/var/lib/AccountsService/icons/$(whoami)"
     ln -sf "$avatar_source" "$avatar_link"
     print_success "Avatar symlink -> $avatar_source"
-
-    # Hyprland sources modules/colors.conf at startup; wallpaper.sh regenerates
-    # it from the current wallpaper, but it must exist on first launch.
-    local colors_conf="$HOME/.config/hypr/modules/colors.conf"
-    if [[ ! -f "$colors_conf" ]]; then
-        cat >"$colors_conf" <<'EOF'
-# Default accent — overwritten by accent-from-wallpaper.py on next wallpaper change.
-$accent     = rgba(3b82f6ee)
-$accentSoft = rgba(1e40afee)
-EOF
-        print_success "Default colors.conf created"
-    fi
 }
 
 # Check optional external dependencies

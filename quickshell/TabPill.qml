@@ -7,7 +7,7 @@ Rectangle {
     property string glyph: ""
     property string label: ""
     property bool active: false
-    property color accent: Theme.accentPrimary
+    property color accent: Theme.accent.blue
     signal picked()
     radius: 13
     color: tp.active
