@@ -1,11 +1,8 @@
 pragma Singleton
 import QtQuick
 import Quickshell
-import Quickshell.Io
 
 Singleton {
-    id: theme
-
     // Surfaces
     readonly property color bg:        "#1c1917"   // primary background (cards)
     readonly property color bgAlt:     "#292524"   // secondary (popup body)
@@ -28,7 +25,6 @@ Singleton {
 
     // Accents
     readonly property QtObject accent: QtObject {
-        // Semantic — stable, don't change per wallpaper.
         readonly property color blue:   "#3b82f6"
         readonly property color green:  "#22c55e"
         readonly property color red:    "#ef4444"
@@ -38,40 +34,6 @@ Singleton {
         readonly property color pink:   "#f472b6"
         readonly property color teal:   "#34d399"
         readonly property color slate:  "#94a3b8"
-    }
-
-    // Wallpaper-driven Material 3 roles. Live at the Theme root (not inside
-    // the readonly `accent` QtObject — that can't hold mutable properties).
-    // Updated by the FileView below from ~/.cache/quickshell/accent.conf,
-    // which scripts/accent-from-wallpaper.py writes after every wallpaper
-    // change. Components reference these directly: `Theme.accentPrimary`.
-    property color accentPrimary:            "#3b82f6"
-    property color accentPrimaryContainer:   "#1e3a8a"
-    property color accentFgPrimary:          "#ffffff"
-    property color accentFgPrimaryContainer: "#dbeafe"
-    property color accentOutline:            "#6b7280"
-
-    FileView {
-        path: Quickshell.env("HOME") + "/.cache/quickshell/accent.conf"
-        watchChanges: true
-        onFileChanged: reload()
-        onLoaded: {
-            const map = {
-                primary:            "accentPrimary",
-                primaryContainer:   "accentPrimaryContainer",
-                fgPrimary:          "accentFgPrimary",
-                fgPrimaryContainer: "accentFgPrimaryContainer",
-                outline:            "accentOutline",
-            };
-            for (const line of text().split("\n")) {
-                const eq = line.indexOf("=");
-                if (eq <= 0) continue;
-                const key = line.slice(0, eq).trim();
-                const val = line.slice(eq + 1).trim();
-                if (!/^#[0-9a-fA-F]{6}$/.test(val)) continue;
-                if (map[key]) theme[map[key]] = val;
-            }
-        }
     }
 
     // Typography

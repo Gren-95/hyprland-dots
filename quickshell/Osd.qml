@@ -17,7 +17,7 @@ Scope {
     property string osdLabel: ""
     property real osdLevel: 0
     property bool osdMuted: false
-    property color osdAccent: Theme.accentPrimary
+    property color osdAccent: Theme.accent.blue
     property int osdToken: 0
     property bool _ready: false
 
@@ -53,7 +53,7 @@ Scope {
         if (!a) return;
         const v = a.volume;
         const icon = a.muted ? "󰸈" : (v < 0.34 ? "󰕿" : v < 0.67 ? "󰖀" : "󰕾");
-        root.show(icon, v, "Volume", a.muted, Theme.accentPrimary);
+        root.show(icon, v, "Volume", a.muted, Theme.accent.blue);
     }
     function showMic() {
         const a = Pipewire.defaultAudioSource && Pipewire.defaultAudioSource.audio;
