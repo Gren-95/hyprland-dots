@@ -34,8 +34,11 @@ RowLayout {
         return false;
     }
     readonly property bool sleepInhibit: idleHyprOff || fullscreenApp || mediaPlaying
-    readonly property bool anyOn: cameraOn || micOn || recording || remoteOn
-                                  || sleepInhibit || immichOn || jellyfinOn
+    // Master switch from Quick Actions ("Activity icons"); hides the whole
+    // cluster when off, regardless of what's active.
+    readonly property bool enabled: Settings.activityIconsVisible
+    readonly property bool anyOn: enabled && (cameraOn || micOn || recording || remoteOn
+                                  || sleepInhibit || immichOn || jellyfinOn)
     readonly property string sleepReason: {
         const r = [];
         if (si.idleHyprOff)   r.push("Stay Awake");
@@ -84,27 +87,29 @@ RowLayout {
         property bool on: false
         property bool pulse: false
         property string tip: ""
+        // Gated by the master switch so one toggle hides every dot.
+        readonly property bool show: dot.on && si.enabled
         Layout.fillHeight: true
-        implicitWidth: dot.on ? (g.implicitWidth + 14) : 0
+        implicitWidth: dot.show ? (g.implicitWidth + 14) : 0
 
         Text {
             id: g
             anchors.centerIn: parent
-            visible: dot.on
+            visible: dot.show
             text: dot.glyph
             color: dot.tint
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.md
             // Soft blink while recording.
             SequentialAnimation on opacity {
-                running: dot.pulse && dot.on
+                running: dot.pulse && dot.show
                 loops: Animation.Infinite
                 NumberAnimation { from: 1.0; to: 0.35; duration: 750; easing.type: Easing.InOutQuad }
                 NumberAnimation { from: 0.35; to: 1.0; duration: 750; easing.type: Easing.InOutQuad }
             }
         }
-        HoverHandler { id: dh; enabled: dot.on }
-        BarTooltip { bar: si.parentBar; target: dot; text: dot.tip; active: dh.hovered && dot.on }
+        HoverHandler { id: dh; enabled: dot.show }
+        BarTooltip { bar: si.parentBar; target: dot; text: dot.tip; active: dh.hovered && dot.show }
     }
 
     // Leading gap + subtle divider so the status cluster reads as a distinct
