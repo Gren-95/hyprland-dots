@@ -8,42 +8,61 @@ Rectangle {
     signal hovered()
     Layout.fillWidth: true
     implicitHeight: Theme.height.rowSm
-    radius: 6
-    color: dr.highlighted ? "#3b3531" : (hover.containsMouse ? Theme.bgAlt : "transparent")
-    Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+    radius: Theme.radius.sm
+
+    readonly property bool isConnected: dr.device && dr.device.connected
+    readonly property bool isPairing: dr.device && dr.device.pairing
+
+    color: dr.highlighted ? Theme.bgActive : (hover.containsMouse ? Theme.bgHover : "transparent")
+    scale: hover.pressed ? 0.985 : 1.0
+    Behavior on color { ColorAnimation  { duration: Theme.duration.fast } }
+    Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
+
+    // Animated selection / hover accent rail.
+    Rectangle {
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        width: 3
+        height: parent.height - 12
+        radius: 1.5
+        color: "#60a5fa"
+        opacity: dr.isConnected ? 1.0 : (dr.highlighted ? 0.8 : (hover.containsMouse ? 0.4 : 0.0))
+        Behavior on opacity { NumberAnimation { duration: Theme.duration.fast } }
+    }
 
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: 8
-        anchors.rightMargin: 8
+        anchors.leftMargin: 12
+        anchors.rightMargin: 10
         spacing: Theme.spacing.md
         Text {
-            text: dr.device && dr.device.connected ? "󰂱" : "󰂯"
-            color: dr.device && dr.device.connected ? "#60a5fa" : Theme.mutedDeep
+            text: dr.isConnected ? "󰂱" : "󰂯"
+            color: dr.isConnected ? "#60a5fa" : Theme.mutedDeep
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.md
+            Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
         }
         Text {
             Layout.fillWidth: true
             text: dr.device ? (dr.device.name || dr.device.deviceName || dr.device.address) : ""
-            color: "#f5f5f4"
+            color: dr.isConnected ? Theme.fg : Theme.fgMuted
             elide: Text.ElideRight
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.base
+            font.bold: dr.isConnected
         }
         Text {
-            visible: dr.device && dr.device.batteryAvailable
+            visible: dr.device && dr.device.batteryAvailable && !dr.isPairing
             text: dr.device ? Math.round(dr.device.battery * 100) + "%" : ""
             color: Theme.muted
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.sm
         }
-        Text {
-            visible: dr.device && dr.device.pairing
-            text: "pairing…"
+        Spinner {
+            visible: dr.isPairing
             color: Theme.accent.yellow
-            font.family: Theme.font
-            font.pixelSize: Theme.fontSize.sm
+            implicitWidth: 13
+            implicitHeight: 13
         }
     }
 

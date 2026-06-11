@@ -40,8 +40,10 @@ ColumnLayout {
                 : (cardMa.containsMouse ? Theme.bgHover : "#1a1716")
             border.color: isActive ? accent : (isHighlighted ? Theme.mutedDeep : Theme.borderSubtle)
             border.width: isActive ? 2 : 1
+            scale: cardMa.pressed ? 0.97 : (isHighlighted ? 1.02 : 1.0)
             Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
             Behavior on border.color { ColorAnimation { duration: Theme.duration.normal } }
+            Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
 
             RowLayout {
                 anchors.fill: parent
@@ -98,11 +100,12 @@ ColumnLayout {
                     border.width: 2
                     Rectangle {
                         anchors.centerIn: parent
-                        visible: card.isActive
                         width: 8
                         height: 8
                         radius: 4
                         color: card.accent
+                        scale: card.isActive ? 1.0 : 0.0
+                        Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.emphasized } }
                     }
                 }
             }

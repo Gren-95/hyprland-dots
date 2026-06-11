@@ -75,6 +75,14 @@ Scope {
                     implicitHeight: clockRow.implicitHeight + 4
                     Component.onCompleted: { cal.anchorBar = bar; cal.anchorItem = clockAnchor; }
 
+                    HoverHandler { id: clockHover }
+                    BarTooltip {
+                        bar: bar
+                        target: clockAnchor
+                        text: "Calendar · Super+D"
+                        active: clockHover.hovered && !cal.open
+                    }
+
                     RowLayout {
                         id: clockRow
                         anchors.centerIn: parent
@@ -114,6 +122,12 @@ Scope {
                             parentBar: bar
                             notifs: notifService
                         }
+
+                        // iOS-style status icons (camera / mic / recording /
+                        // remote access / sleep-inhibit) next to the bell.
+                        StatusIndicators {
+                            parentBar: bar
+                        }
                     }
                 }
 
@@ -132,6 +146,7 @@ Scope {
 
                     MediaKeys {
                         id: mediaKeys
+                        parentBar: bar
                         anchors.centerIn: parent
                     }
                 }
@@ -145,14 +160,16 @@ Scope {
 
                     BarIcon {
                         id: launcherIcon
+                        parentBar: bar
                         glyph: "󰀻"
                         pixelSize: Theme.fontSize.xl
-                        tooltip: "Open app launcher"
+                        tooltip: "App launcher · Super+R"
                         onClicked: spotlight.toggle()
                     }
                     BarSep {}
 
                     WorkspaceStrip {
+                        parentBar: bar
                         glyphFn: workspaceGlyph
                     }
 
@@ -203,6 +220,7 @@ Scope {
                     // on the Wi-Fi tab.
                     BarIcon {
                         id: wifiIcon
+                        parentBar: bar
                         readonly property var dev: btMod.wifiDevice
                         readonly property bool enabled: btMod.wifiEnabled
                         readonly property bool connected: btMod.wifiConnected
@@ -213,20 +231,21 @@ Scope {
                             : connected ? Theme.accent.green
                             : Theme.muted
                         pixelSize: Theme.fontSize.md
-                        tooltip: !enabled ? "Wi-Fi off"
+                        tooltip: (!enabled ? "Wi-Fi off"
                             : connected && btMod.activeNetwork ? btMod.activeNetwork.name
-                            : "Wi-Fi"
+                            : "Wi-Fi") + " · Super+Shift+B"
                         onClicked: btMod.openTab("wifi")
                     }
 
                     // VPN indicator — only visible when Tailscale is up.
                     BarIcon {
                         id: vpnIcon
+                        parentBar: bar
                         visible: TailscaleService.running
                         glyph: "󰒃"
                         color: Theme.accent.purple
                         pixelSize: Theme.fontSize.md
-                        tooltip: TailscaleService.tailnet || "VPN"
+                        tooltip: (TailscaleService.tailnet || "VPN") + " · Super+Shift+B"
                         onClicked: btMod.openTab("vpn")
                     }
 
@@ -242,6 +261,7 @@ Scope {
                     // Battery: opens AudioPowerModule on the Power tab.
                     BarIcon {
                         id: batteryIcon
+                        parentBar: bar
                         onClicked: apMod.openTab("power")
                         readonly property var dev: UPower.displayDevice
                         readonly property int pct: dev ? Math.round(dev.percentage * 100) : 0
@@ -261,12 +281,12 @@ Scope {
                             return Theme.accent.yellow;
                         }
                         tooltip: {
-                            if (!dev) return "";
-                            if (charging && dev.timeToFull > 0)
-                                return Math.round(dev.timeToFull / 60) + " min to full";
-                            if (dev.timeToEmpty > 0)
-                                return Math.round(dev.timeToEmpty / 60) + " min left";
-                            return "";
+                            const kb = " · Super+S";
+                            if (charging && dev && dev.timeToFull > 0)
+                                return Math.round(dev.timeToFull / 60) + " min to full" + kb;
+                            if (dev && dev.timeToEmpty > 0)
+                                return Math.round(dev.timeToEmpty / 60) + " min left" + kb;
+                            return "Audio & Power" + kb;
                         }
                         onWheel: (up) => {
                             brightProc.command = ["brightnessctl", "set", up ? "+5%" : "5%-"];
@@ -277,10 +297,12 @@ Scope {
 
                     // Microphone (only when unmuted)
                     BarIcon {
+                        parentBar: bar
                         readonly property var src: Pipewire.defaultAudioSource
                         visible: src && src.audio && !src.audio.muted
                         glyph: "󰍬"
                         color: Theme.accent.orange
+                        tooltip: "Mute microphone"
                         onClicked: {
                             if (src && src.audio) src.audio.muted = true;
                         }

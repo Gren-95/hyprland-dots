@@ -3,6 +3,7 @@
 // with the Power tab pre-selected via openAt("power").
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
@@ -35,9 +36,18 @@ Item {
     readonly property int outSelectedIndex: sndIndex >= 1 && sndIndex <= outCount ? sndIndex - 1 : -1
     readonly property int inSelectedIndex: sndIndex >= outCount + 2 ? sndIndex - outCount - 2 : -1
 
+    // The section the sound-tab cursor is currently in: output (sink) for
+    // indices 0..outCount, input (source) beyond that. Left/Right adjust this
+    // node's volume so the arrows feel the same as the Power tab's sliders.
+    readonly property var sndActiveNode: sndIndex >= outCount + 1 ? source : sink
     function adjustVolume(delta) {
-        if (!sink || !sink.audio) return;
-        sink.audio.volume = Math.max(0, Math.min(1, sink.audio.volume + delta));
+        const node = sndActiveNode;
+        if (!node || !node.audio) return;
+        node.audio.volume = Math.max(0, Math.min(1, node.audio.volume + delta));
+    }
+    function toggleSndMute() {
+        const node = sndActiveNode;
+        if (node && node.audio) node.audio.muted = !node.audio.muted;
     }
     function activateOutput(i) {
         if (i < 0 || i >= outputDevices.length) return;
@@ -95,6 +105,8 @@ Item {
     function activatePwr() { if (pwrIndex <= 2) activateProfile(pwrIndex); }
 
     // ===== Tab + popup control =====
+    // Toggle between the two tabs (Sound ↔ Power).
+    function cycleActiveTab() { setTab(activeTab === "sound" ? "power" : "sound"); }
     function setTab(name) {
         if (activeTab === name) return;
         activeTab = name;
@@ -220,6 +232,14 @@ Item {
     }
 
     // ===== Popup =====
+    HoverHandler { id: apHover }
+    BarTooltip {
+        bar: ap.parentBar
+        target: ap
+        text: "Audio & Power · Super+S"
+        active: apHover.hovered && !ap.popupOpen
+    }
+
     BarPopupCard {
         id: apPopup
         parentBar: ap.parentBar
@@ -237,24 +257,32 @@ Item {
                 ap.navigateNext(); e.accepted = true;
             } else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
                 ap.navigatePrev(); e.accepted = true;
-            } else if (e.key === Qt.Key_Tab) {
-                // Only two tabs; Shift has no extra direction here.
-                ap.setTab(ap.activeTab === "sound" ? "power" : "sound");
-                e.accepted = true;
+            } else if (e.key === Qt.Key_Tab || e.key === Qt.Key_Backtab) {
+                // Tab / Shift+Tab switch tabs (only two, so either direction).
+                ap.cycleActiveTab(); e.accepted = true;
+            } else if ((e.modifiers & Qt.ShiftModifier)
+                    && (e.key === Qt.Key_Right || e.key === Qt.Key_L
+                     || e.key === Qt.Key_Left  || e.key === Qt.Key_H)) {
+                // Shift+←/→ also switches tabs (consistent with Connectivity);
+                // checked before the plain arrows that adjust volume.
+                ap.cycleActiveTab(); e.accepted = true;
             } else if (ap.activeTab === "sound") {
-                if (e.key === Qt.Key_Down || e.key === Qt.Key_J || e.key === Qt.Key_Right || e.key === Qt.Key_L) {
+                // Up/Down move between rows (mute toggles + devices);
+                // Left/Right (and +/-) adjust the selected section's volume.
+                if (e.key === Qt.Key_Down || e.key === Qt.Key_J) {
                     ap.cycleSnd(1); e.accepted = true;
-                } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K || e.key === Qt.Key_Left || e.key === Qt.Key_H) {
+                } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
                     ap.cycleSnd(-1); e.accepted = true;
+                } else if (e.key === Qt.Key_Right || e.key === Qt.Key_L
+                        || e.key === Qt.Key_Plus || e.key === Qt.Key_Equal) {
+                    ap.adjustVolume(0.05); e.accepted = true;
+                } else if (e.key === Qt.Key_Left || e.key === Qt.Key_H
+                        || e.key === Qt.Key_Minus) {
+                    ap.adjustVolume(-0.05); e.accepted = true;
                 } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
                     ap.activateSndIndex(); e.accepted = true;
                 } else if (e.key === Qt.Key_M) {
-                    if (ap.sink && ap.sink.audio) ap.sink.audio.muted = !ap.sink.audio.muted;
-                    e.accepted = true;
-                } else if (e.key === Qt.Key_Plus || e.key === Qt.Key_Equal) {
-                    ap.adjustVolume(0.05); e.accepted = true;
-                } else if (e.key === Qt.Key_Minus) {
-                    ap.adjustVolume(-0.05); e.accepted = true;
+                    ap.toggleSndMute(); e.accepted = true;
                 }
             } else if (ap.activeTab === "power") {
                 if (e.key === Qt.Key_Down || e.key === Qt.Key_J) {
@@ -320,38 +348,67 @@ Item {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     active: ap.popupOpen
+                    opacity: 0
+                    transformOrigin: Item.Top
                     sourceComponent: !ap.popupOpen ? null
                                    : ap.activeTab === "power" ? powerPane
                                    : soundPane
+                    onLoaded: paneInAnim.restart()
+                    ParallelAnimation {
+                        id: paneInAnim
+                        NumberAnimation { target: paneLoader; property: "opacity"; from: 0.0; to: 1.0; duration: Theme.duration.normal; easing.type: Theme.easing.standard }
+                        NumberAnimation { target: paneLoader; property: "scale"; from: 0.97; to: 1.0; duration: Theme.duration.normal; easing.type: Theme.easing.standard }
+                    }
+                }
+
+                // Keyboard hint footer
+                Text {
+                    Layout.fillWidth: true
+                    text: "Tab tabs · ↑↓ move · ←→ adjust · ↵ select"
+                    color: Theme.mutedDeep
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.xs
+                    horizontalAlignment: Text.AlignHCenter
+                    opacity: 0.65
                 }
 
                 Component {
                     id: soundPane
-                    ColumnLayout {
-                        spacing: Theme.spacing.md
-                        AudioSection {
-                            Layout.fillWidth: true
-                            title: "OUTPUT"
-                            node: ap.sink
-                            isSink: true
-                            selectedIndex: ap.outSelectedIndex !== undefined ? ap.outSelectedIndex : -1
-                            toggleHighlighted: ap.sndIndex === 0
-                            onDeviceHovered: (idx) => ap.sndIndex = idx + 1
-                            onToggleHovered: ap.sndIndex = 0
+                    Flickable {
+                        id: sndFlick
+                        clip: true
+                        contentWidth: width
+                        contentHeight: sndCol.implicitHeight
+                        boundsBehavior: Flickable.StopAtBounds
+                        ScrollBar.vertical: ThinScrollBar {}
+                        ColumnLayout {
+                            id: sndCol
+                            width: sndFlick.width
+                            spacing: Theme.spacing.md
+                            AudioSection {
+                                Layout.fillWidth: true
+                                title: "OUTPUT"
+                                node: ap.sink
+                                isSink: true
+                                selectedIndex: ap.outSelectedIndex !== undefined ? ap.outSelectedIndex : -1
+                                toggleHighlighted: ap.sndIndex === 0
+                                sliderActive: ap.sndIndex <= ap.outCount
+                                onDeviceHovered: (idx) => ap.sndIndex = idx + 1
+                                onToggleHovered: ap.sndIndex = 0
+                            }
+                            Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderStrong }
+                            AudioSection {
+                                Layout.fillWidth: true
+                                title: "INPUT"
+                                node: ap.source
+                                isSink: false
+                                selectedIndex: ap.inSelectedIndex !== undefined ? ap.inSelectedIndex : -1
+                                toggleHighlighted: ap.sndIndex === ap.outCount + 1
+                                sliderActive: ap.sndIndex >= ap.outCount + 1
+                                onDeviceHovered: (idx) => ap.sndIndex = ap.outCount + 2 + idx
+                                onToggleHovered: ap.sndIndex = ap.outCount + 1
+                            }
                         }
-                        Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderStrong }
-                        AudioSection {
-                            Layout.fillWidth: true
-                            title: "INPUT"
-                            node: ap.source
-                            isSink: false
-                            selectedIndex: ap.inSelectedIndex !== undefined ? ap.inSelectedIndex : -1
-                            toggleHighlighted: ap.sndIndex === ap.outCount + 1
-                            onDeviceHovered: (idx) => ap.sndIndex = ap.outCount + 2 + idx
-                            onToggleHovered: ap.sndIndex = ap.outCount + 1
-                        }
-                        // Push content to the top; let the rest stay empty.
-                        Item { Layout.fillHeight: true }
                     }
                 }
 

@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import Quickshell.Bluetooth
 import Quickshell.Networking
 
@@ -101,6 +102,12 @@ Item {
         if (n <= 0) return;
         tabIndex = (tabIndex + delta + n) % n;
     }
+    // Switch the active tab (Bluetooth → Wi-Fi → VPN), wrapping.
+    function cycleActiveTab(delta) {
+        const order = ["bluetooth", "wifi", "vpn"];
+        const i = order.indexOf(activeTab);
+        setTab(order[(i + delta + order.length) % order.length]);
+    }
     function openAt(idx) {
         popupOpen = true;
         const n = tabStopCount;
@@ -164,6 +171,7 @@ Item {
             color: !bt.powered ? Theme.mutedDeep : "#60a5fa"
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.md
+            Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
         }
         Text {
             visible: bt.powered && bt.connectedDevices.length > 0
@@ -189,6 +197,14 @@ Item {
         }
     }
 
+    HoverHandler { id: btHover }
+    BarTooltip {
+        bar: bt.parentBar
+        target: bt
+        text: "Network · Super+Shift+B"
+        active: btHover.hovered && !bt.popupOpen
+    }
+
     BarPopupCard {
         id: popup
         parentBar: bt.parentBar
@@ -212,12 +228,17 @@ Item {
                 bt.navigatePrev();
                 e.accepted = true;
             } else if (e.key === Qt.Key_Tab) {
-                // Cycle bluetooth → wifi → vpn → bluetooth (Shift reverses).
-                const order = ["bluetooth", "wifi", "vpn"];
-                const dir = (e.modifiers & Qt.ShiftModifier) ? -1 : 1;
-                const i = order.indexOf(bt.activeTab);
-                bt.setTab(order[(i + dir + order.length) % order.length]);
+                // Tab = next tab. Shift+Tab arrives as Key_Tab+Shift on some
+                // setups, so honour the modifier here too.
+                bt.cycleActiveTab((e.modifiers & Qt.ShiftModifier) ? -1 : 1);
                 e.accepted = true;
+            } else if (e.key === Qt.Key_Backtab) {
+                // Shift+Tab on X11/Wayland usually emits Key_Backtab.
+                bt.cycleActiveTab(-1); e.accepted = true;
+            } else if ((e.modifiers & Qt.ShiftModifier) && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
+                bt.cycleActiveTab(1); e.accepted = true;
+            } else if ((e.modifiers & Qt.ShiftModifier) && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
+                bt.cycleActiveTab(-1); e.accepted = true;
             } else if (e.key === Qt.Key_Right || e.key === Qt.Key_L) {
                 bt.cycleTab(1); e.accepted = true;
             } else if (e.key === Qt.Key_Left || e.key === Qt.Key_H) {
@@ -290,10 +311,31 @@ Item {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     active: bt.popupOpen
+                    // Start hidden + slightly shrunk; paneInAnim plays the
+                    // tab-content in whenever the loaded item changes.
+                    opacity: 0
+                    transformOrigin: Item.Top
                     sourceComponent: !bt.popupOpen ? null
                                    : bt.activeTab === "wifi" ? wifiPane
                                    : bt.activeTab === "vpn"  ? vpnPane
                                    : btPane
+                    onLoaded: paneInAnim.restart()
+                    ParallelAnimation {
+                        id: paneInAnim
+                        NumberAnimation { target: paneLoader; property: "opacity"; from: 0.0; to: 1.0; duration: Theme.duration.normal; easing.type: Theme.easing.standard }
+                        NumberAnimation { target: paneLoader; property: "scale"; from: 0.97; to: 1.0; duration: Theme.duration.normal; easing.type: Theme.easing.standard }
+                    }
+                }
+
+                // Keyboard hint footer
+                Text {
+                    Layout.fillWidth: true
+                    text: "Tab tabs · ↑↓ move · ↵ select · esc close"
+                    color: Theme.mutedDeep
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.xs
+                    horizontalAlignment: Text.AlignHCenter
+                    opacity: 0.65
                 }
 
                 Component {
@@ -351,23 +393,50 @@ Item {
                             font.bold: true
                         }
 
-                        ColumnLayout {
+                        Flickable {
+                            id: btFlick
                             Layout.fillWidth: true
+                            Layout.fillHeight: true
                             Layout.topMargin: -8
-                            spacing: 2
                             visible: bt.powered
-                            Repeater {
-                                model: bt.visibleDevices
-                                delegate: BtDeviceRow {
-                                    required property var modelData
-                                    required property int index
-                                    device: modelData
-                                    highlighted: bt.selectedIndex === index
-                                    onHovered: bt.tabIndex = index + 2
+                            clip: true
+                            contentWidth: width
+                            contentHeight: btRowsCol.implicitHeight
+                            boundsBehavior: Flickable.StopAtBounds
+                            ScrollBar.vertical: ThinScrollBar {}
+                            ColumnLayout {
+                                id: btRowsCol
+                                width: btFlick.width
+                                spacing: 2
+                                Repeater {
+                                    id: btRepeater
+                                    model: bt.visibleDevices
+                                    delegate: BtDeviceRow {
+                                        required property var modelData
+                                        required property int index
+                                        device: modelData
+                                        highlighted: bt.selectedIndex === index
+                                        onHovered: bt.tabIndex = index + 2
+                                    }
                                 }
                             }
+                            // Keep the keyboard-selected row scrolled into view.
+                            Connections {
+                                target: bt
+                                function onTabIndexChanged() { Qt.callLater(btFlick.ensureVisible) }
+                            }
+                            function ensureVisible() {
+                                if (bt.selectedIndex < 0) return;
+                                const it = btRepeater.itemAt(bt.selectedIndex);
+                                if (!it) return;
+                                const top = it.y, bot = top + it.height;
+                                if (top < btFlick.contentY) btFlick.contentY = Math.max(0, top - 4);
+                                else if (bot > btFlick.contentY + btFlick.height)
+                                    btFlick.contentY = Math.min(Math.max(0, btFlick.contentHeight - btFlick.height), bot - btFlick.height + 4);
+                            }
                         }
-                        Item { Layout.fillHeight: true }
+                        // Keep content top-aligned when the list is hidden.
+                        Item { Layout.fillHeight: true; visible: !bt.powered }
                     }
                 }
 
@@ -436,25 +505,51 @@ Item {
                             font.bold: true
                         }
 
-                        ColumnLayout {
+                        Flickable {
+                            id: wifiFlick
                             Layout.fillWidth: true
+                            Layout.fillHeight: true
                             Layout.topMargin: -8
-                            spacing: 2
                             visible: bt.wifiEnabled
-                            Repeater {
-                                model: bt.visibleNetworks
-                                delegate: WifiNetworkRow {
-                                    required property var modelData
-                                    required property int index
-                                    network: modelData
-                                    highlighted: bt.selectedIndex === index
-                                    onHovered: bt.tabIndex = index + 2
-                                    onPicked: bt.activateNetwork(index)
-                                    onForgetRequested: if (network) network.forget()
+                            clip: true
+                            contentWidth: width
+                            contentHeight: wifiRowsCol.implicitHeight
+                            boundsBehavior: Flickable.StopAtBounds
+                            ScrollBar.vertical: ThinScrollBar {}
+                            ColumnLayout {
+                                id: wifiRowsCol
+                                width: wifiFlick.width
+                                spacing: 2
+                                Repeater {
+                                    id: wifiRepeater
+                                    model: bt.visibleNetworks
+                                    delegate: WifiNetworkRow {
+                                        required property var modelData
+                                        required property int index
+                                        network: modelData
+                                        highlighted: bt.selectedIndex === index
+                                        onHovered: bt.tabIndex = index + 2
+                                        onPicked: bt.activateNetwork(index)
+                                        onForgetRequested: if (network) network.forget()
+                                    }
                                 }
                             }
+                            Connections {
+                                target: bt
+                                function onTabIndexChanged() { Qt.callLater(wifiFlick.ensureVisible) }
+                            }
+                            function ensureVisible() {
+                                if (bt.selectedIndex < 0) return;
+                                const it = wifiRepeater.itemAt(bt.selectedIndex);
+                                if (!it) return;
+                                const top = it.y, bot = top + it.height;
+                                if (top < wifiFlick.contentY) wifiFlick.contentY = Math.max(0, top - 4);
+                                else if (bot > wifiFlick.contentY + wifiFlick.height)
+                                    wifiFlick.contentY = Math.min(Math.max(0, wifiFlick.contentHeight - wifiFlick.height), bot - wifiFlick.height + 4);
+                            }
                         }
-                        Item { Layout.fillHeight: true }
+                        // Keep content top-aligned when the list is hidden.
+                        Item { Layout.fillHeight: true; visible: !bt.wifiEnabled }
                     }
                 }
 
@@ -556,26 +651,52 @@ Item {
                             font.bold: true
                         }
 
-                        ColumnLayout {
+                        Flickable {
+                            id: vpnFlick
                             Layout.fillWidth: true
+                            Layout.fillHeight: true
                             Layout.topMargin: -8
-                            spacing: 2
                             visible: TailscaleService.daemonOk && TailscaleService.running
-                            Repeater {
-                                model: TailscaleService.peers
-                                delegate: VpnPeerRow {
-                                    required property var modelData
-                                    required property int index
-                                    entry: modelData
-                                    isExitNode: modelData.id === TailscaleService.exitNodeId
-                                    highlighted: bt.selectedIndex === index
-                                    onHovered: bt.tabIndex = index + 2
-                                    onCopied: TailscaleService.copyIp(modelData.ips[0] || "")
-                                    onExitToggled: TailscaleService.setExitNode(modelData.id === TailscaleService.exitNodeId ? "" : modelData.id)
+                            clip: true
+                            contentWidth: width
+                            contentHeight: vpnRowsCol.implicitHeight
+                            boundsBehavior: Flickable.StopAtBounds
+                            ScrollBar.vertical: ThinScrollBar {}
+                            ColumnLayout {
+                                id: vpnRowsCol
+                                width: vpnFlick.width
+                                spacing: 2
+                                Repeater {
+                                    id: vpnRepeater
+                                    model: TailscaleService.peers
+                                    delegate: VpnPeerRow {
+                                        required property var modelData
+                                        required property int index
+                                        entry: modelData
+                                        isExitNode: modelData.id === TailscaleService.exitNodeId
+                                        highlighted: bt.selectedIndex === index
+                                        onHovered: bt.tabIndex = index + 2
+                                        onCopied: TailscaleService.copyIp(modelData.ips[0] || "")
+                                        onExitToggled: TailscaleService.setExitNode(modelData.id === TailscaleService.exitNodeId ? "" : modelData.id)
+                                    }
                                 }
                             }
+                            Connections {
+                                target: bt
+                                function onTabIndexChanged() { Qt.callLater(vpnFlick.ensureVisible) }
+                            }
+                            function ensureVisible() {
+                                if (bt.selectedIndex < 0) return;
+                                const it = vpnRepeater.itemAt(bt.selectedIndex);
+                                if (!it) return;
+                                const top = it.y, bot = top + it.height;
+                                if (top < vpnFlick.contentY) vpnFlick.contentY = Math.max(0, top - 4);
+                                else if (bot > vpnFlick.contentY + vpnFlick.height)
+                                    vpnFlick.contentY = Math.min(Math.max(0, vpnFlick.contentHeight - vpnFlick.height), bot - vpnFlick.height + 4);
+                            }
                         }
-                        Item { Layout.fillHeight: true }
+                        // Keep content top-aligned when the peer list is hidden.
+                        Item { Layout.fillHeight: true; visible: !(TailscaleService.daemonOk && TailscaleService.running) }
                     }
                 }
             }

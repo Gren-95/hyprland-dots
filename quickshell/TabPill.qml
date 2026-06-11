@@ -1,4 +1,6 @@
-// Tab pill used in the Bluetooth/Wi-Fi tab strip.
+// Tab pill used in the Bluetooth/Wi-Fi/VPN tab strip. The active background is
+// drawn by TabStrip's sliding indicator; this pill only owns its glyph/label
+// (colour-eased on activation) plus hover tint and a press-scale tap.
 import QtQuick
 import QtQuick.Layouts
 
@@ -10,13 +12,10 @@ Rectangle {
     property color accent: Theme.accent.blue
     signal picked()
     radius: 13
-    color: tp.active
-        ? Qt.rgba(tp.accent.r, tp.accent.g, tp.accent.b, 0.20)
-        : (tpMa.containsMouse ? "#262220" : "transparent")
-    border.color: tp.active ? tp.accent : "transparent"
-    border.width: tp.active ? 1 : 0
-    Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
-    Behavior on border.color { ColorAnimation { duration: Theme.duration.normal } }
+    color: (!tp.active && tpMa.containsMouse) ? Qt.rgba(1, 1, 1, 0.05) : "transparent"
+    scale: tpMa.pressed ? 0.94 : 1.0
+    Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+    Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
 
     RowLayout {
         anchors.centerIn: parent
@@ -26,6 +25,7 @@ Rectangle {
             color: tp.active ? tp.accent : Theme.muted
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.md
+            Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
         }
         Text {
             text: tp.label
@@ -33,6 +33,7 @@ Rectangle {
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.base
             font.bold: tp.active
+            Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
         }
     }
     MouseArea {

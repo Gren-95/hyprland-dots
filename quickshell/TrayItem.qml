@@ -12,12 +12,16 @@ Item {
     Layout.fillHeight: true
     implicitWidth: 28
 
+    scale: hoverArea.pressed ? 0.88 : 1.0
+    Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
+
     Rectangle {
         anchors.fill: parent
         anchors.margins: 2
         radius: 4
         color: hoverArea.containsMouse ? Theme.bgAlt : "transparent"
         opacity: tray.item && tray.item.status === Status.Passive ? 0.5 : 1.0
+        Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
     }
 
     IconImage {

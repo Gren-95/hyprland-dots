@@ -30,6 +30,13 @@ PopupWindow {
     visible: card.open
     color: "transparent"
 
+    // When the popup maps (e.g. opened by a click on the bar icon), the inner
+    // FocusScope's `focus: true` claims focus within its scope but doesn't
+    // always become the window's *active* focus item, so key events never
+    // arrive. Force it once the surface is up so keyboard nav works regardless
+    // of how the popup was opened.
+    onVisibleChanged: if (visible) Qt.callLater(contentScope.forceActiveFocus)
+
     SproutBg {
         anchors.fill: parent
         fillColor: Theme.bgAlt

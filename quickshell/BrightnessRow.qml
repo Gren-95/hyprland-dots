@@ -29,6 +29,7 @@ RowLayout {
     VolumeSlider {
         Layout.fillWidth: true
         value: br.value
+        showThumb: br.highlighted
         border.color: br.highlighted ? Theme.fg : Theme.borderStrong
         border.width: br.highlighted ? 2 : 1
         onMoved: br.moved(value)
