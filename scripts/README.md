@@ -21,6 +21,7 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | `battery-notify.sh` | `restart.sh` | Polls `/sys/class/power_supply/BAT*` every 60s. Sends critical/normal notifications at 10% / 20% (replace-key `battery`). |
 | `network-notify.sh` | `restart.sh` | `nmcli monitor` pipe. Emits a notification on connect/disconnect (replace-key `network`). |
 | `media-inhibit.sh` | `restart.sh` | Polls `playerctl status` every 3s. Inhibits `org.freedesktop.ScreenSaver` while a player is `Playing` so hypridle doesn't lock during playback. |
+| `fullscreen-inhibit.sh` | `restart.sh` | Polls `hyprctl workspaces` every 5s. Inhibits `org.freedesktop.ScreenSaver` while any window is fullscreen so hypridle doesn't dim/lock/suspend during controller-driven games (gamepad input doesn't reset the Wayland idle timer). |
 | `power-auto.sh` | `restart.sh` + autostart | Listens to `upower --monitor-detail`. Sets `performance` on AC, `balanced` on battery ≥30%, `power-saver` <30% via `powerprofilesctl`. Idempotent (skips if already at target). |
 | `dotwatch.sh` | `restart.sh` | `inotifywait` on the dots repo. Reloads Hyprland / hypridle config in-place when their files change. Hot-reloads `gtk-3.0/gtk.css` notify and hyprlock config notify. |
 | `immich-sync.sh` | cron (via `sync-toggle.sh`) | Runs once by default. `--daemon` flag for legacy loop mode (unused by current setup). Uses the `immich` CLI to upload `$PICTURES_DIR` (excluding `**/ocr/**`). |

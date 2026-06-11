@@ -9,6 +9,9 @@ ColumnLayout {
     property bool isSink: true
     property int selectedIndex: -1
     property bool toggleHighlighted: false
+    // True when the keyboard cursor is somewhere in this section, so the
+    // volume slider shows its thumb + accent as the active adjust target.
+    property bool sliderActive: false
     signal deviceHovered(int idx)
     signal toggleHovered()
     spacing: Theme.spacing.sm
@@ -45,6 +48,9 @@ ColumnLayout {
         VolumeSlider {
             Layout.fillWidth: true
             value: section.node && section.node.audio ? section.node.audio.volume : 0
+            showThumb: section.sliderActive
+            border.color: section.sliderActive ? Theme.fg : Theme.borderStrong
+            border.width: section.sliderActive ? 2 : 1
             onMoved: {
                 if (section.node && section.node.audio) section.node.audio.volume = value;
             }

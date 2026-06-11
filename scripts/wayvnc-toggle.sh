@@ -1,13 +1,10 @@
 #!/bin/bash
 set -euo pipefail
-source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 
+# Toggle the WayVNC remote-access server. State is shown by the bar's
+# remote-access status icon, so no notification is sent.
 if pgrep -x wayvnc > /dev/null; then
     pkill wayvnc || true
-    notify normal wayvnc network-vpn "WayVNC" "Remote access stopped"
 else
     wayvnc &>/dev/null &
-    sleep 0.5
-    IP=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $7; exit}')
-    notify normal wayvnc network-vpn "WayVNC" "Remote access started\n${IP}:5900"
 fi

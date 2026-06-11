@@ -22,6 +22,8 @@ CONFIG_ITEMS=(
     "fish"
     "ranger"
     "gtk-3.0"
+    "gtk-4.0"
+    "kdeglobals"
     "immich"
     "jellyfin"
 )

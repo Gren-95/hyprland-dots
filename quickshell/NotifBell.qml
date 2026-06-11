@@ -10,24 +10,52 @@ Item {
     property var notifs: null
     Layout.fillHeight: true
     implicitWidth: row.implicitWidth + 14
+    scale: bellMa.pressed ? 0.88 : 1.0
+    Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
+
+    // Ring the bell whenever the unread count climbs.
+    property int _lastCount: 0
+    Connections {
+        target: bell.notifs
+        function onUnreadCountChanged() {
+            if (bell.notifs && bell.notifs.unreadCount > bell._lastCount && !bell.notifs.dnd)
+                ringAnim.restart();
+            bell._lastCount = bell.notifs ? bell.notifs.unreadCount : 0;
+        }
+    }
 
     RowLayout {
         id: row
         anchors.centerIn: parent
         spacing: Theme.spacing.xs
         Text {
+            id: bellGlyph
             text: bell.notifs && bell.notifs.dnd ? "󰂛"
                 : (bell.notifs && bell.notifs.unreadCount > 0 ? "󰂞" : "󰂚")
             color: bell.notifs && bell.notifs.dnd ? Theme.accent.orange : "#f5f5f4"
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.md
+            transformOrigin: Item.Top
+            Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+
+            SequentialAnimation {
+                id: ringAnim
+                NumberAnimation { target: bellGlyph; property: "rotation"; to:  16; duration: 70 }
+                NumberAnimation { target: bellGlyph; property: "rotation"; to: -13; duration: 110 }
+                NumberAnimation { target: bellGlyph; property: "rotation"; to:   9; duration: 100 }
+                NumberAnimation { target: bellGlyph; property: "rotation"; to:   0; duration: 90; easing.type: Theme.easing.standard }
+            }
         }
         Rectangle {
+            id: badge
             visible: bell.notifs && bell.notifs.unreadCount > 0 && !bell.notifs.dnd
             implicitWidth: cnt.implicitWidth + 8
             implicitHeight: 14
             radius: 7
             color: Theme.accent.red
+            // Pop in on appearance.
+            scale: visible ? 1.0 : 0.0
+            Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.emphasized } }
             Text {
                 id: cnt
                 anchors.centerIn: parent
@@ -40,8 +68,18 @@ Item {
         }
     }
 
+    HoverHandler { id: bellHover }
+    BarTooltip {
+        bar: bell.parentBar
+        target: bell
+        text: "Notifications · Super+N"
+        active: bellHover.hovered
+    }
+
     MouseArea {
+        id: bellMa
         anchors.fill: parent
+        hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         onClicked: (e) => {

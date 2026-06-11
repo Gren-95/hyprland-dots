@@ -44,6 +44,20 @@ Scope {
         activeList = activeList.filter(e => e.id !== id);
     }
     function clearHistory() { historyList = []; }
+    // Resolve a usable icon source for a notification entry: prefer embedded
+    // image data, then the app icon (a file path as-is, or a theme name via
+    // iconPath), finally a generic fallback so every notification shows one.
+    function iconFor(entry) {
+        if (!entry) return "";
+        if (entry.image) return entry.image;
+        const ic = entry.appIcon || "";
+        if (ic !== "") {
+            if (ic.charAt(0) === "/" || ic.indexOf("://") >= 0 || ic.charAt(0) === "~")
+                return ic;
+            return Quickshell.iconPath(ic, "dialog-information");
+        }
+        return Quickshell.iconPath("dialog-information", "");
+    }
 
     NotificationServer {
         id: server
@@ -268,8 +282,8 @@ Scope {
                 Layout.fillWidth: true
                 spacing: Theme.spacing.md
                 IconImage {
-                    visible: hist.entry && (hist.entry.image || hist.entry.appIcon)
-                    source: hist.entry ? (hist.entry.image || hist.entry.appIcon) : ""
+                    visible: source != ""
+                    source: root.iconFor(hist.entry)
                     implicitSize: 18
                 }
                 Text {
@@ -373,8 +387,8 @@ Scope {
                 Layout.fillWidth: true
                 spacing: Theme.spacing.md
                 IconImage {
-                    visible: card.entry && (card.entry.image || card.entry.appIcon)
-                    source: card.entry ? (card.entry.image || card.entry.appIcon) : ""
+                    visible: source != ""
+                    source: root.iconFor(card.entry)
                     implicitSize: 24
                 }
                 ColumnLayout {

@@ -26,55 +26,17 @@ Item {
 
     // ============ Toggle definitions (on/off state visible) ============
     // `state` lambdas return a bool; `toggle()` flips it.
+    // STATIC list — only the immutable bits live here. `on`/`description` are
+    // computed per-row in ToggleRow (reactive), so toggling a state never
+    // rebuilds this array and the Repeater never recreates its rows (which is
+    // what made the panel jump/flicker on every toggle).
     readonly property var toggles: [
-        {
-            glyph:    "󰂛", offGlyph: "󰂚",
-            label:    "Do Not Disturb",
-            accent:   Theme.accent.orange,
-            on:       notifService.dnd,
-            description: notifService.dnd ? "Notifications muted" : "Notifications enabled",
-            action:   "dnd",
-        },
-        {
-            glyph:    "󰒲", offGlyph: "󰒳",
-            label:    "Stay Awake",
-            accent:   Theme.accent.purple,
-            on:       !actions.idleOn,
-            description: actions.idleOn ? "Idle sleep enabled" : "Idle sleep disabled",
-            action:   "idle",
-        },
-        {
-            glyph:    "󰋩", offGlyph: "󰋩",
-            label:    "Immich sync",
-            accent:   "#f59e0b",
-            on:       actions.immichOn,
-            description: actions.immichOn ? "Uploading photos hourly" : "Background sync stopped",
-            action:   "immich",
-        },
-        {
-            glyph:    "󰝚", offGlyph: "󰝚",
-            label:    "Jellyfin sync",
-            accent:   "#818cf8",
-            on:       actions.jellyfinOn,
-            description: actions.jellyfinOn ? "Syncing music every 2h" : "Background sync stopped",
-            action:   "jellyfin",
-        },
-        {
-            glyph:    "󰢹", offGlyph: "󰢹",
-            label:    "Remote access",
-            accent:   Theme.accent.orange,
-            on:       actions.wayvncOn,
-            description: actions.wayvncOn ? "WayVNC server running on :5900" : "Remote access stopped",
-            action:   "wayvnc",
-        },
-        {
-            glyph:    "󰎈", offGlyph: "󰎈",
-            label:    "Media keys",
-            accent:   Theme.accent.purple,
-            on:       Settings.mediaKeysVisible,
-            description: Settings.mediaKeysVisible ? "Prev / play / next in bar" : "Hidden",
-            action:   "mediakeys",
-        },
+        { glyph: "󰂛", offGlyph: "󰂚", label: "Do Not Disturb", accent: Theme.accent.orange, action: "dnd" },
+        { glyph: "󰒲", offGlyph: "󰒳", label: "Stay Awake",     accent: Theme.accent.purple, action: "idle" },
+        { glyph: "󰋩", offGlyph: "󰋩", label: "Immich sync",    accent: "#f59e0b",           action: "immich" },
+        { glyph: "󰝚", offGlyph: "󰝚", label: "Jellyfin sync",  accent: "#818cf8",           action: "jellyfin" },
+        { glyph: "󰢹", offGlyph: "󰢹", label: "Remote access",  accent: Theme.accent.orange, action: "wayvnc" },
+        { glyph: "󰎈", offGlyph: "󰎈", label: "Media keys",     accent: Theme.accent.purple, action: "mediakeys" },
     ]
 
     // ============ One-shot actions ============
@@ -181,30 +143,19 @@ Item {
     Process {
         id: idleToggleProc
         command: ["sh", "-c",
-            "source ~/.config/scripts/lib/notify.sh && " +
-            "if pgrep -x hypridle >/dev/null; then " +
-            "  pkill hypridle && notify low hypridle system-suspend-inhibited 'Stay Awake' 'Idle disabled'; " +
-            "else " +
-            "  hypridle & disown && notify low hypridle system-suspend-uninhibited 'Sleep Mode' 'Idle enabled'; " +
-            "fi"]
+            "if pgrep -x hypridle >/dev/null; then pkill hypridle; else hypridle & disown; fi"]
         running: false
         // No onExited: startDetached() forks the child off — onExited never
         // fires for detached processes. State reconciliation happens via the
         // clearInFlightTimer below.
     }
     // Immich + Jellyfin sync state is managed via cron entries; the
-    // sync-toggle.sh helper installs/comments/uncomments the relevant
-    // crontab lines. "On" = the cron line is uncommented. `toggle` emits
-    // the resulting state ("0" or "1") so the notification can be sent
-    // in the same shell invocation without a second crontab read.
+    // sync-toggle.sh helper installs/comments/uncomments the relevant crontab
+    // lines. "On" = the cron line is uncommented. The bar status icons show
+    // the resulting state, so no toggle notification is sent.
     Process {
         id: immichToggleProc
-        command: ["sh", "-c",
-            "state=$(bash ~/.config/scripts/sync-toggle.sh toggle immich); " +
-            "source ~/.config/scripts/lib/notify.sh; " +
-            "[[ \"$state\" == \"1\" ]] " +
-            "  && notify low immich-sync camera-photo 'Immich sync' 'Hourly schedule enabled' " +
-            "  || notify low immich-sync camera-photo 'Immich sync' 'Schedule disabled'"]
+        command: ["bash", Quickshell.env("HOME") + "/.config/scripts/sync-toggle.sh", "toggle", "immich"]
         running: false
     }
     Process {
@@ -214,12 +165,7 @@ Item {
     }
     Process {
         id: jellyfinToggleProc
-        command: ["sh", "-c",
-            "state=$(bash ~/.config/scripts/sync-toggle.sh toggle jellyfin); " +
-            "source ~/.config/scripts/lib/notify.sh; " +
-            "[[ \"$state\" == \"1\" ]] " +
-            "  && notify low jellyfin-sync audio-x-generic 'Jellyfin sync' 'Schedule enabled (every 2h)' " +
-            "  || notify low jellyfin-sync audio-x-generic 'Jellyfin sync' 'Schedule disabled'"]
+        command: ["bash", Quickshell.env("HOME") + "/.config/scripts/sync-toggle.sh", "toggle", "jellyfin"]
         running: false
     }
     // Clears the in-flight flag a beat after the toggle starts so periodic
@@ -260,6 +206,14 @@ Item {
         repeat: true
         triggeredOnStart: true
         onTriggered: daemonCheckProc.running = true
+    }
+
+    HoverHandler { id: qaHover }
+    BarTooltip {
+        bar: actions.parentBar
+        target: actions
+        text: "Quick actions · Super+A"
+        active: qaHover.hovered && !actions.popupOpen
     }
 
     PopupWindow {
@@ -416,14 +370,41 @@ Item {
         implicitHeight: 54
         radius: 10
         readonly property color accent: row.entry ? row.entry.accent : Theme.muted
-        readonly property bool on: row.entry ? !!row.entry.on : false
+        // Inline so each row tracks only its own underlying state — keeps the
+        // model array static (no Repeater rebuild → no jumping).
+        readonly property bool on: {
+            if (!row.entry) return false;
+            switch (row.entry.action) {
+            case "dnd":       return notifService.dnd;
+            case "idle":      return !actions.idleOn;
+            case "immich":    return actions.immichOn;
+            case "jellyfin":  return actions.jellyfinOn;
+            case "wayvnc":    return actions.wayvncOn;
+            case "mediakeys": return Settings.mediaKeysVisible;
+            }
+            return false;
+        }
+        readonly property string desc: {
+            if (!row.entry) return "";
+            switch (row.entry.action) {
+            case "dnd":       return notifService.dnd ? "Notifications muted" : "Notifications enabled";
+            case "idle":      return actions.idleOn ? "Idle sleep enabled" : "Idle sleep disabled";
+            case "immich":    return actions.immichOn ? "Uploading photos hourly" : "Background sync stopped";
+            case "jellyfin":  return actions.jellyfinOn ? "Syncing music every 2h" : "Background sync stopped";
+            case "wayvnc":    return actions.wayvncOn ? "WayVNC server running on :5900" : "Remote access stopped";
+            case "mediakeys": return Settings.mediaKeysVisible ? "Prev / play / next in bar" : "Hidden";
+            }
+            return "";
+        }
         color: row.on
             ? Qt.rgba(accent.r, accent.g, accent.b, 0.10)
             : (rowMa.containsMouse ? Theme.bgHover : "#1a1716")
         border.color: row.on ? accent : (row.highlighted ? Theme.mutedDeep : Theme.borderSubtle)
         border.width: row.on ? 2 : 1
+        scale: rowMa.pressed ? 0.98 : 1.0
         Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
         Behavior on border.color { ColorAnimation { duration: Theme.duration.normal } }
+        Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
 
         RowLayout {
             anchors.fill: parent
@@ -463,7 +444,7 @@ Item {
                 }
                 Text {
                     Layout.fillWidth: true
-                    text: row.entry ? row.entry.description : ""
+                    text: row.desc
                     color: Theme.mutedDeep
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.xs
@@ -518,7 +499,7 @@ Item {
             : (tileMa.containsMouse ? Theme.bgHover : "#1a1716")
         border.color: tile.highlighted ? accent : Theme.borderSubtle
         border.width: tile.highlighted ? 2 : 1
-        scale: tile.highlighted ? 1.03 : 1.0
+        scale: tileMa.pressed ? 0.95 : (tile.highlighted ? 1.03 : 1.0)
         Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
         Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
         Behavior on border.color { ColorAnimation { duration: Theme.duration.normal } }

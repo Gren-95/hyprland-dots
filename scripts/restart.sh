@@ -88,6 +88,16 @@ bash "$HOME/.config/scripts/media-inhibit.sh" >/dev/null 2>&1 &
 sleep 0.2
 if pgrep -f media-inhibit.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
 
+# Inhibit idle while a window is fullscreen (controller-driven games don't
+# reset the Wayland idle timer, so hypridle would dim/lock mid-game).
+echo -n "Running: fullscreen-inhibit ... "
+pkill -TERM -f fullscreen-inhibit.sh 2>/dev/null
+sleep 0.3
+pkill -KILL -f fullscreen-inhibit.sh 2>/dev/null
+bash "$HOME/.config/scripts/fullscreen-inhibit.sh" >/dev/null 2>&1 &
+sleep 0.2
+if pgrep -f fullscreen-inhibit.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
+
 # Restart cliphist daemon (Wayland clipboard history)
 echo -n "Running: cliphist ... "
 pkill -f "wl-paste.*cliphist" 2>/dev/null
@@ -131,9 +141,10 @@ echo -n "Running: dbus-update-activation-environment ... "
 dbus-update-activation-environment --systemd --all >/dev/null 2>&1
 if [[ $? -eq 0 ]]; then echo "OK"; else echo "FAILED"; fi
 
-# Set GTK theme and dark mode preference
+# Set GTK theme, icon theme and dark mode preference
 echo -n "Running: gsettings (GTK theme) ... "
 gsettings set org.gnome.desktop.interface gtk-theme "Adwaita" >/dev/null 2>&1 && \
+gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark" >/dev/null 2>&1 && \
 gsettings set org.gnome.desktop.interface color-scheme "prefer-dark" >/dev/null 2>&1
 if [[ $? -eq 0 ]]; then echo "OK"; else echo "FAILED"; fi
 
