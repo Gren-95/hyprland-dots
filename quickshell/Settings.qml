@@ -12,6 +12,7 @@ Scope {
 
     // ===== Flags =====
     property bool mediaKeysVisible: false
+    property bool activityIconsVisible: true   // bar's camera/mic/sync status icons
 
     // ===== Internals =====
     // Saving is skipped while `loaded` is false so the initial assignment
@@ -42,6 +43,7 @@ Scope {
     }
 
     onMediaKeysVisibleChanged: _save("media-keys.enabled", mediaKeysVisible)
+    onActivityIconsVisibleChanged: _save("activity-icons.enabled", activityIconsVisible)
 
     FileView {
         path: Quickshell.env("HOME") + "/.cache/quickshell/media-keys.enabled"
@@ -50,6 +52,13 @@ Scope {
             settings.mediaKeysVisible = text().trim() === "1";
             settings.loaded = true;
         }
+        onFileChanged: reload()
+    }
+    FileView {
+        path: Quickshell.env("HOME") + "/.cache/quickshell/activity-icons.enabled"
+        watchChanges: true
+        // Default stays true when the file is absent (onLoaded won't fire).
+        onLoaded: settings.activityIconsVisible = text().trim() === "1"
         onFileChanged: reload()
     }
 

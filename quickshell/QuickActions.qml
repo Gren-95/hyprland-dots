@@ -37,6 +37,7 @@ Item {
         { glyph: "󰝚", offGlyph: "󰝚", label: "Jellyfin sync",  accent: "#818cf8",           action: "jellyfin" },
         { glyph: "󰢹", offGlyph: "󰢹", label: "Remote access",  accent: Theme.accent.orange, action: "wayvnc" },
         { glyph: "󰎈", offGlyph: "󰎈", label: "Media keys",     accent: Theme.accent.purple, action: "mediakeys" },
+        { glyph: "󰈈", offGlyph: "󰈉", label: "Activity icons", accent: Theme.accent.teal,   action: "activityicons" },
     ]
 
     // ============ One-shot actions ============
@@ -110,6 +111,8 @@ Item {
             wayvncToggleProc.startDetached();
         } else if (entry.action === "mediakeys") {
             Settings.mediaKeysVisible = !Settings.mediaKeysVisible;
+        } else if (entry.action === "activityicons") {
+            Settings.activityIconsVisible = !Settings.activityIconsVisible;
         } else if (entry.action === "keybinds") {
             actions.popupOpen = false;
             keybinds.toggle();
@@ -381,6 +384,7 @@ Item {
             case "jellyfin":  return actions.jellyfinOn;
             case "wayvnc":    return actions.wayvncOn;
             case "mediakeys": return Settings.mediaKeysVisible;
+            case "activityicons": return Settings.activityIconsVisible;
             }
             return false;
         }
@@ -393,6 +397,7 @@ Item {
             case "jellyfin":  return actions.jellyfinOn ? "Syncing music every 2h" : "Background sync stopped";
             case "wayvnc":    return actions.wayvncOn ? "WayVNC server running on :5900" : "Remote access stopped";
             case "mediakeys": return Settings.mediaKeysVisible ? "Prev / play / next in bar" : "Hidden";
+            case "activityicons": return Settings.activityIconsVisible ? "Camera/mic/sync icons shown" : "Hidden";
             }
             return "";
         }
