@@ -49,6 +49,7 @@ Scope {
     property var flyoutSizes: ({})             // flyout id -> { w, h } overrides
     property var barPlacement: ({})            // module id -> "bar"|"overflow"|"hidden"
     property var trayPlacement: ({})           // tray app id -> same
+    property var qaHidden: ({})                // quick-action key -> true (hidden)
 
     // Reactive flyout-geometry lookup (reads flyoutSizes, so bindings track it).
     function flyoutSize(id, dim, def) {
@@ -84,6 +85,14 @@ Scope {
         trayPlacement = m;
     }
 
+    // ===== Quick Actions item visibility =====
+    function qaVisible(key) { return !qaHidden[key]; }
+    function setQaVisible(key, vis) {
+        const m = Object.assign({}, qaHidden);
+        if (vis) delete m[key]; else m[key] = true;
+        qaHidden = m;
+    }
+
     readonly property var _schema: [
         { name: "mediaKeysVisible",     file: "media-keys.enabled",     type: "bool" },
         { name: "activityIconsVisible", file: "activity-icons.enabled", type: "bool" },
@@ -101,6 +110,7 @@ Scope {
         { name: "flyoutSizes",          file: "flyout-sizes.json",      type: "json" },
         { name: "barPlacement",         file: "bar-placement.json",     type: "json" },
         { name: "trayPlacement",        file: "tray-placement.json",    type: "json" },
+        { name: "qaHidden",             file: "qa-hidden.json",         type: "json" },
     ]
 
     readonly property string _dir: Quickshell.env("HOME") + "/.cache/quickshell/"

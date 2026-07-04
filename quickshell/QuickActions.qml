@@ -32,7 +32,7 @@ Item {
     // computed per-row in ToggleRow (reactive), so toggling a state never
     // rebuilds this array and the Repeater never recreates its rows (which is
     // what made the panel jump/flicker on every toggle).
-    readonly property var toggles: [
+    readonly property var allToggles: [
         { glyph: "󰂛", offGlyph: "󰂚", label: "Do Not Disturb", accent: Theme.accent.orange, action: "dnd" },
         { glyph: "󰒲", offGlyph: "󰒳", label: "Stay Awake",     accent: Theme.accent.purple, action: "idle" },
         { glyph: "󰋩", offGlyph: "󰋩", label: "Immich sync",    accent: "#f59e0b",           action: "immich" },
@@ -43,15 +43,24 @@ Item {
     ]
 
     // ============ One-shot actions ============
-    readonly property var oneShots: [
+    // The cmd-only entries also carry an `action` key: it matches no branch
+    // in activate() so they fall through to the cmd runner, and it doubles
+    // as the visibility key for the Settings Bar tab.
+    readonly property var allOneShots: [
         { glyph: "󰅍", label: "Clipboard",    accent: Theme.accent.slate, action: "clipboard" },
-        { glyph: "󰹑", label: "Screenshot",   accent: "#60a5fa", cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenshot.sh"] },
-        { glyph: "󰕧", label: "Record",       accent: Theme.accent.red, cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenrecord.sh"] },
-        { glyph: "󰈊", label: "Color picker", accent: "#e879f9", cmd: ["hyprpicker", "-a"] },
+        { glyph: "󰹑", label: "Screenshot",   accent: "#60a5fa", action: "screenshot", cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenshot.sh"] },
+        { glyph: "󰕧", label: "Record",       accent: Theme.accent.red, action: "record", cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenrecord.sh"] },
+        { glyph: "󰈊", label: "Color picker", accent: "#e879f9", action: "colorpicker", cmd: ["hyprpicker", "-a"] },
         { glyph: "󰋖", label: "Keybinds",     accent: Theme.accent.blue, action: "keybinds" },
         { glyph: "󰸉", label: "Wallpaper",    accent: Theme.accent.green, action: "wallpaper" },
         { glyph: "󰒓", label: "Settings",     accent: Theme.accent.slate, action: "settings" },
     ]
+
+    // What actually renders: entries not hidden via the Settings Bar tab.
+    // Keyboard nav and activate() index into these filtered lists, so
+    // hiding entries keeps selection and activation consistent.
+    readonly property var toggles: allToggles.filter(t => settingsStore.qaVisible(t.action))
+    readonly property var oneShots: allOneShots.filter(t => settingsStore.qaVisible(t.action))
 
     // ============ Toggle state/description lookups ============
     // Read by the SettingRow delegates; every branch reads notifiable

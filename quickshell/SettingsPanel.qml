@@ -177,6 +177,32 @@ Scope {
                                 }
                             }
 
+                            SectionLabel { text: "QUICK ACTIONS" }
+                            Repeater {
+                                model: [
+                                    { key: "dnd",           label: "Do Not Disturb" },
+                                    { key: "idle",          label: "Stay Awake" },
+                                    { key: "immich",        label: "Immich sync" },
+                                    { key: "jellyfin",      label: "Jellyfin sync" },
+                                    { key: "wayvnc",        label: "Remote access" },
+                                    { key: "mediakeys",     label: "Media keys toggle" },
+                                    { key: "activityicons", label: "Activity icons toggle" },
+                                    { key: "clipboard",     label: "Clipboard" },
+                                    { key: "screenshot",    label: "Screenshot" },
+                                    { key: "record",        label: "Record" },
+                                    { key: "colorpicker",   label: "Color picker" },
+                                    { key: "keybinds",      label: "Keybinds" },
+                                    { key: "wallpaper",     label: "Wallpaper" },
+                                    { key: "settings",      label: "Settings" },
+                                ]
+                                delegate: QaRow {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    itemKey: modelData.key
+                                    label: modelData.label
+                                }
+                            }
+
                             SectionLabel { text: "TRAY APPS" }
                             Text {
                                 visible: trayRepeater.count === 0
@@ -440,6 +466,39 @@ Scope {
                     : [ { id: "bar", label: "Bar" }, { id: "hidden", label: "Hide" } ]
                 value: settingsStore.placement(prow.itemId)
                 onSelected: (v) => settingsStore.setPlacement(prow.itemId, v)
+            }
+        }
+    }
+
+    // Quick Actions item row: label + Show/Hide segmented control. Hidden
+    // entries disappear from the Quick Actions panel (their global
+    // shortcuts and Settings access stay available).
+    component QaRow: Rectangle {
+        id: qrow
+        property string itemKey: ""
+        property string label: ""
+        implicitHeight: 44
+        radius: 10
+        color: "#1a1716"
+        border.color: Theme.borderSubtle
+        border.width: 1
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 12
+            anchors.rightMargin: 8
+            spacing: Theme.spacing.md
+            Text {
+                Layout.fillWidth: true
+                text: qrow.label
+                color: Theme.fgDim
+                font.family: Theme.font
+                font.pixelSize: Theme.fontSize.base
+                elide: Text.ElideRight
+            }
+            SegmentedControl {
+                options: [ { id: "show", label: "Show" }, { id: "hide", label: "Hide" } ]
+                value: settingsStore.qaVisible(qrow.itemKey) ? "show" : "hide"
+                onSelected: (v) => settingsStore.setQaVisible(qrow.itemKey, v === "show")
             }
         }
     }
