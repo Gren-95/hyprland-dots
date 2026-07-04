@@ -53,7 +53,7 @@ apply() {
     [[ "$cur" == "$target" ]] && return 0
     powerprofilesctl set "$target" 2>/dev/null || return 1
 
-    local label="$target" icon="power-profile-$target"
+    local label="$target" icon="power-profile-$target-symbolic"
     case "$target" in
         performance) label="Performance (on AC)" ;;
         balanced)    label="Balanced (on battery)" ;;
