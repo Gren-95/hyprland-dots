@@ -89,8 +89,8 @@ Scope {
         parentBar: root.anchorBar
         anchorItem: root.anchorItem
         open: root.open && root.anchorBar !== null
-        cardWidth: 560
-        cardHeight: 560
+        cardWidth: settingsStore.flyoutSize("spotlight", "w", 560)
+        cardHeight: settingsStore.flyoutSize("spotlight", "h", 560)
         onDismissed: root.open = false
         onKeyPressed: (e) => {
             const n = root.totalRows;
@@ -194,7 +194,7 @@ Scope {
 
                         Repeater {
                             id: appsRepeater
-                            model: root.filtered.slice(0, 60)
+                            model: root.filtered.slice(0, settingsStore.spotlightCap)
                             delegate: SpotlightRow {
                                 required property var modelData
                                 required property int index

@@ -35,7 +35,7 @@ Scope {
         onExited: (code) => { if (code !== 0) console.warn("calendar fetch failed:", code); }
     }
     Timer {
-        interval: 600000  // 10 minutes
+        interval: settingsStore.calendarFetchInterval * 60000
         running: root.icsUrl !== ""
         repeat: true
         triggeredOnStart: true
@@ -162,8 +162,8 @@ Scope {
         parentBar: root.anchorBar
         anchorItem: root.anchorItem
         open: root.open && root.anchorBar !== null
-        cardWidth: 400
-        cardHeight: 660
+        cardWidth: settingsStore.flyoutSize("calendar", "w", 400)
+        cardHeight: settingsStore.flyoutSize("calendar", "h", 660)
         pinned: root.pinned
         borderColor: Theme.mutedDeep
         onDismissed: root.close()

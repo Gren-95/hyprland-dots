@@ -12,7 +12,7 @@ Scope {
 
     property var activeList: []
     property var historyList: []
-    property int maxHistory: 50
+    property int maxHistory: settingsStore.notifHistoryCap
     property bool dnd: false
     property bool pinned: false
     property int unreadCount: 0
@@ -131,8 +131,8 @@ Scope {
         parentBar: root.anchorBar
         anchorItem: root.anchorItem
         open: root.centerOpen && root.anchorBar !== null
-        cardWidth: 420
-        cardHeight: 620
+        cardWidth: settingsStore.flyoutSize("notifications", "w", 420)
+        cardHeight: settingsStore.flyoutSize("notifications", "h", 620)
         borderColor: Theme.borderStrong
         onDismissed: root.closeCenter()
 
@@ -448,7 +448,7 @@ Scope {
 
         Timer {
             interval: card.entry && card.entry.ref && card.entry.ref.expireTimeout > 0
-                ? card.entry.ref.expireTimeout : 6000
+                ? card.entry.ref.expireTimeout : settingsStore.toastTimeout
             running: true
             repeat: false
             onTriggered: {

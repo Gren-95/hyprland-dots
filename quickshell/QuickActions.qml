@@ -259,7 +259,7 @@ Item {
         anchorItem: actions._openAnchor ?? actions.flyoutAnchor ?? actions
         open: actions.popupOpen
         pinned: actions.pinned
-        cardWidth: 420
+        cardWidth: settingsStore.flyoutSize("quickactions", "w", 420)
         cardHeight: panel.implicitHeight + 28
         fillColor: Theme.bg
         borderColor: Theme.border
