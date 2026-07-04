@@ -13,6 +13,10 @@ Item {
     property var parentBar
     property bool popupOpen: false
     property bool pinned: false
+    // Default flyout anchor (placement-aware, bound from shell.qml) and a
+    // per-open override set by openTab(name, from). Fallback: own icon.
+    property Item flyoutAnchor: null
+    property Item _openAnchor: null
     property string activeTab: "sound"
     signal navigateNext()
     signal navigatePrev()
@@ -143,7 +147,11 @@ Item {
     }
     // Toggle the popup; if it's already on this tab, close it. Otherwise
     // switch to the tab and open. Called from the per-tab bar icons.
-    function openTab(name) {
+    // `from` (optional) re-anchors the flyout under the bar item that opened
+    // it (battery satellite icon, overflow rows) so the tail points at what
+    // was actually clicked. Omitted → default anchor.
+    function openTab(name, from) {
+        _openAnchor = from ?? null;
         if (popupOpen && activeTab === name) { popupOpen = false; }
         else { setTab(name); popupOpen = true; }
     }
@@ -262,7 +270,7 @@ Item {
     BarFlyout {
         id: apPopup
         parentBar: ap.parentBar
-        anchorItem: ap
+        anchorItem: ap._openAnchor ?? ap.flyoutAnchor ?? ap
         open: ap.popupOpen
         cardWidth: 380
         // Fixed height sized for the larger tab content so the popup surface

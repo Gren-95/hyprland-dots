@@ -9,6 +9,10 @@ Item {
     property var parentBar
     property bool popupOpen: false
     property bool pinned: false
+    // Default flyout anchor (placement-aware, bound from shell.qml) and a
+    // per-open override set by openTab(name, from). Fallback: own icon.
+    property Item flyoutAnchor: null
+    property Item _openAnchor: null
     // activeTab: "bluetooth" or "wifi"
     property string activeTab: "bluetooth"
     // tabIndex: 0 = primary toggle (BT power / wifi enable), 1 = secondary
@@ -82,7 +86,11 @@ Item {
     }
     // Toggle the popup; if it's already on this tab, close it. Otherwise
     // switch to the tab and open. Called from the per-tab bar icons.
-    function openTab(name) {
+    // `from` (optional) re-anchors the flyout under the bar item that opened
+    // it (wifi/vpn satellite icons, overflow rows) so the tail points at
+    // what was actually clicked. Omitted → default anchor.
+    function openTab(name, from) {
+        _openAnchor = from ?? null;
         if (popupOpen && activeTab === name) { popupOpen = false; }
         else { setTab(name); popupOpen = true; }
     }
@@ -208,7 +216,7 @@ Item {
     BarFlyout {
         id: popup
         parentBar: bt.parentBar
-        anchorItem: bt
+        anchorItem: bt._openAnchor ?? bt.flyoutAnchor ?? bt
         open: bt.popupOpen
         cardWidth: 360
         // Fixed height so switching tabs doesn't resize the Wayland surface.

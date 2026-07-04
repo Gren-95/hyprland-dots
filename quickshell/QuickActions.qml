@@ -11,6 +11,10 @@ Item {
     property var parentBar
     property bool popupOpen: false
     property bool pinned: false
+    // Default flyout anchor (placement-aware, bound from shell.qml) and a
+    // per-open override (overflow rows). Fallback: own chevron.
+    property Item flyoutAnchor: null
+    property Item _openAnchor: null
     property bool idleOn: true       // best-guess; refreshed from `pgrep hypridle`
     property bool immichOn: false    // immich cron entry enabled
     property bool jellyfinOn: false  // jellyfin cron entry enabled
@@ -220,7 +224,7 @@ Item {
     BarFlyout {
         id: actionsPopup
         parentBar: actions.parentBar
-        anchorItem: actions
+        anchorItem: actions._openAnchor ?? actions.flyoutAnchor ?? actions
         open: actions.popupOpen
         pinned: actions.pinned
         cardWidth: 420

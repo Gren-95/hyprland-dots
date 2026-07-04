@@ -243,7 +243,7 @@ Scope {
                         tooltip: (!enabled ? "Wi-Fi off"
                             : connected && btMod.activeNetwork ? btMod.activeNetwork.name
                             : "Wi-Fi") + " · Super+Shift+B"
-                        onClicked: btMod.openTab("wifi")
+                        onClicked: btMod.openTab("wifi", wifiIcon)
                     }
 
                     // VPN indicator — only visible when Tailscale is up.
@@ -255,7 +255,7 @@ Scope {
                         color: Theme.accent.purple
                         pixelSize: Theme.fontSize.md
                         tooltip: (TailscaleService.tailnet || "VPN") + " · Super+Shift+B"
-                        onClicked: btMod.openTab("vpn")
+                        onClicked: btMod.openTab("vpn", vpnIcon)
                     }
 
                     BarSep {}
@@ -271,7 +271,7 @@ Scope {
                     BarIcon {
                         id: batteryIcon
                         parentBar: bar
-                        onClicked: apMod.openTab("power")
+                        onClicked: apMod.openTab("power", batteryIcon)
                         readonly property var dev: UPower.displayDevice
                         readonly property int pct: dev ? Math.round(dev.percentage * 100) : 0
                         readonly property bool charging: dev && (dev.state === UPowerDeviceState.Charging
@@ -389,7 +389,7 @@ Scope {
                     appid: "quickshell"
                     name: "bluetooth"
                     description: "Toggle bluetooth menu"
-                    onPressed: btMod.popupOpen = !btMod.popupOpen
+                    onPressed: { btMod._openAnchor = null; btMod.popupOpen = !btMod.popupOpen }
                 }
                 GlobalShortcut {
                     appid: "quickshell"
