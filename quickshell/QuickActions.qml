@@ -103,9 +103,21 @@ Item {
     // 0..toggles.length-1  → toggles
     // toggles.length..end  → one-shots
     property int selectedIndex: 0
-    readonly property int totalItems: toggles.length + oneShots.length
+
+    // Bar modules wired from shell.qml ({id, glyph(), color(), label,
+    // when?, open(anchor)}). Modules placed in "overflow" render as tiles
+    // in this grid — Quick Actions IS the tray; the chevron only keeps
+    // hidden tray apps. glyph()/color() thunks are called inside this
+    // binding, so state (battery %, wifi strength) stays live.
+    property var moduleEntries: []
+    readonly property var tuckedModules: moduleEntries
+        .filter(e => settingsStore.placement(e.id) === "overflow" && (!e.when || e.when()))
+        .map(e => ({ glyph: e.glyph(), label: e.label, accent: e.color(),
+                     action: "__module_" + e.id, _open: e.open }))
+
+    readonly property int totalItems: toggles.length + oneShots.length + tuckedModules.length
     readonly property int gridColumns: 4
-    readonly property var gridItems: toggles.concat(oneShots)
+    readonly property var gridItems: toggles.concat(oneShots).concat(tuckedModules)
 
     Layout.fillHeight: true
     implicitWidth: 32
@@ -129,7 +141,7 @@ Item {
 
     function activate(idx) {
         if (idx < 0 || idx >= totalItems) return;
-        const entry = idx < toggles.length ? toggles[idx] : oneShots[idx - toggles.length];
+        const entry = gridItems[idx];
         // Flyout-opening actions inherit the panel's own anchor, so the new
         // flyout appears exactly where the panel was hanging.
         runEntry(entry, actions._openAnchor ?? actions.flyoutAnchor ?? actions);
@@ -141,6 +153,13 @@ Item {
         if (entry) runEntry(entry, from ?? null);
     }
     function runEntry(entry, from) {
+        // Tucked bar-module tile: close the panel and open the module's
+        // flyout where the panel was.
+        if (entry._open) {
+            actions.popupOpen = false;
+            entry._open(from);
+            return;
+        }
         if (entry.action === "dnd") {
             notifService.dnd = !notifService.dnd;
         } else if (entry.action === "idle") {

@@ -1,8 +1,6 @@
-// Windows-style hidden-tray chevron. Sits before the tray; its flyout hosts
-// (a) tray apps placed in "overflow" and (b) launcher rows for bar modules
-// placed in "overflow" — clicking a module row opens that module's flyout
-// re-anchored to this chevron (via openTab(tab, from) / flyoutAnchor).
-// Only visible when something is actually in overflow.
+// Windows-style hidden-tray chevron. Sits before the tray and hosts ONLY
+// tray apps placed in "overflow" — tucked bar modules render as tiles in
+// the Quick Actions grid instead. Only visible when something is tucked.
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -13,27 +11,16 @@ Item {
     id: chev
     property var parentBar
     property bool popupOpen: false
-    // Open tray context menus inside the flyout; while any is open the
-    // flyout pins itself so the focus grab doesn't dismiss it (the menu is
-    // a separate window and would be destroyed mid-use).
+    // Tray context menus are separate windows; while any is open the flyout
+    // pins itself so the focus grab doesn't dismiss it mid-use.
     property int menusOpen: 0
 
-    // Module entries wired from shell.qml:
-    //   { id, glyph: () => string, color: () => color, label,
-    //     when?: () => bool, open: (anchorItem) => void }
-    // glyph/color are thunks so the row live-tracks the hidden bar icon's
-    // state (battery %, wifi strength...) — reading notifiable properties
-    // inside the binding keeps it reactive.
-    property var entries: []
-
-    readonly property var overflowEntries: entries.filter(e =>
-        settingsStore.placement(e.id) === "overflow" && (!e.when || e.when()))
     readonly property var overflowTray: {
         const list = (SystemTray.items && SystemTray.items.values) || [];
         return list.filter(t => settingsStore.trayPlacementOf(t.id || t.title) === "overflow");
     }
 
-    visible: overflowEntries.length > 0 || overflowTray.length > 0
+    visible: overflowTray.length > 0
     onVisibleChanged: if (!visible) popupOpen = false
 
     Layout.fillHeight: true
@@ -53,7 +40,7 @@ Item {
     BarTooltip {
         bar: chev.parentBar
         target: chev
-        text: "Hidden items"
+        text: "Hidden tray apps"
         active: chevHover.hovered && !chev.popupOpen
     }
 
@@ -68,102 +55,26 @@ Item {
         anchorItem: chev
         open: chev.popupOpen
         pinned: chev.menusOpen > 0
-        cardWidth: 300
-        cardHeight: content.implicitHeight + 2 * Theme.spacing.lg
+        cardWidth: Math.max(120, Math.min(300, chev.overflowTray.length * 36 + 40))
+        cardHeight: trayRow.implicitHeight + 2 * Theme.spacing.lg
         onDismissed: chev.popupOpen = false
 
-        ColumnLayout {
-            id: content
+        RowLayout {
+            id: trayRow
             anchors { top: parent.top; left: parent.left; right: parent.right }
             anchors.margins: Theme.spacing.lg
             spacing: Theme.spacing.sm
-
-            // Overflow tray icons in a row
-            Text {
-                visible: chev.overflowTray.length > 0
-                text: "TRAY"
-                color: Theme.mutedDeep
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.xs
-                font.letterSpacing: 1
-                font.bold: true
-            }
-            RowLayout {
-                visible: chev.overflowTray.length > 0
-                Layout.fillWidth: true
-                spacing: Theme.spacing.sm
-                Repeater {
-                    model: chev.overflowTray
-                    delegate: TrayItem {
-                        required property var modelData
-                        item: modelData
-                        anchorWindow: chev.parentBar
-                        implicitHeight: 28
-                        onMenuOpenChanged: chev.menusOpen += menuOpen ? 1 : -1
-                    }
-                }
-                Item { Layout.fillWidth: true }
-            }
-
-            // Overflow module rows
-            Text {
-                visible: chev.overflowEntries.length > 0
-                text: "MODULES"
-                color: Theme.mutedDeep
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.xs
-                font.letterSpacing: 1
-                font.bold: true
-            }
             Repeater {
-                model: chev.overflowEntries
-                delegate: Rectangle {
+                model: chev.overflowTray
+                delegate: TrayItem {
                     required property var modelData
-                    Layout.fillWidth: true
-                    implicitHeight: 40
-                    radius: 8
-                    color: rowMa.containsMouse ? Theme.bgHover : "transparent"
-                    Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 10
-                        anchors.rightMargin: 10
-                        spacing: Theme.spacing.md
-                        Text {
-                            text: modelData.glyph()
-                            color: modelData.color()
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.md
-                        }
-                        Text {
-                            Layout.fillWidth: true
-                            text: modelData.label
-                            color: Theme.fgDim
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.base
-                            elide: Text.ElideRight
-                        }
-                        Text {
-                            text: "󰅂"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.sm
-                        }
-                    }
-                    MouseArea {
-                        id: rowMa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        // Close the chevron flyout, then open the module's
-                        // flyout anchored here (PopupManager close-then-open).
-                        onClicked: {
-                            chev.popupOpen = false;
-                            modelData.open(chev);
-                        }
-                    }
+                    item: modelData
+                    anchorWindow: chev.parentBar
+                    implicitHeight: 28
+                    onMenuOpenChanged: chev.menusOpen += menuOpen ? 1 : -1
                 }
             }
+            Item { Layout.fillWidth: true }
         }
     }
 }
