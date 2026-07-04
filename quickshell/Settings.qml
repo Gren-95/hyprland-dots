@@ -47,6 +47,8 @@ Scope {
     property int calendarFetchInterval: 10     // minutes between ICS fetches
     property string wallpaperDir: Quickshell.env("HOME") + "/Pictures/wallpapers"
     property var flyoutSizes: ({})             // flyout id -> { w, h } overrides
+    property var barPlacement: ({})            // module id -> "bar"|"overflow"|"hidden"
+    property var trayPlacement: ({})           // tray app id -> same
 
     // Reactive flyout-geometry lookup (reads flyoutSizes, so bindings track it).
     function flyoutSize(id, dim, def) {
@@ -58,6 +60,28 @@ Scope {
         if (!m[id]) m[id] = {};
         m[id][dim] = v;
         flyoutSizes = m;   // reassign — never mutate in place
+    }
+
+    // ===== Bar item placement: "bar" | "overflow" | "hidden" =====
+    // mediakeys/activityicons bridge to their legacy bool flags (2-state),
+    // so old cache files and the Quick Actions toggles keep working.
+    function placement(id) {
+        if (id === "mediakeys")     return mediaKeysVisible ? "bar" : "hidden";
+        if (id === "activityicons") return activityIconsVisible ? "bar" : "hidden";
+        return barPlacement[id] ?? "bar";
+    }
+    function setPlacement(id, p) {
+        if (id === "mediakeys")     { mediaKeysVisible = (p === "bar"); return; }
+        if (id === "activityicons") { activityIconsVisible = (p === "bar"); return; }
+        const m = Object.assign({}, barPlacement);
+        m[id] = p;
+        barPlacement = m;
+    }
+    function trayPlacementOf(tid)     { return trayPlacement[tid] ?? "bar"; }
+    function setTrayPlacement(tid, p) {
+        const m = Object.assign({}, trayPlacement);
+        m[tid] = p;
+        trayPlacement = m;
     }
 
     readonly property var _schema: [
@@ -75,6 +99,8 @@ Scope {
         { name: "calendarFetchInterval", file: "calendar-fetch-interval", type: "int" },
         { name: "wallpaperDir",         file: "wallpaper-dir",          type: "string" },
         { name: "flyoutSizes",          file: "flyout-sizes.json",      type: "json" },
+        { name: "barPlacement",         file: "bar-placement.json",     type: "json" },
+        { name: "trayPlacement",        file: "tray-placement.json",    type: "json" },
     ]
 
     readonly property string _dir: Quickshell.env("HOME") + "/.cache/quickshell/"

@@ -9,6 +9,10 @@ Item {
     id: tray
     property SystemTrayItem item
     property var anchorWindow: null
+    // Watched by the overflow chevron so its flyout pins itself while a
+    // tray context menu (a separate window) is open — otherwise the focus
+    // grab would dismiss the flyout and destroy the menu under the cursor.
+    readonly property bool menuOpen: menuAnchor.visible
     Layout.fillHeight: true
     implicitWidth: 28
 

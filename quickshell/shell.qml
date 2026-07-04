@@ -147,6 +147,7 @@ Scope {
                         NotifBell {
                             parentBar: bar
                             notifs: notifService
+                            visible: settingsStore.placement("bell") === "bar"
                         }
 
                         // iOS-style status icons (camera / mic / recording /
@@ -217,10 +218,31 @@ Scope {
                     anchors.rightMargin: 8
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 0
+                    // Windows-style hidden-tray chevron: hosts everything
+                    // placed in "overflow" via the Settings Bar tab.
+                    OverflowChevron {
+                        id: overflowChevron
+                        parentBar: bar
+                        entries: [
+                            { id: "network",      label: "Network",       glyph: () => "󰂯",              color: () => Theme.fgMuted,        open: (a) => btMod.openTab("bluetooth", a) },
+                            { id: "wifi",         label: "Wi-Fi",         glyph: () => wifiIcon.glyph,    color: () => wifiIcon.color,       open: (a) => btMod.openTab("wifi", a) },
+                            { id: "vpn",          label: "VPN",           glyph: () => "󰒃",              color: () => Theme.accent.purple,  when: () => TailscaleService.running, open: (a) => btMod.openTab("vpn", a) },
+                            { id: "audiopower",   label: "Sound",         glyph: () => "󰕾",              color: () => Theme.fgMuted,        open: (a) => apMod.openTab("sound", a) },
+                            { id: "battery",      label: "Battery",       glyph: () => batteryIcon.glyph, color: () => batteryIcon.color,    open: (a) => apMod.openTab("power", a) },
+                            { id: "mic",          label: "Mute microphone", glyph: () => "󰍬",            color: () => Theme.accent.orange,  when: () => micIcon.unmuted, open: (a) => { if (micIcon.src && micIcon.src.audio) micIcon.src.audio.muted = true; } },
+                            { id: "quickactions", label: "Quick actions", glyph: () => "󰍝",              color: () => Theme.fgMuted,        open: (a) => { quickMod._openAnchor = a; quickMod.popupOpen = true; } },
+                        ]
+                    }
+
                     RowLayout {
                         spacing: Theme.spacing.md
                         Repeater {
-                            model: SystemTray.items
+                            // Only tray apps placed on the bar; the rest live
+                            // in the overflow chevron (or are hidden).
+                            model: {
+                                const list = (SystemTray.items && SystemTray.items.values) || [];
+                                return list.filter(t => settingsStore.trayPlacementOf(t.id || t.title) === "bar");
+                            }
                             delegate: TrayItem {
                                 required property SystemTrayItem modelData
                                 item: modelData
@@ -232,12 +254,16 @@ Scope {
                     QuickActions {
                         id: quickMod
                         parentBar: bar
+                        visible: settingsStore.placement("quickactions") === "bar"
+                        flyoutAnchor: visible ? null : (overflowChevron.visible ? overflowChevron : null)
                     }
                     BarSep {}
 
                     ConnectivityModule {
                         id: btMod
                         parentBar: bar
+                        visible: settingsStore.placement("network") === "bar"
+                        flyoutAnchor: visible ? null : (overflowChevron.visible ? overflowChevron : null)
                         onNavigateNext: { popupOpen = false; apMod.openAt("sound") }
                         onNavigatePrev: { popupOpen = false; cal.openAt(0) }
                     }
@@ -247,6 +273,7 @@ Scope {
                     BarIcon {
                         id: wifiIcon
                         parentBar: bar
+                        visible: settingsStore.placement("wifi") === "bar"
                         readonly property var dev: btMod.wifiDevice
                         readonly property bool enabled: btMod.wifiEnabled
                         readonly property bool connected: btMod.wifiConnected
@@ -267,7 +294,7 @@ Scope {
                     BarIcon {
                         id: vpnIcon
                         parentBar: bar
-                        visible: TailscaleService.running
+                        visible: TailscaleService.running && settingsStore.placement("vpn") === "bar"
                         glyph: "󰒃"
                         color: Theme.accent.purple
                         pixelSize: Theme.fontSize.md
@@ -280,6 +307,8 @@ Scope {
                     AudioPowerModule {
                         id: apMod
                         parentBar: bar
+                        visible: settingsStore.placement("audiopower") === "bar"
+                        flyoutAnchor: visible ? null : (overflowChevron.visible ? overflowChevron : null)
                         onNavigateNext: { popupOpen = false; spotlight.openAt(0) }
                         onNavigatePrev: { popupOpen = false; btMod.openAt(-1) }
                     }
@@ -288,6 +317,7 @@ Scope {
                     BarIcon {
                         id: batteryIcon
                         parentBar: bar
+                        visible: settingsStore.placement("battery") === "bar"
                         onClicked: apMod.openTab("power", batteryIcon)
                         readonly property var dev: UPower.displayDevice
                         readonly property int pct: dev ? Math.round(dev.percentage * 100) : 0
@@ -323,9 +353,11 @@ Scope {
 
                     // Microphone (only when unmuted)
                     BarIcon {
+                        id: micIcon
                         parentBar: bar
                         readonly property var src: Pipewire.defaultAudioSource
-                        visible: src && src.audio && !src.audio.muted
+                        readonly property bool unmuted: src && src.audio ? !src.audio.muted : false
+                        visible: unmuted && settingsStore.placement("mic") === "bar"
                         glyph: "󰍬"
                         color: Theme.accent.orange
                         tooltip: "Mute microphone"
