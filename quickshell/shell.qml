@@ -10,6 +10,15 @@ import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
 
 Scope {
+    // Shared stores, instantiated FIRST so every sibling below (and the
+    // components they create) resolves them via the id scope chain — the
+    // same proven pattern as notifService. These were `pragma Singleton`
+    // files before, but config singletons don't reliably instantiate on a
+    // cold start: consumer binding reads just return undefined until a
+    // change notification happens to heal them.
+    Settings { id: settingsStore }
+    PopupManager { id: popupManager }
+
     Notifications { id: notifService }
     IcsCalendar { id: cal }
     Spotlight { id: spotlight }
@@ -21,6 +30,7 @@ Scope {
     PolkitPrompt { id: polkit }
     SystemMonitor { id: sysmon }
     WallpaperPicker { id: wallpaperPicker }
+    SettingsPanel { id: settingsPanel }
     RegionSelector { id: regionSelector }
     ScreenshotActions { id: screenshotActions }
 
@@ -44,6 +54,7 @@ Scope {
                 keybinds.anchorBar = bar;        keybinds.anchorItem = launcherIcon;
                 sysmon.anchorBar = bar;          sysmon.anchorItem = clockAnchor;
                 wallpaperPicker.anchorBar = bar; wallpaperPicker.anchorItem = quickMod;
+                settingsPanel.anchorBar = bar;   settingsPanel.anchorItem = quickMod;
             }
 
             Rectangle {
@@ -378,6 +389,12 @@ Scope {
                     name: "wallpaper"
                     description: "Toggle wallpaper picker"
                     onPressed: wallpaperPicker.toggle()
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "settings"
+                    description: "Toggle shell settings panel"
+                    onPressed: settingsPanel.toggle()
                 }
                 GlobalShortcut {
                     appid: "quickshell"

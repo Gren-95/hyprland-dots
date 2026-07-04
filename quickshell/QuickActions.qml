@@ -50,7 +50,36 @@ Item {
         { glyph: "󰈊", label: "Color picker", accent: "#e879f9", cmd: ["hyprpicker", "-a"] },
         { glyph: "󰋖", label: "Keybinds",     accent: Theme.accent.blue, action: "keybinds" },
         { glyph: "󰸉", label: "Wallpaper",    accent: Theme.accent.green, action: "wallpaper" },
+        { glyph: "󰒓", label: "Settings",     accent: Theme.accent.slate, action: "settings" },
     ]
+
+    // ============ Toggle state/description lookups ============
+    // Read by the SettingRow delegates; every branch reads notifiable
+    // properties, so the bindings stay reactive.
+    function toggleState(action) {
+        switch (action) {
+        case "dnd":       return notifService.dnd;
+        case "idle":      return !actions.idleOn;
+        case "immich":    return actions.immichOn;
+        case "jellyfin":  return actions.jellyfinOn;
+        case "wayvnc":    return actions.wayvncOn;
+        case "mediakeys": return settingsStore.mediaKeysVisible;
+        case "activityicons": return settingsStore.activityIconsVisible;
+        }
+        return false;
+    }
+    function toggleDesc(action) {
+        switch (action) {
+        case "dnd":       return notifService.dnd ? "Notifications muted" : "Notifications enabled";
+        case "idle":      return actions.idleOn ? "Idle sleep enabled" : "Idle sleep disabled";
+        case "immich":    return actions.immichOn ? "Uploading photos hourly" : "Background sync stopped";
+        case "jellyfin":  return actions.jellyfinOn ? "Syncing music every 2h" : "Background sync stopped";
+        case "wayvnc":    return actions.wayvncOn ? "WayVNC server running on :5900" : "Remote access stopped";
+        case "mediakeys": return settingsStore.mediaKeysVisible ? "Prev / play / next in bar" : "Hidden";
+        case "activityicons": return settingsStore.activityIconsVisible ? "Camera/mic/sync icons shown" : "Hidden";
+        }
+        return "";
+    }
 
     // Single flat index across both sections for keyboard nav:
     // 0..toggles.length-1  → toggles
@@ -112,9 +141,9 @@ Item {
             clearInFlightTimer.restart();
             wayvncToggleProc.startDetached();
         } else if (entry.action === "mediakeys") {
-            Settings.mediaKeysVisible = !Settings.mediaKeysVisible;
+            settingsStore.mediaKeysVisible = !settingsStore.mediaKeysVisible;
         } else if (entry.action === "activityicons") {
-            Settings.activityIconsVisible = !Settings.activityIconsVisible;
+            settingsStore.activityIconsVisible = !settingsStore.activityIconsVisible;
         } else if (entry.action === "keybinds") {
             actions.popupOpen = false;
             keybinds.toggle();
@@ -124,6 +153,9 @@ Item {
         } else if (entry.action === "clipboard") {
             actions.popupOpen = false;
             clipboard.openMenu();
+        } else if (entry.action === "settings") {
+            actions.popupOpen = false;
+            settingsPanel.toggle();
         } else if (entry.cmd) {
             actions.popupOpen = false;
             runProc.command = entry.cmd;
@@ -301,10 +333,15 @@ Item {
                     spacing: Theme.spacing.sm
                     Repeater {
                         model: actions.toggles
-                        delegate: ToggleRow {
+                        delegate: SettingRow {
                             required property var modelData
                             required property int index
-                            entry: modelData
+                            glyph: modelData.glyph
+                            offGlyph: modelData.offGlyph
+                            accent: modelData.accent
+                            label: modelData.label
+                            on: actions.toggleState(modelData.action)
+                            desc: actions.toggleDesc(modelData.action)
                             highlighted: actions.selectedIndex === index
                             Layout.fillWidth: true
                             onPicked: actions.activate(index)
@@ -346,133 +383,6 @@ Item {
                     }
                 }
             }
-    }
-
-    // Full-width toggle pill — leading icon (tinted square), label + description,
-    // trailing on/off switch indicator.
-    component ToggleRow: Rectangle {
-        id: row
-        property var entry
-        property bool highlighted: false
-        signal picked()
-        signal hovered()
-        implicitHeight: 54
-        radius: 10
-        readonly property color accent: row.entry ? row.entry.accent : Theme.muted
-        // Inline so each row tracks only its own underlying state — keeps the
-        // model array static (no Repeater rebuild → no jumping).
-        readonly property bool on: {
-            if (!row.entry) return false;
-            switch (row.entry.action) {
-            case "dnd":       return notifService.dnd;
-            case "idle":      return !actions.idleOn;
-            case "immich":    return actions.immichOn;
-            case "jellyfin":  return actions.jellyfinOn;
-            case "wayvnc":    return actions.wayvncOn;
-            case "mediakeys": return Settings.mediaKeysVisible;
-            case "activityicons": return Settings.activityIconsVisible;
-            }
-            return false;
-        }
-        readonly property string desc: {
-            if (!row.entry) return "";
-            switch (row.entry.action) {
-            case "dnd":       return notifService.dnd ? "Notifications muted" : "Notifications enabled";
-            case "idle":      return actions.idleOn ? "Idle sleep enabled" : "Idle sleep disabled";
-            case "immich":    return actions.immichOn ? "Uploading photos hourly" : "Background sync stopped";
-            case "jellyfin":  return actions.jellyfinOn ? "Syncing music every 2h" : "Background sync stopped";
-            case "wayvnc":    return actions.wayvncOn ? "WayVNC server running on :5900" : "Remote access stopped";
-            case "mediakeys": return Settings.mediaKeysVisible ? "Prev / play / next in bar" : "Hidden";
-            case "activityicons": return Settings.activityIconsVisible ? "Camera/mic/sync icons shown" : "Hidden";
-            }
-            return "";
-        }
-        color: row.on
-            ? Qt.rgba(accent.r, accent.g, accent.b, 0.10)
-            : (rowMa.containsMouse ? Theme.bgHover : "#1a1716")
-        border.color: row.on ? accent : (row.highlighted ? Theme.mutedDeep : Theme.borderSubtle)
-        border.width: row.on ? 2 : 1
-        scale: rowMa.pressed ? 0.98 : 1.0
-        Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
-        Behavior on border.color { ColorAnimation { duration: Theme.duration.normal } }
-        Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
-
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 12
-            anchors.rightMargin: 12
-            spacing: Theme.spacing.lg
-
-            // Icon square
-            Rectangle {
-                Layout.preferredWidth: 36
-                Layout.preferredHeight: 36
-                Layout.alignment: Qt.AlignVCenter
-                radius: 8
-                color: Qt.rgba(row.accent.r, row.accent.g, row.accent.b, row.on ? 0.20 : 0.08)
-                Text {
-                    anchors.centerIn: parent
-                    text: row.on
-                        ? (row.entry ? row.entry.glyph    : "")
-                        : (row.entry ? row.entry.offGlyph : "")
-                    color: row.on ? row.accent : Theme.muted
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xl
-                }
-            }
-
-            // Title + description
-            ColumnLayout {
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignVCenter
-                spacing: 2
-                Text {
-                    text: row.entry ? row.entry.label : ""
-                    color: row.on ? Theme.fg : Theme.fgDim
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.base
-                    font.bold: row.on
-                }
-                Text {
-                    Layout.fillWidth: true
-                    text: row.desc
-                    color: Theme.mutedDeep
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xs
-                    elide: Text.ElideRight
-                }
-            }
-
-            // Track-style switch indicator
-            Rectangle {
-                Layout.preferredWidth: 36
-                Layout.preferredHeight: 20
-                Layout.alignment: Qt.AlignVCenter
-                radius: 10
-                color: row.on ? row.accent : Theme.borderSubtle
-                border.color: row.on ? row.accent : Theme.border
-                border.width: 1
-                Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
-                Rectangle {
-                    width: 14
-                    height: 14
-                    radius: 7
-                    color: Theme.fg
-                    anchors.verticalCenter: parent.verticalCenter
-                    x: row.on ? parent.width - width - 3 : 3
-                    Behavior on x { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-                }
-            }
-        }
-
-        MouseArea {
-            id: rowMa
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: row.picked()
-            onContainsMouseChanged: if (containsMouse) row.hovered()
-        }
     }
 
     // Grid action tile — colored icon at top, label below.

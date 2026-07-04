@@ -58,7 +58,7 @@ PopupWindow {
     visible: card.open
     color: "transparent"
 
-    onOpenChanged: open ? PopupManager.opened(card) : PopupManager.closed(card)
+    onOpenChanged: open ? popupManager.opened(card) : popupManager.closed(card)
 
     // When the popup maps (e.g. opened by a click on the bar icon), the inner
     // FocusScope's `focus: true` claims focus within its scope but doesn't

@@ -1,6 +1,12 @@
-// Persisted user preferences. Singleton so any component can bind to a
-// setting and changes propagate everywhere. Values are stored as one tiny
-// file per setting under ~/.cache/quickshell.
+// Persisted user preferences. Instantiated ONCE in shell.qml as
+// `settingsStore` (first child, so it exists before any consumer) — any
+// component resolves it via the id scope chain and changes propagate
+// everywhere. Values are stored as one tiny file per setting under
+// ~/.cache/quickshell.
+//
+// NOT a `pragma Singleton`: config singletons don't reliably instantiate
+// on cold start (consumer binding reads return undefined until a change
+// notification heals them) — a root-scope instance has guaranteed order.
 //
 // To add a setting:
 //   1. Declare a typed property with its default below.
@@ -11,26 +17,32 @@
 // no shell quoting). Absent file = QML default.
 //
 // Loop safety: typed scalar properties only notify on real change, which
-// breaks the load→assign→save cycle; `json` (var) settings always notify on
-// assignment, so persist() compares against `lastText` before writing.
-// Maps must be REASSIGNED (clone-and-set), never mutated in place — in-place
-// mutation neither notifies consumers nor persists.
-pragma Singleton
+// breaks the load->assign->save cycle; `json` (var) settings always notify
+// on assignment, so persist() compares against `lastText` before writing.
+// Maps must be REASSIGNED (clone-and-set), never mutated in place.
+//
+// WARNING: do NOT use `required property var modelData` in the Instantiator
+// delegate — it silently aborts construction of the entire singleton on a
+// cold start (every consumer then reads undefined). Use the classic context
+// `modelData` as below.
+
 import QtQuick
+import QtQml.Models   // Instantiator (not provided by QtQuick in Qt 6)
 import Quickshell
 import Quickshell.Io
 
 Scope {
     id: settings
-
-    // ===== Settings (defaults live here) =====
     property bool mediaKeysVisible: false
-    property bool activityIconsVisible: true   // bar's camera/mic/sync status icons
+    property bool activityIconsVisible: true
+    property int toastTimeout: 6000
+    property int notifHistoryCap: 50
 
-    // ===== Schema: name must match a property above =====
     readonly property var _schema: [
         { name: "mediaKeysVisible",     file: "media-keys.enabled",     type: "bool" },
         { name: "activityIconsVisible", file: "activity-icons.enabled", type: "bool" },
+        { name: "toastTimeout",         file: "toast-timeout",          type: "int"  },
+        { name: "notifHistoryCap",      file: "notif-history-cap",      type: "int"  },
     ]
 
     readonly property string _dir: Quickshell.env("HOME") + "/.cache/quickshell/"
@@ -55,28 +67,21 @@ Scope {
     Instantiator {
         model: settings._schema
         delegate: FileView {
-            required property var modelData
-            // First load attempt (success or file-absent) finished. Changes
-            // made before that are held in `dirty` and flushed after, so a
-            // fast post-login toggle isn't lost and the boot-time load
-            // doesn't bounce straight back into a write.
             property bool ready: false
             property bool dirty: false
-            property string lastText: ""   // last content seen or written
+            property string lastText: ""
 
             path: settings._dir + modelData.file
             watchChanges: true
             atomicWrites: true
             printErrors: false
 
-            // Reading settings[name] inside a binding dependency-tracks the
-            // named property, so this re-evaluates on every settings change.
             readonly property var current: settings[modelData.name]
             onCurrentChanged: ready ? persist() : dirty = true
 
             function persist() {
                 const s = settings._serialize(modelData.type, current);
-                if (s === lastText) return;   // breaks the json echo loop
+                if (s === lastText) return;
                 lastText = s;
                 setText(s);
             }
@@ -88,7 +93,7 @@ Scope {
                 ready = true;
                 if (dirty) { dirty = false; persist(); }
             }
-            onLoadFailed: {   // file absent → keep the QML default
+            onLoadFailed: {
                 ready = true;
                 if (dirty) { dirty = false; persist(); }
             }

@@ -1,7 +1,7 @@
 // Single-open policy for bar flyouts. Every BarFlyout registers here when it
 // opens; opening one closes whatever else was open (close-then-open, same
 // ordering the nav ring already used, so focus grabs never overlap).
-pragma Singleton
+
 import QtQuick
 import Quickshell
 

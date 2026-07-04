@@ -1,6 +1,6 @@
 // Compact media chip: optional track title + prev / play-pause / next.
 // Drives the active MPRIS player directly. Visibility bound to
-// Settings.mediaKeysVisible.
+// settingsStore.mediaKeysVisible.
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -26,7 +26,7 @@ Item {
         if (a && a.length > 0) { try { return a.join(", "); } catch (e) { return String(a[0]); } }
         return mk.player.trackArtist || "";
     }
-    visible: Settings.mediaKeysVisible
+    visible: settingsStore.mediaKeysVisible
     implicitHeight: 28
     // Width is the chip's natural size; the wrapper in shell.qml centers us.
     implicitWidth: chip.implicitWidth
