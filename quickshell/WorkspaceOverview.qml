@@ -1,12 +1,13 @@
-// Workspace overview: grid of workspace cards with window thumbnails (via grim
-// for visible windows, app icons for windows on hidden workspaces).
-// 1-9 jump, h/l/←/→ navigate, Enter activate, Esc cancel.
+// Workspace overview: top drawer strip of workspace cards with window
+// thumbnails (via grim for visible windows, app icons for windows on hidden
+// workspaces). 1-9 jump, h/l/←/→ navigate, Enter activate, Esc cancel.
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Widgets
+import Quickshell.Hyprland
 
 Scope {
     id: root
@@ -142,44 +143,52 @@ Scope {
             visible: root.open
             color: "transparent"
 
-            anchors { top: true; bottom: true; left: true; right: true }
+            // Top drawer: full-width strip of workspace cards hanging under
+            // the bar (Task-View style), replacing the fullscreen grid.
+            anchors { top: true; left: true; right: true }
+            margins { top: 36 }
+            implicitHeight: drawer.implicitHeight
             WlrLayershell.exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: root.open ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
-            Rectangle {
-                anchors.fill: parent
-                color: "#000000"
-                opacity: 0.7
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: root.close()
-                }
+            // Click-away close (the old fullscreen backdrop is gone).
+            HyprlandFocusGrab {
+                active: root.open
+                windows: [win]
+                onCleared: root.close()
             }
 
-            Item {
+            Rectangle {
+                id: drawer
                 anchors.fill: parent
+                implicitHeight: drawerCol.implicitHeight + 2 * Theme.spacing.lg
+                color: Theme.bgAlt
                 focus: root.open
                 scale: root.open ? 1.0 : 0.96
                 opacity: root.open ? 1.0 : 0.0
+                transformOrigin: Item.Top
                 Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
                 Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+
+                // Bottom hairline matching the bar's.
+                Rectangle {
+                    anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+                    height: 1
+                    color: Theme.mutedDeep
+                }
+
                 Keys.onPressed: (e) => {
                     const n = root.workspaces.length;
                     if (e.key === Qt.Key_Escape) { root.close(); e.accepted = true; }
                     else if (e.key === Qt.Key_Tab) {
                         root.cycle(e.modifiers & Qt.ShiftModifier ? -1 : 1); e.accepted = true;
-                    } else if (e.key === Qt.Key_Right || e.key === Qt.Key_L) {
+                    } else if (e.key === Qt.Key_Right || e.key === Qt.Key_L
+                            || e.key === Qt.Key_Down || e.key === Qt.Key_J) {
                         root.cycle(1); e.accepted = true;
-                    } else if (e.key === Qt.Key_Left || e.key === Qt.Key_H) {
+                    } else if (e.key === Qt.Key_Left || e.key === Qt.Key_H
+                            || e.key === Qt.Key_Up || e.key === Qt.Key_K) {
                         root.cycle(-1); e.accepted = true;
-                    } else if (e.key === Qt.Key_Down || e.key === Qt.Key_J) {
-                        // Down a row in the grid
-                        root.focusedIndex = Math.min(n - 1, root.focusedIndex + grid.columns);
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
-                        root.focusedIndex = Math.max(0, root.focusedIndex - grid.columns);
-                        e.accepted = true;
                     } else if (e.key === Qt.Key_Home) {
                         root.focusedIndex = 0; e.accepted = true;
                     } else if (e.key === Qt.Key_End) {
@@ -199,61 +208,59 @@ Scope {
                 }
 
                 ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 56
-                    spacing: Theme.spacing.xxl
+                    id: drawerCol
+                    anchors { top: parent.top; left: parent.left; right: parent.right }
+                    anchors.margins: Theme.spacing.lg
+                    spacing: Theme.spacing.md
 
-                    Rectangle {
-                        Layout.alignment: Qt.AlignHCenter
-                        Layout.preferredWidth: 360
-                        Layout.preferredHeight: 48
-                        radius: 22
-                        color: Theme.bg
-                        border.color: Theme.border
-                        border.width: 1
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 18
-                            anchors.rightMargin: 18
-                            spacing: Theme.spacing.md
-                            Text {
-                                text: "󰍹"
-                                color: Theme.accent.purple
-                                font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.xl
-                            }
-                            Text {
-                                text: "Workspaces"
-                                color: Theme.fg
-                                font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.lg
-                                font.bold: true
-                            }
-                            Item { Layout.fillWidth: true }
-                            Text {
-                                text: root.workspaces.length + " active"
-                                color: Theme.mutedDeep
-                                font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.sm
-                            }
+                    // Slim header row: title on the left, hint on the right.
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.spacing.md
+                        Text {
+                            text: "󰍹"
+                            color: Theme.accent.purple
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.xl
+                        }
+                        Text {
+                            text: "Workspaces"
+                            color: Theme.fg
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.lg
+                            font.bold: true
+                        }
+                        Text {
+                            text: root.workspaces.length + " active"
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.sm
+                        }
+                        Item { Layout.fillWidth: true }
+                        Text {
+                            text: "1-9 jump  •  ←/h →/l navigate  •  Enter switch  •  Esc cancel"
+                            color: Theme.disabled
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.sm
                         }
                     }
 
+                    // Horizontal card strip; scrolls when workspaces overflow,
+                    // centers when they don't.
                     Flickable {
-                        id: gridFlick
+                        id: stripFlick
                         Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        contentWidth: width
-                        contentHeight: Math.max(height, grid.implicitHeight)
+                        Layout.preferredHeight: strip.implicitHeight
+                        contentWidth: Math.max(width, strip.implicitWidth)
+                        contentHeight: strip.implicitHeight
+                        flickableDirection: Flickable.HorizontalFlick
+                        boundsBehavior: Flickable.StopAtBounds
                         clip: true
 
-                        GridLayout {
-                            id: grid
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            y: Math.max(0, (gridFlick.height - implicitHeight) / 2)
-                            columns: Math.min(4, Math.max(1, root.workspaces.length))
-                            columnSpacing: Theme.spacing.xxl
-                            rowSpacing: Theme.spacing.xxl
+                        RowLayout {
+                            id: strip
+                            x: Math.max(0, (stripFlick.width - implicitWidth) / 2)
+                            spacing: Theme.spacing.xl
                             Repeater {
                                 model: root.workspaces
                                 delegate: WsCard {
@@ -271,14 +278,6 @@ Scope {
                                 }
                             }
                         }
-                    }
-
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "1-9 jump  •  ←/h →/l navigate  •  Enter switch  •  Esc cancel"
-                        color: Theme.disabled
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.sm
                     }
                 }
             }
