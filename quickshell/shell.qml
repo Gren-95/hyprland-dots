@@ -233,7 +233,7 @@ Scope {
                         entries: [
                             { id: "network",      label: "Network",       glyph: () => "󰂯",              color: () => Theme.fgMuted,        open: (a) => btMod.openTab("bluetooth", a) },
                             { id: "wifi",         label: "Wi-Fi",         glyph: () => wifiIcon.glyph,    color: () => wifiIcon.color,       open: (a) => btMod.openTab("wifi", a) },
-                            { id: "vpn",          label: "VPN",           glyph: () => "󰒃",              color: () => Theme.accent.purple,  when: () => TailscaleService.running, open: (a) => btMod.openTab("vpn", a) },
+                            { id: "vpn",          label: "VPN",           glyph: () => "󰒃",              color: () => TailscaleService.running ? Theme.accent.purple : Theme.muted, open: (a) => btMod.openTab("vpn", a) },
                             { id: "audiopower",   label: "Sound",         glyph: () => "󰕾",              color: () => Theme.fgMuted,        open: (a) => apMod.openTab("sound", a) },
                             { id: "battery",      label: "Battery",       glyph: () => batteryIcon.glyph, color: () => batteryIcon.color,    open: (a) => apMod.openTab("power", a) },
                             { id: "mic",          label: "Mute microphone", glyph: () => "󰍬",            color: () => Theme.accent.orange,  when: () => micIcon.unmuted, open: (a) => { if (micIcon.src && micIcon.src.audio) micIcon.src.audio.muted = true; } },
@@ -312,15 +312,21 @@ Scope {
                         onClicked: btMod.openTab("wifi", wifiIcon)
                     }
 
-                    // VPN indicator — only visible when Tailscale is up.
+                    // VPN indicator — a network satellite like the Wi-Fi icon:
+                    // always present, state shown by color, click opens the
+                    // Network flyout's VPN tab (toggle, peers, exit nodes).
                     BarIcon {
                         id: vpnIcon
                         parentBar: bar
-                        visible: TailscaleService.running && settingsStore.placement("vpn") === "bar"
+                        visible: settingsStore.placement("vpn") === "bar"
                         glyph: "󰒃"
-                        color: Theme.accent.purple
+                        color: !TailscaleService.daemonOk ? Theme.mutedDeep
+                             : TailscaleService.running ? Theme.accent.purple
+                             : Theme.muted
                         pixelSize: Theme.fontSize.md
-                        tooltip: (TailscaleService.tailnet || "VPN") + " · Super+Shift+B"
+                        tooltip: (!TailscaleService.daemonOk ? "VPN daemon down"
+                            : TailscaleService.running ? (TailscaleService.tailnet || "VPN up")
+                            : "VPN off") + " · Super+Shift+B"
                         onClicked: btMod.openTab("vpn", vpnIcon)
                     }
 

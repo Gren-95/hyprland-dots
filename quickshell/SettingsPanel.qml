@@ -191,7 +191,6 @@ Scope {
                                     { key: "immich",        label: "Immich sync" },
                                     { key: "jellyfin",      label: "Jellyfin sync" },
                                     { key: "wayvnc",        label: "Remote access" },
-                                    { key: "tailscale",     label: "VPN toggle" },
                                     { key: "mediakeys",     label: "Media keys toggle" },
                                     { key: "activityicons", label: "Activity icons toggle" },
                                     { key: "clipboard",     label: "Clipboard" },
