@@ -7,12 +7,19 @@ add a new modal" or "where do I change X" — not a tutorial.
 
 | Layer | Lives in | Examples |
 |---|---|---|
-| **Singletons** | `Theme.qml`, `Hypr.qml`, `TailscaleService.qml`, `Settings.qml` | Design tokens, hyprctl dispatch helper, Tailscale CLI wrapper, persisted user flags |
-| **Primitives** | `BarPopupCard.qml`, `PopupCard.qml`, `TabStrip.qml`, `SproutBg.qml` | Reusable popup envelopes + the speech-bubble shape |
+| **Singletons** | `Theme.qml`, `Hypr.qml`, `TailscaleService.qml`, `Settings.qml`, `PopupManager.qml` | Design tokens, hyprctl dispatch helper, Tailscale CLI wrapper, persisted user flags, single-open flyout policy |
+| **Primitives** | `BarFlyout.qml`, `PopupCard.qml`, `TabStrip.qml`, `SproutBg.qml` | The flyout envelope, the top-drawer envelope, the speech-bubble shape |
 | **Bar items** | `BarIcon.qml`, `BarSep.qml`, `WorkspaceStrip.qml`, `MediaKeys.qml` | Leaf widgets that sit on the top bar |
-| **Bar modules** | `ConnectivityModule.qml`, `AudioPowerModule.qml`, `NotifBell.qml`, `QuickActions.qml` | Bar entry points that open their own popup |
-| **Modals** | `Spotlight.qml`, `Clipboard.qml`, `Keybinds.qml`, `PowerMenu.qml`, `PolkitPrompt.qml`, `IcsCalendar.qml`, `Notifications.qml`, `WorkspaceOverview.qml`, `ScreenRecorder.qml`, `Osd.qml`, `SystemMonitor.qml`, `WallpaperPicker.qml`, `RegionSelector.qml`, `ScreenshotActions.qml` | Centered or bar-anchored overlays |
+| **Bar modules** | `ConnectivityModule.qml`, `AudioPowerModule.qml`, `NotifBell.qml`, `QuickActions.qml` | Bar entry points that open their own flyout |
+| **Flyout modals** | `Spotlight.qml`, `Clipboard.qml`, `Keybinds.qml`, `IcsCalendar.qml`, `Notifications.qml`, `SystemMonitor.qml`, `WallpaperPicker.qml` | Scope-level services whose UI opens as a flyout under a bar item |
+| **Drawers & overlays** | `WorkspaceOverview.qml` (top drawer strip), `PolkitPrompt.qml` (top-center drawer), `ScreenshotActions.qml` (top-right sheet), `ScreenRecorder.qml`, `Osd.qml`, `RegionSelector.qml` | Everything not anchored to a specific bar icon |
 | **Reusable widgets** | `TabPill`, `PinButton`, `BtToggle`, `VolumeSlider`, `BrightnessRow`, `ProfileSelector`, `*Row` files | Pieces composed into modules |
+
+**Unified-shell rule:** nothing opens as a free-floating centered window.
+Every surface either hangs under its bar icon (`BarFlyout`), drops from the
+bar edge (`PopupCard` top drawer, WorkspaceOverview strip), or is inherently
+fullscreen (RegionSelector). The power menu lives in AudioPowerModule's
+Power tab (SESSION row) — `quickshell:powermenu` opens that tab.
 
 Entry point is `shell.qml`. It instantiates every modal and the per-screen bar
 via `Variants { model: Quickshell.screens }`.
@@ -48,21 +55,33 @@ while the VPN tab is open.
 Persists user flags as one tiny file per flag under `~/.cache/quickshell/`
 (plain `"0"` or `"1"`, no JSON dance). Pattern: declare `property bool fooBar`
 plus `onFooBarChanged: _save("foo-bar.enabled", fooBar)` and a `FileView`
-that reads the same path. Currently only owns `mediaKeysVisible`.
+that reads the same path. Owns `mediaKeysVisible` and `activityIconsVisible`.
+
+### `PopupManager.qml`
+Single-open policy for flyouts. `BarFlyout` registers itself in
+`onOpenChanged`; opening one flyout closes whatever else was open
+(close-then-open so focus grabs never overlap). `PopupManager.closeAll()`
+force-closes the current one.
 
 ## Primitives
 
-### `BarPopupCard`
-Bar-anchored centered popup. Used by `ConnectivityModule`, `AudioPowerModule`,
-`IcsCalendar`. Wraps `PopupWindow + SproutBg + animated FocusScope`. Content
-goes directly inside the braces — it lands in the inner FocusScope via the
-default property alias.
+### `BarFlyout`
+The single popup primitive: a card hanging directly under a bar item, with
+the SproutBg tail pointing up at it, growing downward out of the bar. Used
+by every bar module and flyout modal. Wraps `PopupWindow + SproutBg +
+animated FocusScope`. Content goes directly inside the braces — it lands in
+the inner FocusScope via the default property alias, below the tail.
+Positioning is computed into `anchor.rect`: centered under `anchorItem`,
+clamped to the screen edges (the tail keeps tracking the icon when clamped).
+Registers with `PopupManager` so only one flyout is open at a time.
+Unaccepted Escape closes by default.
 
 ```qml
-BarPopupCard {
+BarFlyout {
     parentBar: bar
+    anchorItem: someBarIcon   // the item it hangs from
     open: mod.popupOpen
-    cardWidth: 360
+    cardWidth: 380
     cardHeight: 460
     pinned: mod.pinned
     onDismissed: mod.popupOpen = false
@@ -78,11 +97,18 @@ binding source (e.g. `mod.popupOpen = false`). Do not assign to `card.open`
 directly — it breaks the `open: mod.popupOpen` binding and the popup can't
 reopen.
 
+**Anchor wiring for Scope-level modals**: modals instantiated in `shell.qml`
+(Spotlight, Clipboard, Keybinds, SystemMonitor, WallpaperPicker, IcsCalendar,
+Notifications) expose `anchorBar` / `anchorItem` properties, assigned once
+from the bar's `Component.onCompleted` (or the anchor item's, for the
+clock/bell). Their flyout binds
+`open: root.open && root.anchorBar !== null`.
+
 ### `PopupCard`
-Full-screen-backdrop centered modal. Used by `Spotlight`, `Clipboard`,
-`Keybinds`, `PowerMenu`, `PolkitPrompt`. Pass content via
-`contentComponent: Component { … }` (the default alias breaks inside the
-per-screen `Variants` delegate).
+Top drawer: a card hanging from the bar's bottom edge — top-center by
+default, `edge: "right"` for toast-like sheets. Used by `PolkitPrompt`
+(exclusive keyboard, no click-away) and `ScreenshotActions` (top-right).
+Pass content via `contentComponent: Component { … }`.
 
 ### `TabStrip`
 Rounded pill container for tab navigation. Used by `ConnectivityModule` and
@@ -129,8 +155,14 @@ when >1 player.
 
 ## Modals
 
-All centered modals share the same open animation: scale `0.96 → 1.0`,
-opacity `0 → 1`, `Theme.duration.normal`, `Theme.easing.standard`.
+All flyouts and drawers share the same open animation: scale `0.94–0.96 → 1.0`,
+opacity `0 → 1`, `transformOrigin: Item.Top` (grow out of the bar),
+`Theme.duration.normal`, `Theme.easing.standard`.
+
+Flyout anchor map: launcher icon → Spotlight, Clipboard, Keybinds ·
+clock → IcsCalendar · bell → Notifications center · clock cluster →
+SystemMonitor · Quick Actions chevron → WallpaperPicker, QuickActions ·
+their own bar icons → ConnectivityModule, AudioPowerModule, MediaKeys.
 
 Each modal exposes:
 - `property bool open: false`
@@ -151,10 +183,15 @@ Cross-modal Ctrl+Left/Right navigation is wired in `shell.qml` via
 - **`RegionSelector`** (`Super+Shift+S`) — full-screen dim overlay with
   click-drag region selection, live dimensions readout, multi-monitor-aware
   coordinate translation. Pipes the resulting `"X,Y WxH"` to
-  `scripts/screenshot.sh` and chains into ScreenshotActions.
-- **`ScreenshotActions`** — post-capture action sheet that opens once
-  `screenshot.sh` echoes the saved path. Buttons: Edit (swappy), OCR
-  (screenshot-ocr.sh), Reveal (nautilus), Done. Keys `E/O/R`, `Enter`=Edit.
+  `scripts/screenshot.sh` and chains into ScreenshotActions. (The one
+  intentionally fullscreen surface besides WorkspaceOverview's strip.)
+- **`ScreenshotActions`** — post-capture top-right action sheet
+  (`PopupCard edge: "right"`) that opens once `screenshot.sh` echoes the
+  saved path. Buttons: Edit (swappy), OCR (screenshot-ocr.sh), Reveal
+  (nautilus), Done. Keys `E/O/R`, `Enter`=Edit.
+- **`WorkspaceOverview`** (`Super+Tab`) — full-width top drawer strip of
+  workspace cards with live grim thumbnails. Click-away closes via focus
+  grab; Super release commits the highlighted workspace.
 
 ## Conventions
 
@@ -221,9 +258,13 @@ close the popup.
 ## Adding a new modal
 
 1. Create `MyModal.qml`. Root is `Scope`.
-2. Add `property bool open: false`, `function toggle()`, `function close()`.
-3. For centered-modal layout, use `PopupCard { contentComponent: Component { … } }`.
-4. For bar-anchored, use `BarPopupCard` and treat the consumer as a bar module.
+2. Add `property bool open: false`, `function toggle()`, `function close()`,
+   plus `property var anchorBar: null` / `property var anchorItem: null`.
+3. Use `BarFlyout { parentBar: root.anchorBar; anchorItem: root.anchorItem;
+   open: root.open && root.anchorBar !== null; … }` with content inside the
+   braces. (Only use `PopupCard` for bar-edge drawers with no natural icon.)
+4. Pick the bar item it should hang from and assign the anchors in the bar's
+   `Component.onCompleted` in `shell.qml`.
 5. Add a plain-English modal title at the top of the content.
 6. Add uppercase section headers above each visual grouping.
 7. Instantiate it once at the top of `shell.qml`: `MyModal { id: myModal }`.

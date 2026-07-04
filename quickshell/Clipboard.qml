@@ -399,7 +399,7 @@ Scope {
 
             // Color swatch
             Rectangle {
-                visible: row.entry && row.entry.isColor
+                visible: !!(row.entry && row.entry.isColor)
                 Layout.preferredWidth: 28
                 Layout.preferredHeight: 28
                 radius: 4
