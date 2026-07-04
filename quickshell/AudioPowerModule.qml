@@ -75,7 +75,14 @@ Item {
 
     // ===== Power state =====
     readonly property var profiles: [PowerProfile.Performance, PowerProfile.Balanced, PowerProfile.PowerSaver]
-    // 0..2 profiles, 3 = screen slider, 4 = kb slider
+    // Session actions (Sleep / Reboot / Shutdown), mirrored from PowerMenu.qml.
+    readonly property var sessionActions: [
+        { glyph: "󰒲", label: "Sleep",    accent: Theme.accent.purple, cmd: ["systemctl", "suspend"] },
+        { glyph: "󰜉", label: "Reboot",   accent: Theme.accent.orange, cmd: ["systemctl", "reboot"] },
+        { glyph: "󰐥", label: "Shutdown", accent: Theme.accent.red,    cmd: ["systemctl", "poweroff"] },
+    ]
+    // pwrIndex stops: 0..2 profiles, 3 = screen slider, 4 = kb slider,
+    // 5..7 session actions (Sleep / Reboot / Shutdown).
     property int pwrIndex: 0
     property real screenLevel: 0.5
     property real kbLevel: 0
@@ -101,8 +108,18 @@ Item {
         getScreenProc.running = false; getScreenProc.running = true;
         getKbProc.running = false; getKbProc.running = true;
     }
-    function cyclePwr(delta) { pwrIndex = (pwrIndex + delta + 5) % 5; }
-    function activatePwr() { if (pwrIndex <= 2) activateProfile(pwrIndex); }
+    function runSession(i) {
+        const a = sessionActions[i];
+        if (!a) return;
+        sessionProc.command = a.cmd;
+        sessionProc.startDetached();
+        popupOpen = false;
+    }
+    function cyclePwr(delta) { pwrIndex = (pwrIndex + delta + 8) % 8; }
+    function activatePwr() {
+        if (pwrIndex <= 2) activateProfile(pwrIndex);
+        else if (pwrIndex >= 5) runSession(pwrIndex - 5);
+    }
 
     // ===== Tab + popup control =====
     // Toggle between the two tabs (Sound ↔ Power).
@@ -197,6 +214,7 @@ Item {
     // ===== Power-related processes =====
     Process { id: setScreenProc; command: [] }
     Process { id: setKbProc; command: [] }
+    Process { id: sessionProc; command: [] }
     Process {
         id: getScreenProc
         command: ["sh", "-c", "echo $(brightnessctl get) $(brightnessctl max)"]
@@ -463,6 +481,66 @@ Item {
                                 highlighted: ap.pwrIndex === 4
                                 onMoved: (v) => ap.setKb(v)
                                 onHovered: ap.pwrIndex = 4
+                            }
+                        }
+
+                        Text {
+                            text: "SESSION"
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.xs
+                            font.letterSpacing: 1
+                            font.bold: true
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.topMargin: -8
+                            spacing: Theme.spacing.sm
+                            Repeater {
+                                model: ap.sessionActions
+                                delegate: Rectangle {
+                                    required property var modelData
+                                    required property int index
+                                    readonly property bool hl: ap.pwrIndex === 5 + index
+                                    Layout.fillWidth: true
+                                    implicitHeight: 60
+                                    radius: 10
+                                    color: hl ? Qt.rgba(modelData.accent.r, modelData.accent.g, modelData.accent.b, 0.12)
+                                              : Theme.bgHover
+                                    border.color: hl ? modelData.accent : Theme.borderSubtle
+                                    border.width: 1
+                                    scale: stMa.pressed ? 0.94 : (hl ? 1.04 : 1.0)
+                                    Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+                                    Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }
+                                    Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+                                    ColumnLayout {
+                                        anchors.centerIn: parent
+                                        spacing: 2
+                                        Text {
+                                            Layout.alignment: Qt.AlignHCenter
+                                            text: modelData.glyph
+                                            color: modelData.accent
+                                            font.family: Theme.font
+                                            font.pixelSize: Theme.fontSize.lg
+                                        }
+                                        Text {
+                                            Layout.alignment: Qt.AlignHCenter
+                                            text: modelData.label
+                                            color: hl ? Theme.fg : Theme.fgMuted
+                                            font.family: Theme.font
+                                            font.pixelSize: Theme.fontSize.xs
+                                            font.bold: hl
+                                        }
+                                    }
+                                    MouseArea {
+                                        id: stMa
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: ap.runSession(index)
+                                        onContainsMouseChanged: if (containsMouse) ap.pwrIndex = 5 + index
+                                    }
+                                }
                             }
                         }
                         // Push content to the top; let the rest stay empty.
