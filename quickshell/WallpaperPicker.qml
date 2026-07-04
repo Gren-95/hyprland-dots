@@ -9,11 +9,17 @@ Scope {
     id: root
     property bool open: false
     property var wallpapers: []   // array of absolute paths
-    // Set from the bar so the picker flyout hangs under the Quick Actions chevron.
+    // Default anchor set from the bar (the Quick Actions chevron); openers
+    // can pass their own item via toggle(from) so the flyout hangs under
+    // whatever was actually clicked (QA tile, promoted icon).
     property var anchorBar: null
     property var anchorItem: null
+    property Item _openAnchor: null
 
-    function toggle() { open = !open }
+    function toggle(from) {
+        open = !open;
+        if (open) _openAnchor = from ?? null;
+    }
     function close()  { open = false }
     function refresh() { if (!listProc.running) listProc.running = true }
 
@@ -42,7 +48,7 @@ Scope {
 
     BarFlyout {
         parentBar: root.anchorBar
-        anchorItem: root.anchorItem
+        anchorItem: root._openAnchor ?? root.anchorItem
         open: root.open && root.anchorBar !== null
         cardWidth: settingsStore.flyoutSize("wallpaper", "w", 560)
         cardHeight: settingsStore.flyoutSize("wallpaper", "h", 560)

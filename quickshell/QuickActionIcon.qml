@@ -64,7 +64,7 @@ Item {
                 qi.actions._openAnchor = qi;
                 qi.actions.popupOpen = true;
             } else {
-                qi.actions.performAction(qi.entry.action);
+                qi.actions.performAction(qi.entry.action, qi);
             }
         }
     }

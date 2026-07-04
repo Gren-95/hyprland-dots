@@ -14,9 +14,14 @@ Item {
     Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
 
     // Anchor the notification-center flyout to this bell (also covers the
-    // Super+N global shortcut, which only calls toggleCenter()).
+    // Super+N global shortcut, which only calls toggleCenter()). Live
+    // binding: when the bell is hidden via placement, fall back to
+    // bar-center instead of anchoring to an invisible item.
     Component.onCompleted: {
-        if (bell.notifs) { bell.notifs.anchorBar = bell.parentBar; bell.notifs.anchorItem = bell; }
+        if (bell.notifs) {
+            bell.notifs.anchorBar = bell.parentBar;
+            bell.notifs.anchorItem = Qt.binding(() => bell.visible ? bell : null);
+        }
     }
 
     // Ring the bell whenever the unread count climbs.

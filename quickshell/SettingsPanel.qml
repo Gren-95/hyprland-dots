@@ -14,9 +14,12 @@ Scope {
     property bool open: false
     property bool pinned: false
     property string activeTab: "general"
-    // Set from the bar (shell.qml Component.onCompleted).
+    // Default anchor set from the bar (shell.qml Component.onCompleted);
+    // openers can pass their own item via toggle(from) so the panel hangs
+    // under whatever was actually clicked (QA gear tile, promoted icon).
     property var anchorBar: null
     property var anchorItem: null
+    property Item _openAnchor: null
 
     readonly property var tabs: [
         { glyph: "󰒓", label: "General",    accent: Theme.accent.blue,   id: "general" },
@@ -25,7 +28,10 @@ Scope {
         { glyph: "󰢻", label: "Tuning",     accent: Theme.accent.orange, id: "tuning" },
     ]
 
-    function toggle() { open = !open; if (open) activeTab = "general"; }
+    function toggle(from) {
+        open = !open;
+        if (open) { _openAnchor = from ?? null; activeTab = "general"; }
+    }
     function close() { open = false; }
     function cycleTab(delta) {
         const ids = tabs.map(t => t.id);
@@ -35,7 +41,7 @@ Scope {
 
     BarFlyout {
         parentBar: root.anchorBar
-        anchorItem: root.anchorItem
+        anchorItem: root._openAnchor ?? root.anchorItem
         open: root.open && root.anchorBar !== null
         cardWidth: settingsStore.flyoutSize("settings", "w", 560)
         cardHeight: settingsStore.flyoutSize("settings", "h", 640)
