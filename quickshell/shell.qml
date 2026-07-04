@@ -56,11 +56,18 @@ Scope {
             // multi-monitor the last-created bar wins (same as the calendar).
             Component.onCompleted: {
                 spotlight.anchorBar = bar;       spotlight.anchorItem = launcherIcon;
-                clipboard.anchorBar = bar;       clipboard.anchorItem = launcherIcon;
-                keybinds.anchorBar = bar;        keybinds.anchorItem = launcherIcon;
+                // Quick-Actions residents default to the QA chevron, but the
+                // chevron can be hidden (placement, or everything promoted) —
+                // so the default is a LIVE binding falling back to the
+                // overflow chevron, then bar-center (null). Anchoring to an
+                // invisible item puts the flyout at a garbage position.
+                const qaOr = () => quickMod.visible ? quickMod
+                            : overflowChevron.visible ? overflowChevron : null;
+                clipboard.anchorBar = bar;       clipboard.anchorItem = Qt.binding(qaOr);
+                keybinds.anchorBar = bar;        keybinds.anchorItem = Qt.binding(qaOr);
+                wallpaperPicker.anchorBar = bar; wallpaperPicker.anchorItem = Qt.binding(qaOr);
+                settingsPanel.anchorBar = bar;   settingsPanel.anchorItem = Qt.binding(qaOr);
                 sysmon.anchorBar = bar;          sysmon.anchorItem = clockAnchor;
-                wallpaperPicker.anchorBar = bar; wallpaperPicker.anchorItem = quickMod;
-                settingsPanel.anchorBar = bar;   settingsPanel.anchorItem = quickMod;
             }
 
             Rectangle {

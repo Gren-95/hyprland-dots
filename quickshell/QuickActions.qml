@@ -128,15 +128,17 @@ Item {
     function activate(idx) {
         if (idx < 0 || idx >= totalItems) return;
         const entry = idx < toggles.length ? toggles[idx] : oneShots[idx - toggles.length];
-        runEntry(entry);
+        // Flyout-opening actions inherit the panel's own anchor, so the new
+        // flyout appears exactly where the panel was hanging.
+        runEntry(entry, actions._openAnchor ?? actions.flyoutAnchor ?? actions);
     }
     // Run an action by its key — used by the promoted bar icons, which
-    // bypass the panel entirely.
-    function performAction(key) {
+    // bypass the panel entirely and pass themselves as the anchor.
+    function performAction(key, from) {
         const entry = allToggles.concat(allOneShots).find(t => t.action === key);
-        if (entry) runEntry(entry);
+        if (entry) runEntry(entry, from ?? null);
     }
-    function runEntry(entry) {
+    function runEntry(entry, from) {
         if (entry.action === "dnd") {
             notifService.dnd = !notifService.dnd;
         } else if (entry.action === "idle") {
@@ -166,16 +168,16 @@ Item {
             settingsStore.activityIconsVisible = !settingsStore.activityIconsVisible;
         } else if (entry.action === "keybinds") {
             actions.popupOpen = false;
-            keybinds.toggle();
+            keybinds.toggle(from);
         } else if (entry.action === "wallpaper") {
             actions.popupOpen = false;
-            wallpaperPicker.toggle();
+            wallpaperPicker.toggle(from);
         } else if (entry.action === "clipboard") {
             actions.popupOpen = false;
-            clipboard.openMenu();
+            clipboard.openMenu(from);
         } else if (entry.action === "settings") {
             actions.popupOpen = false;
-            settingsPanel.toggle();
+            settingsPanel.toggle(from);
         } else if (entry.cmd) {
             actions.popupOpen = false;
             runProc.command = entry.cmd;

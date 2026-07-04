@@ -13,9 +13,12 @@ Scope {
     property string query: ""
     property int selectedIndex: 0
     property var items: []
-    // Set from the bar so the clipboard flyout hangs under the launcher icon.
+    // Default anchor set from the bar (the Quick Actions chevron); openers
+    // can pass their own item via toggle(from)/openMenu(from) so the flyout
+    // hangs under whatever was actually clicked (QA tile, promoted icon).
     property var anchorBar: null
     property var anchorItem: null
+    property Item _openAnchor: null
 
     readonly property string thumbDir: "/tmp/cliphist-thumbs"
 
@@ -69,11 +72,12 @@ Scope {
         };
     }
 
-    function toggle() {
+    function toggle(from) {
         if (open) close();
-        else openMenu();
+        else openMenu(from);
     }
-    function openMenu() {
+    function openMenu(from) {
+        _openAnchor = from ?? null;
         query = "";
         selectedIndex = 0;
         items = [];
@@ -121,7 +125,7 @@ Scope {
 
     BarFlyout {
         parentBar: root.anchorBar
-        anchorItem: root.anchorItem
+        anchorItem: root._openAnchor ?? root.anchorItem
         open: root.open && root.anchorBar !== null
         cardWidth: settingsStore.flyoutSize("clipboard", "w", 560)
         cardHeight: settingsStore.flyoutSize("clipboard", "h", 620)
