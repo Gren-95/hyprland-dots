@@ -104,11 +104,13 @@ Item {
         return "";
     }
 
-    // Single flat index across both sections for keyboard nav:
+    // Single flat index across the tray grid for keyboard nav:
     // 0..toggles.length-1  → toggles
     // toggles.length..end  → one-shots
     property int selectedIndex: 0
     readonly property int totalItems: toggles.length + oneShots.length
+    readonly property int gridColumns: 4
+    readonly property var gridItems: toggles.concat(oneShots)
 
     Layout.fillHeight: true
     implicitWidth: 32
@@ -309,13 +311,9 @@ Item {
             } else if (e.key === Qt.Key_Left || e.key === Qt.Key_H) {
                 actions.cycle(-1); e.accepted = true;
             } else if (e.key === Qt.Key_Down || e.key === Qt.Key_J) {
-                // Toggles are a single column → step 1. Action grid is
-                // 3 columns → step 3. Branch on which section we're in.
-                actions.cycle(actions.selectedIndex < actions.toggles.length ? 1 : 3);
-                e.accepted = true;
+                actions.cycle(actions.gridColumns); e.accepted = true;
             } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
-                actions.cycle(actions.selectedIndex < actions.toggles.length ? -1 : -3);
-                e.accepted = true;
+                actions.cycle(-actions.gridColumns); e.accepted = true;
             } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
                 actions.activate(actions.selectedIndex); e.accepted = true;
             }
@@ -349,31 +347,20 @@ Item {
                     Item { Layout.fillWidth: true }
                 }
 
-                Text {
-                    text: "TOGGLES"
-                    color: Theme.mutedDeep
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xs
-                    font.letterSpacing: 1
-                    font.bold: true
-                }
-
-                // Toggle row: full-width pills with explicit on/off state
-                ColumnLayout {
+                // ===== Tray grid: every item as a compact state tile =====
+                GridLayout {
                     Layout.fillWidth: true
-                    Layout.topMargin: -8
-                    spacing: Theme.spacing.sm
+                    columns: actions.gridColumns
+                    columnSpacing: Theme.spacing.sm
+                    rowSpacing: Theme.spacing.sm
                     Repeater {
-                        model: actions.toggles
-                        delegate: SettingRow {
+                        model: actions.gridItems
+                        delegate: TrayTile {
                             required property var modelData
                             required property int index
-                            glyph: modelData.glyph
-                            offGlyph: modelData.offGlyph
-                            accent: modelData.accent
-                            label: modelData.label
-                            on: actions.toggleState(modelData.action)
-                            desc: actions.toggleDesc(modelData.action)
+                            entry: modelData
+                            isToggle: actions.isToggleAction(modelData.action)
+                            on: isToggle && actions.toggleState(modelData.action)
                             highlighted: actions.selectedIndex === index
                             Layout.fillWidth: true
                             onPicked: actions.activate(index)
@@ -382,56 +369,42 @@ Item {
                     }
                 }
 
-                // Section divider
-                Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderSubtle }
-
+                // Status line for the highlighted item — replaces the old
+                // per-row descriptions in a single quiet footer.
                 Text {
-                    text: "ACTIONS"
+                    Layout.fillWidth: true
+                    readonly property var cur: actions.gridItems[actions.selectedIndex]
+                    text: cur ? (actions.isToggleAction(cur.action) ? actions.toggleDesc(cur.action) : cur.label) : ""
                     color: Theme.mutedDeep
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.xs
-                    font.letterSpacing: 1
-                    font.bold: true
-                }
-
-                // Actions grid: 3-column tiles, larger than before
-                GridLayout {
-                    Layout.fillWidth: true
-                    Layout.topMargin: -8
-                    columns: 3
-                    columnSpacing: Theme.spacing.sm
-                    rowSpacing: Theme.spacing.sm
-                    Repeater {
-                        model: actions.oneShots
-                        delegate: ActionTile {
-                            required property var modelData
-                            required property int index
-                            entry: modelData
-                            highlighted: actions.selectedIndex === (index + actions.toggles.length)
-                            Layout.fillWidth: true
-                            onPicked: actions.activate(index + actions.toggles.length)
-                            onHovered: actions.selectedIndex = index + actions.toggles.length
-                        }
-                    }
+                    elide: Text.ElideRight
                 }
             }
     }
 
-    // Grid action tile — colored icon at top, label below.
-    component ActionTile: Rectangle {
+    // Compact tray tile — glyph on top, label below. Toggles fill with
+    // their accent while on; one-shots stay neutral until hover/highlight.
+    component TrayTile: Rectangle {
         id: tile
         property var entry
+        property bool isToggle: false
+        property bool on: false
         property bool highlighted: false
         signal picked()
         signal hovered()
         readonly property color accent: tile.entry ? tile.entry.accent : Theme.fg
-        implicitHeight: Theme.height.tile
+        implicitHeight: 64
         radius: 10
-        color: tile.highlighted
-            ? Qt.rgba(accent.r, accent.g, accent.b, 0.12)
-            : (tileMa.containsMouse ? Theme.bgHover : "#1a1716")
-        border.color: tile.highlighted ? accent : Theme.borderSubtle
-        border.width: tile.highlighted ? 2 : 1
+        color: tile.on
+            ? Qt.rgba(accent.r, accent.g, accent.b, 0.16)
+            : tile.highlighted
+                ? Qt.rgba(accent.r, accent.g, accent.b, 0.10)
+                : (tileMa.containsMouse ? Theme.bgHover : "#1a1716")
+        border.color: tile.on ? accent
+                    : tile.highlighted ? Theme.mutedDeep
+                    : Theme.borderSubtle
+        border.width: tile.on ? 2 : 1
         scale: tileMa.pressed ? 0.95 : (tile.highlighted ? 1.03 : 1.0)
         Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
         Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
@@ -439,29 +412,27 @@ Item {
 
         ColumnLayout {
             anchors.centerIn: parent
-            spacing: Theme.spacing.xs
-            Rectangle {
+            spacing: 2
+            Text {
                 Layout.alignment: Qt.AlignHCenter
-                Layout.preferredWidth: 36
-                Layout.preferredHeight: 36
-                radius: 8
-                color: Qt.rgba(tile.accent.r, tile.accent.g, tile.accent.b, 0.15)
-                Text {
-                    anchors.centerIn: parent
-                    text: tile.entry ? tile.entry.glyph : ""
-                    color: tile.accent
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xl
-                }
+                text: tile.entry
+                    ? (tile.isToggle && !tile.on ? (tile.entry.offGlyph || tile.entry.glyph) : tile.entry.glyph)
+                    : ""
+                color: tile.on ? tile.accent
+                     : tile.highlighted || tileMa.containsMouse ? tile.accent
+                     : Theme.fgMuted
+                font.family: Theme.font
+                font.pixelSize: Theme.fontSize.xl
+                Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
             }
             Text {
                 Layout.alignment: Qt.AlignHCenter
-                Layout.maximumWidth: tile.width - 12
+                Layout.maximumWidth: tile.width - 10
                 text: tile.entry ? tile.entry.label : ""
-                color: tile.highlighted ? Theme.fg : Theme.fgMuted
+                color: tile.on || tile.highlighted ? Theme.fg : Theme.muted
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSize.xs
-                font.bold: tile.highlighted
+                font.bold: tile.on || tile.highlighted
                 elide: Text.ElideRight
                 horizontalAlignment: Text.AlignHCenter
             }
