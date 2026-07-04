@@ -206,7 +206,7 @@ Scope {
                                     { id: "audiopower",   label: "Sound",                    three: true },
                                     { id: "battery",      label: "Battery",                  three: true },
                                     { id: "mic",          label: "Microphone",               three: true },
-                                    { id: "quickactions", label: "Quick actions",            three: true },
+                                    { id: "quickactions", label: "Quick actions",            three: false },
                                     { id: "bell",         label: "Notification bell",        three: false },
                                     { id: "mediakeys",    label: "Media keys",               three: false },
                                     { id: "activityicons", label: "Activity icons",          three: false },
@@ -221,6 +221,8 @@ Scope {
                             }
 
                             SectionLabel { text: "QUICK ACTIONS" }
+                            // KEEP IN SYNC with QuickActions.qml allToggles/allOneShots
+                            // (this panel cannot reach quickMod — it lives inside the bar Variants).
                             Repeater {
                                 model: [
                                     { key: "dnd",           label: "Do Not Disturb" },
