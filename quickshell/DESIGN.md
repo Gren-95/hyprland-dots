@@ -7,13 +7,24 @@ add a new modal" or "where do I change X" — not a tutorial.
 
 | Layer | Lives in | Examples |
 |---|---|---|
-| **Singletons** | `Theme.qml`, `Hypr.qml`, `TailscaleService.qml`, `Settings.qml`, `PopupManager.qml` | Design tokens, hyprctl dispatch helper, Tailscale CLI wrapper, persisted user flags, single-open flyout policy |
-| **Primitives** | `BarFlyout.qml`, `PopupCard.qml`, `TabStrip.qml`, `SproutBg.qml` | The flyout envelope, the top-drawer envelope, the speech-bubble shape |
-| **Bar items** | `BarIcon.qml`, `BarSep.qml`, `WorkspaceStrip.qml`, `MediaKeys.qml` | Leaf widgets that sit on the top bar |
+| **Singletons** | `Theme.qml`, `Hypr.qml`, `TailscaleService.qml` | Design tokens (with user-tunable knobs), hyprctl dispatch helper, Tailscale CLI wrapper |
+| **Root stores** | `Settings.qml` (`settingsStore`), `PopupManager.qml` (`popupManager`) | Persisted user settings + single-open flyout policy. Instantiated FIRST in shell.qml and resolved via the id scope chain — NOT singletons (see warning below) |
+| **Primitives** | `BarFlyout.qml`, `PopupCard.qml`, `TabStrip.qml`, `SproutBg.qml`, `SettingRow.qml`, `SegmentedControl.qml` | The flyout envelope, the top-drawer envelope, the speech-bubble shape, settings controls |
+| **Bar items** | `BarIcon.qml`, `BarSep.qml`, `WorkspaceStrip.qml`, `MediaKeys.qml`, `OverflowChevron.qml` | Leaf widgets that sit on the top bar |
 | **Bar modules** | `ConnectivityModule.qml`, `AudioPowerModule.qml`, `NotifBell.qml`, `QuickActions.qml` | Bar entry points that open their own flyout |
-| **Flyout modals** | `Spotlight.qml`, `Clipboard.qml`, `Keybinds.qml`, `IcsCalendar.qml`, `Notifications.qml`, `SystemMonitor.qml`, `WallpaperPicker.qml` | Scope-level services whose UI opens as a flyout under a bar item |
+| **Flyout modals** | `Spotlight.qml`, `Clipboard.qml`, `Keybinds.qml`, `IcsCalendar.qml`, `Notifications.qml`, `SystemMonitor.qml`, `WallpaperPicker.qml`, `SettingsPanel.qml` | Scope-level services whose UI opens as a flyout under a bar item |
 | **Drawers & overlays** | `WorkspaceOverview.qml` (top drawer strip), `PolkitPrompt.qml` (top-center drawer), `ScreenshotActions.qml` (top-right sheet), `ScreenRecorder.qml`, `Osd.qml`, `RegionSelector.qml` | Everything not anchored to a specific bar icon |
 | **Reusable widgets** | `TabPill`, `PinButton`, `BtToggle`, `VolumeSlider`, `BrightnessRow`, `ProfileSelector`, `*Row` files | Pieces composed into modules |
+
+**WARNING — config singletons don't reliably instantiate on cold start.**
+A `pragma Singleton` file referenced only from component files (not from
+shell.qml itself) may never instantiate: consumer binding reads just return
+undefined until a change notification happens to heal them, and
+`required property` Instantiator delegates abort construction silently.
+Shared state therefore lives in **root-scope instances** (`settingsStore`,
+`popupManager`) declared first in shell.qml — guaranteed creation order,
+resolved everywhere via the id scope chain (same pattern as `notifService`).
+Theme survives as a singleton only because shell.qml reads it directly.
 
 **Unified-shell rule:** nothing opens as a free-floating centered window.
 Every surface either hangs under its bar icon (`BarFlyout`), drops from the
@@ -51,17 +62,52 @@ Wraps the `tailscale` CLI. Properties: `state`, `tailnet`, `host`, `selfIPs`,
 `setExitNode(id)`, `copyIp(ip)`. Background poll every 15s, fast poll every 4s
 while the VPN tab is open.
 
-### `Settings.qml`
-Persists user flags as one tiny file per flag under `~/.cache/quickshell/`
-(plain `"0"` or `"1"`, no JSON dance). Pattern: declare `property bool fooBar`
-plus `onFooBarChanged: _save("foo-bar.enabled", fooBar)` and a `FileView`
-that reads the same path. Owns `mediaKeysVisible` and `activityIconsVisible`.
+### `Settings.qml` (instantiated as `settingsStore`)
+Typed schema-driven settings engine. One tiny file per setting under
+`~/.cache/quickshell/`, written via `FileView.setText` (atomic, watched).
+To add a setting: declare a typed property with its default + one `_schema`
+row (`{ name, file, type }`, type ∈ bool/int/real/string/json). External
+edits load into the property; property writes persist. Absent file = QML
+default. Maps (`json` type) must be REASSIGNED, never mutated.
+Also owns the bar-placement API: `placement(id)` / `setPlacement(id, p)` /
+`trayPlacementOf(tid)` / `setTrayPlacement(tid, p)` with p ∈
+`"bar" | "overflow" | "hidden"`, and `flyoutSize(id, dim, def)` /
+`setFlyoutSize(id, dim, v)` for per-flyout geometry.
+Do NOT use `required property var modelData` in its Instantiator delegate —
+it silently aborts construction (context `modelData` only).
 
-### `PopupManager.qml`
+### `PopupManager.qml` (instantiated as `popupManager`)
 Single-open policy for flyouts. `BarFlyout` registers itself in
 `onOpenChanged`; opening one flyout closes whatever else was open
-(close-then-open so focus grabs never overlap). `PopupManager.closeAll()`
+(close-then-open so focus grabs never overlap). `popupManager.closeAll()`
 force-closes the current one.
+
+### `SettingsPanel.qml` (`quickshell:settings`, Super+,)
+Tabbed settings flyout under the Quick Actions chevron (also opened from
+the gear tile). Tabs: **General** (bar widgets, notifications), **Bar**
+(per-item Bar/Tuck/Hide placement incl. live tray apps), **Appearance**
+(highlight accent swatches, font scale, bar height, font family),
+**Tuning** (module knobs, calendar URL, wallpaper dir, flyout sizes).
+
+### `OverflowChevron.qml`
+Windows-style hidden-tray ˄ before the tray. Hosts overflow tray apps as
+real `TrayItem`s (the flyout pins itself while a context menu is open —
+`TrayItem.menuOpen` counting) and overflow modules as launcher rows that
+call `entry.open(chev)` → `module.openTab(tab, chev)`, re-anchoring the
+module flyout to the chevron. Hidden entirely when nothing is in overflow.
+
+### Theme knobs
+`Theme.fontScale` / `fontFamily` / `accentPrimaryName` are pushed in from
+shell.qml via `Binding` elements (a singleton can't resolve settingsStore).
+`Theme.accentPrimary` is THE highlight/selection accent — use it for
+selected rows, active pills, focused cards; keep semantic accents
+(red=danger, green=ok…) fixed.
+
+### Flyout anchoring override
+Modules with tabs expose `openTab(name, from)` — `from` re-anchors the
+flyout under whatever opened it (satellite icons, overflow rows) via
+`_openAnchor`; `flyoutAnchor` is the placement-aware default bound in
+shell.qml. Fallback chain: `_openAnchor ?? flyoutAnchor ?? self`.
 
 ## Primitives
 
