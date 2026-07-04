@@ -146,7 +146,7 @@ Scope {
             // Top drawer: full-width strip of workspace cards hanging under
             // the bar (Task-View style), replacing the fullscreen grid.
             anchors { top: true; left: true; right: true }
-            margins { top: 36 }
+            margins { top: settingsStore.barHeight }
             implicitHeight: drawer.implicitHeight
             WlrLayershell.exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
@@ -301,7 +301,7 @@ Scope {
         implicitHeight: previewH + 38
         radius: 12
         color: ws.highlighted ? Theme.bgActive : Theme.bg
-        border.color: ws.highlighted ? Theme.accent.purple : (ws.isActive ? Theme.accent.blue : Theme.border)
+        border.color: ws.highlighted ? Theme.accentPrimary : (ws.isActive ? Theme.accent.blue : Theme.border)
         border.width: (ws.highlighted || ws.isActive) ? 2 : 1
         scale: ws.highlighted ? 1.04 : 1.0
         Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
@@ -317,7 +317,7 @@ Scope {
             implicitWidth: 22
             implicitHeight: 22
             radius: 11
-            color: ws.isActive ? Theme.accent.blue : (ws.highlighted ? Theme.accent.purple : Theme.border)
+            color: ws.isActive ? Theme.accent.blue : (ws.highlighted ? Theme.accentPrimary : Theme.border)
             z: 5
             Text {
                 anchors.centerIn: parent

@@ -402,7 +402,7 @@ Scope {
         radius: 8
         color: cell.isSelected ? "#3b3531"
              : (cellMa.containsMouse ? "#262220" : "transparent")
-        border.color: cell.isSelected ? Theme.accent.purple
+        border.color: cell.isSelected ? Theme.accentPrimary
                     : cell.isToday ? Theme.accent.blue
                     : "transparent"
         border.width: (cell.isSelected || cell.isToday) ? 2 : 0
@@ -435,7 +435,7 @@ Scope {
                 delegate: Rectangle {
                     width: 4; height: 4; radius: 2
                     color: cell.outsideMonth ? Theme.border
-                         : cell.isSelected ? Theme.accent.purple
+                         : cell.isSelected ? Theme.accentPrimary
                          : Theme.accent.blue
                 }
             }

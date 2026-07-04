@@ -37,12 +37,20 @@ Scope {
     property bool activityIconsVisible: true
     property int toastTimeout: 6000
     property int notifHistoryCap: 50
+    property real fontScale: 1.0               // multiplies every Theme.fontSize token
+    property string fontFamily: "FiraCode Nerd Font"
+    property int barHeight: 36
+    property string accentPrimaryName: "blue"  // Theme.accentPrimary (highlights)
 
     readonly property var _schema: [
         { name: "mediaKeysVisible",     file: "media-keys.enabled",     type: "bool" },
         { name: "activityIconsVisible", file: "activity-icons.enabled", type: "bool" },
         { name: "toastTimeout",         file: "toast-timeout",          type: "int"  },
         { name: "notifHistoryCap",      file: "notif-history-cap",      type: "int"  },
+        { name: "fontScale",            file: "font-scale",             type: "real" },
+        { name: "fontFamily",           file: "font-family",            type: "string" },
+        { name: "barHeight",            file: "bar-height",             type: "int"  },
+        { name: "accentPrimaryName",    file: "accent-primary",         type: "string" },
     ]
 
     readonly property string _dir: Quickshell.env("HOME") + "/.cache/quickshell/"

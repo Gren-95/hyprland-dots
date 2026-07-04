@@ -76,9 +76,9 @@ Item {
         implicitWidth: chipRow.implicitWidth + 16
         radius: height / 2
         color: mk.isPlaying
-            ? Qt.rgba(Theme.accent.blue.r, Theme.accent.blue.g, Theme.accent.blue.b, 0.10)
+            ? Qt.rgba(Theme.accentPrimary.r, Theme.accentPrimary.g, Theme.accentPrimary.b, 0.10)
             : Theme.bgDeep
-        border.color: mk.isPlaying ? Theme.accent.blue : Theme.borderSubtle
+        border.color: mk.isPlaying ? Theme.accentPrimary : Theme.borderSubtle
         border.width: 1
         Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
         Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }
@@ -281,7 +281,7 @@ Item {
                                 width: Math.max(0, parent.width * seek.frac)
                                 height: 5
                                 radius: 2.5
-                                color: Theme.accent.blue
+                                color: Theme.accentPrimary
                             }
                         }
                         Rectangle {
@@ -289,7 +289,7 @@ Item {
                             height: 12
                             radius: 6
                             color: Theme.fg
-                            border.color: Theme.accent.blue
+                            border.color: Theme.accentPrimary
                             border.width: 2
                             anchors.verticalCenter: parent.verticalCenter
                             x: Math.max(0, Math.min(parent.width - width, seek.frac * parent.width - width / 2))
@@ -374,7 +374,7 @@ Item {
             width: 22
             height: 22
             radius: 11
-            color: btn.highlight ? Theme.accent.blue
+            color: btn.highlight ? Theme.accentPrimary
                 : (hover.containsMouse ? Theme.bgHover : "transparent")
             opacity: btn.enabledLook ? 1.0 : 0.35
             // Scale down briefly on press for a tactile feel.

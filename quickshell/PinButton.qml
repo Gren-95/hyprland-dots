@@ -17,7 +17,7 @@ Rectangle {
         rotation: root.pinned ? 0 : -35
         text: "󰐃"
         color: root.pinned ? "#3b82f6" : "#78716c"
-        font.family: "FiraCode Nerd Font"
+        font.family: Theme.font
         font.pixelSize: 13
         Behavior on rotation { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.emphasized } }
         Behavior on color    { ColorAnimation  { duration: Theme.duration.fast } }

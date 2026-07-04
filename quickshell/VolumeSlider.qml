@@ -22,7 +22,7 @@ Rectangle {
         anchors.margins: 2
         width: Math.max(0, Math.min(parent.width - 4, (parent.width - 4) * vs.value))
         radius: height / 2
-        color: Theme.accent.blue
+        color: Theme.accentPrimary
         // Glide for external changes (keys/OSD); stay 1:1 with the finger
         // while dragging so the fill never lags the cursor.
         Behavior on width {
@@ -36,7 +36,7 @@ Rectangle {
         width: 22; height: 22
         radius: 11
         color: Theme.fg
-        border.color: Theme.accent.blue
+        border.color: Theme.accentPrimary
         border.width: 2
         anchors.verticalCenter: parent.verticalCenter
         x: Math.max(-width / 2 + 1,

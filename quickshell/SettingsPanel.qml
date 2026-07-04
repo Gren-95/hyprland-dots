@@ -145,9 +145,99 @@ Scope {
                             }
                         }
 
+                        // ---------- APPEARANCE ----------
+                        ColumnLayout {
+                            visible: root.activeTab === "appearance"
+                            Layout.fillWidth: true
+                            spacing: Theme.spacing.sm
+
+                            SectionLabel { text: "HIGHLIGHT ACCENT" }
+                            // Swatch row: pick the accent used for selections,
+                            // highlights and active states shell-wide.
+                            Rectangle {
+                                Layout.fillWidth: true
+                                implicitHeight: 54
+                                radius: 10
+                                color: "#1a1716"
+                                border.color: Theme.borderSubtle
+                                border.width: 1
+                                RowLayout {
+                                    anchors.centerIn: parent
+                                    spacing: Theme.spacing.md
+                                    Repeater {
+                                        model: ["blue", "green", "red", "orange", "yellow", "purple", "pink", "teal", "slate"]
+                                        delegate: Rectangle {
+                                            required property string modelData
+                                            readonly property bool active: settingsStore.accentPrimaryName === modelData
+                                            implicitWidth: 30
+                                            implicitHeight: 30
+                                            radius: 15
+                                            color: Theme.accent[modelData]
+                                            border.color: active ? Theme.fg : "transparent"
+                                            border.width: active ? 3 : 0
+                                            scale: swMa.containsMouse ? 1.12 : 1.0
+                                            Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
+                                            MouseArea {
+                                                id: swMa
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: settingsStore.accentPrimaryName = parent.modelData
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            SectionLabel { text: "TYPE & BAR" }
+                            StepperRow {
+                                Layout.fillWidth: true
+                                label: "Font scale"
+                                desc: "Scales every text size in the shell"
+                                value: Math.round(settingsStore.fontScale * 100)
+                                step: 5; min: 80; max: 130
+                                display: Math.round(settingsStore.fontScale * 100) + "%"
+                                onStepped: (v) => settingsStore.fontScale = v / 100
+                            }
+                            StepperRow {
+                                Layout.fillWidth: true
+                                label: "Bar height"
+                                desc: "Height of the top bar in pixels"
+                                value: settingsStore.barHeight
+                                step: 2; min: 28; max: 48
+                                display: settingsStore.barHeight + "px"
+                                onStepped: (v) => settingsStore.barHeight = v
+                            }
+
+                            SectionLabel { text: "FONT FAMILY" }
+                            Rectangle {
+                                Layout.fillWidth: true
+                                implicitHeight: 44
+                                radius: 10
+                                color: "#1a1716"
+                                border.color: fontInput.activeFocus ? Theme.accentPrimary : Theme.borderSubtle
+                                border.width: 1
+                                TextInput {
+                                    id: fontInput
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 12
+                                    anchors.rightMargin: 12
+                                    verticalAlignment: TextInput.AlignVCenter
+                                    text: settingsStore.fontFamily
+                                    color: Theme.fg
+                                    font.family: Theme.font
+                                    font.pixelSize: Theme.fontSize.base
+                                    selectByMouse: true
+                                    clip: true
+                                    // Commit on Enter / focus loss, not per keystroke.
+                                    onEditingFinished: settingsStore.fontFamily = text
+                                }
+                            }
+                        }
+
                         // ---------- PLACEHOLDERS (filled in later phases) ----------
                         Text {
-                            visible: root.activeTab !== "general"
+                            visible: root.activeTab !== "general" && root.activeTab !== "appearance"
                             Layout.fillWidth: true
                             Layout.topMargin: 24
                             text: "Coming in a later phase"
