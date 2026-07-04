@@ -36,7 +36,7 @@ RowLayout {
     readonly property bool sleepInhibit: idleHyprOff || fullscreenApp || mediaPlaying
     // Master switch from Quick Actions ("Activity icons"); hides the whole
     // cluster when off, regardless of what's active.
-    readonly property bool enabled: Settings.activityIconsVisible
+    readonly property bool enabled: settingsStore.activityIconsVisible
     readonly property bool anyOn: enabled && (cameraOn || micOn || recording || remoteOn
                                   || sleepInhibit || immichOn || jellyfinOn)
     readonly property string sleepReason: {
