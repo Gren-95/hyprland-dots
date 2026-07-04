@@ -72,7 +72,7 @@ Item {
     function isToggleAction(key) { return allToggles.some(t => t.action === key); }
 
     // ============ Toggle state/description lookups ============
-    // Read by the SettingRow delegates; every branch reads notifiable
+    // Read by the tray-tile delegates; every branch reads notifiable
     // properties, so the bindings stay reactive.
     function toggleState(action) {
         switch (action) {
