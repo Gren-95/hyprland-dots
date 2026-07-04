@@ -1,12 +1,10 @@
-// Quick Actions overflow panel. Bar chevron opens a centered modal with
-// two sections: stateful toggles up top (with explicit on/off state),
+// Quick Actions overflow panel. Bar chevron opens a flyout hanging under it
+// with two sections: stateful toggles up top (with explicit on/off state),
 // then a 3-column grid of one-shot actions below.
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
-import Quickshell.Hyprland
 
 Item {
     id: actions
@@ -219,52 +217,43 @@ Item {
         active: qaHover.hovered && !actions.popupOpen
     }
 
-    PopupWindow {
+    BarFlyout {
         id: actionsPopup
-        anchor.window: actions.parentBar
-        anchor.rect.x: (actions.parentBar.width - implicitWidth) / 2
-        anchor.rect.y: (actions.parentBar.screen.height - implicitHeight) / 2
-        implicitWidth: 420
-        implicitHeight: panel.implicitHeight + 28
-        visible: actions.popupOpen
-        color: "transparent"
+        parentBar: actions.parentBar
+        anchorItem: actions
+        open: actions.popupOpen
+        pinned: actions.pinned
+        cardWidth: 420
+        cardHeight: panel.implicitHeight + 28
+        fillColor: Theme.bg
+        borderColor: Theme.border
+        onDismissed: actions.popupOpen = false
 
-        SproutBg { anchors.fill: parent; fillColor: Theme.bg; borderColor: Theme.border; showTail: false }
-
-        FocusScope {
-            anchors.fill: parent
-            focus: actions.popupOpen
-            scale: actions.popupOpen ? 1.0 : 0.95
-            opacity: actions.popupOpen ? 1.0 : 0.0
-            transformOrigin: Item.Center
-            Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-            Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-
-            Keys.onPressed: (e) => {
-                const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
-                if (e.key === Qt.Key_Escape) { actions.popupOpen = false; e.accepted = true; }
-                else if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
-                    actions.navigateNext(); e.accepted = true;
-                } else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
-                    actions.navigatePrev(); e.accepted = true;
-                } else if (e.key === Qt.Key_Right || e.key === Qt.Key_L || e.key === Qt.Key_Tab) {
-                    actions.cycle(e.modifiers & Qt.ShiftModifier ? -1 : 1); e.accepted = true;
-                } else if (e.key === Qt.Key_Left || e.key === Qt.Key_H) {
-                    actions.cycle(-1); e.accepted = true;
-                } else if (e.key === Qt.Key_Down || e.key === Qt.Key_J) {
-                    // Toggles are a single column → step 1. Action grid is
-                    // 3 columns → step 3. Branch on which section we're in.
-                    actions.cycle(actions.selectedIndex < actions.toggles.length ? 1 : 3);
-                    e.accepted = true;
-                } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
-                    actions.cycle(actions.selectedIndex < actions.toggles.length ? -1 : -3);
-                    e.accepted = true;
-                } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
-                    actions.activate(actions.selectedIndex); e.accepted = true;
-                }
+        onKeyPressed: (e) => {
+            const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
+            if (e.key === Qt.Key_Escape) { actions.popupOpen = false; e.accepted = true; }
+            else if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
+                actions.navigateNext(); e.accepted = true;
+            } else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
+                actions.navigatePrev(); e.accepted = true;
+            } else if (e.key === Qt.Key_Right || e.key === Qt.Key_L || e.key === Qt.Key_Tab) {
+                actions.cycle(e.modifiers & Qt.ShiftModifier ? -1 : 1); e.accepted = true;
+            } else if (e.key === Qt.Key_Left || e.key === Qt.Key_H) {
+                actions.cycle(-1); e.accepted = true;
+            } else if (e.key === Qt.Key_Down || e.key === Qt.Key_J) {
+                // Toggles are a single column → step 1. Action grid is
+                // 3 columns → step 3. Branch on which section we're in.
+                actions.cycle(actions.selectedIndex < actions.toggles.length ? 1 : 3);
+                e.accepted = true;
+            } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
+                actions.cycle(actions.selectedIndex < actions.toggles.length ? -1 : -3);
+                e.accepted = true;
+            } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
+                actions.activate(actions.selectedIndex); e.accepted = true;
             }
+        }
 
-            ColumnLayout {
+        ColumnLayout {
                 id: panel
                 anchors {
                     top: parent.top
@@ -353,13 +342,6 @@ Item {
                     }
                 }
             }
-        }
-    }
-
-    HyprlandFocusGrab {
-        active: actions.popupOpen && !actions.pinned
-        windows: [actionsPopup]
-        onCleared: actions.popupOpen = false
     }
 
     // Full-width toggle pill — leading icon (tinted square), label + description,
