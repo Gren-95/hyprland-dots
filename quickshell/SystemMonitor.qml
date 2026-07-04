@@ -85,6 +85,7 @@ Scope {
 
                     // ============ CPU card ============
                     StatCard {
+                        visible: settingsStore.sysmonShowCpu
                         glyph: "󰍛"
                         title: "PROCESSOR"
                         headline: root.data.cpu_pct.toFixed(0) + "%"
@@ -135,6 +136,7 @@ Scope {
 
                     // ============ Memory ============
                     StatCard {
+                        visible: settingsStore.sysmonShowRam
                         glyph: "󰧴"
                         title: "MEMORY"
                         headline: root.data.ram_used_gb.toFixed(1) + " GB"
@@ -146,6 +148,7 @@ Scope {
 
                     // ============ Storage (one row per mounted filesystem) ============
                     Text {
+                        visible: settingsStore.sysmonShowStorage
                         Layout.fillWidth: true
                         Layout.topMargin: Theme.spacing.sm
                         text: "STORAGE"
@@ -156,6 +159,7 @@ Scope {
                         font.bold: true
                     }
                     ColumnLayout {
+                        visible: settingsStore.sysmonShowStorage
                         Layout.fillWidth: true
                         Layout.topMargin: -4
                         spacing: 6
@@ -174,6 +178,7 @@ Scope {
 
                     // ============ Thermal chips ============
                     Text {
+                        visible: settingsStore.sysmonShowThermal
                         Layout.fillWidth: true
                         Layout.topMargin: Theme.spacing.sm
                         text: "THERMAL"
@@ -184,6 +189,7 @@ Scope {
                         font.bold: true
                     }
                     RowLayout {
+                        visible: settingsStore.sysmonShowThermal
                         Layout.fillWidth: true
                         Layout.topMargin: -4
                         spacing: Theme.spacing.sm

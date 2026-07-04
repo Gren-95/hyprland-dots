@@ -9,6 +9,8 @@ Singleton {
     property real fontScale: 1.0
     property string fontFamily: "FiraCode Nerd Font"
     property string accentPrimaryName: "blue"
+    property real animScale: 1.0    // 0 = animations off (instant)
+    property real radiusScale: 1.0
     // The highlight/selection accent — used for selected rows, focused
     // cards, active pills. Semantic accents (red=danger, green=ok, …) stay.
     readonly property color accentPrimary: {
@@ -82,10 +84,10 @@ Singleton {
         readonly property int xxl: 20
     }
     readonly property QtObject radius: QtObject {
-        readonly property int sm: 6
-        readonly property int md: 8
-        readonly property int lg: 12
-        readonly property int xl: 16
+        readonly property int sm: Math.round(6 * radiusScale)
+        readonly property int md: Math.round(8 * radiusScale)
+        readonly property int lg: Math.round(12 * radiusScale)
+        readonly property int xl: Math.round(16 * radiusScale)
     }
     readonly property QtObject height: QtObject {
         readonly property int chip:    22    // tiny pill (BtToggle, badges)
@@ -96,11 +98,11 @@ Singleton {
         readonly property int card:    56    // ProfileSelector cards
     }
 
-    // Animation
+    // Animation (scaled by the user's animScale; 0 disables)
     readonly property QtObject duration: QtObject {
-        readonly property int fast:   120   // micro: hover/colour ticks
-        readonly property int normal: 180   // standard: popup open/close, scale snaps
-        readonly property int slow:   240   // deliberate: workspace switches, big morphs
+        readonly property int fast:   Math.round(120 * animScale)   // micro: hover/colour ticks
+        readonly property int normal: Math.round(180 * animScale)   // standard: popup open/close, scale snaps
+        readonly property int slow:   Math.round(240 * animScale)   // deliberate: workspace switches, big morphs
     }
     readonly property QtObject easing: QtObject {
         readonly property int standard:    Easing.OutCubic      // most things

@@ -24,6 +24,8 @@ Scope {
     Binding { target: Theme; property: "fontScale";         value: settingsStore.fontScale }
     Binding { target: Theme; property: "fontFamily";        value: settingsStore.fontFamily }
     Binding { target: Theme; property: "accentPrimaryName"; value: settingsStore.accentPrimaryName }
+    Binding { target: Theme; property: "animScale";         value: settingsStore.animScale }
+    Binding { target: Theme; property: "radiusScale";       value: settingsStore.radiusScale }
 
     Notifications { id: notifService }
     IcsCalendar { id: cal }
@@ -73,7 +75,7 @@ Scope {
             Rectangle {
                 id: barRect
                 anchors.fill: parent
-                color: Theme.bgAlt
+                color: Qt.rgba(Theme.bgAlt.r, Theme.bgAlt.g, Theme.bgAlt.b, settingsStore.barOpacity)
                 radius: 0
                 border.width: 0
 
@@ -130,12 +132,15 @@ Scope {
                                 anchors.centerIn: parent
                                 spacing: Theme.spacing.md
                                 Text {
-                                    text: "  " + Qt.formatDate(clockTimer.now, "ddd, dd MMM")
+                                    text: "  " + Qt.formatDate(clockTimer.now, settingsStore.clockDateFormat)
                                     color: Theme.muted
                                     font { family: Theme.font; pixelSize: Theme.fontSize.base }
                                 }
                                 Text {
-                                    text: Qt.formatTime(clockTimer.now, "HH:mm")
+                                    text: Qt.formatTime(clockTimer.now,
+                                        settingsStore.clock24h
+                                            ? (settingsStore.clockShowSeconds ? "HH:mm:ss" : "HH:mm")
+                                            : (settingsStore.clockShowSeconds ? "h:mm:ss AP" : "h:mm AP"))
                                     color: "#f5f5f4"
                                     font { family: Theme.font; pixelSize: Theme.fontSize.md; bold: true }
                                 }
@@ -204,12 +209,13 @@ Scope {
 
                     WorkspaceStrip {
                         parentBar: bar
-                        glyphFn: workspaceGlyph
+                        glyphFn: settingsStore.workspaceGlyphs ? workspaceGlyph : ((id) => "" + id)
                     }
 
                     Item { width: 8 }
                     Text {
-                        Layout.maximumWidth: 400
+                        visible: settingsStore.windowTitleWidth > 0
+                        Layout.maximumWidth: settingsStore.windowTitleWidth
                         elide: Text.ElideRight
                         text: Hyprland.activeToplevel ? Hyprland.activeToplevel.title : ""
                         color: Theme.muted
@@ -377,6 +383,24 @@ Scope {
                             brightProc.startDetached();
                         }
                         Process { id: brightProc; command: [] }
+
+                        // Low-battery warning toast: fires once when dropping
+                        // below the threshold on battery power; re-arms after
+                        // charging or recovering 5% above it. 0 disables.
+                        property bool _warned: false
+                        readonly property int warnPct: settingsStore.batteryWarnPct
+                        onPctChanged: {
+                            if (warnPct <= 0) return;
+                            if (!charging && pct > 0 && pct <= warnPct && !_warned) {
+                                _warned = true;
+                                battWarnProc.command = ["notify-send", "-u", "critical",
+                                    "Battery low", pct + "% remaining"];
+                                battWarnProc.startDetached();
+                            } else if (charging || pct > warnPct + 5) {
+                                _warned = false;
+                            }
+                        }
+                        Process { id: battWarnProc; command: [] }
                     }
 
                     // Microphone (only when unmuted)

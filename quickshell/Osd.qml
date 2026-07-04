@@ -159,7 +159,7 @@ Scope {
             color: "transparent"
 
             anchors { bottom: true; left: true; right: true }
-            margins.bottom: 60
+            margins.bottom: settingsStore.osdBottomMargin
             implicitHeight: 120
             WlrLayershell.exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay

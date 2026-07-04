@@ -33,7 +33,7 @@ Scope {
             urgency: n.urgency,
             ref: n,
         };
-        activeList = [entry, ...activeList].slice(0, 5);
+        activeList = [entry, ...activeList].slice(0, settingsStore.toastMax);
         historyList = [entry, ...historyList].slice(0, maxHistory);
         if (!centerOpen) unreadCount += 1;
     }
@@ -94,9 +94,9 @@ Scope {
             // Anchor only top so the surface width matches stackCol exactly
             // (380 px) instead of spanning the screen. Clicks left/right of
             // the toast pass through to underlying windows.
-            anchors { top: true }
-            margins { top: 40 }
-            implicitWidth: 380
+            anchors { top: true; right: settingsStore.toastPosition === "right" }
+            margins { top: 40; right: settingsStore.toastPosition === "right" ? 12 : 0 }
+            implicitWidth: settingsStore.toastWidth
             implicitHeight: Math.max(1, stackCol.implicitHeight)
             color: "transparent"
             WlrLayershell.layer: WlrLayer.Overlay
@@ -109,7 +109,7 @@ Scope {
 
             ColumnLayout {
                 id: stackCol
-                width: 380
+                width: settingsStore.toastWidth
                 anchors.top: parent.top
                 spacing: 0
                 Repeater {
