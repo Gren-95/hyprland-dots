@@ -38,6 +38,7 @@ Item {
         { glyph: "󰋩", offGlyph: "󰋩", label: "Immich sync",    accent: "#f59e0b",           action: "immich" },
         { glyph: "󰝚", offGlyph: "󰝚", label: "Jellyfin sync",  accent: "#818cf8",           action: "jellyfin" },
         { glyph: "󰢹", offGlyph: "󰢹", label: "Remote access",  accent: Theme.accent.orange, action: "wayvnc" },
+        { glyph: "󰒃", offGlyph: "󰒃", label: "VPN",            accent: Theme.accent.purple, action: "tailscale" },
         { glyph: "󰎈", offGlyph: "󰎈", label: "Media keys",     accent: Theme.accent.purple, action: "mediakeys" },
         { glyph: "󰈈", offGlyph: "󰈉", label: "Activity icons", accent: Theme.accent.teal,   action: "activityicons" },
     ]
@@ -81,6 +82,7 @@ Item {
         case "immich":    return actions.immichOn;
         case "jellyfin":  return actions.jellyfinOn;
         case "wayvnc":    return actions.wayvncOn;
+        case "tailscale": return TailscaleService.running;
         case "mediakeys": return settingsStore.mediaKeysVisible;
         case "activityicons": return settingsStore.activityIconsVisible;
         }
@@ -93,6 +95,9 @@ Item {
         case "immich":    return actions.immichOn ? "Uploading photos hourly" : "Background sync stopped";
         case "jellyfin":  return actions.jellyfinOn ? "Syncing music every 2h" : "Background sync stopped";
         case "wayvnc":    return actions.wayvncOn ? "WayVNC server running on :5900" : "Remote access stopped";
+        case "tailscale": return TailscaleService.running
+            ? "Tailscale up" + (TailscaleService.tailnet ? " · " + TailscaleService.tailnet : "")
+            : "Tailscale down";
         case "mediakeys": return settingsStore.mediaKeysVisible ? "Prev / play / next in bar" : "Hidden";
         case "activityicons": return settingsStore.activityIconsVisible ? "Camera/mic/sync icons shown" : "Hidden";
         }
@@ -162,6 +167,9 @@ Item {
             actions.toggleInFlight = true;
             clearInFlightTimer.restart();
             wayvncToggleProc.startDetached();
+        } else if (entry.action === "tailscale") {
+            // TailscaleService refreshes itself ~800ms after toggling.
+            TailscaleService.toggle();
         } else if (entry.action === "mediakeys") {
             settingsStore.mediaKeysVisible = !settingsStore.mediaKeysVisible;
         } else if (entry.action === "activityicons") {
