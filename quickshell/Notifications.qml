@@ -17,6 +17,9 @@ Scope {
     property bool pinned: false
     property int unreadCount: 0
     property bool centerOpen: false
+    // Set by NotifBell so the center flyout hangs under the bar bell.
+    property var anchorBar: null
+    property var anchorItem: null
 
     function _push(n) {
         const entry = {
@@ -122,48 +125,16 @@ Scope {
         }
     }
 
-    // ============ Notification center: full-screen overlay listing history ============
-    Variants {
-        model: Quickshell.screens
-        PanelWindow {
-            id: centerWindow
-            required property var modelData
-            screen: modelData
-            visible: root.centerOpen
-            color: "transparent"
-            anchors { top: true; bottom: true; left: true; right: true }
-            WlrLayershell.exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: root.centerOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
-
-            Rectangle {
-                anchors.fill: parent
-                color: "#000000"
-                opacity: 0.45
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: root.closeCenter()
-                }
-            }
-
-            Rectangle {
-                id: panel
-                anchors.centerIn: parent
-                width: 560
-                height: 620
-                radius: Theme.radius.lg
-                color: Theme.bgAlt
-                border.color: Theme.borderStrong
-                border.width: 1
-                focus: root.centerOpen
-                scale: root.centerOpen ? 1.0 : 0.96
-                opacity: root.centerOpen ? 1.0 : 0.0
-                transformOrigin: Item.Center
-                Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-                Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-                Keys.onPressed: (e) => {
-                    if (e.key === Qt.Key_Escape) { root.closeCenter(); e.accepted = true; }
-                }
+    // ============ Notification center: flyout hanging under the bar bell ============
+    BarFlyout {
+        id: centerFlyout
+        parentBar: root.anchorBar
+        anchorItem: root.anchorItem
+        open: root.centerOpen && root.anchorBar !== null
+        cardWidth: 420
+        cardHeight: 620
+        borderColor: Theme.borderStrong
+        onDismissed: root.closeCenter()
 
                 ColumnLayout {
                     id: centerHeader
@@ -259,8 +230,6 @@ Scope {
                         }
                     }
                 }
-            }
-        }
     }
 
     component HistoryRow: Rectangle {

@@ -13,6 +13,12 @@ Item {
     scale: bellMa.pressed ? 0.88 : 1.0
     Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
 
+    // Anchor the notification-center flyout to this bell (also covers the
+    // Super+N global shortcut, which only calls toggleCenter()).
+    Component.onCompleted: {
+        if (bell.notifs) { bell.notifs.anchorBar = bell.parentBar; bell.notifs.anchorItem = bell; }
+    }
+
     // Ring the bell whenever the unread count climbs.
     property int _lastCount: 0
     Connections {
