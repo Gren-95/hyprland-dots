@@ -49,7 +49,7 @@ Scope {
     property var flyoutSizes: ({})             // flyout id -> { w, h } overrides
     property var barPlacement: ({})            // module id -> "bar"|"overflow"|"hidden"
     property var trayPlacement: ({})           // tray app id -> same
-    property var qaHidden: ({})                // quick-action key -> true (hidden)
+    property var qaPlacement: ({})             // quick-action key -> "bar"|"overflow"|"hidden"
 
     // Reactive flyout-geometry lookup (reads flyoutSizes, so bindings track it).
     function flyoutSize(id, dim, def) {
@@ -85,12 +85,15 @@ Scope {
         trayPlacement = m;
     }
 
-    // ===== Quick Actions item visibility =====
-    function qaVisible(key) { return !qaHidden[key]; }
-    function setQaVisible(key, vis) {
-        const m = Object.assign({}, qaHidden);
-        if (vis) delete m[key]; else m[key] = true;
-        qaHidden = m;
+    // ===== Quick Actions item placement =====
+    // Same states as bar items, but "overflow" (the default) means the
+    // Quick Actions panel itself; "bar" promotes the item to its own icon
+    // in the bar's right group.
+    function qaPlacementOf(key)     { return qaPlacement[key] ?? "overflow"; }
+    function setQaPlacement(key, p) {
+        const m = Object.assign({}, qaPlacement);
+        m[key] = p;
+        qaPlacement = m;
     }
 
     readonly property var _schema: [
@@ -110,7 +113,7 @@ Scope {
         { name: "flyoutSizes",          file: "flyout-sizes.json",      type: "json" },
         { name: "barPlacement",         file: "bar-placement.json",     type: "json" },
         { name: "trayPlacement",        file: "tray-placement.json",    type: "json" },
-        { name: "qaHidden",             file: "qa-hidden.json",         type: "json" },
+        { name: "qaPlacement",          file: "qa-placement.json",      type: "json" },
     ]
 
     readonly property string _dir: Quickshell.env("HOME") + "/.cache/quickshell/"

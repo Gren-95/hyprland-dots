@@ -470,9 +470,10 @@ Scope {
         }
     }
 
-    // Quick Actions item row: label + Show/Hide segmented control. Hidden
-    // entries disappear from the Quick Actions panel (their global
-    // shortcuts and Settings access stay available).
+    // Quick Actions item row — same three states as bar items: Bar promotes
+    // the item to its own bar icon, Tuck keeps it in the Quick Actions
+    // panel (default), Hide removes it everywhere (global shortcuts and
+    // Settings access stay available).
     component QaRow: Rectangle {
         id: qrow
         property string itemKey: ""
@@ -496,9 +497,13 @@ Scope {
                 elide: Text.ElideRight
             }
             SegmentedControl {
-                options: [ { id: "show", label: "Show" }, { id: "hide", label: "Hide" } ]
-                value: settingsStore.qaVisible(qrow.itemKey) ? "show" : "hide"
-                onSelected: (v) => settingsStore.setQaVisible(qrow.itemKey, v === "show")
+                options: [
+                    { id: "bar",      label: "Bar" },
+                    { id: "overflow", label: "Tuck" },
+                    { id: "hidden",   label: "Hide" },
+                ]
+                value: settingsStore.qaPlacementOf(qrow.itemKey)
+                onSelected: (v) => settingsStore.setQaPlacement(qrow.itemKey, v)
             }
         }
     }

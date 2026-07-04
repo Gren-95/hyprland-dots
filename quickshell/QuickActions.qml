@@ -56,11 +56,20 @@ Item {
         { glyph: "󰒓", label: "Settings",     accent: Theme.accent.slate, action: "settings" },
     ]
 
-    // What actually renders: entries not hidden via the Settings Bar tab.
+    // What renders in the panel: entries placed in "overflow" (the default).
+    // "bar" entries are promoted to their own BarIcons (rendered by
+    // shell.qml from promotedItems); "hidden" entries appear nowhere.
     // Keyboard nav and activate() index into these filtered lists, so
-    // hiding entries keeps selection and activation consistent.
-    readonly property var toggles: allToggles.filter(t => settingsStore.qaVisible(t.action))
-    readonly property var oneShots: allOneShots.filter(t => settingsStore.qaVisible(t.action))
+    // placement changes keep selection and activation consistent.
+    readonly property var toggles: allToggles.filter(t => settingsStore.qaPlacementOf(t.action) === "overflow")
+    readonly property var oneShots: allOneShots.filter(t => settingsStore.qaPlacementOf(t.action) === "overflow")
+    readonly property var promotedItems: allToggles.concat(allOneShots)
+        .filter(t => settingsStore.qaPlacementOf(t.action) === "bar")
+    // Promoted TOGGLES need daemon state even while the panel is closed
+    // (their bar icons show on/off), so the probe keeps polling slowly.
+    readonly property bool hasPromotedToggles: allToggles.some(t => settingsStore.qaPlacementOf(t.action) === "bar")
+    // Whether an action key belongs to the toggle family (drives bar-icon state color).
+    function isToggleAction(key) { return allToggles.some(t => t.action === key); }
 
     // ============ Toggle state/description lookups ============
     // Read by the SettingRow delegates; every branch reads notifiable
@@ -118,14 +127,16 @@ Item {
 
     function activate(idx) {
         if (idx < 0 || idx >= totalItems) return;
-        let entry;
-        let isToggle = false;
-        if (idx < toggles.length) {
-            entry = toggles[idx];
-            isToggle = true;
-        } else {
-            entry = oneShots[idx - toggles.length];
-        }
+        const entry = idx < toggles.length ? toggles[idx] : oneShots[idx - toggles.length];
+        runEntry(entry);
+    }
+    // Run an action by its key — used by the promoted bar icons, which
+    // bypass the panel entirely.
+    function performAction(key) {
+        const entry = allToggles.concat(allOneShots).find(t => t.action === key);
+        if (entry) runEntry(entry);
+    }
+    function runEntry(entry) {
         if (entry.action === "dnd") {
             notifService.dnd = !notifService.dnd;
         } else if (entry.action === "idle") {
@@ -247,8 +258,10 @@ Item {
         }
     }
     Timer {
-        running: actions.popupOpen && !actions.toggleInFlight
-        interval: 1500
+        // Fast poll while the panel is open; slow background poll while any
+        // toggle is promoted to a bar icon (its on/off state must stay live).
+        running: (actions.popupOpen || actions.hasPromotedToggles) && !actions.toggleInFlight
+        interval: actions.popupOpen ? 1500 : 10000
         repeat: true
         triggeredOnStart: true
         onTriggered: daemonCheckProc.running = true
