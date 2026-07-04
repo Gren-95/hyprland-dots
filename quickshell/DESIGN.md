@@ -64,7 +64,7 @@ while the VPN tab is open.
 
 ### `Settings.qml` (instantiated as `settingsStore`)
 Typed schema-driven settings engine. One tiny file per setting under
-`~/.cache/quickshell/`, written via `FileView.setText` (atomic, watched).
+`~/.config/quickshell/settings/` (gitignored), written via `FileView.setText` (atomic, watched).
 To add a setting: declare a typed property with its default + one `_schema`
 row (`{ name, file, type }`, type ∈ bool/int/real/string/json). External
 edits load into the property; property writes persist. Absent file = QML

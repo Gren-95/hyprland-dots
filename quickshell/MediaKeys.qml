@@ -115,7 +115,7 @@ Item {
             }
             Rectangle {
                 // Separator between count and title (only when both shown).
-                visible: mk.hasMultiple && mk.trackTitle !== ""
+                visible: mk.hasMultiple && mk.trackTitle !== "" && settingsStore.mediaTitleWidth > 0
                 Layout.alignment: Qt.AlignVCenter
                 implicitWidth: 3; implicitHeight: 3
                 radius: 1.5
@@ -125,9 +125,9 @@ Item {
             // Track title — only shown when there's metadata. Truncates so
             // the chip stays bounded.
             Text {
-                Layout.maximumWidth: 260
+                Layout.maximumWidth: settingsStore.mediaTitleWidth
                 Layout.alignment: Qt.AlignVCenter
-                visible: mk.trackTitle !== ""
+                visible: mk.trackTitle !== "" && settingsStore.mediaTitleWidth > 0
                 text: mk.trackTitle
                 color: mk.isPlaying ? Theme.fg : Theme.fgMuted
                 font.family: Theme.font
@@ -138,7 +138,7 @@ Item {
 
             // Separator dot between title and controls.
             Rectangle {
-                visible: mk.trackTitle !== ""
+                visible: mk.trackTitle !== "" && settingsStore.mediaTitleWidth > 0
                 Layout.alignment: Qt.AlignVCenter
                 implicitWidth: 3; implicitHeight: 3
                 radius: 1.5

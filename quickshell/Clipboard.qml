@@ -29,7 +29,7 @@ Scope {
     }
 
     readonly property int rowSpacing: 2
-    function _rowHeight(item) { return item && item.isImage ? 76 : 44; }
+    function _rowHeight(item) { return item && item.isImage && settingsStore.clipboardThumbs ? 76 : 44; }
     function _rowYAt(idx) {
         let y = 0;
         for (let i = 0; i < idx && i < filtered.length; i++) {
@@ -342,7 +342,7 @@ Scope {
         signal picked()
         signal hovered()
         signal removed()
-        implicitHeight: row.entry && row.entry.isImage ? 76 : 48
+        implicitHeight: row.entry && row.entry.isImage && settingsStore.clipboardThumbs ? 76 : 48
         radius: 8
         color: row.highlighted ? "#3b3531" : (hover.containsMouse ? "#262220" : "transparent")
 
@@ -362,7 +362,7 @@ Scope {
             onExited: row.thumbReady = true
         }
         Component.onCompleted: {
-            if (row.entry && row.entry.isImage) thumbProc.running = true;
+            if (row.entry && row.entry.isImage && settingsStore.clipboardThumbs) thumbProc.running = true;
         }
 
         RowLayout {
@@ -382,7 +382,7 @@ Scope {
 
             // Image thumbnail
             Rectangle {
-                visible: row.entry && row.entry.isImage
+                visible: row.entry && row.entry.isImage && settingsStore.clipboardThumbs
                 Layout.preferredWidth: 84
                 Layout.preferredHeight: 60
                 radius: 4
@@ -428,7 +428,7 @@ Scope {
                 }
                 Text {
                     Layout.fillWidth: true
-                    visible: row.entry && row.entry.isImage
+                    visible: row.entry && row.entry.isImage && settingsStore.clipboardThumbs
                     text: row.entry && row.entry.isImage
                         ? (row.entry.dims ? row.entry.dims + "  •  " + row.entry.size : row.entry.size)
                         : ""

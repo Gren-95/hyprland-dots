@@ -115,7 +115,51 @@ Scope {
 
                             // Bar-widget visibility lives in the Bar tab
                             // (Media keys / Activity icons placement rows).
+                            SectionLabel { text: "CLOCK" }
+                            BoolRow {
+                                Layout.fillWidth: true
+                                label: "24-hour time"
+                                on: settingsStore.clock24h
+                                onToggled: (v) => settingsStore.clock24h = v
+                            }
+                            BoolRow {
+                                Layout.fillWidth: true
+                                label: "Show seconds"
+                                on: settingsStore.clockShowSeconds
+                                onToggled: (v) => settingsStore.clockShowSeconds = v
+                            }
+                            PathField {
+                                Layout.fillWidth: true
+                                text: settingsStore.clockDateFormat
+                                placeholder: "ddd, dd MMM  (Qt date format)"
+                                onCommitted: (t) => settingsStore.clockDateFormat = t
+                            }
+
                             SectionLabel { text: "NOTIFICATIONS" }
+                            ChoiceRow {
+                                Layout.fillWidth: true
+                                label: "Toast position"
+                                options: [ { id: "center", label: "Center" }, { id: "right", label: "Right" } ]
+                                value: settingsStore.toastPosition
+                                onSelected: (v) => settingsStore.toastPosition = v
+                            }
+                            StepperRow {
+                                Layout.fillWidth: true
+                                label: "Toast width"
+                                value: settingsStore.toastWidth
+                                step: 20; min: 300; max: 560
+                                display: settingsStore.toastWidth + "px"
+                                onStepped: (v) => settingsStore.toastWidth = v
+                            }
+                            StepperRow {
+                                Layout.fillWidth: true
+                                label: "Visible toasts"
+                                desc: "Stacked at once; the rest queue in history"
+                                value: settingsStore.toastMax
+                                step: 1; min: 1; max: 10
+                                display: String(settingsStore.toastMax)
+                                onStepped: (v) => settingsStore.toastMax = v
+                            }
                             StepperRow {
                                 Layout.fillWidth: true
                                 label: "Toast timeout"
@@ -133,6 +177,17 @@ Scope {
                                 step: 10; min: 10; max: 200
                                 display: String(settingsStore.notifHistoryCap)
                                 onStepped: (v) => settingsStore.notifHistoryCap = v
+                            }
+
+                            SectionLabel { text: "POWER" }
+                            StepperRow {
+                                Layout.fillWidth: true
+                                label: "Low battery warning"
+                                desc: "Critical toast below this level; 0 disables"
+                                value: settingsStore.batteryWarnPct
+                                step: 5; min: 0; max: 40
+                                display: settingsStore.batteryWarnPct > 0 ? settingsStore.batteryWarnPct + "%" : "off"
+                                onStepped: (v) => settingsStore.batteryWarnPct = v
                             }
                         }
 
@@ -308,6 +363,40 @@ Scope {
                                 display: settingsStore.barHeight + "px"
                                 onStepped: (v) => settingsStore.barHeight = v
                             }
+                            StepperRow {
+                                Layout.fillWidth: true
+                                label: "Bar opacity"
+                                value: Math.round(settingsStore.barOpacity * 100)
+                                step: 10; min: 30; max: 100
+                                display: Math.round(settingsStore.barOpacity * 100) + "%"
+                                onStepped: (v) => settingsStore.barOpacity = v / 100
+                            }
+                            StepperRow {
+                                Layout.fillWidth: true
+                                label: "Animation speed"
+                                desc: "0% disables animations entirely"
+                                value: Math.round(settingsStore.animScale * 100)
+                                step: 25; min: 0; max: 150
+                                display: Math.round(settingsStore.animScale * 100) + "%"
+                                onStepped: (v) => settingsStore.animScale = v / 100
+                            }
+                            StepperRow {
+                                Layout.fillWidth: true
+                                label: "Corner radius"
+                                value: Math.round(settingsStore.radiusScale * 100)
+                                step: 10; min: 50; max: 150
+                                display: Math.round(settingsStore.radiusScale * 100) + "%"
+                                onStepped: (v) => settingsStore.radiusScale = v / 100
+                            }
+                            StepperRow {
+                                Layout.fillWidth: true
+                                label: "Window title width"
+                                desc: "Active-window title in the bar; 0 hides it"
+                                value: settingsStore.windowTitleWidth
+                                step: 100; min: 0; max: 800
+                                display: settingsStore.windowTitleWidth > 0 ? settingsStore.windowTitleWidth + "px" : "off"
+                                onStepped: (v) => settingsStore.windowTitleWidth = v
+                            }
 
                             SectionLabel { text: "FONT FAMILY" }
                             Rectangle {
@@ -378,6 +467,58 @@ Scope {
                                 display: settingsStore.calendarFetchInterval + "m"
                                 onStepped: (v) => settingsStore.calendarFetchInterval = v
                             }
+                            ChoiceRow {
+                                Layout.fillWidth: true
+                                label: "Week starts on"
+                                options: [ { id: "mon", label: "Monday" }, { id: "sun", label: "Sunday" } ]
+                                value: settingsStore.weekStartMonday ? "mon" : "sun"
+                                onSelected: (v) => settingsStore.weekStartMonday = (v === "mon")
+                            }
+                            StepperRow {
+                                Layout.fillWidth: true
+                                label: "OSD position"
+                                desc: "Distance from the bottom edge"
+                                value: settingsStore.osdBottomMargin
+                                step: 20; min: 20; max: 400
+                                display: settingsStore.osdBottomMargin + "px"
+                                onStepped: (v) => settingsStore.osdBottomMargin = v
+                            }
+                            StepperRow {
+                                Layout.fillWidth: true
+                                label: "Media chip title"
+                                desc: "Track title width in the bar; 0 = icons only"
+                                value: settingsStore.mediaTitleWidth
+                                step: 40; min: 0; max: 480
+                                display: settingsStore.mediaTitleWidth > 0 ? settingsStore.mediaTitleWidth + "px" : "off"
+                                onStepped: (v) => settingsStore.mediaTitleWidth = v
+                            }
+                            BoolRow {
+                                Layout.fillWidth: true
+                                label: "Launcher calculator"
+                                desc: "Inline = math row in Spotlight"
+                                on: settingsStore.spotlightCalc
+                                onToggled: (v) => settingsStore.spotlightCalc = v
+                            }
+                            BoolRow {
+                                Layout.fillWidth: true
+                                label: "Clipboard thumbnails"
+                                desc: "Render image previews in history"
+                                on: settingsStore.clipboardThumbs
+                                onToggled: (v) => settingsStore.clipboardThumbs = v
+                            }
+                            BoolRow {
+                                Layout.fillWidth: true
+                                label: "Workspace icons"
+                                desc: "Glyphs in the workspace strip; off = numbers"
+                                on: settingsStore.workspaceGlyphs
+                                onToggled: (v) => settingsStore.workspaceGlyphs = v
+                            }
+
+                            SectionLabel { text: "SYSTEM MONITOR CARDS" }
+                            BoolRow { Layout.fillWidth: true; label: "Processor"; on: settingsStore.sysmonShowCpu;     onToggled: (v) => settingsStore.sysmonShowCpu = v }
+                            BoolRow { Layout.fillWidth: true; label: "Memory";    on: settingsStore.sysmonShowRam;     onToggled: (v) => settingsStore.sysmonShowRam = v }
+                            BoolRow { Layout.fillWidth: true; label: "Storage";   on: settingsStore.sysmonShowStorage; onToggled: (v) => settingsStore.sysmonShowStorage = v }
+                            BoolRow { Layout.fillWidth: true; label: "Thermal";   on: settingsStore.sysmonShowThermal; onToggled: (v) => settingsStore.sysmonShowThermal = v }
 
                             SectionLabel { text: "CALENDAR URL" }
                             PathField {
@@ -420,6 +561,95 @@ Scope {
 
                     }
                 }
+            }
+        }
+    }
+
+    // Boolean setting row: label + description + On/Off control.
+    component BoolRow: Rectangle {
+        id: brow
+        property string label: ""
+        property string desc: ""
+        property bool on: false
+        signal toggled(bool v)
+        implicitHeight: 44
+        radius: 10
+        color: "#1a1716"
+        border.color: Theme.borderSubtle
+        border.width: 1
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 12
+            anchors.rightMargin: 8
+            spacing: Theme.spacing.md
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 1
+                Text {
+                    text: brow.label
+                    color: Theme.fgDim
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.base
+                }
+                Text {
+                    Layout.fillWidth: true
+                    visible: brow.desc !== ""
+                    text: brow.desc
+                    color: Theme.mutedDeep
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.xs
+                    elide: Text.ElideRight
+                }
+            }
+            SegmentedControl {
+                options: [ { id: "on", label: "On" }, { id: "off", label: "Off" } ]
+                value: brow.on ? "on" : "off"
+                onSelected: (v) => brow.toggled(v === "on")
+            }
+        }
+    }
+
+    // Multi-choice setting row: label + description + segmented options.
+    component ChoiceRow: Rectangle {
+        id: crow
+        property string label: ""
+        property string desc: ""
+        property var options: []
+        property string value: ""
+        signal selected(string id)
+        implicitHeight: 44
+        radius: 10
+        color: "#1a1716"
+        border.color: Theme.borderSubtle
+        border.width: 1
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 12
+            anchors.rightMargin: 8
+            spacing: Theme.spacing.md
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 1
+                Text {
+                    text: crow.label
+                    color: Theme.fgDim
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.base
+                }
+                Text {
+                    Layout.fillWidth: true
+                    visible: crow.desc !== ""
+                    text: crow.desc
+                    color: Theme.mutedDeep
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.xs
+                    elide: Text.ElideRight
+                }
+            }
+            SegmentedControl {
+                options: crow.options
+                value: crow.value
+                onSelected: (v) => crow.selected(v)
             }
         }
     }

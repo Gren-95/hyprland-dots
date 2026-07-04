@@ -50,6 +50,27 @@ Scope {
     property var barPlacement: ({})            // module id -> "bar"|"overflow"|"hidden"
     property var trayPlacement: ({})           // tray app id -> same
     property var qaPlacement: ({})             // quick-action key -> "bar"|"overflow"|"hidden"
+    property bool clock24h: true
+    property bool clockShowSeconds: false
+    property string clockDateFormat: "ddd, dd MMM"
+    property real animScale: 1.0               // multiplies Theme.duration; 0 = instant
+    property real radiusScale: 1.0             // multiplies Theme.radius
+    property real barOpacity: 1.0
+    property int batteryWarnPct: 15            // low-battery toast threshold; 0 = off
+    property string toastPosition: "center"    // "center" | "right"
+    property int toastMax: 5                   // visible toast stack cap
+    property int toastWidth: 380
+    property bool weekStartMonday: true
+    property int windowTitleWidth: 400         // bar window-title cap; 0 = hidden
+    property int osdBottomMargin: 60
+    property int mediaTitleWidth: 260          // media chip track title; 0 = icons only
+    property bool sysmonShowCpu: true
+    property bool sysmonShowRam: true
+    property bool sysmonShowStorage: true
+    property bool sysmonShowThermal: true
+    property bool workspaceGlyphs: true        // icons vs plain numbers in the strip
+    property bool spotlightCalc: true          // inline calculator row
+    property bool clipboardThumbs: true        // image thumbnails in history
 
     // Reactive flyout-geometry lookup (reads flyoutSizes, so bindings track it).
     function flyoutSize(id, dim, def) {
@@ -114,9 +135,33 @@ Scope {
         { name: "barPlacement",         file: "bar-placement.json",     type: "json" },
         { name: "trayPlacement",        file: "tray-placement.json",    type: "json" },
         { name: "qaPlacement",          file: "qa-placement.json",      type: "json" },
+        { name: "clock24h",             file: "clock-24h",              type: "bool" },
+        { name: "clockShowSeconds",     file: "clock-seconds",          type: "bool" },
+        { name: "clockDateFormat",      file: "clock-date-format",      type: "string" },
+        { name: "animScale",            file: "anim-scale",             type: "real" },
+        { name: "radiusScale",          file: "radius-scale",           type: "real" },
+        { name: "barOpacity",           file: "bar-opacity",            type: "real" },
+        { name: "batteryWarnPct",       file: "battery-warn-pct",       type: "int"  },
+        { name: "toastPosition",        file: "toast-position",         type: "string" },
+        { name: "toastMax",             file: "toast-max",              type: "int"  },
+        { name: "toastWidth",           file: "toast-width",            type: "int"  },
+        { name: "weekStartMonday",      file: "week-start-monday",      type: "bool" },
+        { name: "windowTitleWidth",     file: "window-title-width",     type: "int"  },
+        { name: "osdBottomMargin",      file: "osd-bottom-margin",      type: "int"  },
+        { name: "mediaTitleWidth",      file: "media-title-width",      type: "int"  },
+        { name: "sysmonShowCpu",        file: "sysmon-show-cpu",        type: "bool" },
+        { name: "sysmonShowRam",        file: "sysmon-show-ram",        type: "bool" },
+        { name: "sysmonShowStorage",    file: "sysmon-show-storage",    type: "bool" },
+        { name: "sysmonShowThermal",    file: "sysmon-show-thermal",    type: "bool" },
+        { name: "workspaceGlyphs",      file: "workspace-glyphs",       type: "bool" },
+        { name: "spotlightCalc",        file: "spotlight-calc",         type: "bool" },
+        { name: "clipboardThumbs",      file: "clipboard-thumbs",       type: "bool" },
     ]
 
-    readonly property string _dir: Quickshell.env("HOME") + "/.cache/quickshell/"
+    // Settings live under ~/.config (they're user prefs, not cache — a
+    // cache wipe must not eat the bar layout). The dir is gitignored in
+    // the dotfiles repo, like calendar.url.
+    readonly property string _dir: Quickshell.env("HOME") + "/.config/quickshell/settings/"
 
     function _parse(type, text) {
         switch (type) {

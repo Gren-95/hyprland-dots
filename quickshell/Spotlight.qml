@@ -15,6 +15,7 @@ Scope {
     property var anchorItem: null
 
     readonly property string calcExpr: {
+        if (!settingsStore.spotlightCalc) return "";
         const q = root.query.trim();
         if (q.startsWith("=")) return q.slice(1).trim();
         // auto-detect: has at least one digit and one operator

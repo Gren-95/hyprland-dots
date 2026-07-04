@@ -221,14 +221,17 @@ Scope {
                         rowSpacing: 2
 
                         Repeater {
-                            model: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                            model: settingsStore.weekStartMonday
+                                ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                                : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
                             delegate: Text {
                                 required property var modelData
                                 required property int index
                                 Layout.fillWidth: true
                                 Layout.alignment: Qt.AlignHCenter
                                 text: modelData
-                                color: index >= 5 ? Theme.disabled : Theme.mutedDeep
+                                color: (settingsStore.weekStartMonday ? index >= 5 : (index === 0 || index === 6))
+                                    ? Theme.disabled : Theme.mutedDeep
                                 font.family: Theme.font
                                 font.pixelSize: Theme.fontSize.sm
                                 font.bold: true
@@ -243,13 +246,15 @@ Scope {
                                 readonly property date cellDate: {
                                     const first = new Date(root.selectedDate.getFullYear(),
                                         root.selectedDate.getMonth(), 1);
-                                    const offset = (first.getDay() + 6) % 7;
+                                    const offset = settingsStore.weekStartMonday
+                                        ? (first.getDay() + 6) % 7 : first.getDay();
                                     return new Date(first.getFullYear(), first.getMonth(),
                                         1 - offset + index);
                                 }
                                 day: cellDate.getDate()
                                 outsideMonth: cellDate.getMonth() !== root.selectedDate.getMonth()
-                                isWeekend: index % 7 >= 5
+                                isWeekend: settingsStore.weekStartMonday
+                                    ? index % 7 >= 5 : (index % 7 === 0 || index % 7 === 6)
                                 isToday: {
                                     const t = new Date();
                                     return cellDate.getFullYear() === t.getFullYear() &&
