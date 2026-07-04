@@ -113,26 +113,8 @@ Scope {
                             Layout.fillWidth: true
                             spacing: Theme.spacing.sm
 
-                            SectionLabel { text: "BAR WIDGETS" }
-                            SettingRow {
-                                Layout.fillWidth: true
-                                glyph: "󰎈"; offGlyph: "󰎈"
-                                accent: Theme.accent.purple
-                                label: "Media keys"
-                                desc: on ? "Prev / play / next in bar" : "Hidden"
-                                on: settingsStore.mediaKeysVisible
-                                onPicked: settingsStore.mediaKeysVisible = !settingsStore.mediaKeysVisible
-                            }
-                            SettingRow {
-                                Layout.fillWidth: true
-                                glyph: "󰈈"; offGlyph: "󰈉"
-                                accent: Theme.accent.teal
-                                label: "Activity icons"
-                                desc: on ? "Camera/mic/sync icons shown" : "Hidden"
-                                on: settingsStore.activityIconsVisible
-                                onPicked: settingsStore.activityIconsVisible = !settingsStore.activityIconsVisible
-                            }
-
+                            // Bar-widget visibility lives in the Bar tab
+                            // (Media keys / Activity icons placement rows).
                             SectionLabel { text: "NOTIFICATIONS" }
                             StepperRow {
                                 Layout.fillWidth: true
