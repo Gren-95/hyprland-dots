@@ -9,7 +9,7 @@ add a new modal" or "where do I change X" — not a tutorial.
 |---|---|---|
 | **Singletons** | `Theme.qml`, `Hypr.qml`, `TailscaleService.qml` | Design tokens (with user-tunable knobs), hyprctl dispatch helper, Tailscale CLI wrapper |
 | **Root stores** | `Settings.qml` (`settingsStore`), `PopupManager.qml` (`popupManager`) | Persisted user settings + single-open flyout policy. Instantiated FIRST in shell.qml and resolved via the id scope chain — NOT singletons (see warning below) |
-| **Primitives** | `BarFlyout.qml`, `PopupCard.qml`, `TabStrip.qml`, `SproutBg.qml`, `SettingRow.qml`, `SegmentedControl.qml` | The flyout envelope, the top-drawer envelope, the speech-bubble shape, settings controls |
+| **Primitives** | `BarFlyout.qml`, `PopupCard.qml`, `TabStrip.qml`, `SproutBg.qml`, `SegmentedControl.qml` | The flyout envelope, the top-drawer envelope, the speech-bubble shape, settings controls |
 | **Bar items** | `BarIcon.qml`, `BarSep.qml`, `WorkspaceStrip.qml`, `MediaKeys.qml`, `OverflowChevron.qml` | Leaf widgets that sit on the top bar |
 | **Bar modules** | `ConnectivityModule.qml`, `AudioPowerModule.qml`, `NotifBell.qml`, `QuickActions.qml` | Bar entry points that open their own flyout |
 | **Flyout modals** | `Spotlight.qml`, `Clipboard.qml`, `Keybinds.qml`, `IcsCalendar.qml`, `Notifications.qml`, `SystemMonitor.qml`, `WallpaperPicker.qml`, `SettingsPanel.qml` | Scope-level services whose UI opens as a flyout under a bar item |
@@ -84,8 +84,8 @@ force-closes the current one.
 
 ### `SettingsPanel.qml` (`quickshell:settings`, Super+,)
 Tabbed settings flyout under the Quick Actions chevron (also opened from
-the gear tile). Tabs: **General** (bar widgets, notifications), **Bar**
-(per-item Bar/Tuck/Hide placement incl. live tray apps), **Appearance**
+the gear tile). Tabs: **General** (clock, notifications, power), **Bar**
+(bar items, Quick Actions items, live tray apps — Bar/Tuck/Hide), **Appearance**
 (highlight accent swatches, font scale, bar height, font family),
 **Tuning** (module knobs, calendar URL, wallpaper dir, flyout sizes).
 
