@@ -157,12 +157,13 @@ Scope {
     }
 
     // ====== Popup ======
-    BarPopupCard {
+    BarFlyout {
         id: popup
         parentBar: root.anchorBar
+        anchorItem: root.anchorItem
         open: root.open && root.anchorBar !== null
-        cardWidth: 1000
-        cardHeight: 560
+        cardWidth: 400
+        cardHeight: 660
         pinned: root.pinned
         borderColor: Theme.mutedDeep
         onDismissed: root.close()
@@ -184,32 +185,14 @@ Scope {
             else if (e.key === Qt.Key_T || e.key === Qt.Key_Home) { root.today(); e.accepted = true; }
         }
 
+            // Stacked flyout layout: month header + grid up top, then the
+            // selected day's events below (Windows clock-flyout style).
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: Theme.spacing.xl
+                anchors.margins: Theme.spacing.lg
                 spacing: Theme.spacing.md
 
-                Text {
-                    Layout.fillWidth: true
-                    text: "Calendar"
-                    color: Theme.fg
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.md
-                    font.bold: true
-                    horizontalAlignment: Text.AlignHCenter
-                }
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                spacing: Theme.spacing.xl
-
-                // ====== Left pane: month grid ======
-                ColumnLayout {
-                    Layout.preferredWidth: 280
-                    Layout.fillHeight: true
-                    spacing: Theme.spacing.md
-
+                    // ====== Month header ======
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.spacing.md
@@ -231,18 +214,8 @@ Scope {
                         NavBtn { glyph: "›"; onClicked: root.nextMonth() }
                     }
 
-                    Text {
-                        text: "CALENDAR"
-                        color: Theme.mutedDeep
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.xs
-                        font.letterSpacing: 1
-                        font.bold: true
-                    }
-
                     GridLayout {
                         Layout.fillWidth: true
-                        Layout.topMargin: -8
                         columns: 7
                         columnSpacing: 2
                         rowSpacing: 2
@@ -297,42 +270,20 @@ Scope {
                         }
                     }
 
-                    Item { Layout.fillHeight: true }
-
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "←/→ day · ↑/↓ week · PgUp/PgDn month · T today · Esc close"
-                        color: Theme.disabled
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.xs
+                    // ====== Divider between grid and events ======
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: 1
+                        color: Theme.border
                     }
-                }
 
-                // Divider
-                Rectangle {
-                    Layout.preferredWidth: 1
-                    Layout.fillHeight: true
-                    color: Theme.border
-                }
-
-                // ====== Right pane: events for selected day + upcoming ======
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    spacing: Theme.spacing.md
-
+                    // ====== Events for selected day + upcoming ======
                     Text {
-                        text: Qt.formatDate(root.selectedDate, "dddd")
+                        text: Qt.formatDate(root.selectedDate, "dddd, d MMMM yyyy")
                         color: Theme.fg
                         font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.lg
+                        font.pixelSize: Theme.fontSize.md
                         font.bold: true
-                    }
-                    Text {
-                        text: Qt.formatDate(root.selectedDate, "d MMMM yyyy")
-                        color: Theme.muted
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.base
                     }
 
                     Flickable {
@@ -397,8 +348,14 @@ Scope {
                             }
                         }
                     }
-                }
-            }
+
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: "←/→ day · ↑/↓ week · PgUp/PgDn month · T today · Esc close"
+                        color: Theme.disabled
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize.xs
+                    }
             }
         }
 
