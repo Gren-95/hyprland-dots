@@ -41,6 +41,24 @@ Scope {
     property string fontFamily: "FiraCode Nerd Font"
     property int barHeight: 36
     property string accentPrimaryName: "blue"  // Theme.accentPrimary (highlights)
+    property int spotlightCap: 60              // launcher results shown
+    property int osdDuration: 1500             // ms the volume/brightness OSD stays
+    property int sysmonInterval: 1500          // ms between system-monitor refreshes
+    property int calendarFetchInterval: 10     // minutes between ICS fetches
+    property string wallpaperDir: Quickshell.env("HOME") + "/Pictures/wallpapers"
+    property var flyoutSizes: ({})             // flyout id -> { w, h } overrides
+
+    // Reactive flyout-geometry lookup (reads flyoutSizes, so bindings track it).
+    function flyoutSize(id, dim, def) {
+        const e = flyoutSizes[id];
+        return (e && e[dim]) ? e[dim] : def;
+    }
+    function setFlyoutSize(id, dim, v) {
+        const m = JSON.parse(JSON.stringify(flyoutSizes));
+        if (!m[id]) m[id] = {};
+        m[id][dim] = v;
+        flyoutSizes = m;   // reassign — never mutate in place
+    }
 
     readonly property var _schema: [
         { name: "mediaKeysVisible",     file: "media-keys.enabled",     type: "bool" },
@@ -51,6 +69,12 @@ Scope {
         { name: "fontFamily",           file: "font-family",            type: "string" },
         { name: "barHeight",            file: "bar-height",             type: "int"  },
         { name: "accentPrimaryName",    file: "accent-primary",         type: "string" },
+        { name: "spotlightCap",         file: "spotlight-cap",          type: "int"  },
+        { name: "osdDuration",          file: "osd-duration",           type: "int"  },
+        { name: "sysmonInterval",       file: "sysmon-interval",        type: "int"  },
+        { name: "calendarFetchInterval", file: "calendar-fetch-interval", type: "int" },
+        { name: "wallpaperDir",         file: "wallpaper-dir",          type: "string" },
+        { name: "flyoutSizes",          file: "flyout-sizes.json",      type: "json" },
     ]
 
     readonly property string _dir: Quickshell.env("HOME") + "/.cache/quickshell/"

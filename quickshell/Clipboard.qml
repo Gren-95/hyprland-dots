@@ -123,8 +123,8 @@ Scope {
         parentBar: root.anchorBar
         anchorItem: root.anchorItem
         open: root.open && root.anchorBar !== null
-        cardWidth: 560
-        cardHeight: 620
+        cardWidth: settingsStore.flyoutSize("clipboard", "w", 560)
+        cardHeight: settingsStore.flyoutSize("clipboard", "h", 620)
         onDismissed: root.close()
         onKeyPressed: (e) => {
             const n = root.filtered.length;

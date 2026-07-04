@@ -272,10 +272,10 @@ Item {
         parentBar: ap.parentBar
         anchorItem: ap._openAnchor ?? ap.flyoutAnchor ?? ap
         open: ap.popupOpen
-        cardWidth: 380
+        cardWidth: settingsStore.flyoutSize("audiopower", "w", 380)
         // Fixed height sized for the larger tab content so the popup surface
         // doesn't resize when switching tabs (which causes visible jitter).
-        cardHeight: 480
+        cardHeight: settingsStore.flyoutSize("audiopower", "h", 480)
         pinned: ap.pinned
         onDismissed: ap.popupOpen = false
         onKeyPressed: (e) => {

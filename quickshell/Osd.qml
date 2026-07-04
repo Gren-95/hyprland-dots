@@ -39,7 +39,7 @@ Scope {
         hideTimer.restart();
     }
 
-    Timer { id: hideTimer; interval: 1500; running: false; repeat: false }
+    Timer { id: hideTimer; interval: settingsStore.osdDuration; running: false; repeat: false }
     Timer {
         id: readyTimer
         interval: 800

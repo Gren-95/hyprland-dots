@@ -154,8 +154,8 @@ Scope {
         parentBar: root.anchorBar
         anchorItem: root.anchorItem
         open: root.open && root.anchorBar !== null
-        cardWidth: 640
-        cardHeight: 620
+        cardWidth: settingsStore.flyoutSize("keybinds", "w", 640)
+        cardHeight: settingsStore.flyoutSize("keybinds", "h", 620)
         onDismissed: root.close()
         onKeyPressed: (e) => {
             const n = root.filtered.length;

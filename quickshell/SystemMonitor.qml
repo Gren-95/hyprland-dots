@@ -48,7 +48,7 @@ Scope {
 
     Timer {
         running: root.open
-        interval: 1500
+        interval: settingsStore.sysmonInterval
         repeat: true
         triggeredOnStart: true
         onTriggered: root.refresh()
@@ -58,8 +58,8 @@ Scope {
         parentBar: root.anchorBar
         anchorItem: root.anchorItem
         open: root.open && root.anchorBar !== null
-        cardWidth: 620
-        cardHeight: 640
+        cardWidth: settingsStore.flyoutSize("sysmon", "w", 620)
+        cardHeight: settingsStore.flyoutSize("sysmon", "h", 640)
         onDismissed: root.close()
         Item {
                 anchors.fill: parent

@@ -22,7 +22,7 @@ Scope {
     Process {
         id: listProc
         command: ["sh", "-c",
-            "find $HOME/Pictures/wallpapers -type f \\( " +
+            "find " + settingsStore.wallpaperDir + " -type f \\( " +
             "-iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' " +
             "-o -iname '*.webp' \\) | sort"]
         running: false
@@ -44,8 +44,8 @@ Scope {
         parentBar: root.anchorBar
         anchorItem: root.anchorItem
         open: root.open && root.anchorBar !== null
-        cardWidth: 560
-        cardHeight: 560
+        cardWidth: settingsStore.flyoutSize("wallpaper", "w", 560)
+        cardHeight: settingsStore.flyoutSize("wallpaper", "h", 560)
         onDismissed: root.close()
         Item {
                 anchors.fill: parent
@@ -111,7 +111,7 @@ Scope {
                                     Layout.preferredHeight: 140
                                     radius: 10
                                     color: Theme.bgDeep
-                                    border.color: hover.containsMouse ? Theme.accent.blue : Theme.borderSubtle
+                                    border.color: hover.containsMouse ? Theme.accentPrimary : Theme.borderSubtle
                                     border.width: hover.containsMouse ? 2 : 1
                                     clip: true
                                     Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }

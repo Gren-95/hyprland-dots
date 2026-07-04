@@ -218,9 +218,9 @@ Item {
         parentBar: bt.parentBar
         anchorItem: bt._openAnchor ?? bt.flyoutAnchor ?? bt
         open: bt.popupOpen
-        cardWidth: 360
+        cardWidth: settingsStore.flyoutSize("network", "w", 360)
         // Fixed height so switching tabs doesn't resize the Wayland surface.
-        cardHeight: 460
+        cardHeight: settingsStore.flyoutSize("network", "h", 460)
         pinned: bt.pinned
         borderColor: Theme.borderStrong
         onDismissed: bt.popupOpen = false
