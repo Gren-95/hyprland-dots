@@ -280,7 +280,7 @@ Scope {
                         moduleEntries: [
                             { id: "network",      label: "Network",       glyph: () => "󰂯",              color: () => Theme.fgMuted,        open: (a) => btMod.openTab("bluetooth", a) },
                             { id: "wifi",         label: "Wi-Fi",         glyph: () => wifiIcon.glyph,    color: () => wifiIcon.color,       open: (a) => btMod.openTab("wifi", a) },
-                            { id: "vpn",          label: "VPN",           glyph: () => "󰒃",              color: () => TailscaleService.running ? Theme.accent.purple : Theme.muted, open: (a) => btMod.openTab("vpn", a) },
+                            { id: "vpn",          label: "VPN",           glyph: () => vpnIcon.glyph,     color: () => vpnIcon.color,        open: (a) => btMod.openTab("vpn", a) },
                             { id: "audiopower",   label: "Sound",         glyph: () => "󰕾",              color: () => Theme.fgMuted,        open: (a) => apMod.openTab("sound", a) },
                             { id: "battery",      label: "Battery",       glyph: () => batteryIcon.glyph, color: () => batteryIcon.color,    open: (a) => apMod.openTab("power", a) },
                             { id: "mic",          label: "Mute mic",      glyph: () => "󰍬",              color: () => Theme.accent.orange,  when: () => micIcon.unmuted, open: (a) => { if (micIcon.src && micIcon.src.audio) micIcon.src.audio.muted = true; } },
