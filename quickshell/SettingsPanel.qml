@@ -5,6 +5,8 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
+import Quickshell.Widgets
+import Quickshell.Services.SystemTray
 
 Scope {
     id: root
@@ -143,6 +145,89 @@ Scope {
                                 step: 10; min: 10; max: 200
                                 display: String(settingsStore.notifHistoryCap)
                                 onStepped: (v) => settingsStore.notifHistoryCap = v
+                            }
+                        }
+
+                        // ---------- BAR ----------
+                        ColumnLayout {
+                            visible: root.activeTab === "bar"
+                            Layout.fillWidth: true
+                            spacing: Theme.spacing.sm
+
+                            SectionLabel { text: "BAR ITEMS" }
+                            Repeater {
+                                model: [
+                                    { id: "network",      label: "Network (Bluetooth icon)", three: true },
+                                    { id: "wifi",         label: "Wi-Fi",                    three: true },
+                                    { id: "vpn",          label: "VPN",                      three: true },
+                                    { id: "audiopower",   label: "Sound",                    three: true },
+                                    { id: "battery",      label: "Battery",                  three: true },
+                                    { id: "mic",          label: "Microphone",               three: true },
+                                    { id: "quickactions", label: "Quick actions",            three: true },
+                                    { id: "bell",         label: "Notification bell",        three: false },
+                                    { id: "mediakeys",    label: "Media keys",               three: false },
+                                    { id: "activityicons", label: "Activity icons",          three: false },
+                                ]
+                                delegate: PlacementRow {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    itemId: modelData.id
+                                    label: modelData.label
+                                    threeState: modelData.three
+                                }
+                            }
+
+                            SectionLabel { text: "TRAY APPS" }
+                            Text {
+                                visible: trayRepeater.count === 0
+                                Layout.fillWidth: true
+                                text: "No tray apps running"
+                                color: Theme.disabled
+                                font.family: Theme.font
+                                font.pixelSize: Theme.fontSize.base
+                            }
+                            Repeater {
+                                id: trayRepeater
+                                model: SystemTray.items
+                                delegate: Rectangle {
+                                    id: trayRow
+                                    required property var modelData
+                                    readonly property string tid: modelData.id || modelData.title
+                                    Layout.fillWidth: true
+                                    implicitHeight: 44
+                                    radius: 10
+                                    color: "#1a1716"
+                                    border.color: Theme.borderSubtle
+                                    border.width: 1
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 12
+                                        anchors.rightMargin: 8
+                                        spacing: Theme.spacing.md
+                                        IconImage {
+                                            implicitSize: 18
+                                            source: modelData.icon
+                                            asynchronous: true
+                                        }
+                                        Text {
+                                            Layout.fillWidth: true
+                                            text: modelData.title || modelData.id || "(unnamed)"
+                                            color: Theme.fgDim
+                                            font.family: Theme.font
+                                            font.pixelSize: Theme.fontSize.base
+                                            elide: Text.ElideRight
+                                        }
+                                        SegmentedControl {
+                                            options: [
+                                                { id: "bar",      label: "Bar" },
+                                                { id: "overflow", label: "Tuck" },
+                                                { id: "hidden",   label: "Hide" },
+                                            ]
+                                            value: settingsStore.trayPlacementOf(trayRow.tid)
+                                            onSelected: (v) => settingsStore.setTrayPlacement(trayRow.tid, v)
+                                        }
+                                    }
+                                }
                             }
                         }
 
@@ -319,19 +404,42 @@ Scope {
                             }
                         }
 
-                        // ---------- PLACEHOLDERS (filled in later phases) ----------
-                        Text {
-                            visible: root.activeTab === "bar"
-                            Layout.fillWidth: true
-                            Layout.topMargin: 24
-                            text: "Coming in a later phase"
-                            color: Theme.disabled
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.base
-                            horizontalAlignment: Text.AlignHCenter
-                        }
                     }
                 }
+            }
+        }
+    }
+
+    // Placement row: item label + Bar/Tuck/Hide segmented control.
+    component PlacementRow: Rectangle {
+        id: prow
+        property string itemId: ""
+        property string label: ""
+        property bool threeState: true
+        implicitHeight: 44
+        radius: 10
+        color: "#1a1716"
+        border.color: Theme.borderSubtle
+        border.width: 1
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 12
+            anchors.rightMargin: 8
+            spacing: Theme.spacing.md
+            Text {
+                Layout.fillWidth: true
+                text: prow.label
+                color: Theme.fgDim
+                font.family: Theme.font
+                font.pixelSize: Theme.fontSize.base
+                elide: Text.ElideRight
+            }
+            SegmentedControl {
+                options: prow.threeState
+                    ? [ { id: "bar", label: "Bar" }, { id: "overflow", label: "Tuck" }, { id: "hidden", label: "Hide" } ]
+                    : [ { id: "bar", label: "Bar" }, { id: "hidden", label: "Hide" } ]
+                value: settingsStore.placement(prow.itemId)
+                onSelected: (v) => settingsStore.setPlacement(prow.itemId, v)
             }
         }
     }
