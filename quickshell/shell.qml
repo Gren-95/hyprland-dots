@@ -252,22 +252,17 @@ Scope {
                     }
 
                     // Quick Actions items promoted to the bar ("Bar" in the
-                    // Settings Bar tab): one icon each. Toggles tint with
-                    // their on/off state; one-shots just fire.
+                    // Settings Bar tab), rendered as first-class bar icons.
                     Repeater {
                         model: quickMod.promotedItems
-                        delegate: BarIcon {
+                        delegate: QuickActionIcon {
                             required property var modelData
-                            readonly property bool isToggle: quickMod.isToggleAction(modelData.action)
-                            readonly property bool on: isToggle && quickMod.toggleState(modelData.action)
+                            entry: modelData
+                            actions: quickMod
                             parentBar: bar
-                            glyph: isToggle && !on ? (modelData.offGlyph || modelData.glyph) : modelData.glyph
-                            color: on ? modelData.accent : Theme.fgMuted
-                            pixelSize: Theme.fontSize.md
-                            tooltip: isToggle ? modelData.label + (on ? " · on" : " · off") : modelData.label
-                            onClicked: quickMod.performAction(modelData.action)
                         }
                     }
+                    BarSep { visible: quickMod.promotedItems.length > 0 }
 
                     QuickActions {
                         id: quickMod
