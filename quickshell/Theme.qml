@@ -3,6 +3,28 @@ import QtQuick
 import Quickshell
 
 Singleton {
+    // ===== User-tunable knobs =====
+    // Pushed in from shell.qml via Binding elements (a singleton can't
+    // resolve the settingsStore id itself). Defaults match the classic look.
+    property real fontScale: 1.0
+    property string fontFamily: "FiraCode Nerd Font"
+    property string accentPrimaryName: "blue"
+    // The highlight/selection accent — used for selected rows, focused
+    // cards, active pills. Semantic accents (red=danger, green=ok, …) stay.
+    readonly property color accentPrimary: {
+        switch (accentPrimaryName) {
+        case "green":  return accent.green;
+        case "red":    return accent.red;
+        case "orange": return accent.orange;
+        case "yellow": return accent.yellow;
+        case "purple": return accent.purple;
+        case "pink":   return accent.pink;
+        case "teal":   return accent.teal;
+        case "slate":  return accent.slate;
+        }
+        return accent.blue;
+    }
+
     // Surfaces
     readonly property color bg:        "#1c1917"   // primary background (cards)
     readonly property color bgAlt:     "#292524"   // secondary (popup body)
@@ -36,18 +58,18 @@ Singleton {
         readonly property color slate:  "#94a3b8"
     }
 
-    // Typography
-    readonly property string font:  "FiraCode Nerd Font"
+    // Typography (scaled by the user's fontScale)
+    readonly property string font: fontFamily
     readonly property QtObject fontSize: QtObject {
-        readonly property int xs:   10
-        readonly property int sm:   11
-        readonly property int base: 13
-        readonly property int md:   14
-        readonly property int lg:   16
-        readonly property int xl:   18
-        readonly property int xxl:  22
-        readonly property int hero: 28
-        readonly property int huge: 32
+        readonly property int xs:   Math.round(10 * fontScale)
+        readonly property int sm:   Math.round(11 * fontScale)
+        readonly property int base: Math.round(13 * fontScale)
+        readonly property int md:   Math.round(14 * fontScale)
+        readonly property int lg:   Math.round(16 * fontScale)
+        readonly property int xl:   Math.round(18 * fontScale)
+        readonly property int xxl:  Math.round(22 * fontScale)
+        readonly property int hero: Math.round(28 * fontScale)
+        readonly property int huge: Math.round(32 * fontScale)
     }
 
     // Geometry

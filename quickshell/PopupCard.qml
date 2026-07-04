@@ -31,7 +31,7 @@ Scope {
         visible: root.open
         color: "transparent"
         anchors { top: true; right: root.edge === "right" }
-        margins { top: 36; right: root.edge === "right" ? 12 : 0 }
+        margins { top: settingsStore.barHeight; right: root.edge === "right" ? 12 : 0 }
         implicitWidth: root.cardWidth
         implicitHeight: root.cardHeight
         WlrLayershell.exclusionMode: ExclusionMode.Ignore

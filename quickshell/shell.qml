@@ -19,6 +19,12 @@ Scope {
     Settings { id: settingsStore }
     PopupManager { id: popupManager }
 
+    // Push the appearance settings into the Theme singleton (it can't
+    // resolve settingsStore itself — singletons sit outside this scope).
+    Binding { target: Theme; property: "fontScale";         value: settingsStore.fontScale }
+    Binding { target: Theme; property: "fontFamily";        value: settingsStore.fontFamily }
+    Binding { target: Theme; property: "accentPrimaryName"; value: settingsStore.accentPrimaryName }
+
     Notifications { id: notifService }
     IcsCalendar { id: cal }
     Spotlight { id: spotlight }
@@ -43,7 +49,7 @@ Scope {
             screen: modelData
 
             anchors { top: true; left: true; right: true }
-            implicitHeight: 36
+            implicitHeight: settingsStore.barHeight
             color: "transparent"
 
             // Anchor the shared flyout modals to this bar's items. On
