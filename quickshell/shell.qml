@@ -231,20 +231,12 @@ Scope {
                     anchors.rightMargin: 8
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 0
-                    // Windows-style hidden-tray chevron: hosts everything
-                    // placed in "overflow" via the Settings Bar tab.
+                    // Windows-style hidden-tray chevron: only overflow TRAY
+                    // apps live here — tucked bar modules render as tiles in
+                    // the Quick Actions grid instead.
                     OverflowChevron {
                         id: overflowChevron
                         parentBar: bar
-                        entries: [
-                            { id: "network",      label: "Network",       glyph: () => "󰂯",              color: () => Theme.fgMuted,        open: (a) => btMod.openTab("bluetooth", a) },
-                            { id: "wifi",         label: "Wi-Fi",         glyph: () => wifiIcon.glyph,    color: () => wifiIcon.color,       open: (a) => btMod.openTab("wifi", a) },
-                            { id: "vpn",          label: "VPN",           glyph: () => "󰒃",              color: () => TailscaleService.running ? Theme.accent.purple : Theme.muted, open: (a) => btMod.openTab("vpn", a) },
-                            { id: "audiopower",   label: "Sound",         glyph: () => "󰕾",              color: () => Theme.fgMuted,        open: (a) => apMod.openTab("sound", a) },
-                            { id: "battery",      label: "Battery",       glyph: () => batteryIcon.glyph, color: () => batteryIcon.color,    open: (a) => apMod.openTab("power", a) },
-                            { id: "mic",          label: "Mute microphone", glyph: () => "󰍬",            color: () => Theme.accent.orange,  when: () => micIcon.unmuted, open: (a) => { if (micIcon.src && micIcon.src.audio) micIcon.src.audio.muted = true; } },
-                            { id: "quickactions", label: "Quick actions", glyph: () => "󰍝",              color: () => Theme.fgMuted,        open: (a) => { quickMod._openAnchor = a; quickMod.popupOpen = true; } },
-                        ]
                     }
 
                     RowLayout {
@@ -284,6 +276,15 @@ Scope {
                         // promoted or hidden — an empty panel is useless.
                         visible: settingsStore.placement("quickactions") === "bar" && totalItems > 0
                         flyoutAnchor: visible ? null : (overflowChevron.visible ? overflowChevron : null)
+                        // Bar modules that render as grid tiles when tucked.
+                        moduleEntries: [
+                            { id: "network",      label: "Network",       glyph: () => "󰂯",              color: () => Theme.fgMuted,        open: (a) => btMod.openTab("bluetooth", a) },
+                            { id: "wifi",         label: "Wi-Fi",         glyph: () => wifiIcon.glyph,    color: () => wifiIcon.color,       open: (a) => btMod.openTab("wifi", a) },
+                            { id: "vpn",          label: "VPN",           glyph: () => "󰒃",              color: () => TailscaleService.running ? Theme.accent.purple : Theme.muted, open: (a) => btMod.openTab("vpn", a) },
+                            { id: "audiopower",   label: "Sound",         glyph: () => "󰕾",              color: () => Theme.fgMuted,        open: (a) => apMod.openTab("sound", a) },
+                            { id: "battery",      label: "Battery",       glyph: () => batteryIcon.glyph, color: () => batteryIcon.color,    open: (a) => apMod.openTab("power", a) },
+                            { id: "mic",          label: "Mute mic",      glyph: () => "󰍬",              color: () => Theme.accent.orange,  when: () => micIcon.unmuted, open: (a) => { if (micIcon.src && micIcon.src.audio) micIcon.src.audio.muted = true; } },
+                        ]
                     }
                     BarSep {}
 
@@ -291,7 +292,7 @@ Scope {
                         id: btMod
                         parentBar: bar
                         visible: settingsStore.placement("network") === "bar"
-                        flyoutAnchor: visible ? null : (overflowChevron.visible ? overflowChevron : null)
+                        flyoutAnchor: visible ? null : (quickMod.visible ? quickMod : (overflowChevron.visible ? overflowChevron : null))
                         onNavigateNext: { popupOpen = false; apMod.openAt("sound") }
                         onNavigatePrev: { popupOpen = false; cal.openAt(0) }
                     }
@@ -342,7 +343,7 @@ Scope {
                         id: apMod
                         parentBar: bar
                         visible: settingsStore.placement("audiopower") === "bar"
-                        flyoutAnchor: visible ? null : (overflowChevron.visible ? overflowChevron : null)
+                        flyoutAnchor: visible ? null : (quickMod.visible ? quickMod : (overflowChevron.visible ? overflowChevron : null))
                         onNavigateNext: { popupOpen = false; spotlight.openAt(0) }
                         onNavigatePrev: { popupOpen = false; btMod.openAt(-1) }
                     }

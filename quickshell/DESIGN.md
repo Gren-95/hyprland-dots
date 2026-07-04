@@ -90,11 +90,12 @@ the gear tile). Tabs: **General** (clock, notifications, power), **Bar**
 **Tuning** (module knobs, calendar URL, wallpaper dir, flyout sizes).
 
 ### `OverflowChevron.qml`
-Windows-style hidden-tray ˄ before the tray. Hosts overflow tray apps as
-real `TrayItem`s (the flyout pins itself while a context menu is open —
-`TrayItem.menuOpen` counting) and overflow modules as launcher rows that
-call `entry.open(chev)` → `module.openTab(tab, chev)`, re-anchoring the
-module flyout to the chevron. Hidden entirely when nothing is in overflow.
+Windows-style hidden-tray ˄ before the tray. Hosts ONLY overflow tray apps
+as real `TrayItem`s (the flyout pins itself while a context menu is open —
+`TrayItem.menuOpen` counting). Tucked bar modules render as tiles in the
+Quick Actions grid instead (`quickMod.moduleEntries`, wired in shell.qml);
+clicking one opens the module flyout where the panel was. Hidden entirely
+when no tray app is tucked.
 
 ### Theme knobs
 `Theme.fontScale` / `fontFamily` / `accentPrimaryName` are pushed in from
