@@ -9,6 +9,9 @@ import Quickshell.Io
 Scope {
     id: root
     property bool open: false
+    // Set from the bar so the monitor flyout hangs by the clock cluster.
+    property var anchorBar: null
+    property var anchorItem: null
     property var data: ({
         cpu_pct: 0, cpu_cores: [], cpu_temp: 0,
         ram_used_gb: 0, ram_total_gb: 0, ram_pct: 0,
@@ -51,16 +54,15 @@ Scope {
         onTriggered: root.refresh()
     }
 
-    PopupCard {
-        open: root.open
+    BarFlyout {
+        parentBar: root.anchorBar
+        anchorItem: root.anchorItem
+        open: root.open && root.anchorBar !== null
         cardWidth: 620
         cardHeight: 640
-        onClosed: root.close()
-        onKeyPressed: (e) => {
-            if (e.key === Qt.Key_Escape) { root.close(); e.accepted = true; }
-        }
-        contentComponent: Component {
-            Item {
+        onDismissed: root.close()
+        Item {
+                anchors.fill: parent
                 ColumnLayout {
                     anchors {
                         top: parent.top
@@ -202,7 +204,6 @@ Scope {
                         horizontalAlignment: Text.AlignHCenter
                     }
                 }
-            }
         }
     }
 

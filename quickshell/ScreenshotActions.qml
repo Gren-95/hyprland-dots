@@ -1,5 +1,6 @@
-// Post-capture action modal: opens after a screenshot is saved.
-// Shows a thumbnail of the capture + 4 actions: Edit, OCR, Reveal, Done.
+// Post-capture action sheet: opens top-right next to the tray after a
+// screenshot is saved (toast-like). Shows a thumbnail of the capture +
+// 4 actions: Edit, OCR, Reveal, Done.
 // Auto-dismisses on action invoke; Esc / click-outside closes.
 import QtQuick
 import QtQuick.Layouts
@@ -29,6 +30,7 @@ Scope {
         open: root.open
         cardWidth: 480
         cardHeight: 360
+        edge: "right"
         onClosed: root.close()
         onKeyPressed: (e) => {
             if (e.key === Qt.Key_Escape) { root.close(); e.accepted = true; }

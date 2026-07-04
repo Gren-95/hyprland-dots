@@ -11,6 +11,9 @@ Scope {
     property bool open: false
     property string query: ""
     property int selectedIndex: 0
+    // Set from the bar so the launcher flyout hangs under the launcher icon.
+    property var anchorBar: null
+    property var anchorItem: null
 
     readonly property string calcExpr: {
         const q = root.query.trim();
@@ -83,11 +86,13 @@ Scope {
 
     Process { id: copyProc; command: [] }
 
-    PopupCard {
-        open: root.open
-        cardWidth: 640
+    BarFlyout {
+        parentBar: root.anchorBar
+        anchorItem: root.anchorItem
+        open: root.open && root.anchorBar !== null
+        cardWidth: 560
         cardHeight: 560
-        onClosed: root.open = false
+        onDismissed: root.open = false
         onKeyPressed: (e) => {
             const n = root.totalRows;
             if (e.key === Qt.Key_Down) {
@@ -108,8 +113,8 @@ Scope {
                 e.accepted = true;
             }
         }
-        contentComponent: Component {
-            Item {
+        Item {
+                anchors.fill: parent
                 ColumnLayout {
                     id: headerCol
                     anchors { top: parent.top; left: parent.left; right: parent.right }
@@ -233,7 +238,6 @@ Scope {
                         );
                     }
                 }
-            }
         }
     }
 
