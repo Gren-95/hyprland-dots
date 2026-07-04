@@ -75,7 +75,8 @@ Item {
 
     // ===== Power state =====
     readonly property var profiles: [PowerProfile.Performance, PowerProfile.Balanced, PowerProfile.PowerSaver]
-    // Session actions (Sleep / Reboot / Shutdown), mirrored from PowerMenu.qml.
+    // Session actions (Sleep / Reboot / Shutdown). This is the shell's power
+    // menu — the `powermenu` global shortcut opens this tab.
     readonly property var sessionActions: [
         { glyph: "󰒲", label: "Sleep",    accent: Theme.accent.purple, cmd: ["systemctl", "suspend"] },
         { glyph: "󰜉", label: "Reboot",   accent: Theme.accent.orange, cmd: ["systemctl", "reboot"] },

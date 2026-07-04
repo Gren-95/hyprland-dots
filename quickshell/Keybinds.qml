@@ -12,6 +12,9 @@ Scope {
     property string query: ""
     property int selectedIndex: 0
     property var entries: []
+    // Set from the bar so the keybinds flyout hangs under the launcher icon.
+    property var anchorBar: null
+    property var anchorItem: null
 
     function toggle() {
         if (open) close();
@@ -147,11 +150,13 @@ Scope {
         }
     }
 
-    PopupCard {
-        open: root.open
-        cardWidth: 900
+    BarFlyout {
+        parentBar: root.anchorBar
+        anchorItem: root.anchorItem
+        open: root.open && root.anchorBar !== null
+        cardWidth: 640
         cardHeight: 620
-        onClosed: root.close()
+        onDismissed: root.close()
         onKeyPressed: (e) => {
             const n = root.filtered.length;
             if (e.key === Qt.Key_Down) {
@@ -178,8 +183,8 @@ Scope {
                 e.accepted = true;
             }
         }
-        contentComponent: Component {
-            Item {
+        Item {
+                anchors.fill: parent
                 ColumnLayout {
                     id: headerCol
                     anchors { top: parent.top; left: parent.left; right: parent.right }
@@ -318,7 +323,6 @@ Scope {
                         Item { Layout.fillWidth: true }
                     }
                 }
-            }
         }
     }
 

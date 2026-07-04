@@ -16,7 +16,6 @@ Scope {
     Clipboard { id: clipboard }
     Osd { id: osd }
     Keybinds { id: keybinds }
-    PowerMenu { id: powerMenu }
     WorkspaceOverview { id: workspaceOverview }
     ScreenRecorder { id: recorder }
     PolkitPrompt { id: polkit }
@@ -36,6 +35,16 @@ Scope {
             anchors { top: true; left: true; right: true }
             implicitHeight: 36
             color: "transparent"
+
+            // Anchor the shared flyout modals to this bar's items. On
+            // multi-monitor the last-created bar wins (same as the calendar).
+            Component.onCompleted: {
+                spotlight.anchorBar = bar;       spotlight.anchorItem = launcherIcon;
+                clipboard.anchorBar = bar;       clipboard.anchorItem = launcherIcon;
+                keybinds.anchorBar = bar;        keybinds.anchorItem = launcherIcon;
+                sysmon.anchorBar = bar;          sysmon.anchorItem = clockAnchor;
+                wallpaperPicker.anchorBar = bar; wallpaperPicker.anchorItem = quickMod;
+            }
 
             Rectangle {
                 id: barRect
@@ -337,8 +346,8 @@ Scope {
                 GlobalShortcut {
                     appid: "quickshell"
                     name: "powermenu"
-                    description: "Toggle power menu"
-                    onPressed: powerMenu.toggle()
+                    description: "Open the Power tab (session actions live there)"
+                    onPressed: apMod.openTab("power")
                 }
                 GlobalShortcut {
                     appid: "quickshell"

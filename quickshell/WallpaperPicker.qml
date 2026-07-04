@@ -9,6 +9,9 @@ Scope {
     id: root
     property bool open: false
     property var wallpapers: []   // array of absolute paths
+    // Set from the bar so the picker flyout hangs under the Quick Actions chevron.
+    property var anchorBar: null
+    property var anchorItem: null
 
     function toggle() { open = !open }
     function close()  { open = false }
@@ -37,16 +40,15 @@ Scope {
         close();
     }
 
-    PopupCard {
-        open: root.open
-        cardWidth: 760
+    BarFlyout {
+        parentBar: root.anchorBar
+        anchorItem: root.anchorItem
+        open: root.open && root.anchorBar !== null
+        cardWidth: 560
         cardHeight: 560
-        onClosed: root.close()
-        onKeyPressed: (e) => {
-            if (e.key === Qt.Key_Escape) { root.close(); e.accepted = true; }
-        }
-        contentComponent: Component {
-            Item {
+        onDismissed: root.close()
+        Item {
+                anchors.fill: parent
                 ColumnLayout {
                     anchors {
                         top: parent.top
@@ -159,7 +161,6 @@ Scope {
                         }
                     }
                 }
-            }
         }
     }
 }

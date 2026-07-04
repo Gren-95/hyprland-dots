@@ -13,6 +13,9 @@ Scope {
     property string query: ""
     property int selectedIndex: 0
     property var items: []
+    // Set from the bar so the clipboard flyout hangs under the launcher icon.
+    property var anchorBar: null
+    property var anchorItem: null
 
     readonly property string thumbDir: "/tmp/cliphist-thumbs"
 
@@ -116,11 +119,13 @@ Scope {
     Process { id: delProc; command: [] }
     Process { id: wipeProc; command: [] }
 
-    PopupCard {
-        open: root.open
-        cardWidth: 800
+    BarFlyout {
+        parentBar: root.anchorBar
+        anchorItem: root.anchorItem
+        open: root.open && root.anchorBar !== null
+        cardWidth: 560
         cardHeight: 620
-        onClosed: root.close()
+        onDismissed: root.close()
         onKeyPressed: (e) => {
             const n = root.filtered.length;
             const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
@@ -152,8 +157,8 @@ Scope {
                 e.accepted = true;
             }
         }
-        contentComponent: Component {
-            Item {
+        Item {
+                anchors.fill: parent
                 ColumnLayout {
                     id: headerCol
                     anchors { top: parent.top; left: parent.left; right: parent.right }
@@ -322,7 +327,6 @@ Scope {
                         }
                     }
                 }
-            }
         }
     }
 

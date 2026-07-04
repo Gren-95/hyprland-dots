@@ -42,7 +42,6 @@ Scope {
         open: root.active
         cardWidth: 500
         cardHeight: 320
-        backdropOpacity: 0.65
         exclusiveKeyboard: true
         onClosed: root._cancel()
         contentComponent: Component {
