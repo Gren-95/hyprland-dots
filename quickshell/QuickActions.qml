@@ -261,7 +261,7 @@ Item {
         // Fast poll while the panel is open; slow background poll while any
         // toggle is promoted to a bar icon (its on/off state must stay live).
         running: (actions.popupOpen || actions.hasPromotedToggles) && !actions.toggleInFlight
-        interval: actions.popupOpen ? 1500 : 10000
+        interval: actions.popupOpen ? 1500 : 4000
         repeat: true
         triggeredOnStart: true
         onTriggered: daemonCheckProc.running = true
