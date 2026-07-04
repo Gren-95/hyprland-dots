@@ -165,22 +165,15 @@ Item {
     }
 
     // Full now-playing popup: album art, title/artist, seek bar, transport.
-    PopupWindow {
+    BarFlyout {
         id: playerPopup
-        visible: mk.playerOpen && mk.hasPlayer
-        color: "transparent"
-        anchor.window: mk.parentBar
-        anchor.item: mk
-        anchor.edges: Edges.Bottom
-        anchor.gravity: Edges.Bottom
-        implicitWidth: 280
-        implicitHeight: playerCard.implicitHeight
-
-        HyprlandFocusGrab {
-            active: playerPopup.visible
-            windows: [playerPopup]
-            onCleared: mk.playerOpen = false
-        }
+        parentBar: mk.parentBar
+        anchorItem: mk
+        open: mk.playerOpen && mk.hasPlayer
+        cardWidth: 280
+        cardHeight: playerCol.implicitHeight + 2 * Theme.spacing.lg
+        borderColor: Theme.borderStrong
+        onDismissed: mk.playerOpen = false
 
         // Refresh the playback position while open and playing.
         Timer {
@@ -195,21 +188,9 @@ Item {
             function onPlayerChanged() { mk.curPos = mk.player ? mk.player.position : 0 }
         }
 
-        Rectangle {
-            id: playerCard
-            width: parent.width
-            implicitHeight: playerCol.implicitHeight + 2 * Theme.spacing.lg
-            radius: Theme.radius.lg
-            color: Theme.bgAlt
-            border.color: Theme.borderStrong
-            border.width: 1
-            scale: mk.playerOpen ? 1.0 : 0.96
-            opacity: mk.playerOpen ? 1.0 : 0.0
-            transformOrigin: Item.Top
-            Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-            Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-
-            ColumnLayout {
+        // Body/border/animation come from BarFlyout — the content is just the
+        // column now.
+        ColumnLayout {
                 id: playerCol
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -373,7 +354,6 @@ Item {
                         onClicked: if (mk.hasPlayer) mk.player.next()
                     }
                 }
-            }
         }
     }
 

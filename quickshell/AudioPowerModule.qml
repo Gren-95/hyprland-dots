@@ -258,9 +258,10 @@ Item {
         active: apHover.hovered && !ap.popupOpen
     }
 
-    BarPopupCard {
+    BarFlyout {
         id: apPopup
         parentBar: ap.parentBar
+        anchorItem: ap
         open: ap.popupOpen
         cardWidth: 380
         // Fixed height sized for the larger tab content so the popup surface

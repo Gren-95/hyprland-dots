@@ -205,9 +205,10 @@ Item {
         active: btHover.hovered && !bt.popupOpen
     }
 
-    BarPopupCard {
+    BarFlyout {
         id: popup
         parentBar: bt.parentBar
+        anchorItem: bt
         open: bt.popupOpen
         cardWidth: 360
         // Fixed height so switching tabs doesn't resize the Wayland surface.
