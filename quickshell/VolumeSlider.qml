@@ -61,10 +61,10 @@ Rectangle {
         hoverEnabled: true
         preventStealing: true
         cursorShape: Qt.PointingHandCursor
-        onPressed: (e) => { vs.value = Math.max(0, Math.min(1, (e.x + anchors.margins) / vs.width)); vs.moved(); }
+        onPressed: (e) => { vs.value = Math.max(0, Math.min(settingsStore.maxVolume / 100, (e.x + anchors.margins) / vs.width)); vs.moved(); }
         onPositionChanged: (e) => {
             if (pressed) {
-                vs.value = Math.max(0, Math.min(1, (e.x + anchors.margins) / vs.width));
+                vs.value = Math.max(0, Math.min(settingsStore.maxVolume / 100, (e.x + anchors.margins) / vs.width));
                 vs.moved();
             }
         }
