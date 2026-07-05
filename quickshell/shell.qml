@@ -451,7 +451,7 @@ Scope {
                     appid: "quickshell"
                     name: "quickactions"
                     description: "Toggle quick actions panel"
-                    onPressed: quickMod.popupOpen = !quickMod.popupOpen
+                    onPressed: { quickMod._openAnchor = null; quickMod.popupOpen = !quickMod.popupOpen }
                 }
                 GlobalShortcut {
                     appid: "quickshell"
@@ -487,7 +487,7 @@ Scope {
                     appid: "quickshell"
                     name: "bluetooth"
                     description: "Toggle bluetooth menu"
-                    onPressed: { btMod._openAnchor = null; btMod.popupOpen = !btMod.popupOpen }
+                    onPressed: btMod.openTab("bluetooth")
                 }
                 GlobalShortcut {
                     appid: "quickshell"
