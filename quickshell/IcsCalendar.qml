@@ -209,6 +209,13 @@ Scope {
                             font.bold: true
                             elide: Text.ElideRight
                         }
+                        Text {
+                            visible: weatherService.ready
+                            text: weatherService.glyph + " " + weatherService.display
+                            color: Theme.fgMuted
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.md
+                        }
                         NavBtn { glyph: "‹"; onClicked: root.prevMonth() }
                         NavBtn { glyph: "·"; onClicked: root.today(); wide: false }
                         NavBtn { glyph: "›"; onClicked: root.nextMonth() }
