@@ -56,7 +56,9 @@ Scope {
     property real animScale: 1.0               // multiplies Theme.duration; 0 = instant
     property real radiusScale: 1.0             // multiplies Theme.radius
     property real barOpacity: 1.0
-    property int batteryWarnPct: 15            // low-battery toast threshold; 0 = off
+    property var batteryWarnLevels: [20, 10]   // toast at each level while discharging
+    property int batteryCriticalPct: 5         // countdown-to-action level; 0 = off
+    property string batteryCriticalAction: "suspend"   // "suspend" | "none"
     property string toastPosition: "center"    // "center" | "right"
     property int toastMax: 5                   // visible toast stack cap
     property int toastWidth: 380
@@ -147,7 +149,9 @@ Scope {
         { name: "animScale",            file: "anim-scale",             type: "real" },
         { name: "radiusScale",          file: "radius-scale",           type: "real" },
         { name: "barOpacity",           file: "bar-opacity",            type: "real" },
-        { name: "batteryWarnPct",       file: "battery-warn-pct",       type: "int"  },
+        { name: "batteryWarnLevels",    file: "battery-warn-levels.json", type: "json" },
+        { name: "batteryCriticalPct",   file: "battery-critical-pct",   type: "int"  },
+        { name: "batteryCriticalAction", file: "battery-critical-action", type: "string" },
         { name: "toastPosition",        file: "toast-position",         type: "string" },
         { name: "toastMax",             file: "toast-max",              type: "int"  },
         { name: "toastWidth",           file: "toast-width",            type: "int"  },

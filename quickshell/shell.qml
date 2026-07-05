@@ -426,20 +426,42 @@ Scope {
                         }
                         Process { id: brightProc; command: [] }
 
-                        // Low-battery warning toast: fires once when dropping
-                        // below the threshold on battery power; re-arms after
-                        // charging or recovering 5% above it. 0 disables.
-                        property bool _warned: false
-                        readonly property int warnPct: settingsStore.batteryWarnPct
-                        onPctChanged: {
-                            if (warnPct <= 0) return;
-                            if (!charging && pct > 0 && pct <= warnPct && !_warned) {
-                                _warned = true;
+                        // Multi-level low-battery warnings + critical action.
+                        // Each level toasts once per discharge cycle; at the
+                        // critical level a cancelable 15s countdown fires the
+                        // configured action. Everything re-arms on charging.
+                        property var _warnedLevels: []
+                        onPctChanged: batteryLogic()
+                        onChargingChanged: if (charging) { _warnedLevels = []; criticalTimer.stop(); }
+                        function batteryLogic() {
+                            if (charging || plugged || pct <= 0) return;
+                            const levels = settingsStore.batteryWarnLevels || [];
+                            for (const l of levels) {
+                                if (pct <= l && _warnedLevels.indexOf(l) < 0) {
+                                    _warnedLevels = _warnedLevels.concat([l]);
+                                    battWarnProc.command = ["notify-send", "-u", "critical",
+                                        "Battery low", pct + "% remaining"];
+                                    battWarnProc.startDetached();
+                                }
+                            }
+                            const crit = settingsStore.batteryCriticalPct;
+                            if (crit > 0 && pct <= crit
+                                    && settingsStore.batteryCriticalAction === "suspend"
+                                    && !criticalTimer.running) {
                                 battWarnProc.command = ["notify-send", "-u", "critical",
-                                    "Battery low", pct + "% remaining"];
+                                    "Battery critical", "Suspending in 15 s — plug in to cancel"];
                                 battWarnProc.startDetached();
-                            } else if (charging || pct > warnPct + 5) {
-                                _warned = false;
+                                criticalTimer.start();
+                            }
+                        }
+                        Timer {
+                            id: criticalTimer
+                            interval: 15000
+                            onTriggered: {
+                                if (!batteryIcon.charging && !batteryIcon.plugged) {
+                                    battWarnProc.command = ["systemctl", "suspend"];
+                                    battWarnProc.startDetached();
+                                }
                             }
                         }
                         Process { id: battWarnProc; command: [] }
