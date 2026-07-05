@@ -71,6 +71,7 @@ Scope {
     property bool sysmonShowStorage: true
     property bool sysmonShowThermal: true
     property bool workspaceGlyphs: true        // icons vs plain numbers in the strip
+    property bool workspaceWindowIcons: false  // tiny app icons inside each pill
     property bool spotlightCalc: true          // inline calculator row
     property bool clipboardThumbs: true        // image thumbnails in history
     property string barWheelAction: "workspace" // bar-background wheel: workspace|volume|none
@@ -173,6 +174,7 @@ Scope {
         { name: "sysmonShowStorage",    file: "sysmon-show-storage",    type: "bool" },
         { name: "sysmonShowThermal",    file: "sysmon-show-thermal",    type: "bool" },
         { name: "workspaceGlyphs",      file: "workspace-glyphs",       type: "bool" },
+        { name: "workspaceWindowIcons", file: "workspace-window-icons", type: "bool" },
         { name: "spotlightCalc",        file: "spotlight-calc",         type: "bool" },
         { name: "clipboardThumbs",      file: "clipboard-thumbs",       type: "bool" },
         { name: "barWheelAction",       file: "bar-wheel-action",       type: "string" },
