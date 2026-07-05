@@ -75,6 +75,8 @@ Scope {
     property int volumeStep: 5                 // % per wheel tick / arrow press
     property int brightnessStep: 5
     property int maxVolume: 100                // % ceiling for all volume paths
+    property bool idleInhibitOnMedia: false    // Stay Awake while media plays
+    property bool idleInhibitOnPower: false    // Stay Awake while on AC
 
     // Reactive flyout-geometry lookup (reads flyoutSizes, so bindings track it).
     function flyoutSize(id, dim, def) {
@@ -164,6 +166,8 @@ Scope {
         { name: "volumeStep",           file: "volume-step",            type: "int"  },
         { name: "brightnessStep",       file: "brightness-step",        type: "int"  },
         { name: "maxVolume",            file: "max-volume",             type: "int"  },
+        { name: "idleInhibitOnMedia",   file: "idle-inhibit-media",     type: "bool" },
+        { name: "idleInhibitOnPower",   file: "idle-inhibit-power",     type: "bool" },
     ]
 
     // Settings live under ~/.config (they're user prefs, not cache — a

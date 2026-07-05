@@ -180,6 +180,20 @@ Scope {
                             }
 
                             SectionLabel { text: "POWER" }
+                            BoolRow {
+                                Layout.fillWidth: true
+                                label: "Stay awake while media plays"
+                                desc: "Inhibits idle sleep during playback"
+                                on: settingsStore.idleInhibitOnMedia
+                                onToggled: (v) => settingsStore.idleInhibitOnMedia = v
+                            }
+                            BoolRow {
+                                Layout.fillWidth: true
+                                label: "Stay awake on AC power"
+                                desc: "Inhibits idle sleep while charging"
+                                on: settingsStore.idleInhibitOnPower
+                                onToggled: (v) => settingsStore.idleInhibitOnPower = v
+                            }
                             StepperRow {
                                 Layout.fillWidth: true
                                 label: "Low battery warning"

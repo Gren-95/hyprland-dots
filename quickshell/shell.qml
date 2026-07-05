@@ -27,6 +27,7 @@ Scope {
     Binding { target: Theme; property: "animScale";         value: settingsStore.animScale }
     Binding { target: Theme; property: "radiusScale";       value: settingsStore.radiusScale }
 
+    IdleService { id: idleService }
     Notifications { id: notifService }
     IcsCalendar { id: cal }
     Spotlight { id: spotlight }
