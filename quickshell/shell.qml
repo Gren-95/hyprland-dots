@@ -59,23 +59,23 @@ Scope {
             Component.onCompleted: {
                 spotlight.anchorBar = bar;       spotlight.anchorItem = launcherIcon;
                 // Command palette: every Quick Actions item (auto-synced from
-                // its arrays) + the flyout destinations. run() passes the
-                // launcher icon so opened panels appear where Spotlight was.
+                // its arrays) + the flyout destinations;
+                // panels open at their own home anchors (own icon / QA chevron).
                 spotlight.shellActions = quickMod.allToggles.map(t => ({
                     name: t.label, glyph: t.glyph, accent: t.accent,
                     keywords: t.action, isToggle: true,
                     state: () => quickMod.toggleState(t.action),
-                    run: () => quickMod.performAction(t.action, launcherIcon),
+                    run: () => quickMod.performAction(t.action),
                 })).concat(quickMod.allOneShots.map(t => ({
                     name: t.label, glyph: t.glyph, accent: t.accent,
                     keywords: t.action, isToggle: false,
-                    run: () => quickMod.performAction(t.action, launcherIcon),
+                    run: () => quickMod.performAction(t.action),
                 }))).concat([
-                    { name: "Bluetooth",      glyph: "󰂯", accent: Theme.accent.blue,   keywords: "bt network devices",              isToggle: false, run: () => btMod.openTab("bluetooth", launcherIcon) },
-                    { name: "Wi-Fi",          glyph: "󰖩", accent: Theme.accent.green,  keywords: "wifi network internet",           isToggle: false, run: () => btMod.openTab("wifi", launcherIcon) },
-                    { name: "VPN",            glyph: "󰒃", accent: Theme.accent.purple, keywords: "tailscale vpn exit node",         isToggle: false, run: () => btMod.openTab("vpn", launcherIcon) },
-                    { name: "Sound",          glyph: "󰕾", accent: Theme.accent.blue,   keywords: "audio volume output input",       isToggle: false, run: () => apMod.openTab("sound", launcherIcon) },
-                    { name: "Power",          glyph: "󰐥", accent: Theme.accent.red,    keywords: "battery profile sleep reboot shutdown session", isToggle: false, run: () => apMod.openTab("power", launcherIcon) },
+                    { name: "Bluetooth",      glyph: "󰂯", accent: Theme.accent.blue,   keywords: "bt network devices",              isToggle: false, run: () => btMod.openTab("bluetooth") },
+                    { name: "Wi-Fi",          glyph: "󰖩", accent: Theme.accent.green,  keywords: "wifi network internet",           isToggle: false, run: () => btMod.openTab("wifi") },
+                    { name: "VPN",            glyph: "󰒃", accent: Theme.accent.purple, keywords: "tailscale vpn exit node",         isToggle: false, run: () => btMod.openTab("vpn") },
+                    { name: "Sound",          glyph: "󰕾", accent: Theme.accent.blue,   keywords: "audio volume output input",       isToggle: false, run: () => apMod.openTab("sound") },
+                    { name: "Power",          glyph: "󰐥", accent: Theme.accent.red,    keywords: "battery profile sleep reboot shutdown session", isToggle: false, run: () => apMod.openTab("power") },
                     { name: "Calendar",       glyph: "󰃭", accent: Theme.accent.blue,   keywords: "date events schedule",            isToggle: false, run: () => cal.openAt(0) },
                     { name: "Notifications",  glyph: "󰂚", accent: Theme.accent.orange, keywords: "notification center history",     isToggle: false, run: () => notifService.openCenter() },
                     { name: "System monitor", glyph: "󰍛", accent: Theme.accent.green,  keywords: "cpu ram disk temps sysmon",       isToggle: false, run: () => sysmon.toggle() },
