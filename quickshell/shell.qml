@@ -276,7 +276,7 @@ Scope {
                             { id: "battery",      label: "Battery",       glyph: () => batteryIcon.glyph, color: () => batteryIcon.color,    open: (a) => apMod.openTab("power", a) },
                         ]
                     }
-                    BarSep {}
+                    BarSep { visible: settingsStore.placement("network") === "bar" || settingsStore.placement("wifi") === "bar" || settingsStore.placement("vpn") === "bar" }
 
                     ConnectivityModule {
                         id: btMod
@@ -314,7 +314,7 @@ Scope {
                         pixelSize: Theme.fontSize.md
                         tooltip: (!enabled ? "Wi-Fi off"
                             : connected && btMod.activeNetwork ? btMod.activeNetwork.name
-                            : "Wi-Fi") + " · Super+Shift+B"
+                            : "Wi-Fi")
                         onClicked: btMod.openTab("wifi", wifiIcon)
                     }
 
@@ -332,11 +332,11 @@ Scope {
                         pixelSize: Theme.fontSize.md
                         tooltip: (!TailscaleService.daemonOk ? "VPN daemon down"
                             : TailscaleService.running ? (TailscaleService.tailnet || "VPN up")
-                            : "VPN off") + " · Super+Shift+B"
+                            : "VPN off")
                         onClicked: btMod.openTab("vpn", vpnIcon)
                     }
 
-                    BarSep {}
+                    BarSep { visible: settingsStore.placement("audiopower") === "bar" || settingsStore.placement("battery") === "bar" || (micIcon.unmuted && settingsStore.placement("mic") === "bar") }
 
                     AudioPowerModule {
                         id: apMod
