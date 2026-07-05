@@ -284,7 +284,7 @@ Scope {
                         visible: settingsStore.placement("network") === "bar"
                         flyoutAnchor: visible ? null : (quickMod.visible ? quickMod : null)
                         onNavigateNext: { popupOpen = false; apMod.openAt("sound") }
-                        onNavigatePrev: { popupOpen = false; cal.openAt(0) }
+                        onNavigatePrev: { popupOpen = false; quickMod.openAt(0) }
                     }
 
                     // Wi-Fi indicator — opens the same popup as Bluetooth but
@@ -334,7 +334,7 @@ Scope {
                         parentBar: bar
                         visible: settingsStore.placement("audiopower") === "bar"
                         flyoutAnchor: visible ? null : (quickMod.visible ? quickMod : null)
-                        onNavigateNext: { popupOpen = false; quickMod.openAt(0) }
+                        onNavigateNext: { popupOpen = false; spotlight.openAt(0) }
                         onNavigatePrev: { popupOpen = false; btMod.openAt(-1) }
                     }
 
@@ -414,17 +414,17 @@ Scope {
 
                 Connections {
                     target: quickMod
-                    function onNavigateNext() { quickMod.popupOpen = false; spotlight.openAt(0) }
-                    function onNavigatePrev() { quickMod.popupOpen = false; apMod.openAt("sound") }
+                    function onNavigateNext() { quickMod.popupOpen = false; btMod.openAt(0) }
+                    function onNavigatePrev() { quickMod.popupOpen = false; cal.openAt(0) }
                 }
                 Connections {
                     target: spotlight
                     function onNavigateNext() { spotlight.close(); cal.openAt(0) }
-                    function onNavigatePrev() { spotlight.close(); quickMod.openAt(0) }
+                    function onNavigatePrev() { spotlight.close(); apMod.openAt("sound") }
                 }
                 Connections {
                     target: cal
-                    function onNavigateNext() { cal.close(); btMod.openAt(0) }
+                    function onNavigateNext() { cal.close(); quickMod.openAt(0) }
                     function onNavigatePrev() { cal.close(); spotlight.openAt(0) }
                 }
                 GlobalShortcut {
