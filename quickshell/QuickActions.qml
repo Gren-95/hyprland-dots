@@ -17,7 +17,6 @@ Item {
     // per-open override (overflow rows). Fallback: own chevron.
     property Item flyoutAnchor: null
     property Item _openAnchor: null
-    property bool idleOn: true       // best-guess; refreshed from `pgrep hypridle`
     property bool immichOn: false    // immich cron entry enabled
     property bool jellyfinOn: false  // jellyfin cron entry enabled
     property bool wayvncOn: false    // wayvnc daemon running
@@ -82,7 +81,7 @@ Item {
     function toggleState(action) {
         switch (action) {
         case "dnd":       return notifService.dnd;
-        case "idle":      return !actions.idleOn;
+        case "idle":      return idleService.effectiveInhibited;
         case "immich":    return actions.immichOn;
         case "jellyfin":  return actions.jellyfinOn;
         case "wayvnc":    return actions.wayvncOn;
@@ -95,7 +94,8 @@ Item {
     function toggleDesc(action) {
         switch (action) {
         case "dnd":       return notifService.dnd ? "Notifications muted" : "Notifications enabled";
-        case "idle":      return actions.idleOn ? "Idle sleep enabled" : "Idle sleep disabled";
+        case "idle":      return idleService.effectiveInhibited
+            ? "Awake · " + (idleService.reason || "manual") : "Idle sleep enabled";
         case "immich":    return actions.immichOn ? "Uploading photos hourly" : "Background sync stopped";
         case "jellyfin":  return actions.jellyfinOn ? "Syncing music every 2h" : "Background sync stopped";
         case "wayvnc":    return actions.wayvncOn ? "WayVNC server running on :5900" : "Remote access stopped";
@@ -178,11 +178,7 @@ Item {
         if (entry.action === "dnd") {
             notifService.dnd = !notifService.dnd;
         } else if (entry.action === "idle") {
-            // Optimistic: flip UI immediately; daemonCheck reconciles later.
-            actions.idleOn = !actions.idleOn;
-            actions.toggleInFlight = true;
-            clearInFlightTimer.restart();
-            idleToggleProc.startDetached();
+            idleService.toggleManual();
         } else if (entry.action === "immich") {
             actions.immichOn = !actions.immichOn;
             actions.toggleInFlight = true;
@@ -239,15 +235,7 @@ Item {
     }
 
     Process { id: runProc; command: [] }
-    Process {
-        id: idleToggleProc
-        command: ["sh", "-c",
-            "if pgrep -x hypridle >/dev/null; then pkill hypridle; else hypridle & disown; fi"]
-        running: false
-        // No onExited: startDetached() forks the child off — onExited never
-        // fires for detached processes. State reconciliation happens via the
-        // clearInFlightTimer below.
-    }
+
     // Immich + Jellyfin sync state is managed via cron entries; the
     // sync-toggle.sh helper installs/comments/uncomments the relevant crontab
     // lines. "On" = the cron line is uncommented. The bar status icons show
@@ -281,7 +269,6 @@ Item {
         // Output format: "idle=0|1 immich=0|1 jellyfin=0|1"
         id: daemonCheckProc
         command: ["sh", "-c",
-            "printf 'idle=%s ' $(pgrep -x hypridle >/dev/null && echo 1 || echo 0); " +
             "printf 'wayvnc=%s ' $(pgrep -x wayvnc >/dev/null && echo 1 || echo 0); " +
             "bash ~/.config/scripts/sync-toggle.sh status all"]
         running: false
@@ -292,7 +279,6 @@ Item {
                     const [k, v] = kv.split("=");
                     m[k] = v === "1";
                 }
-                if (m.idle !== undefined)     actions.idleOn = m.idle;
                 if (m.wayvnc !== undefined)   actions.wayvncOn = m.wayvnc;
                 if (m.immich !== undefined)   actions.immichOn = m.immich;
                 if (m.jellyfin !== undefined) actions.jellyfinOn = m.jellyfin;
