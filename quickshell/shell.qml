@@ -72,10 +72,10 @@ Scope {
                     run: () => quickMod.performAction(t.action),
                 }))).concat([
                     { name: "Bluetooth",      glyph: "󰂯", accent: Theme.accent.blue,   keywords: "bt network devices",              isToggle: false, run: () => btMod.openTab("bluetooth") },
-                    { name: "Wi-Fi",          glyph: "󰖩", accent: Theme.accent.green,  keywords: "wifi network internet",           isToggle: false, run: () => btMod.openTab("wifi") },
-                    { name: "VPN",            glyph: "󰒃", accent: Theme.accent.purple, keywords: "tailscale vpn exit node",         isToggle: false, run: () => btMod.openTab("vpn") },
+                    { name: "Wi-Fi",          glyph: "󰖩", accent: Theme.accent.green,  keywords: "wifi network internet",           isToggle: false, run: () => btMod.openTab("wifi", wifiIcon.visible ? wifiIcon : null) },
+                    { name: "VPN",            glyph: "󰒃", accent: Theme.accent.purple, keywords: "tailscale vpn exit node",         isToggle: false, run: () => btMod.openTab("vpn", vpnIcon.visible ? vpnIcon : null) },
                     { name: "Sound",          glyph: "󰕾", accent: Theme.accent.blue,   keywords: "audio volume output input",       isToggle: false, run: () => apMod.openTab("sound") },
-                    { name: "Power",          glyph: "󰐥", accent: Theme.accent.red,    keywords: "battery profile sleep reboot shutdown session", isToggle: false, run: () => apMod.openTab("power") },
+                    { name: "Power",          glyph: "󰐥", accent: Theme.accent.red,    keywords: "battery profile sleep reboot shutdown session", isToggle: false, run: () => apMod.openTab("power", batteryIcon.visible ? batteryIcon : null) },
                     { name: "Calendar",       glyph: "󰃭", accent: Theme.accent.blue,   keywords: "date events schedule",            isToggle: false, run: () => cal.openAt(0) },
                     { name: "Notifications",  glyph: "󰂚", accent: Theme.accent.orange, keywords: "notification center history",     isToggle: false, run: () => notifService.openCenter() },
                     { name: "System monitor", glyph: "󰍛", accent: Theme.accent.green,  keywords: "cpu ram disk temps sysmon",       isToggle: false, run: () => sysmon.toggle() },
