@@ -196,12 +196,43 @@ Scope {
                             }
                             StepperRow {
                                 Layout.fillWidth: true
-                                label: "Low battery warning"
-                                desc: "Critical toast below this level; 0 disables"
-                                value: settingsStore.batteryWarnPct
-                                step: 5; min: 0; max: 40
-                                display: settingsStore.batteryWarnPct > 0 ? settingsStore.batteryWarnPct + "%" : "off"
-                                onStepped: (v) => settingsStore.batteryWarnPct = v
+                                label: "Battery warning 1"
+                                desc: "First low-battery toast"
+                                value: (settingsStore.batteryWarnLevels || [])[0] ?? 0
+                                step: 5; min: 0; max: 50
+                                display: (((settingsStore.batteryWarnLevels || [])[0] ?? 0) || "off") + (((settingsStore.batteryWarnLevels || [])[0] ?? 0) ? "%" : "")
+                                onStepped: (v) => {
+                                    const l = (settingsStore.batteryWarnLevels || []).slice();
+                                    l[0] = v; settingsStore.batteryWarnLevels = l;
+                                }
+                            }
+                            StepperRow {
+                                Layout.fillWidth: true
+                                label: "Battery warning 2"
+                                desc: "Second, more urgent toast"
+                                value: (settingsStore.batteryWarnLevels || [])[1] ?? 0
+                                step: 5; min: 0; max: 50
+                                display: (((settingsStore.batteryWarnLevels || [])[1] ?? 0) || "off") + (((settingsStore.batteryWarnLevels || [])[1] ?? 0) ? "%" : "")
+                                onStepped: (v) => {
+                                    const l = (settingsStore.batteryWarnLevels || []).slice();
+                                    l[1] = v; settingsStore.batteryWarnLevels = l;
+                                }
+                            }
+                            StepperRow {
+                                Layout.fillWidth: true
+                                label: "Battery critical"
+                                desc: "Countdown to the action below; 0 disables"
+                                value: settingsStore.batteryCriticalPct
+                                step: 1; min: 0; max: 15
+                                display: settingsStore.batteryCriticalPct > 0 ? settingsStore.batteryCriticalPct + "%" : "off"
+                                onStepped: (v) => settingsStore.batteryCriticalPct = v
+                            }
+                            ChoiceRow {
+                                Layout.fillWidth: true
+                                label: "Critical action"
+                                options: [ { id: "suspend", label: "Suspend" }, { id: "none", label: "None" } ]
+                                value: settingsStore.batteryCriticalAction
+                                onSelected: (v) => settingsStore.batteryCriticalAction = v
                             }
                         }
 
