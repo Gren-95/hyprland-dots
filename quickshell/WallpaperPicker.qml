@@ -43,6 +43,7 @@ Scope {
     function apply(path) {
         setProc.command = ["bash", Quickshell.env("HOME") + "/.config/scripts/wallpaper.sh", path];
         setProc.startDetached();
+        accentService.refreshSoon();   // re-extract the auto accent
         close();
     }
 

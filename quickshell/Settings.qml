@@ -40,7 +40,8 @@ Scope {
     property real fontScale: 1.0               // multiplies every Theme.fontSize token
     property string fontFamily: "FiraCode Nerd Font"
     property int barHeight: 36
-    property string accentPrimaryName: "blue"  // Theme.accentPrimary (highlights)
+    property string accentPrimaryName: "blue"  // Theme.accentPrimary (highlights); "auto" = from wallpaper
+    property string accentAutoHex: ""          // cached wallpaper-extracted accent
     property int spotlightCap: 60              // launcher results shown
     property int osdDuration: 1500             // ms the volume/brightness OSD stays
     property int sysmonInterval: 1500          // ms between system-monitor refreshes
@@ -144,6 +145,7 @@ Scope {
         { name: "fontFamily",           file: "font-family",            type: "string" },
         { name: "barHeight",            file: "bar-height",             type: "int"  },
         { name: "accentPrimaryName",    file: "accent-primary",         type: "string" },
+        { name: "accentAutoHex",        file: "accent-auto-hex",        type: "string" },
         { name: "spotlightCap",         file: "spotlight-cap",          type: "int"  },
         { name: "osdDuration",          file: "osd-duration",           type: "int"  },
         { name: "sysmonInterval",       file: "sysmon-interval",        type: "int"  },

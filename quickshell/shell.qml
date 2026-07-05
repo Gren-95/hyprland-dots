@@ -24,12 +24,14 @@ Scope {
     Binding { target: Theme; property: "fontScale";         value: settingsStore.fontScale }
     Binding { target: Theme; property: "fontFamily";        value: settingsStore.fontFamily }
     Binding { target: Theme; property: "accentPrimaryName"; value: settingsStore.accentPrimaryName }
+    Binding { target: Theme; property: "accentAutoHex";      value: settingsStore.accentAutoHex }
     Binding { target: Theme; property: "animScale";         value: settingsStore.animScale }
     Binding { target: Theme; property: "radiusScale";       value: settingsStore.radiusScale }
 
     IdleService { id: idleService }
     EventToasts {}
     WeatherService { id: weatherService }
+    AccentService { id: accentService }
     Notifications { id: notifService }
     IcsCalendar { id: cal }
     Spotlight { id: spotlight }
