@@ -20,6 +20,8 @@ Scope {
     // Set by NotifBell so the center flyout hangs under the bar bell.
     property var anchorBar: null
     property var anchorItem: null
+    signal navigateNext()
+    signal navigatePrev()
 
     function _push(n) {
         const entry = {
@@ -135,6 +137,11 @@ Scope {
         cardHeight: settingsStore.flyoutSize("notifications", "h", 620)
         borderColor: Theme.borderStrong
         onDismissed: root.closeCenter()
+        onKeyPressed: (e) => {
+            const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
+            if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) { root.navigateNext(); e.accepted = true; }
+            else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) { root.navigatePrev(); e.accepted = true; }
+        }
 
                 ColumnLayout {
                     id: centerHeader
