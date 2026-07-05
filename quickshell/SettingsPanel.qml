@@ -30,9 +30,18 @@ Scope {
 
     function toggle(from) {
         open = !open;
-        if (open) { _openAnchor = from ?? null; activeTab = "general"; }
+        if (open) { _openAnchor = from ?? null; activeTab = "general"; searchInput.text = ""; }
     }
     function close() { open = false; }
+
+    // ===== Search (P7): rows filter themselves via sMatch; while a query
+    // is active every tab's column is shown so matches surface cross-tab.
+    property string search: ""
+    readonly property bool searching: search.trim() !== ""
+    function sMatch(t) {
+        const q = search.trim().toLowerCase();
+        return q === "" || String(t).toLowerCase().indexOf(q) !== -1;
+    }
     function cycleTab(delta) {
         const ids = tabs.map(t => t.id);
         const i = ids.indexOf(activeTab);
@@ -48,6 +57,11 @@ Scope {
         pinned: root.pinned
         onDismissed: root.open = false
         onKeyPressed: (e) => {
+            if (e.key === Qt.Key_Escape && root.searching) {
+                searchInput.text = "";
+                e.accepted = true;
+                return;
+            }
             if (e.key === Qt.Key_Tab || e.key === Qt.Key_Backtab) {
                 root.cycleTab(e.key === Qt.Key_Backtab || (e.modifiers & Qt.ShiftModifier) ? -1 : 1);
                 e.accepted = true;
@@ -78,8 +92,48 @@ Scope {
                         font.bold: true
                     }
                     Item { Layout.fillWidth: true }
+                    Rectangle {
+                        Layout.preferredWidth: 190
+                        implicitHeight: 28
+                        radius: 8
+                        color: Theme.bgDeep
+                        border.color: searchInput.activeFocus ? Theme.accentPrimary : Theme.borderSubtle
+                        border.width: 1
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
+                            spacing: 6
+                            Text {
+                                text: "\u{f0349}"
+                                color: Theme.mutedDeep
+                                font.family: Theme.font
+                                font.pixelSize: Theme.fontSize.sm
+                            }
+                            TextInput {
+                                id: searchInput
+                                Layout.fillWidth: true
+                                verticalAlignment: TextInput.AlignVCenter
+                                color: Theme.fg
+                                font.family: Theme.font
+                                font.pixelSize: Theme.fontSize.sm
+                                selectByMouse: true
+                                clip: true
+                                onTextChanged: root.search = text
+                                Text {
+                                    anchors.fill: parent
+                                    verticalAlignment: Text.AlignVCenter
+                                    visible: searchInput.text === "" && !searchInput.activeFocus
+                                    text: "Search settings"
+                                    color: Theme.disabled
+                                    font.family: Theme.font
+                                    font.pixelSize: Theme.fontSize.sm
+                                }
+                            }
+                        }
+                    }
                     Text {
-                        text: "Tab tabs · Esc close"
+                        text: root.searching ? "Esc clears" : "Tab tabs · Esc close"
                         color: Theme.disabled
                         font.family: Theme.font
                         font.pixelSize: Theme.fontSize.xs
@@ -109,7 +163,7 @@ Scope {
 
                         // ---------- GENERAL ----------
                         ColumnLayout {
-                            visible: root.activeTab === "general"
+                            visible: root.activeTab === "general" || root.searching
                             Layout.fillWidth: true
                             spacing: Theme.spacing.sm
 
@@ -130,6 +184,7 @@ Scope {
                             }
                             PathField {
                                 Layout.fillWidth: true
+                                label: "clock date format"
                                 text: settingsStore.clockDateFormat
                                 placeholder: "ddd, dd MMM  (Qt date format)"
                                 onCommitted: (t) => settingsStore.clockDateFormat = t
@@ -244,7 +299,7 @@ Scope {
 
                         // ---------- BAR ----------
                         ColumnLayout {
-                            visible: root.activeTab === "bar"
+                            visible: root.activeTab === "bar" || root.searching
                             Layout.fillWidth: true
                             spacing: Theme.spacing.sm
 
@@ -302,7 +357,7 @@ Scope {
 
                             SectionLabel { text: "TRAY APPS" }
                             Text {
-                                visible: trayRepeater.count === 0
+                                visible: trayRepeater.count === 0 && !root.searching
                                 Layout.fillWidth: true
                                 text: "No tray apps running"
                                 color: Theme.disabled
@@ -356,7 +411,7 @@ Scope {
 
                         // ---------- APPEARANCE ----------
                         ColumnLayout {
-                            visible: root.activeTab === "appearance"
+                            visible: root.activeTab === "appearance" || root.searching
                             Layout.fillWidth: true
                             spacing: Theme.spacing.sm
 
@@ -364,6 +419,7 @@ Scope {
                             // Swatch row: pick the accent used for selections,
                             // highlights and active states shell-wide.
                             Rectangle {
+                                visible: root.sMatch("highlight accent color")
                                 Layout.fillWidth: true
                                 implicitHeight: 54
                                 radius: 10
@@ -454,6 +510,7 @@ Scope {
 
                             SectionLabel { text: "FONT FAMILY" }
                             Rectangle {
+                                visible: root.sMatch("font family")
                                 Layout.fillWidth: true
                                 implicitHeight: 44
                                 radius: 10
@@ -480,7 +537,7 @@ Scope {
 
                         // ---------- TUNING ----------
                         ColumnLayout {
-                            visible: root.activeTab === "tuning"
+                            visible: root.activeTab === "tuning" || root.searching
                             Layout.fillWidth: true
                             spacing: Theme.spacing.sm
 
@@ -619,6 +676,7 @@ Scope {
                             SectionLabel { text: "WEATHER" }
                             PathField {
                                 Layout.fillWidth: true
+                                label: "weather location city"
                                 text: settingsStore.weatherLocation
                                 placeholder: "City name — empty disables weather"
                                 onCommitted: (t) => settingsStore.weatherLocation = t
@@ -633,6 +691,7 @@ Scope {
                             SectionLabel { text: "CALENDAR URL" }
                             PathField {
                                 Layout.fillWidth: true
+                                label: "calendar url ics"
                                 text: calUrlFile.loadedText
                                 placeholder: "https://…/basic.ics"
                                 onCommitted: (t) => calUrlFile.write(t)
@@ -641,6 +700,7 @@ Scope {
                             SectionLabel { text: "WALLPAPER FOLDER" }
                             PathField {
                                 Layout.fillWidth: true
+                                label: "wallpaper folder directory"
                                 text: settingsStore.wallpaperDir
                                 placeholder: "~/Pictures/wallpapers"
                                 onCommitted: (t) => settingsStore.wallpaperDir = t
@@ -682,6 +742,7 @@ Scope {
         property string desc: ""
         property bool on: false
         signal toggled(bool v)
+        visible: root.sMatch(label + " " + desc)
         implicitHeight: 44
         radius: 10
         color: "#1a1716"
@@ -727,6 +788,7 @@ Scope {
         property var options: []
         property string value: ""
         signal selected(string id)
+        visible: root.sMatch(label + " " + desc)
         implicitHeight: 44
         radius: 10
         color: "#1a1716"
@@ -770,6 +832,7 @@ Scope {
         property string itemId: ""
         property string label: ""
         property bool threeState: true
+        visible: root.sMatch(label)
         implicitHeight: 44
         radius: 10
         color: "#1a1716"
@@ -806,6 +869,7 @@ Scope {
         id: qrow
         property string itemKey: ""
         property string label: ""
+        visible: root.sMatch(label)
         implicitHeight: 44
         radius: 10
         color: "#1a1716"
@@ -852,9 +916,11 @@ Scope {
     // Editable path/URL field committing on Enter or focus loss.
     component PathField: Rectangle {
         id: pf
+        property string label: ""     // search-only; not rendered
         property string text: ""
         property string placeholder: ""
         signal committed(string t)
+        visible: root.sMatch(label + " " + placeholder)
         implicitHeight: 44
         radius: 10
         color: "#1a1716"
@@ -890,6 +956,7 @@ Scope {
     component SizeRow: Rectangle {
         id: sz
         property var def
+        visible: root.sMatch((sz.def ? sz.def.label : "") + " flyout size")
         implicitHeight: 44
         radius: 10
         color: "#1a1716"
@@ -935,6 +1002,7 @@ Scope {
 
     // Uppercase section header, matching the shell convention.
     component SectionLabel: Text {
+        visible: !root.searching
         Layout.topMargin: 6
         color: Theme.mutedDeep
         font.family: Theme.font
@@ -955,6 +1023,7 @@ Scope {
         property string display: String(value)
         signal stepped(int v)
 
+        visible: root.sMatch(label + " " + desc)
         implicitHeight: 54
         radius: 10
         color: "#1a1716"
