@@ -117,6 +117,7 @@ Item {
         setTab(order[(i + delta + order.length) % order.length]);
     }
     function openAt(idx) {
+        _openAnchor = null;   // ring hops open at the module's own anchor
         popupOpen = true;
         const n = tabStopCount;
         tabIndex = idx < 0 ? Math.max(0, n - 1) : Math.min(idx, Math.max(0, n - 1));

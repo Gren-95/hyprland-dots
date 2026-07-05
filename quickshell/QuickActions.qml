@@ -225,6 +225,7 @@ Item {
         // Toggle actions keep the panel open so the user can see the state flip.
     }
     function openAt(idx) {
+        _openAnchor = null;
         popupOpen = true;
         selectedIndex = idx < 0 ? totalItems - 1 : Math.min(idx, totalItems - 1);
     }
