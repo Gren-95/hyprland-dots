@@ -63,6 +63,7 @@ Scope {
     property string toastPosition: "center"    // "center" | "right"
     property int toastMax: 5                   // visible toast stack cap
     property int toastWidth: 380
+    property bool notifGroupByApp: true        // center groups history by app
     property bool weekStartMonday: true
     property int windowTitleWidth: 400         // bar window-title cap; 0 = hidden
     property int osdBottomMargin: 60
@@ -167,6 +168,7 @@ Scope {
         { name: "toastPosition",        file: "toast-position",         type: "string" },
         { name: "toastMax",             file: "toast-max",              type: "int"  },
         { name: "toastWidth",           file: "toast-width",            type: "int"  },
+        { name: "notifGroupByApp",      file: "notif-group-by-app",     type: "bool" },
         { name: "weekStartMonday",      file: "week-start-monday",      type: "bool" },
         { name: "windowTitleWidth",     file: "window-title-width",     type: "int"  },
         { name: "osdBottomMargin",      file: "osd-bottom-margin",      type: "int"  },

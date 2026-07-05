@@ -234,6 +234,14 @@ Scope {
                                 onStepped: (v) => settingsStore.notifHistoryCap = v
                             }
 
+                            BoolRow {
+                                Layout.fillWidth: true
+                                label: "Group by app"
+                                desc: "Notification center buckets history per app"
+                                on: settingsStore.notifGroupByApp
+                                onToggled: (v) => settingsStore.notifGroupByApp = v
+                            }
+
                             SectionLabel { text: "EVENT TOASTS" }
                             BoolRow { Layout.fillWidth: true; label: "Charger";         desc: "Plugged / unplugged";       on: (settingsStore.eventToasts || {}).charger === true; onToggled: (v) => settingsStore.setEventToast("charger", v) }
                             BoolRow { Layout.fillWidth: true; label: "Audio device";    desc: "Default output changed";    on: (settingsStore.eventToasts || {}).audio === true;   onToggled: (v) => settingsStore.setEventToast("audio", v) }

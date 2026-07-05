@@ -40,7 +40,7 @@ Scope {
         if (!centerOpen) unreadCount += 1;
     }
     function openCenter() { centerOpen = true; unreadCount = 0; }
-    function closeCenter() { centerOpen = false; }
+    function closeCenter() { centerOpen = false; expandedGroups = ({}); }
     function toggleCenter() { centerOpen = !centerOpen; if (centerOpen) unreadCount = 0; }
     function dismissHistoryEntry(id) {
         historyList = historyList.filter(e => e.id !== id);
@@ -49,6 +49,29 @@ Scope {
         activeList = activeList.filter(e => e.id !== id);
     }
     function clearHistory() { historyList = []; }
+
+    // ===== Grouping (center view): history bucketed by appName, newest
+    // group first. expandedGroups tracks per-app "N more…" state and
+    // resets when the center closes.
+    property var expandedGroups: ({})
+    readonly property var groupedHistory: {
+        const groups = [];
+        const idx = {};
+        for (const e of historyList) {
+            const k = e.appName || "unknown";
+            if (idx[k] === undefined) { idx[k] = groups.length; groups.push({ app: k, entries: [] }); }
+            groups[idx[k]].entries.push(e);
+        }
+        return groups;
+    }
+    function clearApp(app) {
+        historyList = historyList.filter(e => (e.appName || "unknown") !== app);
+    }
+    function toggleGroup(app) {
+        const m = Object.assign({}, expandedGroups);
+        m[app] = !(m[app] === true);
+        expandedGroups = m;   // reassign — never mutate in place
+    }
     // Resolve a usable icon source for a notification entry: prefer embedded
     // image data, then the app icon (a file path as-is, or a theme name via
     // iconPath), finally a generic fallback so every notification shows one.
@@ -222,13 +245,118 @@ Scope {
                         id: historyCol
                         width: parent.width
                         spacing: Theme.spacing.xs
+                        // Flat list when grouping is off.
                         Repeater {
-                            model: root.historyList
+                            model: settingsStore.notifGroupByApp ? [] : root.historyList
                             delegate: HistoryRow {
                                 required property var modelData
                                 entry: modelData
                                 Layout.fillWidth: true
                                 onDismissed: root.dismissHistoryEntry(modelData.id)
+                            }
+                        }
+                        // Grouped by app: header (name · count · clear) for
+                        // multi-entry groups, max 3 rows until expanded.
+                        Repeater {
+                            model: settingsStore.notifGroupByApp ? root.groupedHistory : []
+                            delegate: ColumnLayout {
+                                id: grp
+                                required property var modelData
+                                readonly property string app: modelData.app
+                                readonly property int total: modelData.entries.length
+                                readonly property bool expanded: root.expandedGroups[app] === true
+                                readonly property int shown: expanded ? total : Math.min(3, total)
+                                Layout.fillWidth: true
+                                spacing: Theme.spacing.xs
+
+                                RowLayout {
+                                    visible: grp.total > 1
+                                    Layout.fillWidth: true
+                                    Layout.topMargin: 4
+                                    Layout.leftMargin: 4
+                                    Layout.rightMargin: 4
+                                    spacing: Theme.spacing.sm
+                                    Text {
+                                        text: grp.app
+                                        color: Theme.muted
+                                        font.family: Theme.font
+                                        font.pixelSize: Theme.fontSize.xs
+                                        font.bold: true
+                                        font.letterSpacing: 1
+                                        elide: Text.ElideRight
+                                        Layout.maximumWidth: 200
+                                    }
+                                    Rectangle {
+                                        implicitWidth: grpCount.implicitWidth + 10
+                                        implicitHeight: 16
+                                        radius: 8
+                                        color: Theme.bgDeep
+                                        border.color: Theme.borderSubtle
+                                        border.width: 1
+                                        Text {
+                                            id: grpCount
+                                            anchors.centerIn: parent
+                                            text: grp.total
+                                            color: Theme.mutedDeep
+                                            font.family: Theme.font
+                                            font.pixelSize: Theme.fontSize.xs
+                                        }
+                                    }
+                                    Item { Layout.fillWidth: true }
+                                    Rectangle {
+                                        implicitWidth: 18; implicitHeight: 18; radius: 9
+                                        color: grpClearMa.containsMouse ? Theme.borderStrong : "transparent"
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "×"
+                                            color: Theme.muted
+                                            font.family: Theme.font
+                                            font.pixelSize: Theme.fontSize.md
+                                        }
+                                        MouseArea {
+                                            id: grpClearMa
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.clearApp(grp.app)
+                                        }
+                                    }
+                                }
+
+                                Repeater {
+                                    model: grp.modelData.entries.slice(0, grp.shown)
+                                    delegate: HistoryRow {
+                                        required property var modelData
+                                        entry: modelData
+                                        Layout.fillWidth: true
+                                        onDismissed: root.dismissHistoryEntry(modelData.id)
+                                    }
+                                }
+
+                                Rectangle {
+                                    visible: grp.total > 3
+                                    Layout.fillWidth: true
+                                    implicitHeight: 26
+                                    radius: 8
+                                    color: moreMa.containsMouse ? Theme.bgHover : "transparent"
+                                    border.color: Theme.borderSubtle
+                                    border.width: 1
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: grp.expanded ? "Show less"
+                                            : (grp.total - grp.shown) + " more…"
+                                        color: Theme.fgMuted
+                                        font.family: Theme.font
+                                        font.pixelSize: Theme.fontSize.sm
+                                    }
+                                    MouseArea {
+                                        id: moreMa
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.toggleGroup(grp.app)
+                                    }
+                                }
                             }
                         }
                         Text {
