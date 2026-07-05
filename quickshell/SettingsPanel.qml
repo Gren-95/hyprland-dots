@@ -517,6 +517,41 @@ Scope {
                                 onToggled: (v) => settingsStore.workspaceGlyphs = v
                             }
 
+                            SectionLabel { text: "INPUT" }
+                            ChoiceRow {
+                                Layout.fillWidth: true
+                                label: "Bar scroll"
+                                desc: "Wheel on empty bar space"
+                                options: [ { id: "workspace", label: "Workspaces" }, { id: "volume", label: "Volume" }, { id: "none", label: "Off" } ]
+                                value: settingsStore.barWheelAction
+                                onSelected: (v) => settingsStore.barWheelAction = v
+                            }
+                            StepperRow {
+                                Layout.fillWidth: true
+                                label: "Volume step"
+                                value: settingsStore.volumeStep
+                                step: 1; min: 1; max: 20
+                                display: settingsStore.volumeStep + "%"
+                                onStepped: (v) => settingsStore.volumeStep = v
+                            }
+                            StepperRow {
+                                Layout.fillWidth: true
+                                label: "Brightness step"
+                                value: settingsStore.brightnessStep
+                                step: 1; min: 1; max: 20
+                                display: settingsStore.brightnessStep + "%"
+                                onStepped: (v) => settingsStore.brightnessStep = v
+                            }
+                            StepperRow {
+                                Layout.fillWidth: true
+                                label: "Max volume"
+                                desc: "Ceiling for every volume control"
+                                value: settingsStore.maxVolume
+                                step: 10; min: 50; max: 150
+                                display: settingsStore.maxVolume + "%"
+                                onStepped: (v) => settingsStore.maxVolume = v
+                            }
+
                             SectionLabel { text: "SYSTEM MONITOR CARDS" }
                             BoolRow { Layout.fillWidth: true; label: "Processor"; on: settingsStore.sysmonShowCpu;     onToggled: (v) => settingsStore.sysmonShowCpu = v }
                             BoolRow { Layout.fillWidth: true; label: "Memory";    on: settingsStore.sysmonShowRam;     onToggled: (v) => settingsStore.sysmonShowRam = v }

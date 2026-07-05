@@ -110,9 +110,21 @@ Scope {
                     anchors.fill: parent
                     acceptedButtons: Qt.NoButton
                     onWheel: (e) => {
-                        const dir = e.angleDelta.y > 0 ? "e+1" : "e-1";
-                        Hyprland.dispatch("workspace " + dir);
+                        const up = e.angleDelta.y > 0;
+                        switch (settingsStore.barWheelAction) {
+                        case "workspace":
+                            Hyprland.dispatch("workspace " + (up ? "e+1" : "e-1"));
+                            break;
+                        case "volume": {
+                            const sink = Pipewire.defaultAudioSink;
+                            if (sink && sink.audio)
+                                sink.audio.volume = Math.max(0, Math.min(settingsStore.maxVolume / 100,
+                                    sink.audio.volume + (up ? 1 : -1) * settingsStore.volumeStep / 100));
+                            break;
+                        }
+                        }
                     }
+                    PwObjectTracker { objects: [Pipewire.defaultAudioSink] }
                 }
 
                 Timer {
@@ -408,7 +420,7 @@ Scope {
                             return "Audio & Power" + kb;
                         }
                         onWheel: (up) => {
-                            brightProc.command = ["brightnessctl", "set", up ? "+5%" : "5%-"];
+                            brightProc.command = ["brightnessctl", "set", up ? "+" + settingsStore.brightnessStep + "%" : settingsStore.brightnessStep + "%-"];
                             brightProc.startDetached();
                         }
                         Process { id: brightProc; command: [] }

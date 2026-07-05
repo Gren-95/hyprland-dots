@@ -47,7 +47,7 @@ Item {
     function adjustVolume(delta) {
         const node = sndActiveNode;
         if (!node || !node.audio) return;
-        node.audio.volume = Math.max(0, Math.min(1, node.audio.volume + delta));
+        node.audio.volume = Math.max(0, Math.min(settingsStore.maxVolume / 100, node.audio.volume + delta));
     }
     function toggleSndMute() {
         const node = sndActiveNode;
@@ -217,7 +217,7 @@ Item {
         onWheel: (e) => {
             if (!ap.sink || !ap.sink.audio) return;
             ap.sink.audio.volume = Math.max(0, Math.min(1,
-                ap.sink.audio.volume + (e.angleDelta.y > 0 ? 0.05 : -0.05)));
+                ap.sink.audio.volume + (e.angleDelta.y > 0 ? 1 : -1) * settingsStore.volumeStep / 100));
         }
     }
 
@@ -304,10 +304,10 @@ Item {
                     ap.cycleSnd(-1); e.accepted = true;
                 } else if (e.key === Qt.Key_Right || e.key === Qt.Key_L
                         || e.key === Qt.Key_Plus || e.key === Qt.Key_Equal) {
-                    ap.adjustVolume(0.05); e.accepted = true;
+                    ap.adjustVolume(settingsStore.volumeStep / 100); e.accepted = true;
                 } else if (e.key === Qt.Key_Left || e.key === Qt.Key_H
                         || e.key === Qt.Key_Minus) {
-                    ap.adjustVolume(-0.05); e.accepted = true;
+                    ap.adjustVolume(-settingsStore.volumeStep / 100); e.accepted = true;
                 } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
                     ap.activateSndIndex(); e.accepted = true;
                 } else if (e.key === Qt.Key_M) {

@@ -71,6 +71,10 @@ Scope {
     property bool workspaceGlyphs: true        // icons vs plain numbers in the strip
     property bool spotlightCalc: true          // inline calculator row
     property bool clipboardThumbs: true        // image thumbnails in history
+    property string barWheelAction: "workspace" // bar-background wheel: workspace|volume|none
+    property int volumeStep: 5                 // % per wheel tick / arrow press
+    property int brightnessStep: 5
+    property int maxVolume: 100                // % ceiling for all volume paths
 
     // Reactive flyout-geometry lookup (reads flyoutSizes, so bindings track it).
     function flyoutSize(id, dim, def) {
@@ -156,6 +160,10 @@ Scope {
         { name: "workspaceGlyphs",      file: "workspace-glyphs",       type: "bool" },
         { name: "spotlightCalc",        file: "spotlight-calc",         type: "bool" },
         { name: "clipboardThumbs",      file: "clipboard-thumbs",       type: "bool" },
+        { name: "barWheelAction",       file: "bar-wheel-action",       type: "string" },
+        { name: "volumeStep",           file: "volume-step",            type: "int"  },
+        { name: "brightnessStep",       file: "brightness-step",        type: "int"  },
+        { name: "maxVolume",            file: "max-volume",             type: "int"  },
     ]
 
     // Settings live under ~/.config (they're user prefs, not cache — a
