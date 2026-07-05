@@ -63,8 +63,7 @@ Scope {
                 // so the default is a LIVE binding falling back to the
                 // overflow chevron, then bar-center (null). Anchoring to an
                 // invisible item puts the flyout at a garbage position.
-                const qaOr = () => quickMod.visible ? quickMod
-                            : overflowChevron.visible ? overflowChevron : null;
+                const qaOr = () => quickMod.visible ? quickMod : null;
                 clipboard.anchorBar = bar;       clipboard.anchorItem = Qt.binding(qaOr);
                 keybinds.anchorBar = bar;        keybinds.anchorItem = Qt.binding(qaOr);
                 wallpaperPicker.anchorBar = bar; wallpaperPicker.anchorItem = Qt.binding(qaOr);
@@ -231,14 +230,6 @@ Scope {
                     anchors.rightMargin: 8
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 0
-                    // Windows-style hidden-tray chevron: only overflow TRAY
-                    // apps live here — tucked bar modules render as tiles in
-                    // the Quick Actions grid instead.
-                    OverflowChevron {
-                        id: overflowChevron
-                        parentBar: bar
-                    }
-
                     RowLayout {
                         spacing: Theme.spacing.md
                         Repeater {
@@ -274,8 +265,8 @@ Scope {
                         parentBar: bar
                         // Hide the chevron too when every item has been
                         // promoted or hidden — an empty panel is useless.
-                        visible: settingsStore.placement("quickactions") === "bar" && totalItems > 0
-                        flyoutAnchor: visible ? null : (overflowChevron.visible ? overflowChevron : null)
+                        visible: settingsStore.placement("quickactions") === "bar" && (totalItems > 0 || overflowTray.length > 0)
+                        flyoutAnchor: null
                         // Bar modules that render as grid tiles when tucked.
                         moduleEntries: [
                             { id: "network",      label: "Network",       glyph: () => "󰂯",              color: () => Theme.fgMuted,        open: (a) => btMod.openTab("bluetooth", a) },
@@ -283,7 +274,6 @@ Scope {
                             { id: "vpn",          label: "VPN",           glyph: () => vpnIcon.glyph,     color: () => vpnIcon.color,        open: (a) => btMod.openTab("vpn", a) },
                             { id: "audiopower",   label: "Sound",         glyph: () => "󰕾",              color: () => Theme.fgMuted,        open: (a) => apMod.openTab("sound", a) },
                             { id: "battery",      label: "Battery",       glyph: () => batteryIcon.glyph, color: () => batteryIcon.color,    open: (a) => apMod.openTab("power", a) },
-                            { id: "mic",          label: "Mute mic",      glyph: () => "󰍬",              color: () => Theme.accent.orange,  when: () => micIcon.unmuted, open: (a) => { if (micIcon.src && micIcon.src.audio) micIcon.src.audio.muted = true; } },
                         ]
                     }
                     BarSep {}
@@ -292,7 +282,7 @@ Scope {
                         id: btMod
                         parentBar: bar
                         visible: settingsStore.placement("network") === "bar"
-                        flyoutAnchor: visible ? null : (quickMod.visible ? quickMod : (overflowChevron.visible ? overflowChevron : null))
+                        flyoutAnchor: visible ? null : (quickMod.visible ? quickMod : null)
                         onNavigateNext: { popupOpen = false; apMod.openAt("sound") }
                         onNavigatePrev: { popupOpen = false; cal.openAt(0) }
                     }
@@ -343,7 +333,7 @@ Scope {
                         id: apMod
                         parentBar: bar
                         visible: settingsStore.placement("audiopower") === "bar"
-                        flyoutAnchor: visible ? null : (quickMod.visible ? quickMod : (overflowChevron.visible ? overflowChevron : null))
+                        flyoutAnchor: visible ? null : (quickMod.visible ? quickMod : null)
                         onNavigateNext: { popupOpen = false; spotlight.openAt(0) }
                         onNavigatePrev: { popupOpen = false; btMod.openAt(-1) }
                     }

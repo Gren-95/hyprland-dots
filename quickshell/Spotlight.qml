@@ -152,17 +152,27 @@ Scope {
                     Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderStrong }
                 }
 
+                Text {
+                    id: hintFooter
+                    anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 10 }
+                    text: "type to search · ↑/↓ navigate · ↵ launch · Esc close"
+                    color: Theme.disabled
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.xs
+                    horizontalAlignment: Text.AlignHCenter
+                }
+
                 Flickable {
                     id: results
                     anchors {
                         top: headerCol.bottom
                         left: parent.left
                         right: parent.right
-                        bottom: parent.bottom
+                        bottom: hintFooter.top
                         topMargin: 6
                         leftMargin: 8
                         rightMargin: 8
-                        bottomMargin: 8
+                        bottomMargin: 6
                     }
                     contentHeight: resultsCol.implicitHeight
                     clip: true

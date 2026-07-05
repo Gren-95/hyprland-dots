@@ -31,6 +31,9 @@ Scope {
         cardWidth: 480
         cardHeight: 360
         edge: "right"
+        // Sit below the toast stack when toasts also live top-right.
+        topOffset: settingsStore.toastPosition === "right" && notifService.activeList.length > 0
+            ? Math.min(notifService.activeList.length, settingsStore.toastMax) * 120 : 0
         onClosed: root.close()
         onKeyPressed: (e) => {
             if (e.key === Qt.Key_Escape) { root.close(); e.accepted = true; }
