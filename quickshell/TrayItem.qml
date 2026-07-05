@@ -43,7 +43,10 @@ Item {
 
     QsMenuAnchor {
         id: menuAnchor
-        anchor.window: tray.anchorWindow
+        // Anchor against whichever window actually hosts this item (bar OR
+        // a flyout) — a mismatched window/item pair positions the menu in
+        // the wrong coordinate space.
+        anchor.window: tray.QsWindow.window
         anchor.item: tray
         anchor.edges: Edges.Bottom
         menu: tray.item ? tray.item.menu : null
