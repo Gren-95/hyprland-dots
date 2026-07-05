@@ -136,6 +136,7 @@ Scope {
         cardWidth: settingsStore.flyoutSize("notifications", "w", 420)
         cardHeight: settingsStore.flyoutSize("notifications", "h", 620)
         borderColor: Theme.borderStrong
+        pinned: root.pinned
         onDismissed: root.closeCenter()
         onKeyPressed: (e) => {
             const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
@@ -151,6 +152,10 @@ Scope {
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.spacing.md
+                        PinButton {
+                            pinned: root.pinned
+                            onToggled: root.pinned = !root.pinned
+                        }
                         Text {
                             text: "󰂚"
                             color: Theme.muted
