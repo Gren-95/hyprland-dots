@@ -154,6 +154,7 @@ Scope {
             }
         }
         Item {
+                id: contentRoot
                 anchors.fill: parent
                 ColumnLayout {
                     id: headerCol
@@ -287,7 +288,7 @@ Scope {
                 // Keep the highlighted row in view as arrows move selection.
                 Connections {
                     target: root
-                    function onSelectedIndexChanged() { Qt.callLater(ensureVisible) }
+                    function onSelectedIndexChanged() { Qt.callLater(contentRoot.ensureVisible) }
                 }
                 function ensureVisible() {
                     const idx = root.selectedIndex;
