@@ -89,6 +89,12 @@ Scope {
                                 : Math.min(idx, Math.max(0, root.totalRows - 1));
     }
     function close() { open = false; }
+    // The highlighted shell-toggle action, if any (drives Space-to-toggle).
+    function highlightedToggle() {
+        const ai = selectedIndex - calcOffset;
+        const a = ai >= 0 && ai < matchedActions.length ? matchedActions[ai] : null;
+        return a && a.isToggle ? a : null;
+    }
     function activate(i) {
         if (hasCalc && i === 0) {
             copyProc.command = ["wl-copy", root.calcResult];
@@ -131,6 +137,11 @@ Scope {
                 root.selectedIndex = Math.max(0, root.selectedIndex - 1);
                 e.accepted = true;
             } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
+                root.activate(root.selectedIndex); e.accepted = true;
+            } else if (e.key === Qt.Key_Space && root.highlightedToggle()) {
+                // Space flips the highlighted toggle (repeatedly — the row
+                // stays put with its live pill); for anything else Space
+                // falls through and types into the query.
                 root.activate(root.selectedIndex); e.accepted = true;
             } else if (e.key === Qt.Key_Backspace) {
                 root.query = root.query.slice(0, -1);
