@@ -283,8 +283,17 @@ Scope {
                         parentBar: bar
                         visible: settingsStore.placement("network") === "bar"
                         flyoutAnchor: visible ? null : (quickMod.visible ? quickMod : null)
-                        onNavigateNext: { popupOpen = false; apMod.openAt("sound") }
-                        onNavigatePrev: { popupOpen = false; quickMod.openAt(0) }
+                        // Ring: tabs are individual stops (bt -> wifi -> vpn).
+                        onNavigateNext: {
+                            if (activeTab === "bluetooth") setTab("wifi");
+                            else if (activeTab === "wifi") setTab("vpn");
+                            else { popupOpen = false; apMod.openAt("sound"); }
+                        }
+                        onNavigatePrev: {
+                            if (activeTab === "vpn") setTab("wifi");
+                            else if (activeTab === "wifi") setTab("bluetooth");
+                            else { popupOpen = false; quickMod.openAt(0); }
+                        }
                     }
 
                     // Wi-Fi indicator — opens the same popup as Bluetooth but
@@ -334,8 +343,15 @@ Scope {
                         parentBar: bar
                         visible: settingsStore.placement("audiopower") === "bar"
                         flyoutAnchor: visible ? null : (quickMod.visible ? quickMod : null)
-                        onNavigateNext: { popupOpen = false; spotlight.openAt(0) }
-                        onNavigatePrev: { popupOpen = false; btMod.openAt(-1) }
+                        // Ring: sound -> power are individual stops.
+                        onNavigateNext: {
+                            if (activeTab === "sound") setTab("power");
+                            else { popupOpen = false; spotlight.openAt(0); }
+                        }
+                        onNavigatePrev: {
+                            if (activeTab === "power") setTab("sound");
+                            else { popupOpen = false; btMod.setTab("vpn"); btMod.openAt(0); }
+                        }
                     }
 
                     // Battery: opens AudioPowerModule on the Power tab.
@@ -414,17 +430,22 @@ Scope {
 
                 Connections {
                     target: quickMod
-                    function onNavigateNext() { quickMod.popupOpen = false; btMod.openAt(0) }
-                    function onNavigatePrev() { quickMod.popupOpen = false; cal.openAt(0) }
+                    function onNavigateNext() { quickMod.popupOpen = false; btMod.setTab("bluetooth"); btMod.openAt(0) }
+                    function onNavigatePrev() { quickMod.popupOpen = false; notifService.openCenter() }
                 }
                 Connections {
                     target: spotlight
                     function onNavigateNext() { spotlight.close(); cal.openAt(0) }
-                    function onNavigatePrev() { spotlight.close(); apMod.openAt("sound") }
+                    function onNavigatePrev() { spotlight.close(); apMod.openAt("power") }
+                }
+                Connections {
+                    target: notifService
+                    function onNavigateNext() { notifService.closeCenter(); quickMod.openAt(0) }
+                    function onNavigatePrev() { notifService.closeCenter(); cal.openAt(0) }
                 }
                 Connections {
                     target: cal
-                    function onNavigateNext() { cal.close(); quickMod.openAt(0) }
+                    function onNavigateNext() { cal.close(); notifService.openCenter() }
                     function onNavigatePrev() { cal.close(); spotlight.openAt(0) }
                 }
                 GlobalShortcut {
