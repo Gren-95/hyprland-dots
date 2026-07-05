@@ -79,6 +79,7 @@ Scope {
     property int maxVolume: 100                // % ceiling for all volume paths
     property bool idleInhibitOnMedia: false    // Stay Awake while media plays
     property bool idleInhibitOnPower: false    // Stay Awake while on AC
+    property var eventToasts: ({ charger: true, vpn: true, audio: false, layout: false })
 
     // Reactive flyout-geometry lookup (reads flyoutSizes, so bindings track it).
     function flyoutSize(id, dim, def) {
@@ -112,6 +113,12 @@ Scope {
         const m = Object.assign({}, trayPlacement);
         m[tid] = p;
         trayPlacement = m;
+    }
+
+    function setEventToast(k, v) {
+        const m = Object.assign({}, eventToasts);
+        m[k] = v;
+        eventToasts = m;
     }
 
     // ===== Quick Actions item placement =====
@@ -172,6 +179,7 @@ Scope {
         { name: "maxVolume",            file: "max-volume",             type: "int"  },
         { name: "idleInhibitOnMedia",   file: "idle-inhibit-media",     type: "bool" },
         { name: "idleInhibitOnPower",   file: "idle-inhibit-power",     type: "bool" },
+        { name: "eventToasts",          file: "event-toasts.json",      type: "json" },
     ]
 
     // Settings live under ~/.config (they're user prefs, not cache — a
