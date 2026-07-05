@@ -80,6 +80,8 @@ Scope {
     property bool idleInhibitOnMedia: false    // Stay Awake while media plays
     property bool idleInhibitOnPower: false    // Stay Awake while on AC
     property var eventToasts: ({ charger: true, vpn: true, audio: false, layout: false })
+    property string weatherLocation: ""        // city name; empty = weather off
+    property bool weatherFahrenheit: false
 
     // Reactive flyout-geometry lookup (reads flyoutSizes, so bindings track it).
     function flyoutSize(id, dim, def) {
@@ -180,6 +182,8 @@ Scope {
         { name: "idleInhibitOnMedia",   file: "idle-inhibit-media",     type: "bool" },
         { name: "idleInhibitOnPower",   file: "idle-inhibit-power",     type: "bool" },
         { name: "eventToasts",          file: "event-toasts.json",      type: "json" },
+        { name: "weatherLocation",      file: "weather-location",       type: "string" },
+        { name: "weatherFahrenheit",    file: "weather-fahrenheit",     type: "bool" },
     ]
 
     // Settings live under ~/.config (they're user prefs, not cache — a

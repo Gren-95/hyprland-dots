@@ -609,6 +609,20 @@ Scope {
                             BoolRow { Layout.fillWidth: true; label: "Storage";   on: settingsStore.sysmonShowStorage; onToggled: (v) => settingsStore.sysmonShowStorage = v }
                             BoolRow { Layout.fillWidth: true; label: "Thermal";   on: settingsStore.sysmonShowThermal; onToggled: (v) => settingsStore.sysmonShowThermal = v }
 
+                            SectionLabel { text: "WEATHER" }
+                            PathField {
+                                Layout.fillWidth: true
+                                text: settingsStore.weatherLocation
+                                placeholder: "City name — empty disables weather"
+                                onCommitted: (t) => settingsStore.weatherLocation = t
+                            }
+                            BoolRow {
+                                Layout.fillWidth: true
+                                label: "Fahrenheit"
+                                on: settingsStore.weatherFahrenheit
+                                onToggled: (v) => settingsStore.weatherFahrenheit = v
+                            }
+
                             SectionLabel { text: "CALENDAR URL" }
                             PathField {
                                 Layout.fillWidth: true

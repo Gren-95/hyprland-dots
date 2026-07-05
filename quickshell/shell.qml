@@ -29,6 +29,7 @@ Scope {
 
     IdleService { id: idleService }
     EventToasts {}
+    WeatherService { id: weatherService }
     Notifications { id: notifService }
     IcsCalendar { id: cal }
     Spotlight { id: spotlight }
@@ -150,6 +151,7 @@ Scope {
                         bar: bar
                         target: clockAnchor
                         text: "Calendar · Super+D"
+                              + (weatherService.ready ? "  ·  " + weatherService.display + " " + weatherService.label : "")
                         active: clockHover.hovered && !cal.open
                     }
 
