@@ -414,6 +414,10 @@ Scope {
                 elide: Text.ElideRight
             }
             RowLayout {
+                id: actRow
+                // Inline-component root ids ("card") don't resolve from
+                // delegate contexts at runtime — bounce through this row.
+                readonly property var dismissCard: () => card.dismiss()
                 Layout.fillWidth: true
                 spacing: Theme.spacing.sm
                 visible: card.entry && card.entry.ref && card.entry.ref.actions && card.entry.ref.actions.length > 0
@@ -439,7 +443,7 @@ Scope {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: { modelData.invoke(); card.dismiss(); }
+                            onClicked: { modelData.invoke(); actRow.dismissCard(); }
                         }
                     }
                 }

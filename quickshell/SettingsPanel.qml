@@ -205,11 +205,11 @@ Scope {
                                     { id: "vpn",          label: "VPN",                      three: true },
                                     { id: "audiopower",   label: "Sound",                    three: true },
                                     { id: "battery",      label: "Battery",                  three: true },
-                                    { id: "mic",          label: "Microphone",               three: true },
+                                    { id: "mic",          label: "Microphone widget",        three: false },
                                     { id: "quickactions", label: "Quick actions",            three: false },
                                     { id: "bell",         label: "Notification bell",        three: false },
-                                    { id: "mediakeys",    label: "Media keys",               three: false },
-                                    { id: "activityicons", label: "Activity icons",          three: false },
+                                    { id: "mediakeys",    label: "Media keys widget",        three: false },
+                                    { id: "activityicons", label: "Activity icons widget",   three: false },
                                 ]
                                 delegate: PlacementRow {
                                     required property var modelData
@@ -230,8 +230,9 @@ Scope {
                                     { key: "immich",        label: "Immich sync" },
                                     { key: "jellyfin",      label: "Jellyfin sync" },
                                     { key: "wayvnc",        label: "Remote access" },
-                                    { key: "mediakeys",     label: "Media keys toggle" },
-                                    { key: "activityicons", label: "Activity icons toggle" },
+                                    { key: "mic",           label: "Microphone" },
+                                    { key: "mediakeys",     label: "Media keys tile" },
+                                    { key: "activityicons", label: "Activity icons tile" },
                                     { key: "clipboard",     label: "Clipboard" },
                                     { key: "screenshot",    label: "Screenshot" },
                                     { key: "record",        label: "Record" },

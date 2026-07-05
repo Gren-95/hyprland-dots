@@ -10,7 +10,7 @@ add a new modal" or "where do I change X" — not a tutorial.
 | **Singletons** | `Theme.qml`, `Hypr.qml`, `TailscaleService.qml` | Design tokens (with user-tunable knobs), hyprctl dispatch helper, Tailscale CLI wrapper |
 | **Root stores** | `Settings.qml` (`settingsStore`), `PopupManager.qml` (`popupManager`) | Persisted user settings + single-open flyout policy. Instantiated FIRST in shell.qml and resolved via the id scope chain — NOT singletons (see warning below) |
 | **Primitives** | `BarFlyout.qml`, `PopupCard.qml`, `TabStrip.qml`, `SproutBg.qml`, `SegmentedControl.qml` | The flyout envelope, the top-drawer envelope, the speech-bubble shape, settings controls |
-| **Bar items** | `BarIcon.qml`, `BarSep.qml`, `WorkspaceStrip.qml`, `MediaKeys.qml`, `OverflowChevron.qml` | Leaf widgets that sit on the top bar |
+| **Bar items** | `BarIcon.qml`, `BarSep.qml`, `WorkspaceStrip.qml`, `MediaKeys.qml` | Leaf widgets that sit on the top bar |
 | **Bar modules** | `ConnectivityModule.qml`, `AudioPowerModule.qml`, `NotifBell.qml`, `QuickActions.qml` | Bar entry points that open their own flyout |
 | **Flyout modals** | `Spotlight.qml`, `Clipboard.qml`, `Keybinds.qml`, `IcsCalendar.qml`, `Notifications.qml`, `SystemMonitor.qml`, `WallpaperPicker.qml`, `SettingsPanel.qml` | Scope-level services whose UI opens as a flyout under a bar item |
 | **Drawers & overlays** | `WorkspaceOverview.qml` (top drawer strip), `PolkitPrompt.qml` (top-center drawer), `ScreenshotActions.qml` (top-right sheet), `ScreenRecorder.qml`, `Osd.qml`, `RegionSelector.qml` | Everything not anchored to a specific bar icon |
@@ -89,13 +89,11 @@ the gear tile). Tabs: **General** (clock, notifications, power), **Bar**
 (highlight accent swatches, font scale, bar height, font family),
 **Tuning** (module knobs, calendar URL, wallpaper dir, flyout sizes).
 
-### `OverflowChevron.qml`
-Windows-style hidden-tray ˄ before the tray. Hosts ONLY overflow tray apps
-as real `TrayItem`s (the flyout pins itself while a context menu is open —
-`TrayItem.menuOpen` counting). Tucked bar modules render as tiles in the
-Quick Actions grid instead (`quickMod.moduleEntries`, wired in shell.qml);
-clicking one opens the module flyout where the panel was. Hidden entirely
-when no tray app is tucked.
+### Overflow model (no chevron)
+Quick Actions is the single overflow surface: tucked bar modules render as
+grid tiles (`quickMod.moduleEntries`, wired in shell.qml) and tucked tray
+apps render as a `TrayItem` row above the grid (the flyout pins itself
+while a tray context menu is open — `TrayItem.menuOpen` counting).
 
 ### Theme knobs
 `Theme.fontScale` / `fontFamily` / `accentPrimaryName` are pushed in from

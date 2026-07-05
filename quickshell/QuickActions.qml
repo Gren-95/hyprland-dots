@@ -5,6 +5,8 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.Pipewire
+import Quickshell.Services.SystemTray
 
 Item {
     id: actions
@@ -23,6 +25,8 @@ Item {
     // periodic daemonCheck so its stale read doesn't briefly revert the
     // optimistic UI flip.
     property bool toggleInFlight: false
+    readonly property var micSrc: Pipewire.defaultAudioSource
+    PwObjectTracker { objects: [Pipewire.defaultAudioSource] }
     signal navigateNext()
     signal navigatePrev()
 
@@ -38,6 +42,7 @@ Item {
         { glyph: "󰋩", offGlyph: "󰋩", label: "Immich sync",    accent: "#f59e0b",           action: "immich" },
         { glyph: "󰝚", offGlyph: "󰝚", label: "Jellyfin sync",  accent: "#818cf8",           action: "jellyfin" },
         { glyph: "󰢹", offGlyph: "󰢹", label: "Remote access",  accent: Theme.accent.orange, action: "wayvnc" },
+        { glyph: "󰍬", offGlyph: "󰍭", label: "Microphone",     accent: Theme.accent.orange, action: "mic" },
         { glyph: "󰎈", offGlyph: "󰎈", label: "Media keys",     accent: Theme.accent.purple, action: "mediakeys" },
         { glyph: "󰈈", offGlyph: "󰈉", label: "Activity icons", accent: Theme.accent.teal,   action: "activityicons" },
     ]
@@ -81,6 +86,7 @@ Item {
         case "immich":    return actions.immichOn;
         case "jellyfin":  return actions.jellyfinOn;
         case "wayvnc":    return actions.wayvncOn;
+        case "mic":       return actions.micSrc && actions.micSrc.audio ? !actions.micSrc.audio.muted : false;
         case "mediakeys": return settingsStore.mediaKeysVisible;
         case "activityicons": return settingsStore.activityIconsVisible;
         }
@@ -93,6 +99,7 @@ Item {
         case "immich":    return actions.immichOn ? "Uploading photos hourly" : "Background sync stopped";
         case "jellyfin":  return actions.jellyfinOn ? "Syncing music every 2h" : "Background sync stopped";
         case "wayvnc":    return actions.wayvncOn ? "WayVNC server running on :5900" : "Remote access stopped";
+        case "mic":       return (actions.micSrc && actions.micSrc.audio && !actions.micSrc.audio.muted) ? "Microphone live" : "Microphone muted";
         case "mediakeys": return settingsStore.mediaKeysVisible ? "Prev / play / next in bar" : "Hidden";
         case "activityicons": return settingsStore.activityIconsVisible ? "Camera/mic/sync icons shown" : "Hidden";
         }
@@ -110,6 +117,14 @@ Item {
     // hidden tray apps. glyph()/color() thunks are called inside this
     // binding, so state (battery %, wifi strength) stays live.
     property var moduleEntries: []
+    // Hidden tray apps render as a row above the grid — Quick Actions is
+    // the single overflow surface. Menus are separate windows: while one
+    // is open the flyout pins itself so the focus grab can't dismiss it.
+    property int menusOpen: 0
+    readonly property var overflowTray: {
+        const list = (SystemTray.items && SystemTray.items.values) || [];
+        return list.filter(t => settingsStore.trayPlacementOf(t.id || t.title) === "overflow");
+    }
     readonly property var tuckedModules: moduleEntries
         .filter(e => settingsStore.placement(e.id) === "overflow" && (!e.when || e.when()))
         .map(e => ({ glyph: e.glyph(), label: e.label, accent: e.color(),
@@ -183,6 +198,9 @@ Item {
             actions.toggleInFlight = true;
             clearInFlightTimer.restart();
             wayvncToggleProc.startDetached();
+        } else if (entry.action === "mic") {
+            if (actions.micSrc && actions.micSrc.audio)
+                actions.micSrc.audio.muted = !actions.micSrc.audio.muted;
         } else if (entry.action === "mediakeys") {
             settingsStore.mediaKeysVisible = !settingsStore.mediaKeysVisible;
         } else if (entry.action === "activityicons") {
@@ -303,7 +321,7 @@ Item {
         parentBar: actions.parentBar
         anchorItem: actions._openAnchor ?? actions.flyoutAnchor ?? actions
         open: actions.popupOpen
-        pinned: actions.pinned
+        pinned: actions.pinned || actions.menusOpen > 0
         cardWidth: settingsStore.flyoutSize("quickactions", "w", 420)
         cardHeight: panel.implicitHeight + 28
         fillColor: Theme.bg
@@ -345,7 +363,7 @@ Item {
                     Layout.fillWidth: true
                     spacing: Theme.spacing.md
                     PinButton {
-                        pinned: actions.pinned
+                        pinned: actions.pinned || actions.menusOpen > 0
                         onToggled: actions.pinned = !actions.pinned
                     }
                     Text {
@@ -354,6 +372,24 @@ Item {
                         font.family: Theme.font
                         font.pixelSize: Theme.fontSize.md
                         font.bold: true
+                    }
+                    Item { Layout.fillWidth: true }
+                }
+
+                // Hidden tray apps (placement "Tuck" in the Bar tab).
+                RowLayout {
+                    visible: actions.overflowTray.length > 0
+                    Layout.fillWidth: true
+                    spacing: Theme.spacing.sm
+                    Repeater {
+                        model: actions.overflowTray
+                        delegate: TrayItem {
+                            required property var modelData
+                            item: modelData
+                            anchorWindow: actions.parentBar
+                            implicitHeight: 28
+                            onMenuOpenChanged: actions.menusOpen += menuOpen ? 1 : -1
+                        }
                     }
                     Item { Layout.fillWidth: true }
                 }

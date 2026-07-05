@@ -16,6 +16,7 @@ Scope {
     property int cardWidth: 640
     property int cardHeight: 480
     property string edge: "center"   // "center" | "right"
+    property int topOffset: 0        // extra gap below the bar (dodge toasts)
     property bool exclusiveKeyboard: false
     property Component contentComponent: null
     signal closed()
@@ -31,7 +32,7 @@ Scope {
         visible: root.open
         color: "transparent"
         anchors { top: true; right: root.edge === "right" }
-        margins { top: settingsStore.barHeight; right: root.edge === "right" ? 12 : 0 }
+        margins { top: settingsStore.barHeight + root.topOffset; right: root.edge === "right" ? 12 : 0 }
         implicitWidth: root.cardWidth
         implicitHeight: root.cardHeight
         WlrLayershell.exclusionMode: ExclusionMode.Ignore
