@@ -18,6 +18,8 @@ Scope {
     property real osdLevel: 0
     property bool osdMuted: false
     property color osdAccent: Theme.accent.blue
+    property bool osdTextMode: false   // toast mode: free text, no bar/%-line
+    property string osdText: ""
     property int osdToken: 0
     property bool _ready: false
 
@@ -29,7 +31,20 @@ Scope {
     property int blLast: -1
     property int kbLast: -1
 
+    // System-event toast: icon + title + free text, no progress bar.
+    function showToast(icon, title, text, accent) {
+        osdTextMode = true;
+        osdIcon = icon;
+        osdLabel = title;
+        osdText = text;
+        osdMuted = false;
+        osdAccent = accent;
+        osdToken += 1;
+        hideTimer.restart();
+    }
+
     function show(icon, level, label, muted, accent) {
+        osdTextMode = false;
         osdIcon = icon;
         osdLabel = label;
         osdLevel = Math.max(0, Math.min(1, level));
@@ -210,7 +225,8 @@ Scope {
                                 font.pixelSize: Theme.fontSize.sm
                             }
                             Text {
-                                text: root.osdMuted ? "Muted" : Math.round(root.osdLevel * 100) + "%"
+                                text: root.osdTextMode ? root.osdText
+                                    : root.osdMuted ? "Muted" : Math.round(root.osdLevel * 100) + "%"
                                 color: Theme.fg
                                 font.family: Theme.font
                                 font.pixelSize: Theme.fontSize.xl
@@ -220,6 +236,7 @@ Scope {
                     }
 
                     Rectangle {
+                        visible: !root.osdTextMode
                         Layout.preferredWidth: 240
                         Layout.preferredHeight: 6
                         radius: 3

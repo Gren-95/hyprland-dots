@@ -179,6 +179,12 @@ Scope {
                                 onStepped: (v) => settingsStore.notifHistoryCap = v
                             }
 
+                            SectionLabel { text: "EVENT TOASTS" }
+                            BoolRow { Layout.fillWidth: true; label: "Charger";         desc: "Plugged / unplugged";       on: (settingsStore.eventToasts || {}).charger === true; onToggled: (v) => settingsStore.setEventToast("charger", v) }
+                            BoolRow { Layout.fillWidth: true; label: "Audio device";    desc: "Default output changed";    on: (settingsStore.eventToasts || {}).audio === true;   onToggled: (v) => settingsStore.setEventToast("audio", v) }
+                            BoolRow { Layout.fillWidth: true; label: "VPN";             desc: "Tailscale up / down";       on: (settingsStore.eventToasts || {}).vpn === true;     onToggled: (v) => settingsStore.setEventToast("vpn", v) }
+                            BoolRow { Layout.fillWidth: true; label: "Keyboard layout"; desc: "Layout switched";           on: (settingsStore.eventToasts || {}).layout === true;  onToggled: (v) => settingsStore.setEventToast("layout", v) }
+
                             SectionLabel { text: "POWER" }
                             BoolRow {
                                 Layout.fillWidth: true
