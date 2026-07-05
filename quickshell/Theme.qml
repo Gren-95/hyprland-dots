@@ -9,6 +9,7 @@ Singleton {
     property real fontScale: 1.0
     property string fontFamily: "FiraCode Nerd Font"
     property string accentPrimaryName: "blue"
+    property string accentAutoHex: ""   // wallpaper-extracted (AccentService)
     property real animScale: 1.0    // 0 = animations off (instant)
     property real radiusScale: 1.0
     // The highlight/selection accent — used for selected rows, focused
@@ -23,6 +24,7 @@ Singleton {
         case "pink":   return accent.pink;
         case "teal":   return accent.teal;
         case "slate":  return accent.slate;
+        case "auto":   return accentAutoHex !== "" ? accentAutoHex : accent.blue;
         }
         return accent.blue;
     }

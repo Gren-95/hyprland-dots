@@ -430,18 +430,30 @@ Scope {
                                     anchors.centerIn: parent
                                     spacing: Theme.spacing.md
                                     Repeater {
-                                        model: ["blue", "green", "red", "orange", "yellow", "purple", "pink", "teal", "slate"]
+                                        model: ["blue", "green", "red", "orange", "yellow", "purple", "pink", "teal", "slate", "auto"]
                                         delegate: Rectangle {
                                             required property string modelData
                                             readonly property bool active: settingsStore.accentPrimaryName === modelData
+                                            readonly property bool isAuto: modelData === "auto"
                                             implicitWidth: 30
                                             implicitHeight: 30
                                             radius: 15
-                                            color: Theme.accent[modelData]
+                                            color: isAuto
+                                                ? (settingsStore.accentAutoHex !== "" ? settingsStore.accentAutoHex : Theme.accent.blue)
+                                                : Theme.accent[modelData]
                                             border.color: active ? Theme.fg : "transparent"
                                             border.width: active ? 3 : 0
                                             scale: swMa.containsMouse ? 1.12 : 1.0
                                             Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
+                                            // Mountain mini-glyph marks the wallpaper-driven swatch.
+                                            Text {
+                                                visible: parent.isAuto
+                                                anchors.centerIn: parent
+                                                text: "\u{f02e9}"
+                                                color: "#1c1917"
+                                                font.family: Theme.font
+                                                font.pixelSize: Theme.fontSize.sm
+                                            }
                                             MouseArea {
                                                 id: swMa
                                                 anchors.fill: parent
