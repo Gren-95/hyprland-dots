@@ -567,6 +567,13 @@ Scope {
                                 on: settingsStore.workspaceGlyphs
                                 onToggled: (v) => settingsStore.workspaceGlyphs = v
                             }
+                            BoolRow {
+                                Layout.fillWidth: true
+                                label: "Workspace window icons"
+                                desc: "Tiny app icons inside each pill (max 3)"
+                                on: settingsStore.workspaceWindowIcons
+                                onToggled: (v) => settingsStore.workspaceWindowIcons = v
+                            }
 
                             SectionLabel { text: "INPUT" }
                             ChoiceRow {
