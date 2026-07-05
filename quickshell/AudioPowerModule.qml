@@ -142,6 +142,7 @@ Item {
         }
     }
     function openAt(tab) {
+        _openAnchor = null;   // ring hops open at the module's own anchor
         if (tab) setTab(tab);
         popupOpen = true;
     }

@@ -334,7 +334,7 @@ Scope {
                         parentBar: bar
                         visible: settingsStore.placement("audiopower") === "bar"
                         flyoutAnchor: visible ? null : (quickMod.visible ? quickMod : null)
-                        onNavigateNext: { popupOpen = false; spotlight.openAt(0) }
+                        onNavigateNext: { popupOpen = false; quickMod.openAt(0) }
                         onNavigatePrev: { popupOpen = false; btMod.openAt(-1) }
                     }
 
@@ -412,6 +412,16 @@ Scope {
 
                 }
 
+                Connections {
+                    target: quickMod
+                    function onNavigateNext() { quickMod.popupOpen = false; spotlight.openAt(0) }
+                    function onNavigatePrev() { quickMod.popupOpen = false; apMod.openAt("sound") }
+                }
+                Connections {
+                    target: spotlight
+                    function onNavigateNext() { spotlight.close(); cal.openAt(0) }
+                    function onNavigatePrev() { spotlight.close(); quickMod.openAt(0) }
+                }
                 Connections {
                     target: cal
                     function onNavigateNext() { cal.close(); btMod.openAt(0) }

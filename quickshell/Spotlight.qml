@@ -13,6 +13,8 @@ Scope {
     // Set from the bar so the launcher flyout hangs under the launcher icon.
     property var anchorBar: null
     property var anchorItem: null
+    signal navigateNext()
+    signal navigatePrev()
 
     readonly property string calcExpr: {
         if (!settingsStore.spotlightCalc) return "";
@@ -95,7 +97,12 @@ Scope {
         onDismissed: root.open = false
         onKeyPressed: (e) => {
             const n = root.totalRows;
-            if (e.key === Qt.Key_Down) {
+            const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
+            if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
+                root.navigateNext(); e.accepted = true;
+            } else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
+                root.navigatePrev(); e.accepted = true;
+            } else if (e.key === Qt.Key_Down) {
                 if (n > 0) root.selectedIndex = Math.min(n - 1, root.selectedIndex + 1);
                 e.accepted = true;
             } else if (e.key === Qt.Key_Up) {
