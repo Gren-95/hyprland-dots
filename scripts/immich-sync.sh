@@ -17,7 +17,7 @@ run_upload() {
     fi
 
     local output exit_code
-    output=$("$bin" upload --recursive "$PICTURES_DIR" --ignore "**/ocr/**" 2>&1)
+    output=$("$bin" upload --recursive "$PICTURES_DIR" --ignore "**/{ocr,Screenshots}/**" 2>&1)
     exit_code=$?
     echo "$output" >> "$IMMICH_LOG"
 
