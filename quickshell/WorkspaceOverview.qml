@@ -41,7 +41,7 @@ Scope {
     function activate(idx) {
         const ws = root.workspaces[idx];
         if (ws) {
-            Hypr.dispatch("workspace", String(ws.id));
+            Hypr.focusWorkspace(ws.id);
         }
         close();
     }
@@ -299,7 +299,7 @@ Scope {
         readonly property real previewH: root.cardWidth * (monH / monW)
         implicitWidth: root.cardWidth
         implicitHeight: previewH + 38
-        radius: 12
+        radius: 12 * Theme.radiusScale
         color: ws.highlighted ? Theme.bgActive : Theme.bg
         border.color: ws.highlighted ? Theme.accentPrimary : (ws.isActive ? Theme.accent.blue : Theme.border)
         border.width: (ws.highlighted || ws.isActive) ? 2 : 1
@@ -316,7 +316,7 @@ Scope {
             }
             implicitWidth: 22
             implicitHeight: 22
-            radius: 11
+            radius: 11 * Theme.radiusScale
             color: ws.isActive ? Theme.accent.blue : (ws.highlighted ? Theme.accentPrimary : Theme.border)
             z: 5
             Text {
@@ -338,7 +338,7 @@ Scope {
                 margins: 6
             }
             height: ws.previewH - 12
-            radius: 6
+            radius: 6 * Theme.radiusScale
             color: "#0c0a09"
             border.color: Theme.border
             border.width: 1
@@ -357,7 +357,7 @@ Scope {
 
                     Rectangle {
                         anchors.fill: parent
-                        radius: 3
+                        radius: 3 * Theme.radiusScale
                         color: modelData.focused ? "#1e293b" : Theme.bg
                         border.color: modelData.focused ? Theme.accent.blue : Theme.border
                         border.width: 1
@@ -400,7 +400,7 @@ Scope {
                             visible: parent.width > 60
                             implicitWidth: lbl.implicitWidth + 6
                             implicitHeight: lbl.implicitHeight + 2
-                            radius: 2
+                            radius: 2 * Theme.radiusScale
                             color: "#000000aa"
                             Text {
                                 id: lbl
