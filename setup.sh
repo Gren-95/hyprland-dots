@@ -312,7 +312,7 @@ show_summary() {
     echo "Next steps:"
     echo "1. Log out and log back into Hyprland"
     echo "2. Configure wallpapers in scripts/wallpaper.sh"
-    echo "3. Review keybindings in hypr/modules/keys.conf"
+    echo "3. Review keybindings in hypr/modules/keys.lua"
     echo "4. Customize colors and themes to your liking"
     echo ""
     echo "Useful commands:"

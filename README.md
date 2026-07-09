@@ -45,7 +45,7 @@ Modals reachable from keybindings or the bar:
 - [`KEYBINDS.md`](KEYBINDS.md) — flat keybind reference (live viewer: `Super+F1`)
 - [`quickshell/DESIGN.md`](quickshell/DESIGN.md) — QML widget conventions and recipes
 - [`scripts/README.md`](scripts/README.md) — per-script breakdown (what runs when)
-- [`hypr/MODULES.md`](hypr/MODULES.md) — what each `hypr/modules/*.conf` owns
+- [`hypr/MODULES.md`](hypr/MODULES.md) — what each `hypr/modules/*.lua` owns
 
 ## Dependencies
 
@@ -126,7 +126,7 @@ $EDITOR hypr/hypridle.conf
 ### Keybinds
 
 ```bash
-$EDITOR hypr/modules/keys.conf
+$EDITOR hypr/modules/keys.lua
 ```
 
 Press `Super+F1` in session to view all active keybinds.
@@ -180,7 +180,7 @@ Edits to dotfiles are picked up automatically without restarting your session:
 
 | File changed | Action |
 |---|---|
-| `hypr/hyprland.conf`, `hypr/modules/*` | `hyprctl reload` |
+| `hypr/hyprland*.lua`, `hypr/modules/*` | `hyprctl reload` |
 | `hypr/hypridle.conf` | Restart hypridle |
 | `hypr/hyprlock.conf` | Notification (applies on next lock) |
 | `gtk-3.0/gtk.css` | Notification (restart GTK apps to apply) |
