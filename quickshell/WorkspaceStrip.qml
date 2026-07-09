@@ -35,7 +35,7 @@ RowLayout {
 
             Text {
                 text: strip.glyphFn(pill.modelData.id)
-                color: pill.modelData.active ? "#f5f5f4"
+                color: pill.modelData.active ? Theme.fg
                      : (wsMa.containsMouse ? Theme.muted : Theme.mutedDeep)
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSize.lg
@@ -58,7 +58,12 @@ RowLayout {
                     source: {
                         const cls = (modelData.lastIpcObject && modelData.lastIpcObject.class)
                             ? modelData.lastIpcObject.class : "";
-                        return cls ? Quickshell.iconPath(cls.toLowerCase(), "application-x-executable") : "";
+                        if (!cls) return "";
+                        // iconPath can return a bare absolute path (e.g. kitty's
+                        // /usr/lib64/... logo); IconImage treats those as qrc-
+                        // relative and fails — prefix file:// so they load.
+                        const p = Quickshell.iconPath(cls.toLowerCase(), "application-x-executable");
+                        return p.startsWith("/") ? "file://" + p : p;
                     }
                 }
             }
@@ -70,9 +75,9 @@ RowLayout {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: Hyprland.dispatch("workspace " + pill.modelData.id)
+                onClicked: Hyprland.dispatch("hl.dsp.focus({ workspace = " + pill.modelData.id + " })")
                 onWheel: (e) => Hyprland.dispatch(
-                    "workspace " + (e.angleDelta.y > 0 ? "e+1" : "e-1"))
+                    'hl.dsp.focus({ workspace = "' + (e.angleDelta.y > 0 ? "e+1" : "e-1") + '" })')
             }
         }
     }

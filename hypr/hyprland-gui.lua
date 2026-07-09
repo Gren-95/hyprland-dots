@@ -5,7 +5,6 @@ hl.config({
     cursor = {
         enable_hyprcursor = true,
         hide_on_tablet = true,
-        no_hardware_cursors = 1,
     },
     decoration = {
         blur = {

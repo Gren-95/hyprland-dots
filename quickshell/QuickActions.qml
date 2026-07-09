@@ -52,7 +52,7 @@ Item {
     // as the visibility key for the Settings Bar tab.
     readonly property var allOneShots: [
         { glyph: "󰅍", label: "Clipboard",    accent: Theme.accent.slate, action: "clipboard" },
-        { glyph: "󰹑", label: "Screenshot",   accent: "#60a5fa", action: "screenshot", cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenshot.sh"] },
+        { glyph: "󰹑", label: "Screenshot",   accent: Theme.accent.blueBright, action: "screenshot", cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenshot.sh"] },
         { glyph: "󰕧", label: "Record",       accent: Theme.accent.red, action: "record", cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenrecord.sh"] },
         { glyph: "󰈊", label: "Color picker", accent: "#e879f9", action: "colorpicker", cmd: ["hyprpicker", "-a"] },
         { glyph: "󰋖", label: "Keybinds",     accent: Theme.accent.blue, action: "keybinds" },
@@ -311,8 +311,6 @@ Item {
         pinned: actions.pinned || actions.menusOpen > 0
         cardWidth: settingsStore.flyoutSize("quickactions", "w", 420)
         cardHeight: panel.implicitHeight + 28
-        fillColor: Theme.bg
-        borderColor: Theme.border
         onDismissed: actions.popupOpen = false
 
         onKeyPressed: (e) => {
@@ -427,14 +425,15 @@ Item {
         property bool highlighted: false
         signal picked()
         signal hovered()
-        readonly property color accent: tile.entry ? tile.entry.accent : Theme.fg
+        readonly property color accent: (tile.entry && tile.entry.accent !== undefined)
+            ? tile.entry.accent : Theme.fg
         implicitHeight: 64
-        radius: 10
+        radius: 10 * Theme.radiusScale
         color: tile.on
             ? Qt.rgba(accent.r, accent.g, accent.b, 0.16)
             : tile.highlighted
                 ? Qt.rgba(accent.r, accent.g, accent.b, 0.10)
-                : (tileMa.containsMouse ? Theme.bgHover : "#1a1716")
+                : (tileMa.containsMouse ? Theme.bgHover : Theme.bgInset)
         border.color: tile.on ? accent
                     : tile.highlighted ? Theme.mutedDeep
                     : Theme.borderSubtle
