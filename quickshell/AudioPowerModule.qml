@@ -187,7 +187,7 @@ Item {
                 if (v < 0.67) return "󰖀";
                 return "󰕾";
             }
-            color: ap.sink && ap.sink.audio && ap.sink.audio.muted ? Theme.mutedDeep : "#f5f5f4"
+            color: ap.sink && ap.sink.audio && ap.sink.audio.muted ? Theme.mutedDeep : Theme.fg
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.md
         }
@@ -197,7 +197,7 @@ Item {
                 if (ap.sink.audio.muted) return "muted";
                 return Math.round(ap.sink.audio.volume * 100) + "%";
             }
-            color: ap.sink && ap.sink.audio && ap.sink.audio.muted ? Theme.mutedDeep : "#f5f5f4"
+            color: ap.sink && ap.sink.audio && ap.sink.audio.muted ? Theme.mutedDeep : Theme.fg
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.base
         }
@@ -515,7 +515,7 @@ Item {
                                     readonly property bool hl: ap.pwrIndex === 5 + index
                                     Layout.fillWidth: true
                                     implicitHeight: 60
-                                    radius: 10
+                                    radius: 10 * Theme.radiusScale
                                     color: hl ? Qt.rgba(modelData.accent.r, modelData.accent.g, modelData.accent.b, 0.12)
                                               : Theme.bgHover
                                     border.color: hl ? modelData.accent : Theme.borderSubtle

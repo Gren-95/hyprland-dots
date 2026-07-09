@@ -43,9 +43,9 @@ Scope {
 
         Rectangle {
             anchors.fill: parent
-            radius: Theme.radius.lg
+            radius: 0
             color: Theme.bgAlt
-            border.color: Theme.borderStrong
+            border.color: Theme.popupBorder
             border.width: 1
             scale: root.open ? 1.0 : 0.96
             opacity: root.open ? 1.0 : 0.0

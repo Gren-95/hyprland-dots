@@ -107,7 +107,7 @@ Scope {
                                         required property int index
                                         Layout.fillWidth: true
                                         implicitHeight: 16
-                                        radius: 3
+                                        radius: 3 * Theme.radiusScale
                                         color: Theme.bgDeep
                                         Rectangle {
                                             anchors {
@@ -117,7 +117,7 @@ Scope {
                                                 margins: 1
                                             }
                                             width: (parent.width - 2) * Math.min(1, modelData / 100)
-                                            radius: 2
+                                            radius: 2 * Theme.radiusScale
                                             color: root.pctColor(modelData)
                                             Behavior on width { NumberAnimation { duration: Theme.duration.fast } }
                                         }
@@ -227,7 +227,7 @@ Scope {
         property Component contentLoader: null
         Layout.fillWidth: true
         implicitHeight: cardCol.implicitHeight + 24
-        radius: 12
+        radius: 12 * Theme.radiusScale
         color: Theme.bgDeep
         border.color: Theme.borderSubtle
         border.width: 1
@@ -293,7 +293,7 @@ Scope {
                 Layout.fillWidth: true
                 Layout.topMargin: 4
                 implicitHeight: 8
-                radius: 4
+                radius: 4 * Theme.radiusScale
                 color: Theme.bg
                 Rectangle {
                     anchors {
@@ -303,7 +303,7 @@ Scope {
                         margins: 1
                     }
                     width: (barBg.width - 2) * Math.min(1, stat.pct / 100)
-                    radius: 3
+                    radius: 3 * Theme.radiusScale
                     color: stat.barColor
                     Behavior on width { NumberAnimation { duration: Theme.duration.fast } }
                 }
@@ -329,7 +329,7 @@ Scope {
         property real totalGb: 0
         property real pct: 0
         implicitHeight: drCol.implicitHeight + 16
-        radius: 10
+        radius: 10 * Theme.radiusScale
         color: Theme.bgDeep
         border.color: Theme.borderSubtle
         border.width: 1
@@ -379,7 +379,7 @@ Scope {
                 id: drBarBg
                 Layout.fillWidth: true
                 implicitHeight: 6
-                radius: 3
+                radius: 3 * Theme.radiusScale
                 color: Theme.bg
                 Rectangle {
                     anchors {
@@ -389,7 +389,7 @@ Scope {
                         margins: 1
                     }
                     width: (drBarBg.width - 2) * Math.min(1, dr.pct / 100)
-                    radius: 2
+                    radius: 2 * Theme.radiusScale
                     color: root.pctColor(dr.pct)
                     Behavior on width { NumberAnimation { duration: Theme.duration.fast } }
                 }
@@ -407,7 +407,7 @@ Scope {
         property color accent: Theme.accent.blue
         Layout.fillWidth: true
         implicitHeight: 64
-        radius: 10
+        radius: 10 * Theme.radiusScale
         color: Qt.rgba(accent.r, accent.g, accent.b, 0.08)
         border.color: Qt.rgba(accent.r, accent.g, accent.b, 0.4)
         border.width: 1

@@ -127,7 +127,7 @@ Scope {
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 42
-                        radius: 8
+                        radius: 8 * Theme.radiusScale
                         color: "#0c0a09"
                         border.color: passwordField.activeFocus ? Theme.accent.purple : Theme.border
                         border.width: 1
@@ -204,7 +204,7 @@ Scope {
                             id: cancelBtn
                             Layout.preferredWidth: 90
                             Layout.preferredHeight: 32
-                            radius: 8
+                            radius: 8 * Theme.radiusScale
                             color: cancelMouse.containsMouse ? Theme.border : "transparent"
                             border.color: Theme.border
                             border.width: 1
@@ -228,7 +228,7 @@ Scope {
                             id: okBtn
                             Layout.preferredWidth: 110
                             Layout.preferredHeight: 32
-                            radius: 8
+                            radius: 8 * Theme.radiusScale
                             color: okMouse.containsMouse ? "#7c3aed" : Theme.accent.purple
                             Text {
                                 anchors.centerIn: parent

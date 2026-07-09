@@ -58,7 +58,7 @@ ColumnLayout {
         Text {
             text: section.node && section.node.audio
                 ? Math.round(section.node.audio.volume * 100) + "%" : ""
-            color: "#f5f5f4"
+            color: Theme.fg
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.sm
             Layout.preferredWidth: 40

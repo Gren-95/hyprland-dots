@@ -5,9 +5,9 @@ import QtQuick.Shapes
 
 Item {
     id: root
-    property color fillColor: "#292524"
-    property color borderColor: "#78716c"
-    property real cornerRadius: 12
+    property color fillColor: Theme.bgAlt
+    property color borderColor: Theme.popupBorder
+    property real cornerRadius: 0
     property real borderWidth: 1
     property real tailHeight: 10
     property real tailWidth: 18

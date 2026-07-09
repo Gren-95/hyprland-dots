@@ -43,7 +43,7 @@ Item {
             id: bellGlyph
             text: bell.notifs && bell.notifs.dnd ? "󰂛"
                 : (bell.notifs && bell.notifs.unreadCount > 0 ? "󰂞" : "󰂚")
-            color: bell.notifs && bell.notifs.dnd ? Theme.accent.orange : "#f5f5f4"
+            color: bell.notifs && bell.notifs.dnd ? Theme.accent.orange : Theme.fg
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.md
             transformOrigin: Item.Top
@@ -62,7 +62,7 @@ Item {
             visible: bell.notifs && bell.notifs.unreadCount > 0 && !bell.notifs.dnd
             implicitWidth: cnt.implicitWidth + 8
             implicitHeight: 14
-            radius: 7
+            radius: 7 * Theme.radiusScale
             color: Theme.accent.red
             // Pop in on appearance.
             scale: visible ? 1.0 : 0.0
@@ -71,7 +71,7 @@ Item {
                 id: cnt
                 anchors.centerIn: parent
                 text: bell.notifs ? String(bell.notifs.unreadCount) : "0"
-                color: "#f5f5f4"
+                color: Theme.fg
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSize.xs
                 font.bold: true

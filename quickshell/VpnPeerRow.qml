@@ -29,7 +29,7 @@ Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         width: 3
         height: parent.height - 14
-        radius: 1.5
+        radius: 1.5 * Theme.radiusScale
         color: Theme.accent.purple
         opacity: vrow.highlighted ? 0.9 : (vrowMa.containsMouse ? 0.4 : 0.0)
         Behavior on opacity { NumberAnimation { duration: Theme.duration.fast } }
@@ -61,7 +61,7 @@ Rectangle {
                 anchors.centerIn: parent
                 width: 8
                 height: 8
-                radius: 4
+                radius: 4 * Theme.radiusScale
                 color: Theme.accent.green
                 visible: vrow.isOnline
                 opacity: 0.0
@@ -82,7 +82,7 @@ Rectangle {
                 anchors.centerIn: parent
                 width: 8
                 height: 8
-                radius: 4
+                radius: 4 * Theme.radiusScale
                 color: vrow.isOnline ? Theme.accent.green : Theme.disabled
                 Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
             }
@@ -112,7 +112,7 @@ Rectangle {
             visible: vrow.entry && vrow.entry.exitNodeOption
             Layout.preferredWidth: 22
             Layout.preferredHeight: 22
-            radius: 11
+            radius: 11 * Theme.radiusScale
             color: vrow.isExitNode ? Theme.accent.purple : "transparent"
             border.color: vrow.isExitNode ? Theme.accent.purple : Theme.border
             border.width: 1

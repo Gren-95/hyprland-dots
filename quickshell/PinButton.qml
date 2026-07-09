@@ -6,8 +6,8 @@ Rectangle {
     signal toggled()
     implicitWidth: 22
     implicitHeight: 22
-    radius: 4
-    color: ma.containsMouse ? "#292524" : "transparent"
+    radius: 4 * Theme.radiusScale
+    color: ma.containsMouse ? Theme.bgAlt : "transparent"
     scale: ma.pressed ? 0.85 : 1.0
     Behavior on color { ColorAnimation  { duration: Theme.duration.fast } }
     Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
@@ -16,7 +16,7 @@ Rectangle {
         // Tack tilts upright when pinned; eased so the flip reads as motion.
         rotation: root.pinned ? 0 : -35
         text: "󰐃"
-        color: root.pinned ? "#3b82f6" : "#78716c"
+        color: root.pinned ? Theme.accent.blue : "#78716c"
         font.family: Theme.font
         font.pixelSize: 13
         Behavior on rotation { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.emphasized } }

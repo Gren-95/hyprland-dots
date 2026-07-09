@@ -8,7 +8,7 @@ Rectangle {
     signal clicked()
     implicitWidth: lbl.implicitWidth + 18
     implicitHeight: Theme.height.chip
-    radius: 11
+    radius: 11 * Theme.radiusScale
     color: tg.active ? "#1d4ed8" : Theme.bgAlt
     border.color: tg.highlighted ? Theme.fg : (tg.active ? Theme.accent.blue : Theme.borderStrong)
     border.width: tg.highlighted ? 2 : 1
@@ -21,7 +21,7 @@ Rectangle {
         id: lbl
         anchors.centerIn: parent
         text: tg.label
-        color: "#f5f5f4"
+        color: Theme.fg
         font.family: Theme.font
         font.pixelSize: Theme.fontSize.sm
         font.bold: tg.active

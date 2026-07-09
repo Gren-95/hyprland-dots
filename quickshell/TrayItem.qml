@@ -22,7 +22,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 2
-        radius: 4
+        radius: 4 * Theme.radiusScale
         color: hoverArea.containsMouse ? Theme.bgAlt : "transparent"
         opacity: tray.item && tray.item.status === Status.Passive ? 0.5 : 1.0
         Behavior on color { ColorAnimation { duration: Theme.duration.fast } }

@@ -25,7 +25,7 @@ Rectangle {
     readonly property color activeAccent: tabCount > 0 ? tabs[activeIndex].accent : Theme.accent.blue
 
     Layout.preferredHeight: Theme.height.control
-    radius: 15
+    radius: 15 * Theme.radiusScale
     color: Theme.bgDeep
     border.color: Theme.border
     border.width: 1
@@ -38,7 +38,7 @@ Rectangle {
         height: parent.height - 4
         width: strip.tabCount > 0 ? (parent.width - 4) / strip.tabCount : 0
         x: 2 + strip.activeIndex * width
-        radius: 13
+        radius: 13 * Theme.radiusScale
         color: Qt.rgba(strip.activeAccent.r, strip.activeAccent.g, strip.activeAccent.b, 0.20)
         border.color: strip.activeAccent
         border.width: 1

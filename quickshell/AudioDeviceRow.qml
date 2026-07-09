@@ -23,8 +23,8 @@ Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         width: 3
         height: parent.height - 10
-        radius: 1.5
-        color: "#60a5fa"
+        radius: 1.5 * Theme.radiusScale
+        color: Theme.accent.blueBright
         opacity: arow.isActive ? 1.0 : (arow.highlighted ? 0.7 : (rowMa.containsMouse ? 0.35 : 0.0))
         Behavior on opacity { NumberAnimation { duration: Theme.duration.fast } }
     }
@@ -36,7 +36,7 @@ Rectangle {
         spacing: Theme.spacing.sm
         Text {
             text: arow.isActive ? "●" : "○"
-            color: arow.isActive ? "#60a5fa" : Theme.mutedDeep
+            color: arow.isActive ? Theme.accent.blueBright : Theme.mutedDeep
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.sm
             Behavior on color { ColorAnimation { duration: Theme.duration.fast } }

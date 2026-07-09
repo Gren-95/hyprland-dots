@@ -24,8 +24,8 @@ Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         width: 3
         height: parent.height - 12
-        radius: 1.5
-        color: "#60a5fa"
+        radius: 1.5 * Theme.radiusScale
+        color: Theme.accent.blueBright
         opacity: dr.isConnected ? 1.0 : (dr.highlighted ? 0.8 : (hover.containsMouse ? 0.4 : 0.0))
         Behavior on opacity { NumberAnimation { duration: Theme.duration.fast } }
     }
@@ -37,7 +37,7 @@ Rectangle {
         spacing: Theme.spacing.md
         Text {
             text: dr.isConnected ? "󰂱" : "󰂯"
-            color: dr.isConnected ? "#60a5fa" : Theme.mutedDeep
+            color: dr.isConnected ? Theme.accent.blueBright : Theme.mutedDeep
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.md
             Behavior on color { ColorAnimation { duration: Theme.duration.fast } }

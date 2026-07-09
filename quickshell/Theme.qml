@@ -35,11 +35,15 @@ Singleton {
     readonly property color bgDeep:    "#16130f"   // deepest (inset wells, sliders)
     readonly property color bgHover:   "#231f1d"
     readonly property color bgActive:  "#332e2b"
+    readonly property color bgInset:   "#1a1716"   // inset wells (profile rows, settings tiles)
 
     // Borders / dividers
     readonly property color border:        "#3a3633"
     readonly property color borderSubtle:  "#2a2624"
     readonly property color borderStrong:  "#44403c"
+    // Outer frame of popup surfaces (flyouts, popups, overlays) — the box
+    // itself, not UI inside it. Paired with sharp (radius 0) outer corners.
+    readonly property color popupBorder:   "#78716c"
 
     // Text
     readonly property color fg:        "#fafaf9"
@@ -52,6 +56,7 @@ Singleton {
     // Accents
     readonly property QtObject accent: QtObject {
         readonly property color blue:   "#3b82f6"
+        readonly property color blueBright: "#60a5fa"   // icon tint on dark surfaces
         readonly property color green:  "#22c55e"
         readonly property color red:    "#ef4444"
         readonly property color orange: "#f97316"

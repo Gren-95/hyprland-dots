@@ -117,7 +117,7 @@ Scope {
                 id: hud
                 implicitWidth: hudRow.implicitWidth + 24
                 implicitHeight: hudRow.implicitHeight + 14
-                radius: 18
+                radius: 18 * Theme.radiusScale
                 color: Theme.bg
                 border.color: root._justStarted ? "#7f1d1d" : Theme.border
                 border.width: 1
@@ -132,7 +132,7 @@ Scope {
                     Rectangle {
                         Layout.preferredWidth: 12
                         Layout.preferredHeight: 12
-                        radius: 6
+                        radius: 6 * Theme.radiusScale
                         color: root._justStarted ? Theme.accent.red : Theme.accent.green
                     }
 
@@ -157,7 +157,7 @@ Scope {
                         visible: root._justStarted
                         Layout.preferredWidth: stopText.implicitWidth + 18
                         Layout.preferredHeight: 24
-                        radius: 12
+                        radius: 12 * Theme.radiusScale
                         color: stopMouse.containsMouse ? "#7f1d1d" : "transparent"
                         border.color: "#7f1d1d"
                         border.width: 1
