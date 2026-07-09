@@ -13,14 +13,16 @@ Item {
     // per-open override set by openTab(name, from). Fallback: own icon.
     property Item flyoutAnchor: null
     property Item _openAnchor: null
-    // activeTab: "bluetooth" or "wifi"
+    // activeTab: "bluetooth", "wifi" or "vpn"
     property string activeTab: "bluetooth"
     // tabIndex: 0 = primary toggle (BT power / wifi enable), 1 = secondary
-    // toggle (scan / refresh), 2+ = item in the current tab's list.
+    // toggle (scan / refresh), 2+ = item in the current tab's list. On the
+    // wifi tab a wired adapter (when present) is the first list item, the
+    // Wi-Fi networks follow shifted by wiredOffset.
     property int tabIndex: 0
     signal navigateNext()
     signal navigatePrev()
-    readonly property var currentItems: activeTab === "wifi" ? visibleNetworks
+    readonly property var currentItems: activeTab === "wifi" ? (wiredDevice ? [wiredDevice] : []).concat(visibleNetworks)
                                       : activeTab === "vpn"  ? TailscaleService.peers
                                       : visibleDevices
     readonly property int tabStopCount: 2 + currentItems.length
@@ -66,6 +68,25 @@ Item {
     readonly property var activeNetwork: {
         for (const n of visibleNetworks) if (n.connected) return n;
         return null;
+    }
+
+    // ===== Ethernet =====
+    // nmManaged filter keeps virtual wired devices (docker veth, bridges)
+    // out — only a real (built-in / USB / dock) adapter should show here.
+    readonly property var wiredDevice: {
+        const devs = Networking.devices ? Networking.devices.values : [];
+        for (const d of devs) {
+            if (d.type === DeviceType.Wired && d.nmManaged) return d;
+        }
+        return null;
+    }
+    readonly property bool wiredConnected: wiredDevice ? wiredDevice.connected : false
+    // Row-index shift the pinned wired row adds to the wifi list.
+    readonly property int wiredOffset: wiredDevice ? 1 : 0
+    function toggleWired() {
+        if (!wiredDevice) return;
+        if (wiredConnected) wiredDevice.disconnect();
+        else if (wiredDevice.network) wiredDevice.network.connect();
     }
 
     // Fast poll while the VPN tab is open (4 s).
@@ -151,7 +172,10 @@ Item {
         else if (adapter) adapter.discovering = !adapter.discovering;
     }
     function activateCurrent(i) {
-        if (activeTab === "wifi") activateNetwork(i);
+        if (activeTab === "wifi") {
+            if (wiredDevice && i === 0) toggleWired();
+            else activateNetwork(i - wiredOffset);
+        }
         else if (activeTab === "vpn") {
             const p = TailscaleService.peers[i];
             if (p) TailscaleService.copyIp(p.ips[0] || "");
@@ -160,7 +184,7 @@ Item {
     }
     function forgetCurrent(i) {
         if (activeTab === "wifi") {
-            const n = visibleNetworks[i];
+            const n = visibleNetworks[i - wiredOffset];
             if (n && n.known) n.forget();
         } else if (activeTab === "bluetooth") {
             const d = visibleDevices[i];
@@ -177,7 +201,7 @@ Item {
         spacing: Theme.spacing.sm
         Text {
             text: !bt.powered ? "󰂲" : (bt.connectedDevices.length ? "󰂱" : "󰂯")
-            color: !bt.powered ? Theme.mutedDeep : "#60a5fa"
+            color: !bt.powered ? Theme.mutedDeep : Theme.accent.blueBright
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.md
             Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
@@ -185,7 +209,7 @@ Item {
         Text {
             visible: bt.powered && bt.connectedDevices.length > 0
             text: bt.connectedDevices.length
-            color: "#60a5fa"
+            color: Theme.accent.blueBright
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.base
         }
@@ -223,7 +247,6 @@ Item {
         // Fixed height so switching tabs doesn't resize the Wayland surface.
         cardHeight: settingsStore.flyoutSize("network", "h", 460)
         pinned: bt.pinned
-        borderColor: Theme.borderStrong
         onDismissed: bt.popupOpen = false
         onKeyPressed: (e) => {
             const n = bt.currentItems.length;
@@ -486,6 +509,32 @@ Item {
 
                         Rectangle { Layout.fillWidth: true; height: 1; color: Theme.border }
 
+                        // Pinned wired row — shown regardless of Wi-Fi state
+                        // so a dock/USB adapter stays reachable with Wi-Fi off.
+                        Text {
+                            visible: !!bt.wiredDevice
+                            text: "WIRED"
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.xs
+                            font.letterSpacing: 1
+                            font.bold: true
+                        }
+                        WiredRow {
+                            Layout.topMargin: -8
+                            visible: !!bt.wiredDevice
+                            device: bt.wiredDevice
+                            highlighted: bt.selectedIndex === 0 && bt.wiredOffset === 1
+                            onHovered: bt.tabIndex = 2
+                            onPicked: bt.toggleWired()
+                            // Right-click → NetworkManager's editor; close the
+                            // popup so the editor window isn't under our overlay.
+                            onEditRequested: {
+                                Hypr.execute("nm-connection-editor");
+                                bt.popupOpen = false;
+                            }
+                        }
+
                         Text {
                             Layout.fillWidth: true
                             visible: bt.wifiEnabled && bt.visibleNetworks.length === 0
@@ -537,8 +586,8 @@ Item {
                                         required property var modelData
                                         required property int index
                                         network: modelData
-                                        highlighted: bt.selectedIndex === index
-                                        onHovered: bt.tabIndex = index + 2
+                                        highlighted: bt.selectedIndex === index + bt.wiredOffset
+                                        onHovered: bt.tabIndex = index + 2 + bt.wiredOffset
                                         onPicked: bt.activateNetwork(index)
                                         onForgetRequested: if (network) network.forget()
                                     }
@@ -549,8 +598,11 @@ Item {
                                 function onTabIndexChanged() { Qt.callLater(wifiFlick.ensureVisible) }
                             }
                             function ensureVisible() {
-                                if (bt.selectedIndex < 0) return;
-                                const it = wifiRepeater.itemAt(bt.selectedIndex);
+                                // Wired row sits above the Flickable and is
+                                // always on screen; only scroll for networks.
+                                const li = bt.selectedIndex - bt.wiredOffset;
+                                if (li < 0) return;
+                                const it = wifiRepeater.itemAt(li);
                                 if (!it) return;
                                 const top = it.y, bot = top + it.height;
                                 if (top < wifiFlick.contentY) wifiFlick.contentY = Math.max(0, top - 4);
