@@ -1,7 +1,7 @@
 # Scripts
 
 Shell scripts that back the Hyprland session. Most are invoked from
-`hypr/modules/autostart.conf`, Hyprland keybinds, or the Quickshell UI.
+`hypr/modules/autostart.lua`, Hyprland keybinds, or the Quickshell UI.
 
 All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail`
 (no `-e`, transient failures shouldn't kill the loop); one-shots use

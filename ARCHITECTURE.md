@@ -30,8 +30,8 @@ Bird's-eye view of how the pieces fit together. For widget-level detail see
 ## Boot sequence
 
 1. User logs into Hyprland.
-2. Hyprland loads `hyprland.conf`, which sources the `modules/*.conf` files.
-3. `autostart.conf` `exec-once` fires:
+2. Hyprland loads `hyprland.lua`, which requires the `modules/*.lua` files (and `hyprland-gui.lua` last for HyprMod overrides).
+3. `autostart.lua` `exec-once` fires:
    - `scripts/restart.sh` — orchestrates every userspace service
    - `nm-applet --indicator` — system-tray NetworkManager applet (still used
      for Wi-Fi password prompts)
@@ -67,7 +67,7 @@ gtk-3.0, immich, jellyfin). Two entry points:
 
 `dotwatch.sh` runs `inotifywait` on the dots repo and, on file change:
 
-- `hypr/hyprland.conf` or `hypr/modules/*` → `hyprctl reload`
+- `hypr/hyprland*.lua` or `hypr/modules/*` → `hyprctl reload`
 - `hypr/hypridle.conf` → restart hypridle
 - `hypr/hyprlock.conf` → notify (changes apply next lock)
 - `gtk-3.0/gtk.css` → notify (changes apply next GTK app launch)
@@ -92,5 +92,5 @@ watcher missed an atomic write).
 - `quickshell/DESIGN.md` — QML widget conventions, primitives, recipes
 - `scripts/README.md` — per-script breakdown
 - `KEYBINDS.md` — flat keybind reference
-- `hypr/MODULES.md` — what each `hypr/modules/*.conf` does
+- `hypr/MODULES.md` — what each `hypr/modules/*.lua` does
 - `README.md` — install, dependencies, screenshots

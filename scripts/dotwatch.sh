@@ -56,7 +56,7 @@ inotifywait -m -r -e close_write,moved_to,create \
     rel="${path#$DOTS_DIR/}"
 
     case "$rel" in
-        hypr/hyprland.conf|hypr/modules/*) reload_hyprland ;;
+        hypr/hyprland*.lua|hypr/modules/*) reload_hyprland ;;
         hypr/hypridle.conf)                reload_hypridle ;;
         hypr/hyprlock.conf)                notify_hyprlock ;;
         gtk-3.0/gtk.css)                   notify_gtk ;;
