@@ -118,7 +118,8 @@ Scope {
                         const up = e.angleDelta.y > 0;
                         switch (settingsStore.barWheelAction) {
                         case "workspace":
-                            Hyprland.dispatch("workspace " + (up ? "e+1" : "e-1"));
+                            // Hyprland 0.55+ (Lua config) needs dispatcher exprs
+                            Hyprland.dispatch('hl.dsp.focus({ workspace = "' + (up ? "e+1" : "e-1") + '" })');
                             break;
                         case "volume": {
                             const sink = Pipewire.defaultAudioSink;
@@ -136,7 +137,18 @@ Scope {
                     id: clockTimer
                     property date now: new Date()
                     interval: 1000; running: true; repeat: true
-                    onTriggered: now = new Date()
+                    // With seconds hidden, re-arm to the next minute boundary
+                    // instead of ticking 60x/min for an unchanging display.
+                    onTriggered: {
+                        now = new Date();
+                        interval = settingsStore.clockShowSeconds
+                            ? 1000
+                            : 60000 - (now.getSeconds() * 1000 + now.getMilliseconds()) + 50;
+                    }
+                }
+                Connections {
+                    target: settingsStore
+                    function onClockShowSecondsChanged() { clockTimer.interval = 100 }
                 }
 
                 // ============ CENTER (absolute, anchored to monitor center) ============
@@ -180,7 +192,7 @@ Scope {
                                         settingsStore.clock24h
                                             ? (settingsStore.clockShowSeconds ? "HH:mm:ss" : "HH:mm")
                                             : (settingsStore.clockShowSeconds ? "h:mm:ss AP" : "h:mm AP"))
-                                    color: "#f5f5f4"
+                                    color: Theme.fg
                                     font { family: Theme.font; pixelSize: Theme.fontSize.md; bold: true }
                                 }
                             }
