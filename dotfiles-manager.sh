@@ -659,6 +659,47 @@ cmd_fix() {
     fi
 }
 
+# Remove dangling ~/.config symlinks that point into the dots repo.
+# Links become dangling when an item is dropped from CONFIG_ITEMS and its
+# directory is deleted from the repo. Unrelated broken links are left alone.
+cmd_prune() {
+    local dots_physical
+    dots_physical="$(readlink -f "$DOTS_DIR")"
+    local removed=0 kept=0
+
+    for link in "$CONFIG_DIR"/* "$CONFIG_DIR"/.*; do
+        [[ -L "$link" ]] || continue
+        [[ -e "$link" ]] && continue
+
+        local target
+        target="$(readlink "$link")"
+        if [[ "$target" != "$DOTS_DIR"/* && "$target" != "$dots_physical"/* ]]; then
+            verbose "Dangling but not ours, keeping: $link -> $target"
+            kept=$((kept + 1))
+            continue
+        fi
+
+        if [[ "$DRY_RUN" == true ]]; then
+            log_info "[DRY RUN] Would remove dangling symlink: $link -> $target"
+            removed=$((removed + 1))
+            continue
+        fi
+
+        log_info "Removing dangling symlink: $link -> $target"
+        rm "$link" || {
+            log_error "Failed to remove: $link"
+            continue
+        }
+        removed=$((removed + 1))
+    done
+
+    if [[ $removed -eq 0 ]]; then
+        log_success "No dangling symlinks found!"
+    else
+        log_success "Prune completed: $removed dangling link(s) handled, $kept unrelated kept."
+    fi
+}
+
 ################################################################################
 # Main
 ################################################################################
@@ -674,6 +715,7 @@ Commands:
   undo      Restore backups and remove symlinks
   status    Show current symlink status
   fix       Fix inconsistent symlink paths
+  prune     Remove dangling ~/.config symlinks pointing into this repo
 
 Options:
   --dry-run    Preview changes without executing
@@ -697,7 +739,7 @@ main() {
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            backup|undo|status|fix)
+            backup|undo|status|fix|prune)
                 command="$1"
                 shift
                 ;;
@@ -752,6 +794,9 @@ main() {
             ;;
         fix)
             cmd_fix
+            ;;
+        prune)
+            cmd_prune
             ;;
         *)
             log_error "Unknown command: $command"
