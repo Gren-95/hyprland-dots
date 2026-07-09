@@ -121,7 +121,7 @@ Scope {
                 width: root.selW
                 height: root.selH
                 color: "transparent"
-                border.color: "#3b82f6"
+                border.color: Theme.accent.blue
                 border.width: 2
             }
 
@@ -139,15 +139,15 @@ Scope {
                 }
                 implicitWidth: dimText.implicitWidth + 14
                 implicitHeight: dimText.implicitHeight + 8
-                radius: 6
+                radius: 6 * Theme.radiusScale
                 color: "#dd000000"
-                border.color: "#3b82f6"
+                border.color: Theme.accent.blue
                 border.width: 1
                 Text {
                     id: dimText
                     anchors.centerIn: parent
                     text: Math.round(root.selW) + " × " + Math.round(root.selH)
-                    color: "#f5f5f4"
+                    color: Theme.fg
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.sm
                     font.bold: true

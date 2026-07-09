@@ -11,7 +11,7 @@ Rectangle {
     property bool active: false
     property color accent: Theme.accent.blue
     signal picked()
-    radius: 13
+    radius: 13 * Theme.radiusScale
     color: (!tp.active && tpMa.containsMouse) ? Qt.rgba(1, 1, 1, 0.05) : "transparent"
     scale: tpMa.pressed ? 0.94 : 1.0
     Behavior on color { ColorAnimation { duration: Theme.duration.fast } }

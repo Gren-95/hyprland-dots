@@ -70,7 +70,7 @@ Scope {
                         Layout.alignment: Qt.AlignHCenter
                         implicitWidth: 320
                         implicitHeight: 180
-                        radius: 8
+                        radius: 8 * Theme.radiusScale
                         color: Theme.bgDeep
                         border.color: Theme.borderSubtle
                         border.width: 1
@@ -151,7 +151,7 @@ Scope {
 
         Layout.fillWidth: true
         implicitHeight: 60
-        radius: 8
+        radius: 8 * Theme.radiusScale
         color: hover.containsMouse
             ? Qt.rgba(accent.r, accent.g, accent.b, 0.18)
             : Theme.bgDeep

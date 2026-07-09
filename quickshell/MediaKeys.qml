@@ -118,7 +118,7 @@ Item {
                 visible: mk.hasMultiple && mk.trackTitle !== "" && settingsStore.mediaTitleWidth > 0
                 Layout.alignment: Qt.AlignVCenter
                 implicitWidth: 3; implicitHeight: 3
-                radius: 1.5
+                radius: 1.5 * Theme.radiusScale
                 color: Theme.mutedDeep
             }
 
@@ -141,7 +141,7 @@ Item {
                 visible: mk.trackTitle !== "" && settingsStore.mediaTitleWidth > 0
                 Layout.alignment: Qt.AlignVCenter
                 implicitWidth: 3; implicitHeight: 3
-                radius: 1.5
+                radius: 1.5 * Theme.radiusScale
                 color: Theme.mutedDeep
             }
 
@@ -172,7 +172,6 @@ Item {
         open: mk.playerOpen && mk.hasPlayer
         cardWidth: 280
         cardHeight: playerCol.implicitHeight + 2 * Theme.spacing.lg
-        borderColor: Theme.borderStrong
         onDismissed: mk.playerOpen = false
 
         // Refresh the playback position while open and playing.
@@ -271,7 +270,7 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                             width: parent.width
                             height: 5
-                            radius: 2.5
+                            radius: 2.5 * Theme.radiusScale
                             color: Theme.bgDeep
                             border.color: Theme.borderStrong
                             border.width: 1
@@ -280,14 +279,14 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: Math.max(0, parent.width * seek.frac)
                                 height: 5
-                                radius: 2.5
+                                radius: 2.5 * Theme.radiusScale
                                 color: Theme.accentPrimary
                             }
                         }
                         Rectangle {
                             width: 12
                             height: 12
-                            radius: 6
+                            radius: 6 * Theme.radiusScale
                             color: Theme.fg
                             border.color: Theme.accentPrimary
                             border.width: 2
@@ -373,7 +372,7 @@ Item {
             anchors.centerIn: parent
             width: 22
             height: 22
-            radius: 11
+            radius: 11 * Theme.radiusScale
             color: btn.highlight ? Theme.accentPrimary
                 : (hover.containsMouse ? Theme.bgHover : "transparent")
             opacity: btn.enabledLook ? 1.0 : 0.35

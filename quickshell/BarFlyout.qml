@@ -25,7 +25,7 @@ PopupWindow {
     property int cardHeight: 460
     property bool pinned: false
     property color fillColor: Theme.bgAlt
-    property color borderColor: Theme.mutedDeep
+    property color borderColor: Theme.popupBorder
     // Gap kept between the flyout body and the screen's side edges.
     readonly property int edgeMargin: 8
     default property alias contentData: contentScope.data

@@ -329,8 +329,8 @@ Scope {
         readonly property bool on: arow.action && arow.action.isToggle ? arow.action.state() : false
         readonly property color accent: arow.action ? arow.action.accent : Theme.accentPrimary
         implicitHeight: 52
-        radius: 8
-        color: arow.highlighted ? "#3b3531" : (aHover.containsMouse ? "#262220" : "transparent")
+        radius: 8 * Theme.radiusScale
+        color: arow.highlighted ? Theme.bgActive : (aHover.containsMouse ? Theme.bgHover : "transparent")
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: 12
@@ -339,7 +339,7 @@ Scope {
             Rectangle {
                 Layout.preferredWidth: 36
                 Layout.preferredHeight: 36
-                radius: 8
+                radius: 8 * Theme.radiusScale
                 color: Qt.rgba(arow.accent.r, arow.accent.g, arow.accent.b, arow.on ? 0.25 : 0.12)
                 Text {
                     anchors.centerIn: parent
@@ -362,7 +362,7 @@ Scope {
                 visible: arow.action && arow.action.isToggle
                 implicitWidth: stateLbl.implicitWidth + 14
                 implicitHeight: 20
-                radius: 10
+                radius: 10 * Theme.radiusScale
                 color: arow.on ? Qt.rgba(arow.accent.r, arow.accent.g, arow.accent.b, 0.2) : "transparent"
                 border.color: arow.on ? arow.accent : Theme.borderStrong
                 border.width: 1
@@ -402,8 +402,8 @@ Scope {
         signal picked()
         signal hovered()
         implicitHeight: 60
-        radius: 8
-        color: crow.highlighted ? "#3b3531" : (cHover.containsMouse ? "#262220" : "transparent")
+        radius: 8 * Theme.radiusScale
+        color: crow.highlighted ? Theme.bgActive : (cHover.containsMouse ? Theme.bgHover : "transparent")
         border.color: Theme.accentPrimary
         border.width: 1
 
@@ -415,7 +415,7 @@ Scope {
             Rectangle {
                 Layout.preferredWidth: 32
                 Layout.preferredHeight: 32
-                radius: 6
+                radius: 6 * Theme.radiusScale
                 color: "#1d4ed8"
                 Text {
                     anchors.centerIn: parent
@@ -471,8 +471,8 @@ Scope {
         signal picked()
         signal hovered()
         implicitHeight: 52
-        radius: 8
-        color: row.highlighted ? "#3b3531" : (hover.containsMouse ? "#262220" : "transparent")
+        radius: 8 * Theme.radiusScale
+        color: row.highlighted ? Theme.bgActive : (hover.containsMouse ? Theme.bgHover : "transparent")
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: 12

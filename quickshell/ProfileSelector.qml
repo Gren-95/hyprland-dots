@@ -34,10 +34,10 @@ ColumnLayout {
 
             Layout.fillWidth: true
             implicitHeight: Theme.height.card
-            radius: 10
+            radius: 10 * Theme.radiusScale
             color: isActive
                 ? Qt.rgba(accent.r, accent.g, accent.b, 0.10)
-                : (cardMa.containsMouse ? Theme.bgHover : "#1a1716")
+                : (cardMa.containsMouse ? Theme.bgHover : Theme.bgInset)
             border.color: isActive ? accent : (isHighlighted ? Theme.mutedDeep : Theme.borderSubtle)
             border.width: isActive ? 2 : 1
             scale: cardMa.pressed ? 0.97 : (isHighlighted ? 1.02 : 1.0)
@@ -56,7 +56,7 @@ ColumnLayout {
                     Layout.preferredWidth: 36
                     Layout.preferredHeight: 36
                     Layout.alignment: Qt.AlignVCenter
-                    radius: 8
+                    radius: 8 * Theme.radiusScale
                     color: Qt.rgba(card.accent.r, card.accent.g, card.accent.b, 0.18)
                     Text {
                         anchors.centerIn: parent
@@ -94,7 +94,7 @@ ColumnLayout {
                     Layout.preferredWidth: 18
                     Layout.preferredHeight: 18
                     Layout.alignment: Qt.AlignVCenter
-                    radius: 9
+                    radius: 9 * Theme.radiusScale
                     color: "transparent"
                     border.color: card.isActive ? card.accent : Theme.border
                     border.width: 2
@@ -102,7 +102,7 @@ ColumnLayout {
                         anchors.centerIn: parent
                         width: 8
                         height: 8
-                        radius: 4
+                        radius: 4 * Theme.radiusScale
                         color: card.accent
                         scale: card.isActive ? 1.0 : 0.0
                         Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.emphasized } }

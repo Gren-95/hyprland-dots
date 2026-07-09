@@ -38,7 +38,7 @@ Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         width: 3
         height: parent.height - 12
-        radius: 1.5
+        radius: 1.5 * Theme.radiusScale
         color: Theme.accent.green
         opacity: wr.isConnected ? 1.0 : (wr.highlighted ? 0.8 : (wHover.containsMouse ? 0.4 : 0.0))
         Behavior on opacity { NumberAnimation { duration: Theme.duration.fast } }

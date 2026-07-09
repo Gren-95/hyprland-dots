@@ -190,9 +190,9 @@ Scope {
                 anchors.bottom: parent.bottom
                 implicitWidth: cardCol.implicitWidth + 28
                 implicitHeight: cardCol.implicitHeight + 20
-                radius: 14
+                radius: 0
                 color: Theme.bg
-                border.color: Theme.borderStrong
+                border.color: Theme.popupBorder
                 border.width: 1
 
                 opacity: hideTimer.running ? 1.0 : 0.0
@@ -239,12 +239,12 @@ Scope {
                         visible: !root.osdTextMode
                         Layout.preferredWidth: 240
                         Layout.preferredHeight: 6
-                        radius: 3
+                        radius: 3 * Theme.radiusScale
                         color: Theme.bgAlt
                         Rectangle {
                             width: parent.width * (root.osdMuted ? 0 : root.osdLevel)
                             height: parent.height
-                            radius: 3
+                            radius: 3 * Theme.radiusScale
                             color: root.osdAccent
                             Behavior on width { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
                         }

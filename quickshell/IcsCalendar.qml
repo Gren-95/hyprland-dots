@@ -165,7 +165,6 @@ Scope {
         cardWidth: settingsStore.flyoutSize("calendar", "w", 400)
         cardHeight: settingsStore.flyoutSize("calendar", "h", 660)
         pinned: root.pinned
-        borderColor: Theme.mutedDeep
         onDismissed: root.close()
         onKeyPressed: (e) => {
             const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
@@ -378,7 +377,7 @@ Scope {
         signal clicked()
         implicitWidth: nav.wide ? lbl.implicitWidth + 14 : 24
         implicitHeight: 26
-        radius: 4
+        radius: 4 * Theme.radiusScale
         color: ma.containsMouse ? Theme.bgAlt : "transparent"
         border.color: nav.wide ? Theme.borderStrong : "transparent"
         border.width: nav.wide ? 1 : 0
@@ -411,9 +410,9 @@ Scope {
         readonly property bool hasEvent: eventCount > 0
         signal clicked()
         implicitHeight: 48
-        radius: 8
-        color: cell.isSelected ? "#3b3531"
-             : (cellMa.containsMouse ? "#262220" : "transparent")
+        radius: 8 * Theme.radiusScale
+        color: cell.isSelected ? Theme.bgActive
+             : (cellMa.containsMouse ? Theme.bgHover : "transparent")
         border.color: cell.isSelected ? Theme.accentPrimary
                     : cell.isToday ? Theme.accent.blue
                     : "transparent"
@@ -445,7 +444,7 @@ Scope {
             Repeater {
                 model: Math.min(cell.eventCount, 3)
                 delegate: Rectangle {
-                    width: 4; height: 4; radius: 2
+                    width: 4; height: 4; radius: 2 * Theme.radiusScale
                     color: cell.outsideMonth ? Theme.border
                          : cell.isSelected ? Theme.accentPrimary
                          : Theme.accent.blue
@@ -475,7 +474,7 @@ Scope {
         property var event
         property bool showDate: false
         implicitHeight: erCol.implicitHeight + 14
-        radius: 6
+        radius: 6 * Theme.radiusScale
         color: Theme.bgHover
         border.color: Theme.border
         border.width: 1
@@ -493,7 +492,7 @@ Scope {
                     Layout.preferredHeight: 18
                     Layout.alignment: Qt.AlignTop
                     Layout.topMargin: 1
-                    radius: 1.5
+                    radius: 1.5 * Theme.radiusScale
                     color: Theme.accent.blue
                 }
                 Text {
@@ -537,7 +536,7 @@ Scope {
             Text {
                 Layout.fillWidth: true
                 Layout.leftMargin: 11
-                visible: er.event && er.event.location
+                visible: !!(er.event && er.event.location)
                 text: er.event && er.event.location ? "󰍎  " + er.event.location : ""
                 color: Theme.muted
                 font.family: Theme.font

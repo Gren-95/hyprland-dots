@@ -11,7 +11,7 @@ ScrollBar {
     padding: 1
     contentItem: Rectangle {
         implicitWidth: 4
-        radius: 2
+        radius: 2 * Theme.radiusScale
         color: Theme.muted
         opacity: sb.pressed ? 0.9 : (sb.active ? 0.6 : 0.3)
         Behavior on opacity { NumberAnimation { duration: Theme.duration.fast } }

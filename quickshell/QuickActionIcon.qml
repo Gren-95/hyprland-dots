@@ -46,7 +46,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 3
-        width: 4; height: 4; radius: 2
+        width: 4; height: 4; radius: 2 * Theme.radiusScale
         color: qi.entry ? qi.entry.accent : Theme.accentPrimary
     }
 

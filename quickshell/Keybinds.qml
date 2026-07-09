@@ -88,7 +88,7 @@ Scope {
     }
     function _catColor(c) {
         switch (c) {
-            case "audio":      return "#60a5fa";
+            case "audio":      return Theme.accent.blueBright;
             case "brightness": return Theme.accent.yellow;
             case "capture":    return Theme.accent.green;
             case "clipboard":  return Theme.accent.slate;
@@ -336,14 +336,14 @@ Scope {
         property bool highlighted: false
         signal hovered()
         implicitHeight: 40
-        radius: 6
+        radius: 6 * Theme.radiusScale
         color: row.highlighted ? Theme.bgActive : (hover.containsMouse ? Theme.bgHover : "transparent")
 
         // Left accent strip — only visible when highlighted
         Rectangle {
             anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
             width: 3
-            radius: 2
+            radius: 2 * Theme.radiusScale
             color: row.entry ? row.entry.catColor : "transparent"
             opacity: row.highlighted ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: Theme.duration.fast } }
@@ -373,7 +373,7 @@ Scope {
                 Layout.preferredWidth: Math.min(240, kbdRow.implicitWidth)
                 Layout.preferredHeight: 26
                 Layout.alignment: Qt.AlignVCenter
-                radius: 5
+                radius: 5 * Theme.radiusScale
                 color: row.highlighted ? Theme.bg : "#1a1715"
                 border.color: row.highlighted ? Theme.disabled : Theme.border
                 border.width: 1

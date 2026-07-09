@@ -158,7 +158,6 @@ Scope {
         open: root.centerOpen && root.anchorBar !== null
         cardWidth: settingsStore.flyoutSize("notifications", "w", 420)
         cardHeight: settingsStore.flyoutSize("notifications", "h", 620)
-        borderColor: Theme.borderStrong
         pinned: root.pinned
         onDismissed: root.closeCenter()
         onKeyPressed: (e) => {
@@ -203,7 +202,7 @@ Scope {
                             visible: root.historyList.length > 0
                             implicitWidth: clearText.implicitWidth + 16
                             implicitHeight: 26
-                            radius: 4
+                            radius: 4 * Theme.radiusScale
                             color: clearMouse.containsMouse ? "#7f1d1d" : "transparent"
                             border.color: "#7f1d1d"
                             border.width: 1
@@ -289,7 +288,7 @@ Scope {
                                     Rectangle {
                                         implicitWidth: grpCount.implicitWidth + 10
                                         implicitHeight: 16
-                                        radius: 8
+                                        radius: 8 * Theme.radiusScale
                                         color: Theme.bgDeep
                                         border.color: Theme.borderSubtle
                                         border.width: 1
@@ -304,7 +303,7 @@ Scope {
                                     }
                                     Item { Layout.fillWidth: true }
                                     Rectangle {
-                                        implicitWidth: 18; implicitHeight: 18; radius: 9
+                                        implicitWidth: 18; implicitHeight: 18; radius: 9 * Theme.radiusScale
                                         color: grpClearMa.containsMouse ? Theme.borderStrong : "transparent"
                                         Text {
                                             anchors.centerIn: parent
@@ -337,7 +336,7 @@ Scope {
                                     visible: grp.total > 3
                                     Layout.fillWidth: true
                                     implicitHeight: 26
-                                    radius: 8
+                                    radius: 8 * Theme.radiusScale
                                     color: moreMa.containsMouse ? Theme.bgHover : "transparent"
                                     border.color: Theme.borderSubtle
                                     border.width: 1
@@ -377,7 +376,7 @@ Scope {
         property var entry
         signal dismissed()
         implicitHeight: histCol.implicitHeight + 16
-        radius: 8
+        radius: 8 * Theme.radiusScale
         color: histHover.containsMouse ? Theme.bgHover : Theme.bg
         border.color: Theme.border
         border.width: 1
@@ -411,7 +410,7 @@ Scope {
                     font.pixelSize: Theme.fontSize.xs
                 }
                 Rectangle {
-                    implicitWidth: 20; implicitHeight: 20; radius: 10
+                    implicitWidth: 20; implicitHeight: 20; radius: 10 * Theme.radiusScale
                     color: dismissMouse.containsMouse ? Theme.borderStrong : "transparent"
                     Text {
                         anchors.centerIn: parent
@@ -464,9 +463,9 @@ Scope {
             anchors.leftMargin: 8
             anchors.rightMargin: 8
             implicitHeight: cardCol.implicitHeight + 24
-            radius: 10
+            radius: 0
             color: card.entry && card.entry.urgency === NotificationUrgency.Critical
-                ? Theme.accent.red : Theme.muted
+                ? Theme.accent.red : Theme.popupBorder
             layer.enabled: true
             layer.effect: MultiEffect {
                 shadowEnabled: true
@@ -481,7 +480,7 @@ Scope {
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: 2
-                radius: 8
+                radius: 0
                 color: Theme.bg
             }
         }
@@ -506,7 +505,7 @@ Scope {
                     Text {
                         Layout.fillWidth: true
                         text: card.entry ? (card.entry.summary || card.entry.appName) : ""
-                        color: "#f5f5f4"
+                        color: Theme.fg
                         font.family: Theme.font
                         font.pixelSize: Theme.fontSize.md
                         font.bold: true
@@ -524,7 +523,7 @@ Scope {
                     }
                 }
                 Rectangle {
-                    implicitWidth: 26; implicitHeight: 26; radius: 13
+                    implicitWidth: 26; implicitHeight: 26; radius: 13 * Theme.radiusScale
                     color: closeMouse.containsMouse ? Theme.borderStrong : "transparent"
                     Text {
                         anchors.centerIn: parent
@@ -567,14 +566,14 @@ Scope {
                         required property var modelData
                         implicitHeight: 26
                         implicitWidth: actText.implicitWidth + 16
-                        radius: 4
-                        color: actMouse.containsMouse ? "#3b3531" : Theme.bgAlt
+                        radius: 4 * Theme.radiusScale
+                        color: actMouse.containsMouse ? Theme.bgActive : Theme.bgAlt
                         border.color: Theme.borderStrong; border.width: 1
                         Text {
                             id: actText
                             anchors.centerIn: parent
                             text: modelData.text
-                            color: "#f5f5f4"
+                            color: Theme.fg
                             font.family: Theme.font
                             font.pixelSize: Theme.fontSize.base
                         }

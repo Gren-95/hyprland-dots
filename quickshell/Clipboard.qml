@@ -309,7 +309,7 @@ Scope {
                             id: wipeBtn
                             implicitWidth: wipeText.implicitWidth + 16
                             implicitHeight: 20
-                            radius: 4
+                            radius: 4 * Theme.radiusScale
                             color: wipeMouse.containsMouse ? "#7f1d1d" : "transparent"
                             border.color: "#7f1d1d"
                             border.width: 1
@@ -343,8 +343,8 @@ Scope {
         signal hovered()
         signal removed()
         implicitHeight: row.entry && row.entry.isImage && settingsStore.clipboardThumbs ? 76 : 48
-        radius: 8
-        color: row.highlighted ? "#3b3531" : (hover.containsMouse ? "#262220" : "transparent")
+        radius: 8 * Theme.radiusScale
+        color: row.highlighted ? Theme.bgActive : (hover.containsMouse ? Theme.bgHover : "transparent")
 
         readonly property string thumbPath: row.entry && row.entry.isImage
             ? row.thumbDir + "/" + row.entry.id + "." + row.entry.ext
@@ -385,7 +385,7 @@ Scope {
                 visible: row.entry && row.entry.isImage && settingsStore.clipboardThumbs
                 Layout.preferredWidth: 84
                 Layout.preferredHeight: 60
-                radius: 4
+                radius: 4 * Theme.radiusScale
                 color: Theme.bg
                 border.color: Theme.borderStrong
                 border.width: 1
@@ -406,7 +406,7 @@ Scope {
                 visible: !!(row.entry && row.entry.isColor)
                 Layout.preferredWidth: 28
                 Layout.preferredHeight: 28
-                radius: 4
+                radius: 4 * Theme.radiusScale
                 color: row.entry && row.entry.isColor ? row.entry.color : "transparent"
                 border.color: Theme.mutedDeep
                 border.width: 1

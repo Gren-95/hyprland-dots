@@ -95,7 +95,7 @@ Scope {
                     Rectangle {
                         Layout.preferredWidth: 190
                         implicitHeight: 28
-                        radius: 8
+                        radius: 8 * Theme.radiusScale
                         color: Theme.bgDeep
                         border.color: searchInput.activeFocus ? Theme.accentPrimary : Theme.borderSubtle
                         border.width: 1
@@ -381,8 +381,8 @@ Scope {
                                     readonly property string tid: modelData.id || modelData.title
                                     Layout.fillWidth: true
                                     implicitHeight: 44
-                                    radius: 10
-                                    color: "#1a1716"
+                                    radius: 10 * Theme.radiusScale
+                                    color: Theme.bgInset
                                     border.color: Theme.borderSubtle
                                     border.width: 1
                                     RowLayout {
@@ -430,8 +430,8 @@ Scope {
                                 visible: root.sMatch("highlight accent color")
                                 Layout.fillWidth: true
                                 implicitHeight: 54
-                                radius: 10
-                                color: "#1a1716"
+                                radius: 10 * Theme.radiusScale
+                                color: Theme.bgInset
                                 border.color: Theme.borderSubtle
                                 border.width: 1
                                 RowLayout {
@@ -445,7 +445,7 @@ Scope {
                                             readonly property bool isAuto: modelData === "auto"
                                             implicitWidth: 30
                                             implicitHeight: 30
-                                            radius: 15
+                                            radius: 15 * Theme.radiusScale
                                             color: isAuto
                                                 ? (settingsStore.accentAutoHex !== "" ? settingsStore.accentAutoHex : Theme.accent.blue)
                                                 : Theme.accent[modelData]
@@ -533,8 +533,8 @@ Scope {
                                 visible: root.sMatch("font family")
                                 Layout.fillWidth: true
                                 implicitHeight: 44
-                                radius: 10
-                                color: "#1a1716"
+                                radius: 10 * Theme.radiusScale
+                                color: Theme.bgInset
                                 border.color: fontInput.activeFocus ? Theme.accentPrimary : Theme.borderSubtle
                                 border.width: 1
                                 TextInput {
@@ -764,8 +764,8 @@ Scope {
         signal toggled(bool v)
         visible: root.sMatch(label + " " + desc)
         implicitHeight: 44
-        radius: 10
-        color: "#1a1716"
+        radius: 10 * Theme.radiusScale
+        color: Theme.bgInset
         border.color: Theme.borderSubtle
         border.width: 1
         RowLayout {
@@ -810,8 +810,8 @@ Scope {
         signal selected(string id)
         visible: root.sMatch(label + " " + desc)
         implicitHeight: 44
-        radius: 10
-        color: "#1a1716"
+        radius: 10 * Theme.radiusScale
+        color: Theme.bgInset
         border.color: Theme.borderSubtle
         border.width: 1
         RowLayout {
@@ -854,8 +854,8 @@ Scope {
         property bool threeState: true
         visible: root.sMatch(label)
         implicitHeight: 44
-        radius: 10
-        color: "#1a1716"
+        radius: 10 * Theme.radiusScale
+        color: Theme.bgInset
         border.color: Theme.borderSubtle
         border.width: 1
         RowLayout {
@@ -891,8 +891,8 @@ Scope {
         property string label: ""
         visible: root.sMatch(label)
         implicitHeight: 44
-        radius: 10
-        color: "#1a1716"
+        radius: 10 * Theme.radiusScale
+        color: Theme.bgInset
         border.color: Theme.borderSubtle
         border.width: 1
         RowLayout {
@@ -942,8 +942,8 @@ Scope {
         signal committed(string t)
         visible: root.sMatch(label + " " + placeholder)
         implicitHeight: 44
-        radius: 10
-        color: "#1a1716"
+        radius: 10 * Theme.radiusScale
+        color: Theme.bgInset
         border.color: pfInput.activeFocus ? Theme.accentPrimary : Theme.borderSubtle
         border.width: 1
         TextInput {
@@ -978,8 +978,8 @@ Scope {
         property var def
         visible: root.sMatch((sz.def ? sz.def.label : "") + " flyout size")
         implicitHeight: 44
-        radius: 10
-        color: "#1a1716"
+        radius: 10 * Theme.radiusScale
+        color: Theme.bgInset
         border.color: Theme.borderSubtle
         border.width: 1
         RowLayout {
@@ -1045,8 +1045,8 @@ Scope {
 
         visible: root.sMatch(label + " " + desc)
         implicitHeight: 54
-        radius: 10
-        color: "#1a1716"
+        radius: 10 * Theme.radiusScale
+        color: Theme.bgInset
         border.color: Theme.borderSubtle
         border.width: 1
 
@@ -1094,7 +1094,7 @@ Scope {
         signal clicked()
         implicitWidth: 26
         implicitHeight: 26
-        radius: 6
+        radius: 6 * Theme.radiusScale
         color: sbMa.containsMouse ? Theme.bgHover : Theme.bgDeep
         border.color: Theme.borderStrong
         border.width: 1

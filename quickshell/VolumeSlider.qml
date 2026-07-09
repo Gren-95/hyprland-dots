@@ -34,7 +34,7 @@ Rectangle {
     Rectangle {
         id: thumb
         width: 22; height: 22
-        radius: 11
+        radius: 11 * Theme.radiusScale
         color: Theme.fg
         border.color: Theme.accentPrimary
         border.width: 2

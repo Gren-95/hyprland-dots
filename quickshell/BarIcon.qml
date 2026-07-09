@@ -9,7 +9,7 @@ Item {
     // Pass the bar window to enable the hover tooltip (it needs a surface to
     // draw below the thin bar). Icons without it simply show no tooltip.
     property var parentBar: null
-    property color color: "#f5f5f4"
+    property color color: Theme.fg
     property int pixelSize: Theme.fontSize.md
     signal clicked()
     signal wheel(bool up)

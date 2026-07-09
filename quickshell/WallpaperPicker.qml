@@ -116,7 +116,7 @@ Scope {
                                     required property var modelData
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 140
-                                    radius: 10
+                                    radius: 10 * Theme.radiusScale
                                     color: Theme.bgDeep
                                     border.color: hover.containsMouse ? Theme.accentPrimary : Theme.borderSubtle
                                     border.width: hover.containsMouse ? 2 : 1
