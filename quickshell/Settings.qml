@@ -91,12 +91,6 @@ Scope {
         const e = flyoutSizes[id];
         return (e && e[dim]) ? e[dim] : def;
     }
-    function setFlyoutSize(id, dim, v) {
-        const m = JSON.parse(JSON.stringify(flyoutSizes));
-        if (!m[id]) m[id] = {};
-        m[id][dim] = v;
-        flyoutSizes = m;   // reassign — never mutate in place
-    }
 
     // ===== Bar item placement: "bar" | "overflow" | "hidden" =====
     // mediakeys/activityicons bridge to their legacy bool flags (2-state),
@@ -106,36 +100,13 @@ Scope {
         if (id === "activityicons") return activityIconsVisible ? "bar" : "hidden";
         return barPlacement[id] ?? "bar";
     }
-    function setPlacement(id, p) {
-        if (id === "mediakeys")     { mediaKeysVisible = (p === "bar"); return; }
-        if (id === "activityicons") { activityIconsVisible = (p === "bar"); return; }
-        const m = Object.assign({}, barPlacement);
-        m[id] = p;
-        barPlacement = m;
-    }
     function trayPlacementOf(tid)     { return trayPlacement[tid] ?? "bar"; }
-    function setTrayPlacement(tid, p) {
-        const m = Object.assign({}, trayPlacement);
-        m[tid] = p;
-        trayPlacement = m;
-    }
-
-    function setEventToast(k, v) {
-        const m = Object.assign({}, eventToasts);
-        m[k] = v;
-        eventToasts = m;
-    }
 
     // ===== Quick Actions item placement =====
     // Same states as bar items, but "overflow" (the default) means the
     // Quick Actions panel itself; "bar" promotes the item to its own icon
     // in the bar's right group.
     function qaPlacementOf(key)     { return qaPlacement[key] ?? "overflow"; }
-    function setQaPlacement(key, p) {
-        const m = Object.assign({}, qaPlacement);
-        m[key] = p;
-        qaPlacement = m;
-    }
 
     readonly property var _schema: [
         { name: "mediaKeysVisible",     file: "media-keys.enabled",     type: "bool" },
