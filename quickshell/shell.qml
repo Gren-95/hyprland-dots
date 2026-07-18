@@ -10,6 +10,13 @@ import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
 
 Scope {
+    id: shellRoot
+
+    // Bar on the currently-focused Hyprland monitor. Shared flyout modals bind
+    // their anchor here so they open on the active monitor. On a single monitor
+    // this is always the sole bar, so the binding is a no-op.
+    property var activeBar: null
+
     // Shared stores, instantiated FIRST so every sibling below (and the
     // components they create) resolves them via the id scope chain — the
     // same proven pattern as notifService. These were `pragma Singleton`
@@ -54,6 +61,12 @@ Scope {
             required property var modelData
             screen: modelData
 
+            // True when this bar's monitor is the focused one. Shared flyouts
+            // anchor to the active bar so they open on the current monitor.
+            readonly property bool onActiveMonitor: Hyprland.focusedMonitor
+                && Hyprland.focusedMonitor.name === modelData.name
+            onOnActiveMonitorChanged: if (onActiveMonitor) shellRoot.activeBar = bar
+
             anchors { top: true; left: true; right: true }
             implicitHeight: settingsStore.barHeight
             color: "transparent"
@@ -61,7 +74,11 @@ Scope {
             // Anchor the shared flyout modals to this bar's items. On
             // multi-monitor the last-created bar wins (same as the calendar).
             Component.onCompleted: {
-                spotlight.anchorBar = bar;       spotlight.anchorItem = launcherIcon;
+                // Seed the active bar so flyouts have an anchor before the first
+                // monitor-focus change fires.
+                if (onActiveMonitor || !shellRoot.activeBar) shellRoot.activeBar = bar;
+                spotlight.anchorBar = Qt.binding(() => shellRoot.activeBar); spotlight.anchorItem = launcherIcon;
+                notifService.anchorBar = Qt.binding(() => shellRoot.activeBar);
                 // Command palette: every Quick Actions item (auto-synced from
                 // its arrays) + the flyout destinations;
                 // panels open at their own home anchors (own icon / QA chevron).
@@ -90,10 +107,10 @@ Scope {
                 // overflow chevron, then bar-center (null). Anchoring to an
                 // invisible item puts the flyout at a garbage position.
                 const qaOr = () => quickMod.visible ? quickMod : null;
-                clipboard.anchorBar = bar;       clipboard.anchorItem = Qt.binding(qaOr);
-                keybinds.anchorBar = bar;        keybinds.anchorItem = Qt.binding(qaOr);
-                wallpaperPicker.anchorBar = bar; wallpaperPicker.anchorItem = Qt.binding(qaOr);
-                sysmon.anchorBar = bar;          sysmon.anchorItem = clockAnchor;
+                clipboard.anchorBar = Qt.binding(() => shellRoot.activeBar);       clipboard.anchorItem = Qt.binding(qaOr);
+                keybinds.anchorBar = Qt.binding(() => shellRoot.activeBar);        keybinds.anchorItem = Qt.binding(qaOr);
+                wallpaperPicker.anchorBar = Qt.binding(() => shellRoot.activeBar); wallpaperPicker.anchorItem = Qt.binding(qaOr);
+                sysmon.anchorBar = Qt.binding(() => shellRoot.activeBar);          sysmon.anchorItem = clockAnchor;
             }
 
             Rectangle {
@@ -156,7 +173,7 @@ Scope {
                     anchors.verticalCenter: parent.verticalCenter
                     implicitWidth: clockRow.implicitWidth + 12
                     implicitHeight: clockRow.implicitHeight + 4
-                    Component.onCompleted: { cal.anchorBar = bar; cal.anchorItem = clockAnchor; }
+                    Component.onCompleted: { cal.anchorBar = Qt.binding(() => shellRoot.activeBar); cal.anchorItem = clockAnchor; }
 
                     HoverHandler { id: clockHover }
                     BarTooltip {
@@ -198,7 +215,7 @@ Scope {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: {
-                                    cal.anchorBar = bar;
+                                    cal.anchorBar = Qt.binding(() => shellRoot.activeBar);
                                     cal.anchorItem = clockAnchor;
                                     cal.toggle();
                                 }
@@ -216,26 +233,6 @@ Scope {
                         StatusIndicators {
                             parentBar: bar
                         }
-                    }
-                }
-
-                // Slot for the media transport cluster — fills the gap
-                // between the clock (centered) and the right systray, and
-                // centers MediaKeys inside that slot. Visibility toggled
-                // from Quick Actions.
-                Item {
-                    id: mediaKeysSlot
-                    anchors.left: clockAnchor.right
-                    anchors.right: rightGroup.left
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    anchors.leftMargin: Theme.spacing.lg
-                    anchors.rightMargin: Theme.spacing.lg
-
-                    MediaKeys {
-                        id: mediaKeys
-                        parentBar: bar
-                        anchors.centerIn: parent
                     }
                 }
 
@@ -566,7 +563,7 @@ Scope {
                     appid: "quickshell"
                     name: "calendar"
                     description: "Toggle calendar popup"
-                    onPressed: { cal.anchorBar = bar; cal.anchorItem = clockAnchor; cal.toggle() }
+                    onPressed: { cal.anchorBar = Qt.binding(() => shellRoot.activeBar); cal.anchorItem = clockAnchor; cal.toggle() }
                 }
                 GlobalShortcut {
                     appid: "quickshell"

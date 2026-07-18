@@ -42,7 +42,7 @@ Item {
         { glyph: "󰝚", offGlyph: "󰝚", label: "Jellyfin sync",  accent: "#818cf8",           action: "jellyfin" },
         { glyph: "󰢹", offGlyph: "󰢹", label: "Remote access",  accent: Theme.accent.orange, action: "wayvnc" },
         { glyph: "󰍬", offGlyph: "󰍭", label: "Microphone",     accent: Theme.accent.orange, action: "mic" },
-        { glyph: "󰎈", offGlyph: "󰎈", label: "Media keys",     accent: Theme.accent.purple, action: "mediakeys" },
+        { glyph: "󰎈", offGlyph: "󰎈", label: "Now playing",    accent: Theme.accent.purple, action: "mediakeys" },
         { glyph: "󰈈", offGlyph: "󰈉", label: "Activity icons", accent: Theme.accent.teal,   action: "activityicons" },
     ]
 
@@ -99,7 +99,7 @@ Item {
         case "jellyfin":  return actions.jellyfinOn ? "Syncing music every 2h" : "Background sync stopped";
         case "wayvnc":    return actions.wayvncOn ? "WayVNC server running on :5900" : "Remote access stopped";
         case "mic":       return (actions.micSrc && actions.micSrc.audio && !actions.micSrc.audio.muted) ? "Microphone live" : "Microphone muted";
-        case "mediakeys": return settingsStore.mediaKeysVisible ? "Prev / play / next in bar" : "Hidden";
+        case "mediakeys": return settingsStore.mediaKeysVisible ? "Now-playing card in notification panel" : "Hidden";
         case "activityicons": return settingsStore.activityIconsVisible ? "Camera/mic/sync icons shown" : "Hidden";
         }
         return "";

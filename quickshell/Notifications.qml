@@ -226,10 +226,24 @@ Scope {
                     Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderStrong }
                 }
 
+                // MPRIS now-playing card (moved here from the bar). Collapses to
+                // zero height when nothing is playing.
+                MediaCard {
+                    id: mediaCard
+                    anchors {
+                        top: centerHeader.bottom
+                        left: parent.left
+                        right: parent.right
+                        topMargin: mediaCard.visible ? Theme.spacing.md : 0
+                        leftMargin: Theme.spacing.lg
+                        rightMargin: Theme.spacing.lg
+                    }
+                }
+
                 Flickable {
                     id: historyView
                     anchors {
-                        top: centerHeader.bottom
+                        top: mediaCard.visible ? mediaCard.bottom : centerHeader.bottom
                         left: parent.left
                         right: parent.right
                         bottom: parent.bottom
