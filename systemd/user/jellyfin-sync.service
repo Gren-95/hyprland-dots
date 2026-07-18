@@ -1,0 +1,8 @@
+[Unit]
+Description=Sync music from Jellyfin to ~/Music
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash %h/.config/scripts/jellyfin-music-sync.sh

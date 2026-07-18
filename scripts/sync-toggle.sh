@@ -1,5 +1,6 @@
 #!/bin/bash
-# sync-toggle.sh — enable/disable/schedule cron entries for immich/jellyfin sync.
+# sync-toggle.sh — enable/disable/schedule background sync for immich (cron)
+# and jellyfin (a Persistent systemd user timer).
 #
 # QuickActions calls this to toggle background sync on/off. The schedule
 # lives in the user's crontab between marker comments. Toggling adds or
@@ -20,11 +21,18 @@ set -uo pipefail
 
 SCRIPTS="$HOME/.config/scripts"
 
+# jellyfin runs off a Persistent systemd user timer (catches up missed runs on a
+# laptop); immich stays on cron. uses_timer routes the two backends. Everything
+# below (status/toggle/enable/disable/schedule) branches on it.
+JELLYFIN_TIMER="jellyfin-sync.timer"
+JELLYFIN_UNIT_FILE="$HOME/.config/systemd/user/jellyfin-sync.timer"
+uses_timer() { [[ "$1" == "jellyfin" ]]; }
+
 # Default cron schedule per kind (used when first installing the entry).
 default_schedule_for() {
     case "$1" in
         immich)   echo "0 * * * *" ;;
-        jellyfin) echo "0 */2 * * *" ;;
+        jellyfin) echo "0 4 * * *" ;;
         *) return 1 ;;
     esac
 }
@@ -70,6 +78,10 @@ ensure_installed() {
 # Status: 1 if the line after the marker is enabled (no leading #), else 0.
 status_one() {
     local kind=$1
+    if uses_timer "$kind"; then
+        systemctl --user is-enabled "$JELLYFIN_TIMER" >/dev/null 2>&1 && echo 1 || echo 0
+        return
+    fi
     ensure_installed "$kind"
     local marker line
     marker=$(marker_for "$kind")
@@ -80,6 +92,14 @@ status_one() {
 # Flip the comment on the line after the marker.
 flip_one() {
     local kind=$1
+    if uses_timer "$kind"; then
+        if systemctl --user is-enabled "$JELLYFIN_TIMER" >/dev/null 2>&1; then
+            systemctl --user disable --now "$JELLYFIN_TIMER" >/dev/null 2>&1
+        else
+            systemctl --user enable --now "$JELLYFIN_TIMER" >/dev/null 2>&1
+        fi
+        return
+    fi
     ensure_installed "$kind"
     local marker
     marker=$(marker_for "$kind")
@@ -96,6 +116,14 @@ flip_one() {
 
 set_one() {
     local kind=$1 desired=$2
+    if uses_timer "$kind"; then
+        if [[ "$desired" == 1 ]]; then
+            systemctl --user enable --now "$JELLYFIN_TIMER" >/dev/null 2>&1
+        else
+            systemctl --user disable --now "$JELLYFIN_TIMER" >/dev/null 2>&1
+        fi
+        return
+    fi
     local cur
     cur=$(status_one "$kind")
     [[ "$cur" == "$desired" ]] && return 0
@@ -107,6 +135,16 @@ set_one() {
 # based on the existing line). $2 is the new cron expression, e.g. "*/30 * * * *".
 schedule_set() {
     local kind=$1 new_sched=$2
+    if uses_timer "$kind"; then
+        # For the timer $2 is a systemd OnCalendar expression (e.g. "daily" or
+        # "*-*-* 04:00:00"), NOT a cron expression. Rewrite it in the unit and
+        # reload. --follow-symlinks edits the repo file the symlink points to.
+        if [[ -e "$JELLYFIN_UNIT_FILE" ]]; then
+            sed --follow-symlinks -i "s|^OnCalendar=.*|OnCalendar=${new_sched}|" "$JELLYFIN_UNIT_FILE"
+            systemctl --user daemon-reload >/dev/null 2>&1
+        fi
+        return
+    fi
     ensure_installed "$kind"
     local marker inv cur prefix newline
     marker=$(marker_for "$kind")
