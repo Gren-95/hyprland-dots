@@ -9,45 +9,46 @@
 # fullscreen, so normal idle/power-saving resumes on the desktop.
 set -uo pipefail
 
-COOKIE=""
+HOLDER_PID=""
 
+# A ScreenSaver inhibitor is released the instant the requesting D-Bus
+# connection closes, so a one-shot `gdbus call ... Inhibit` inhibits for
+# microseconds and does nothing. Hold it on a long-lived connection instead: a
+# Python helper calls Inhibit then blocks, so the inhibitor lives exactly as
+# long as that process. Killing it drops the connection and releases the lock.
 inhibit() {
-    COOKIE=$(gdbus call --session \
-        --dest org.freedesktop.ScreenSaver \
-        --object-path /org/freedesktop/ScreenSaver \
-        --method org.freedesktop.ScreenSaver.Inhibit \
-        "fullscreen-inhibit" "Fullscreen application" 2>/dev/null | grep -oP '\d+')
+    [ -n "$HOLDER_PID" ] && kill -0 "$HOLDER_PID" 2>/dev/null && return
+    python3 - <<'PY' &
+import signal
+from gi.repository import Gio, GLib
+bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+bus.call_sync('org.freedesktop.ScreenSaver', '/org/freedesktop/ScreenSaver',
+              'org.freedesktop.ScreenSaver', 'Inhibit',
+              GLib.Variant('(ss)', ('fullscreen-inhibit', 'Fullscreen application')),
+              GLib.VariantType('(u)'), Gio.DBusCallFlags.NONE, -1, None)
+signal.signal(signal.SIGTERM, lambda *a: exit(0))
+GLib.MainLoop().run()
+PY
+    HOLDER_PID=$!
 }
 
 uninhibit() {
-    if [ -n "$COOKIE" ]; then
-        gdbus call --session \
-            --dest org.freedesktop.ScreenSaver \
-            --object-path /org/freedesktop/ScreenSaver \
-            --method org.freedesktop.ScreenSaver.UnInhibit \
-            "uint32 $COOKIE" >/dev/null 2>&1
-        COOKIE=""
+    if [ -n "$HOLDER_PID" ]; then
+        kill "$HOLDER_PID" 2>/dev/null
+        HOLDER_PID=""
     fi
 }
 
 trap uninhibit EXIT TERM INT
 
-INHIBITED=false
-
+# Reconcile every poll (not just on transitions): inhibit() is a no-op when the
+# holder is already alive and respawns it if it died, so a crashed holder
+# self-heals instead of silently leaving a fullscreen app un-inhibited.
 while true; do
-    # True if any workspace (on any monitor) has a fullscreen window.
     if hyprctl workspaces -j 2>/dev/null | jq -e 'any(.[]; .hasfullscreen // false)' >/dev/null 2>&1; then
-        FS=true
-    else
-        FS=false
-    fi
-
-    if [ "$FS" = true ] && [ "$INHIBITED" = false ]; then
         inhibit
-        INHIBITED=true
-    elif [ "$FS" = false ] && [ "$INHIBITED" = true ]; then
+    else
         uninhibit
-        INHIBITED=false
     fi
     sleep 5
 done
