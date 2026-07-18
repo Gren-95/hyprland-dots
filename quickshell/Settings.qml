@@ -33,7 +33,7 @@ import Quickshell.Io
 
 Scope {
     id: settings
-    property bool mediaKeysVisible: false
+    property bool mediaKeysVisible: true
     property bool activityIconsVisible: true
     property int toastTimeout: 6000
     property int notifHistoryCap: 50

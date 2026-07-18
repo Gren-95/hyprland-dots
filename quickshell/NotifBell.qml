@@ -17,9 +17,10 @@ Item {
     // Super+N global shortcut, which only calls toggleCenter()). Live
     // binding: when the bell is hidden via placement, fall back to
     // bar-center instead of anchoring to an invisible item.
+    // anchorBar is bound to the active monitor's bar centrally in shell.qml;
+    // the bell only supplies its own item as the (uncentered) anchor target.
     Component.onCompleted: {
         if (bell.notifs) {
-            bell.notifs.anchorBar = bell.parentBar;
             bell.notifs.anchorItem = Qt.binding(() => bell.visible ? bell : null);
         }
     }

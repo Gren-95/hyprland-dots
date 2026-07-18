@@ -24,6 +24,10 @@ PopupWindow {
     property int cardWidth: 380
     property int cardHeight: 460
     property bool pinned: false
+    // Center on screen (old BarPopupCard behavior) instead of hanging under the
+    // anchor icon with a tail. Default for all flyouts; set false on a specific
+    // consumer to anchor it under its bar icon instead.
+    property bool centered: true
     property color fillColor: Theme.bgAlt
     property color borderColor: Theme.popupBorder
     // Gap kept between the flyout body and the screen's side edges.
@@ -51,10 +55,14 @@ PopupWindow {
                  card._iconCenterX - implicitWidth / 2))
 
     anchor.window: card.parentBar
-    anchor.rect.x: card._clampedX
-    anchor.rect.y: card.parentBar ? card.parentBar.height : 0
+    anchor.rect.x: card.centered
+        ? (card.parentBar ? (card.parentBar.width - implicitWidth) / 2 : 0)
+        : card._clampedX
+    anchor.rect.y: card.centered
+        ? (card.parentBar && card.parentBar.screen ? (card.parentBar.screen.height - implicitHeight) / 2 : 0)
+        : (card.parentBar ? card.parentBar.height : 0)
     implicitWidth: cardWidth
-    implicitHeight: cardHeight + bg.tailHeight
+    implicitHeight: cardHeight + (card.centered ? 0 : bg.tailHeight)
     visible: card.open
     color: "transparent"
 
@@ -72,12 +80,12 @@ PopupWindow {
         anchors.fill: parent
         fillColor: card.fillColor
         borderColor: card.borderColor
-        showTail: true
+        showTail: !card.centered
         // Tail points at the icon even when the body is edge-clamped.
         tailX: card._iconCenterX - card._clampedX
         scale: card.open ? 1.0 : 0.94
         opacity: card.open ? 1.0 : 0.0
-        transformOrigin: Item.Top
+        transformOrigin: card.centered ? Item.Center : Item.Top
         Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
         Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
     }
@@ -85,11 +93,11 @@ PopupWindow {
     FocusScope {
         id: contentScope
         anchors.fill: parent
-        anchors.topMargin: bg.tailHeight
+        anchors.topMargin: card.centered ? 0 : bg.tailHeight
         focus: card.open
         scale: card.open ? 1.0 : 0.94
         opacity: card.open ? 1.0 : 0.0
-        transformOrigin: Item.Top
+        transformOrigin: card.centered ? Item.Center : Item.Top
         Behavior on scale   { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
         Behavior on opacity { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
         Keys.onPressed: (e) => {
