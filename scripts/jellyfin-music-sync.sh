@@ -9,6 +9,16 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 CONFIG="$JELLYFIN_CONF"
 LOG="$JELLYFIN_LOG"
 
+# --overwrite / --force re-downloads every track even if it already exists
+# locally, replacing it with the server's copy. Use after fixing files
+# server-side. Normal runs skip tracks that already exist for efficiency.
+FORCE=false
+for arg in "$@"; do
+    case "$arg" in
+        --overwrite|--force) FORCE=true ;;
+    esac
+done
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -125,14 +135,22 @@ sync_music() {
         # Track this file as expected
         expected_files["$dest_file"]=1
 
-        if [[ -f "$dest_file" ]]; then
+        if [[ -f "$dest_file" ]] && [[ "$FORCE" != true ]]; then
             ((skipped++)) || true
             continue
         fi
-        print_info "Downloading: $artist — $name"
+        if [[ -f "$dest_file" ]]; then
+            print_info "Overwriting: $artist — $name"
+        else
+            print_info "Downloading: $artist — $name"
+        fi
 
+        # Download to a temp file and only swap it in on success, so a failed
+        # re-download (especially in --overwrite mode) can never clobber the
+        # existing good local copy.
+        local tmp_file="$dest_file.part"
         local http_code
-        http_code=$(curl -s -o "$dest_file" -w "%{http_code}" \
+        http_code=$(curl -s -o "$tmp_file" -w "%{http_code}" \
             "$JELLYFIN_URL/Audio/$id/stream?static=true&api_key=$JELLYFIN_API_KEY")
 
         # Fall back: get direct stream URL from PlaybackInfo
@@ -144,19 +162,20 @@ sync_music() {
                 | jq -r '.MediaSources[0].DirectStreamUrl // empty')
 
             if [[ -n "$stream_url" ]]; then
-                http_code=$(curl -s -o "$dest_file" -w "%{http_code}" \
+                http_code=$(curl -s -o "$tmp_file" -w "%{http_code}" \
                     "$JELLYFIN_URL$stream_url")
             fi
         fi
 
         if [[ "$http_code" == "200" ]]; then
+            mv -f "$tmp_file" "$dest_file"
             ((downloaded++)) || true
             print_success "Downloaded: $name"
         else
             ((failed++)) || true
             print_warning "Failed [$http_code]: $name"
             print_warning "  Server path: $server_path"
-            rm -f "$dest_file"
+            rm -f "$tmp_file"
         fi
     done < <(echo "$raw_items" | jq -c '.Items[]')
 

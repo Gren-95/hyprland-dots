@@ -202,26 +202,15 @@ setup_immich_cli() {
 setup_jellyfin_sync() {
     print_info "Setting up Jellyfin music sync..."
 
-    # Prompt for sync interval and write it to the crontab via sync-toggle.sh.
-    echo ""
-    print_info "How often should music sync run?"
-    echo "  1) Every 30 minutes"
-    echo "  2) Every 1 hour"
-    echo "  3) Every 2 hours"
-    echo "  4) Every 6 hours"
-    read -p "  Choose [1-4] (default: 3): " interval_choice
-    echo
-
-    local cron_expr="0 */2 * * *"
-    case "$interval_choice" in
-        1) cron_expr="*/30 * * * *" ;;
-        2) cron_expr="0 * * * *"    ;;
-        3) cron_expr="0 */2 * * *"  ;;
-        4) cron_expr="0 */6 * * *"  ;;
-    esac
-
-    bash "$SCRIPT_DIR/scripts/sync-toggle.sh" schedule jellyfin "$cron_expr"
-    print_success "Jellyfin cron schedule: $cron_expr"
+    # Deploy the systemd user timer that runs the sync once a day. Real copies,
+    # NOT symlinks — `systemctl disable` deletes a symlinked unit file, which
+    # would break the Quick Actions toggle. The repo copies under systemd/user/
+    # are the source of truth; re-run setup (or re-copy) after editing them.
+    mkdir -p "$HOME/.config/systemd/user"
+    cp "$SCRIPT_DIR/systemd/user/jellyfin-sync.service" "$HOME/.config/systemd/user/"
+    cp "$SCRIPT_DIR/systemd/user/jellyfin-sync.timer"   "$HOME/.config/systemd/user/"
+    systemctl --user daemon-reload
+    print_success "Jellyfin sync timer installed (once daily, Persistent — catches up missed runs)"
 
     # Prompt for credentials now
     local conf="$HOME/.config/jellyfin/sync.conf"

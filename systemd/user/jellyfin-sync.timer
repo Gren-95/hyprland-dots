@@ -1,0 +1,14 @@
+[Unit]
+Description=Daily Jellyfin music sync
+
+[Timer]
+# Once a day. Persistent=true runs the job on the next boot/wake if the
+# scheduled time was missed (e.g. the laptop was asleep) — a plain cron job
+# would just skip it. RandomizedDelaySec avoids hammering the server exactly
+# at midnight.
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target
