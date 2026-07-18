@@ -43,7 +43,6 @@ Scope {
     PolkitPrompt { id: polkit }
     SystemMonitor { id: sysmon }
     WallpaperPicker { id: wallpaperPicker }
-    SettingsPanel { id: settingsPanel }
     RegionSelector { id: regionSelector }
     ScreenshotActions { id: screenshotActions }
 
@@ -94,7 +93,6 @@ Scope {
                 clipboard.anchorBar = bar;       clipboard.anchorItem = Qt.binding(qaOr);
                 keybinds.anchorBar = bar;        keybinds.anchorItem = Qt.binding(qaOr);
                 wallpaperPicker.anchorBar = bar; wallpaperPicker.anchorItem = Qt.binding(qaOr);
-                settingsPanel.anchorBar = bar;   settingsPanel.anchorItem = Qt.binding(qaOr);
                 sysmon.anchorBar = bar;          sysmon.anchorItem = clockAnchor;
             }
 
@@ -575,12 +573,6 @@ Scope {
                     name: "wallpaper"
                     description: "Toggle wallpaper picker"
                     onPressed: wallpaperPicker.toggle()
-                }
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "settings"
-                    description: "Toggle shell settings panel"
-                    onPressed: settingsPanel.toggle()
                 }
                 GlobalShortcut {
                     appid: "quickshell"

@@ -57,7 +57,6 @@ Item {
         { glyph: "󰈊", label: "Color picker", accent: "#e879f9", action: "colorpicker", cmd: ["hyprpicker", "-a"] },
         { glyph: "󰋖", label: "Keybinds",     accent: Theme.accent.blue, action: "keybinds" },
         { glyph: "󰸉", label: "Wallpaper",    accent: Theme.accent.green, action: "wallpaper" },
-        { glyph: "󰒓", label: "Settings",     accent: Theme.accent.slate, action: "settings" },
     ]
 
     // What renders in the panel: entries placed in "overflow" (the default).
@@ -210,9 +209,6 @@ Item {
         } else if (entry.action === "clipboard") {
             actions.popupOpen = false;
             clipboard.openMenu(from);
-        } else if (entry.action === "settings") {
-            actions.popupOpen = false;
-            settingsPanel.toggle(from);
         } else if (entry.cmd) {
             actions.popupOpen = false;
             runProc.command = entry.cmd;
