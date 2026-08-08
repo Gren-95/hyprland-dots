@@ -39,6 +39,13 @@ if status is-interactive
     abbr -a nf  fastfetch
     abbr -a cls clear
 
+    # ===== Directory jumping =====
+    # zoxide replaces the old `z` plugin. Guarded because this config syncs to
+    # machines that may not have the binary installed yet.
+    if type -q zoxide
+        zoxide init fish | source
+    end
+
     # Reload (full restart, not just source — clears stale state).
     alias reload 'exec fish'
 
