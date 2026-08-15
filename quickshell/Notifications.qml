@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Widgets
 import Quickshell.Services.Notifications
+import Quickshell.Services.UPower
 
 Scope {
     id: root
@@ -23,6 +24,8 @@ Scope {
     signal navigateNext()
     signal navigatePrev()
 
+    // Toast-only: a notification gets exactly one showing in the stack and is
+    // never written to historyList, so the center stays empty by design.
     function _push(n) {
         const entry = {
             id: n.id,
@@ -36,8 +39,6 @@ Scope {
             ref: n,
         };
         activeList = [entry, ...activeList].slice(0, settingsStore.toastMax);
-        historyList = [entry, ...historyList].slice(0, maxHistory);
-        if (!centerOpen) unreadCount += 1;
     }
     function openCenter() { centerOpen = true; unreadCount = 0; }
     function closeCenter() { centerOpen = false; expandedGroups = ({}); }
@@ -49,6 +50,47 @@ Scope {
         activeList = activeList.filter(e => e.id !== id);
     }
     function clearHistory() { historyList = []; }
+
+    // Drop every notification matching `pred` from the toast stack *and* the
+    // center history, closing the underlying server notification so it can't
+    // come back on the next repaint.
+    function _dismissMatching(pred) {
+        for (const e of activeList)
+            if (pred(e) && e.ref) e.ref.dismiss();
+        activeList = activeList.filter(e => !pred(e));
+        historyList = historyList.filter(e => !pred(e));
+        if (unreadCount > historyList.length) unreadCount = historyList.length;
+    }
+    // battery-notify.sh fires "Battery Low" / "Battery Critical"; the bar's
+    // own warnings in shell.qml use the same wording. All of them are stale
+    // the moment power comes back.
+    function _isBatteryWarning(e) {
+        return /^battery (low|critical)/i.test(e.summary || "");
+    }
+    // Idempotent — safe to call from every trigger below, and again on a
+    // charge/discharge flap.
+    function _onPowerRestored() { _dismissMatching(_isBatteryWarning); }
+
+    // Two independent triggers, because they can fire apart from each other:
+    // onBattery flips when the AC line goes online (the charger event proper),
+    // while the display device reaches Charging/FullyCharged a moment later —
+    // and on a full battery, or a dock that reports line power without a
+    // charge cycle, only one of the two moves at all.
+    Connections {
+        target: UPower
+        function onOnBatteryChanged() {
+            if (!UPower.onBattery) root._onPowerRestored();
+        }
+    }
+    Connections {
+        target: UPower.displayDevice
+        ignoreUnknownSignals: true
+        function onStateChanged() {
+            const st = UPower.displayDevice ? UPower.displayDevice.state : 0;
+            if (st === UPowerDeviceState.Charging || st === UPowerDeviceState.FullyCharged)
+                root._onPowerRestored();
+        }
+    }
 
     // ===== Grouping (center view): history bucketed by appName, newest
     // group first. expandedGroups tracks per-app "N more…" state and
@@ -99,13 +141,13 @@ Scope {
         persistenceSupported: true
 
         onNotification: (n) => {
+            // Carried over from the previous config generation — it already
+            // had its one showing, so close it instead of toasting again.
+            // Same for anything arriving under DND: with no history there is
+            // nowhere to read it later.
+            if (n.lastGeneration || root.dnd) { n.dismiss(); return; }
             n.tracked = true;
-            if (!root.dnd) root._push(n);
-            else root.historyList = [{
-                id: n.id, time: new Date(), appName: n.appName || "", appIcon: n.appIcon || "",
-                summary: n.summary || "", body: n.body || "", image: n.image || "",
-                urgency: n.urgency, ref: n,
-            }, ...root.historyList].slice(0, root.maxHistory);
+            root._push(n);
             n.closed.connect(() => root._remove(n.id));
         }
     }
@@ -603,15 +645,15 @@ Scope {
             }
         }
 
+        // Everything expires, critical urgency included. An app may ask for
+        // less than toastTimeout, never for more (and never for "forever").
         Timer {
             interval: card.entry && card.entry.ref && card.entry.ref.expireTimeout > 0
-                ? card.entry.ref.expireTimeout : settingsStore.toastTimeout
+                ? Math.min(card.entry.ref.expireTimeout, settingsStore.toastTimeout)
+                : settingsStore.toastTimeout
             running: true
             repeat: false
-            onTriggered: {
-                if (card.entry && card.entry.ref && card.entry.urgency !== NotificationUrgency.Critical)
-                    card.dismiss();
-            }
+            onTriggered: if (card.entry && card.entry.ref) card.dismiss();
         }
     }
 }

@@ -15,8 +15,9 @@ while true; do
     STATUS=$(cat "/sys/class/power_supply/$BATTERY/status" 2>/dev/null)
 
     if [[ "$STATUS" == "Charging" || "$STATUS" == "Full" ]]; then
-        # Reset latch so the next discharge cycle can re-warn. Past warnings
-        # auto-replace via notify-send's x-canonical-private-synchronous key.
+        # Reset latch so the next discharge cycle can re-warn. Existing
+        # warnings are cleared from both the toast stack and the notification
+        # center by Notifications.qml as soon as UPower reports power.
         WARNED_20=false
         WARNED_10=false
     elif [[ -n "$CAPACITY" ]]; then

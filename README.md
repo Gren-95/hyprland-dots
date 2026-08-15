@@ -172,7 +172,6 @@ These run automatically on login via `restart.sh` and restart cleanly on each se
 | `battery-notify.sh` | Notifies at 20% and 10% battery; dismisses alert when plugged in |
 | `dotwatch.sh` | Watches dotfiles for changes and hot-reloads affected services |
 | `media-inhibit.sh` | Prevents screen sleep during media playback |
-| `network-notify.sh` | Notifies on network connect/disconnect |
 
 ### dotwatch — hot-reload
 

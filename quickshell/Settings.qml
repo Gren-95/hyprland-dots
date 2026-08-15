@@ -35,7 +35,7 @@ Scope {
     id: settings
     property bool mediaKeysVisible: true
     property bool activityIconsVisible: true
-    property int toastTimeout: 6000
+    property int toastTimeout: 10000           // hard ceiling: every toast, critical included, dies here
     property int notifHistoryCap: 50
     property real fontScale: 1.0               // multiplies every Theme.fontSize token
     property string fontFamily: "FiraCode Nerd Font"

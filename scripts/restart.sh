@@ -109,13 +109,6 @@ if pgrep -f "wl-paste.*cliphist" >/dev/null; then echo "OK"; else echo "FAILED";
 # and managed via ConnectivityModule's Wi-Fi tab. Wi-Fi password prompts
 # now have to come from nm-connection-editor (launched on demand).
 
-# Restart network notifier
-echo -n "Running: network-notify ... "
-pkill -f network-notify.sh 2>/dev/null
-bash "$HOME/.config/scripts/network-notify.sh" >/dev/null 2>&1 &
-sleep 0.2
-if pgrep -f network-notify.sh >/dev/null; then echo "OK"; else echo "FAILED"; fi
-
 # Immich + Jellyfin sync are scheduled via cron now; toggle from Quick Actions
 # or run scripts/sync-toggle.sh directly. No daemon to (re)start here.
 

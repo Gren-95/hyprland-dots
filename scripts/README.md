@@ -19,7 +19,6 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | File | Spawned by | What it does |
 |---|---|---|
 | `battery-notify.sh` | `restart.sh` | Polls `/sys/class/power_supply/BAT*` every 60s. Sends critical/normal notifications at 10% / 20% (replace-key `battery`). |
-| `network-notify.sh` | `restart.sh` | `nmcli monitor` pipe. Emits a notification on connect/disconnect (replace-key `network`). |
 | `media-inhibit.sh` | `restart.sh` | Polls `playerctl status` every 3s. Inhibits `org.freedesktop.ScreenSaver` while a player is `Playing` so hypridle doesn't lock during playback. |
 | `fullscreen-inhibit.sh` | `restart.sh` | Polls `hyprctl workspaces` every 5s. Inhibits `org.freedesktop.ScreenSaver` while any window is fullscreen so hypridle doesn't dim/lock/suspend during controller-driven games (gamepad input doesn't reset the Wayland idle timer). |
 | `power-auto.sh` | `restart.sh` + autostart | Listens to `upower --monitor-detail`. Sets `performance` on AC, `balanced` on battery ≥30%, `power-saver` <30% via `powerprofilesctl`. Idempotent (skips if already at target). |
@@ -44,5 +43,5 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | `wallpaper.sh` | `Super+Shift+N`, WallpaperPicker tile | Accepts an absolute path as `$1` to set a specific wallpaper; no arg picks a random one from `$WALLPAPER_DIR`. Applies via `hyprctl hyprpaper` to every monitor. |
 | `sysinfo.sh` | Quickshell `SystemMonitor` (`Super+M`) | Emits a single JSON line: `cpu_pct`, per-core `cpu_cores[]`, `cpu_temp`, `ram_*`, `nvme_temp`, `fan1/2`, `disks[]` (one per real local FS), `uptime`. CPU uses a 200 ms `/proc/stat` sampling window; hwmon paths discovered by name so they survive reboot reordering. |
 | `hyprlock-art.sh` | hypridle pre-lock hook (and direct call) | Copies the current MPRIS album art to `$LOCK_ART` so hyprlock can display it. Also picks a random wallpaper for the lock background. |
-| `restart.sh` | `Super+B` | Sequentially restarts every userspace service: xdg-desktop-portal, gnome-keyring, Quickshell, hyprpaper, hypridle, battery-notify, media-inhibit, cliphist, nm-applet, network-notify, dotwatch. Sets GTK theme, fallback monitor. Logs OK/FAILED per step to stdout. |
+| `restart.sh` | `Super+B` | Sequentially restarts every userspace service: xdg-desktop-portal, gnome-keyring, Quickshell, hyprpaper, hypridle, battery-notify, media-inhibit, cliphist, dotwatch. Sets GTK theme, fallback monitor. Logs OK/FAILED per step to stdout. |
 | `generate-avatar.sh` | `setup.sh` | Python+Pillow renders a circular initials avatar from `$USER`, installs to `/var/lib/AccountsService/icons/$USER` (used as lockscreen avatar). |

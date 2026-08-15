@@ -37,7 +37,7 @@ Bird's-eye view of how the pieces fit together. For widget-level detail see
      for Wi-Fi password prompts)
 4. `restart.sh` starts in sequence: xdg-desktop-portal, gnome-keyring,
    Quickshell, hyprpaper, hypridle, battery-notify, media-inhibit, cliphist,
-   network-notify, dotwatch. Logs OK/FAILED per step.
+   dotwatch. Logs OK/FAILED per step.
 5. Quickshell loads `~/.config/quickshell/shell.qml` (a symlink into the dots
    repo) and renders the bar + every modal as hidden overlays.
 
