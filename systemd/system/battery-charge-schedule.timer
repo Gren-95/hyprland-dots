@@ -1,0 +1,11 @@
+[Unit]
+Description=Apply battery charge cap daily and at boot
+
+[Timer]
+OnCalendar=*-*-* 00:05:00
+OnBootSec=1min
+Persistent=true
+AccuracySec=1m
+
+[Install]
+WantedBy=timers.target

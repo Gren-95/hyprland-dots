@@ -29,6 +29,22 @@ CONFIG_ITEMS=(
 )
 
 # Options
+# System-level files. Unlike everything in CONFIG_ITEMS these are COPIED, not
+# symlinked: systemd runs them as root, and root must not execute files that
+# live in a user-writable repo. Re-run "system" after editing them here.
+SYSTEM_SCRIPTS=(
+    "scripts/battery-charge-schedule"
+)
+SYSTEM_UNITS=(
+    "systemd/system/battery-charge-schedule.service"
+    "systemd/system/battery-charge-schedule.timer"
+)
+SYSTEM_TIMERS=(
+    "battery-charge-schedule.timer"
+)
+SYSTEM_BIN_DIR="/usr/local/bin"
+SYSTEM_UNIT_DIR="/etc/systemd/system"
+
 DRY_RUN=false
 FORCE=false
 VERBOSE=false
@@ -700,6 +716,85 @@ cmd_prune() {
     fi
 }
 
+# Install root-owned scripts and systemd system units, then enable their timers.
+cmd_system() {
+    verify_dots_dir
+
+    if ! command -v sudo &>/dev/null; then
+        log_error "sudo is required to install system files"
+        return 1
+    fi
+
+    log_info "Installing system files (requires sudo)"
+
+    if [[ "$DRY_RUN" != true ]] && [[ "$FORCE" != true ]]; then
+        confirm "Install ${#SYSTEM_SCRIPTS[@]} script(s) to $SYSTEM_BIN_DIR and ${#SYSTEM_UNITS[@]} unit(s) to $SYSTEM_UNIT_DIR?" || {
+            log_info "Aborted"
+            return 0
+        }
+    fi
+
+    local item source
+    for item in "${SYSTEM_SCRIPTS[@]}"; do
+        source="$DOTS_DIR/$item"
+        if [[ ! -f "$source" ]]; then
+            log_error "Missing: $source"
+            return 1
+        fi
+        if [[ "$DRY_RUN" == true ]]; then
+            log_info "[DRY RUN] Would install $item -> $SYSTEM_BIN_DIR/$(basename "$item") (755 root:root)"
+            continue
+        fi
+        sudo install -m 755 -o root -g root "$source" "$SYSTEM_BIN_DIR/" || {
+            log_error "Failed to install $item"
+            return 1
+        }
+        log_success "Installed: $SYSTEM_BIN_DIR/$(basename "$item")"
+    done
+
+    for item in "${SYSTEM_UNITS[@]}"; do
+        source="$DOTS_DIR/$item"
+        if [[ ! -f "$source" ]]; then
+            log_error "Missing: $source"
+            return 1
+        fi
+        if [[ "$DRY_RUN" == true ]]; then
+            log_info "[DRY RUN] Would install $item -> $SYSTEM_UNIT_DIR/$(basename "$item") (644 root:root)"
+            continue
+        fi
+        sudo install -m 644 -o root -g root "$source" "$SYSTEM_UNIT_DIR/" || {
+            log_error "Failed to install $item"
+            return 1
+        }
+        log_success "Installed: $SYSTEM_UNIT_DIR/$(basename "$item")"
+    done
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log_info "[DRY RUN] Would run: systemctl daemon-reload"
+        local timer
+        for timer in "${SYSTEM_TIMERS[@]}"; do
+            log_info "[DRY RUN] Would enable --now $timer"
+        done
+        return 0
+    fi
+
+    sudo systemctl daemon-reload || {
+        log_error "systemctl daemon-reload failed"
+        return 1
+    }
+
+    local timer
+    for timer in "${SYSTEM_TIMERS[@]}"; do
+        sudo systemctl enable --now "$timer" || {
+            log_error "Failed to enable $timer"
+            return 1
+        }
+        log_success "Enabled: $timer"
+    done
+
+    return 0
+}
+
 ################################################################################
 # Main
 ################################################################################
@@ -716,6 +811,7 @@ Commands:
   status    Show current symlink status
   fix       Fix inconsistent symlink paths
   prune     Remove dangling ~/.config symlinks pointing into this repo
+  system    Install root-owned scripts and systemd units (needs sudo)
 
 Options:
   --dry-run    Preview changes without executing
@@ -729,6 +825,7 @@ Examples:
   $(basename "$0") status               # Check symlink status
   $(basename "$0") fix                  # Fix inconsistent symlinks
   $(basename "$0") undo                 # Undo last operation
+  $(basename "$0") system               # Install system scripts and units
 
 EOF
 }
@@ -739,7 +836,7 @@ main() {
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            backup|undo|status|fix|prune)
+            backup|undo|status|fix|prune|system)
                 command="$1"
                 shift
                 ;;
@@ -797,6 +894,9 @@ main() {
             ;;
         prune)
             cmd_prune
+            ;;
+        system)
+            cmd_system
             ;;
         *)
             log_error "Unknown command: $command"

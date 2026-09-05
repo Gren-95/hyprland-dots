@@ -1,0 +1,10 @@
+[Unit]
+Description=Apply weekday battery charge cap (uncapped Fri-Sun)
+Documentation=man:systemd.timer(5)
+# Source lives in dots/scripts/battery-charge-schedule and is DEPLOYED AS A COPY
+# to /usr/local/bin (root-owned): systemd runs this as root, so ExecStart must
+# not point into a user-writable path.
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/battery-charge-schedule
