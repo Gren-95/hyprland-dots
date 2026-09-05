@@ -118,7 +118,11 @@ Scope {
 
     Process {
         id: bindsProc
-        command: ["hyprctl", "binds", "-j"]
+        // Not `hyprctl binds -j` directly: with a Lua Hyprland config every
+        // bind reports dispatcher="__lua" and arg="<callback index>". The
+        // helper re-derives the real dispatcher/arg from the Lua source so
+        // _action() and _classify() below keep working.
+        command: ["bash", Quickshell.env("HOME") + "/.config/scripts/hypr-binds.sh"]
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
