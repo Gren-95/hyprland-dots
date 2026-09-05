@@ -20,10 +20,9 @@ end)
 
 -- See scripts/sync-toggle.sh.
 
--- Auto-switch power profile on AC plug/unplug.
-hl.on("hyprland.start", function()
-    hl.exec_cmd("bash ~/.config/scripts/power-auto.sh")
-end)
+-- Auto-switch power profile on AC plug/unplug: started by restart.sh, which
+-- also pkills any previous copy. Launching it here as well raced the two at
+-- login and could leave a second instance behind.
 
 -- Keep Nautilus resident so file-manager windows open in ~0.2s instead of ~2s
 
