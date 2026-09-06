@@ -1,5 +1,7 @@
 # Dotfiles for my theme of hyprland (inspired by tailwind)
 
+[![lint](https://github.com/Gren-95/hyprland-dots/actions/workflows/lint.yml/badge.svg)](https://github.com/Gren-95/hyprland-dots/actions/workflows/lint.yml)
+
 ![Desktop Screenshot](screenshots/desktop.png)
 
 ## Gallery
@@ -17,27 +19,34 @@ Modals reachable from keybindings or the bar:
     <td align="center" width="33%"><img src="screenshots/gallery/quickactions.png" width="100%"/><br><strong>Quick Actions</strong><br><kbd>Super</kbd>+<kbd>A</kbd></td>
   </tr>
   <tr>
-    <td align="center"><img src="screenshots/gallery/network.png" width="100%"/><br><strong>Network</strong><br><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></td>
+    <td align="center"><img src="screenshots/gallery/network.png" width="100%"/><br><strong>Connectivity</strong><br>Wi-Fi + Bluetooth tabs<br><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></td>
     <td align="center"><img src="screenshots/gallery/audiopower.png" width="100%"/><br><strong>Audio &amp; Power</strong><br><kbd>Super</kbd>+<kbd>S</kbd></td>
     <td align="center"><img src="screenshots/gallery/systemmonitor.png" width="100%"/><br><strong>System Monitor</strong><br><kbd>Super</kbd>+<kbd>M</kbd></td>
   </tr>
   <tr>
-    <td align="center"><img src="screenshots/gallery/notifications.png" width="100%"/><br><strong>Notification Center</strong><br><kbd>Super</kbd>+<kbd>N</kbd></td>
+    <td align="center"><img src="screenshots/gallery/notifications.png" width="100%"/><br><strong>Day Panel</strong> — notifications<br><kbd>Super</kbd>+<kbd>N</kbd></td>
+    <td align="center"><img src="screenshots/gallery/calendar.png" width="100%"/><br><strong>Day Panel</strong> — calendar<br><kbd>Super</kbd>+<kbd>D</kbd></td>
     <td align="center"><img src="screenshots/gallery/powermenu.png" width="100%"/><br><strong>Power Menu</strong><br><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd></td>
-    <td align="center"><img src="screenshots/gallery/keybinds.png" width="100%"/><br><strong>Keybinds Viewer</strong><br><kbd>Super</kbd>+<kbd>F1</kbd></td>
   </tr>
   <tr>
-    <td align="center"><img src="screenshots/gallery/calendar.png" width="100%"/><br><strong>Calendar</strong><br><kbd>Super</kbd>+<kbd>D</kbd></td>
+    <td align="center"><img src="screenshots/gallery/keybinds.png" width="100%"/><br><strong>Keybinds Viewer</strong><br><kbd>Super</kbd>+<kbd>F1</kbd></td>
     <td align="center"><img src="screenshots/gallery/wallpaper.png" width="100%"/><br><strong>Wallpaper Picker</strong><br><kbd>Super</kbd>+<kbd>W</kbd></td>
     <td align="center"><img src="screenshots/gallery/toast.png" width="100%"/><br><strong>Notification Toast</strong><br>auto-shown on incoming notification</td>
   </tr>
 </table>
 
+> [!NOTE]
+> Calendar and notifications are one surface — the day panel. `Super+N` opens it
+> on notifications, `Super+D` on the calendar. The two shots above predate the
+> merge and show the older separate chrome.
+
 > [!TIP]
 > Use `setup.sh` for automated installation, or `dotfiles-manager.sh` for managing symlinks.
 
 > [!NOTE]
-> Built on Nobara 43. Some commands are Fedora/Nobara specific.
+> Built on Nobara 44 with Hyprland 0.56.2 and Quickshell 0.3.1. The Hyprland
+> config is Lua, which needs Hyprland 0.55+. Some commands are Fedora/Nobara
+> specific.
 
 ## Documentation
 
@@ -65,8 +74,15 @@ Modals reachable from keybindings or the bar:
 - `python3` + `python3-pillow` — avatar generation
 - `jq` — JSON parsing
 - `inotify-tools` — dotfile hot-reload daemon
+- `fish` `fzf` `zoxide` — shell, fuzzy finder, directory jumping
+- `wayvnc` — optional VNC server (`Super+Ctrl+R`)
+- `ranger` — optional TUI file manager
 
-## Install Dependencies (Nobara 43)
+Fish plugins are declared in [`fish/fish_plugins`](fish/fish_plugins) and restored by
+[fisher](https://github.com/jorgebucaran/fisher); the prompt is
+[tide](https://github.com/IlanCosman/tide).
+
+## Install Dependencies (Nobara 44)
 
 ### External repositories
 
@@ -83,7 +99,7 @@ sudo dnf install hyprland hyprland-devel quickshell kitty nautilus cliphist \
   wl-clipboard firefox brightnessctl playerctl \
   gnome-keyring jq \
   powerprofilesctl gpu-screen-recorder inotify-tools \
-  fish ranger python3 python3-pillow
+  fish fzf zoxide ranger python3 python3-pillow
 ```
 
 ## Setup
@@ -169,9 +185,11 @@ These run automatically on login via `restart.sh` and restart cleanly on each se
 
 | Script | Purpose |
 |---|---|
-| `battery-notify.sh` | Notifies at 20% and 10% battery; dismisses alert when plugged in |
-| `dotwatch.sh` | Watches dotfiles for changes and hot-reloads affected services |
+| `battery-notify.sh` | Notifies at 20% and 10% battery; dismisses the alert when plugged in |
+| `power-auto.sh` | Sets the power profile from AC state and battery level (`performance` on AC, `balanced` ≥30%, `power-saver` below) |
 | `media-inhibit.sh` | Prevents screen sleep during media playback |
+| `fullscreen-inhibit.sh` | Prevents idle while a window is fullscreen |
+| `dotwatch.sh` | Watches dotfiles for changes and hot-reloads affected services |
 
 ### dotwatch — hot-reload
 
@@ -185,11 +203,32 @@ Edits to dotfiles are picked up automatically without restarting your session:
 | `gtk-3.0/gtk.css` | Notification (restart GTK apps to apply) |
 | `quickshell/*` | Quickshell auto-reloads on file changes |
 
+## Scheduled Jobs
+
+| Job | Schedule | Mechanism |
+|---|---|---|
+| Immich photo sync | Hourly, when enabled | crontab entry between `# QSSYNC:immich` markers |
+| Jellyfin music sync | Daily | `jellyfin-sync.timer` (user timer, `Persistent=true`) |
+| Battery charge cap | Daily at 00:05 | `battery-charge-schedule.timer` (system timer, `Persistent=true`) |
+
+Both sync jobs are toggled from Quick Actions (`Super+A`), which calls
+`sync-toggle.sh`. It comments or uncomments the cron line for Immich and
+enables or disables the user timer for Jellyfin, so a disabled job leaves its
+schedule in place rather than losing it.
+
+`Persistent=true` matters on a laptop: a timer that fires while the machine is
+asleep runs on the next boot instead of being skipped.
+
+The battery cap runs uncapped Friday through Sunday and applies a 75–80% cap on
+weekdays, so the cell ages slower without getting in the way at the weekend. Its
+script is deployed as a **copy** to `/usr/local/bin` — systemd runs it as root,
+so `ExecStart` must not point into a user-writable path.
+
 ## Optional Services
 
 ### Immich (photo sync)
 
-Automatically uploads `~/Pictures/` to your Immich server every hour. Notifies when new photos are uploaded.
+Uploads `~/Pictures/` to your Immich server every hour while enabled. Notifies when new photos are uploaded.
 
 **Setup:**
 
@@ -202,7 +241,7 @@ Auth is stored in `~/.config/immich/auth.yml` (gitignored).
 
 ### Jellyfin (music sync)
 
-Syncs your Jellyfin music library to `~/Music/` every 2 hours. Jellyfin is the master — tracks removed from Jellyfin are deleted locally. Notifies after each sync with a download/skip/remove summary.
+Syncs your Jellyfin music library to `~/Music/` once a day. Jellyfin is the master — tracks removed from Jellyfin are deleted locally. Notifies after each sync with a download/skip/remove summary.
 
 **Setup:**
 
@@ -211,6 +250,12 @@ bash ~/.config/scripts/jellyfin-music-sync.sh
 ```
 
 You will be prompted for your Jellyfin server URL and API key on first run. Config is stored in `~/.config/jellyfin/sync.conf` (gitignored). To reconfigure, delete the file and run the script again.
+
+### Windows VM (WinApps)
+
+`winvm-toggle.sh` starts and stops the `dockur/windows` container that backs
+WinApps, exposed as a Quick Actions toggle. Stopping the container is what
+actually frees the VM's 6 GB of RAM. Needs `docker` and `freerdp`.
 
 ## Dotfiles Manager
 
@@ -221,3 +266,18 @@ You will be prompted for your Jellyfin server URL and API key on first run. Conf
 ./dotfiles-manager.sh fix             # Fix broken or inconsistent symlinks
 ./dotfiles-manager.sh undo            # Restore backups and remove symlinks
 ```
+
+## Development
+
+[`.github/workflows/lint.yml`](.github/workflows/lint.yml) runs on every push and
+pull request. The same checks run locally:
+
+```bash
+shellcheck -S warning $(git ls-files '*.sh' | grep -v '^ranger/scope.sh$')
+luac -p $(git ls-files '*.lua')
+Hyprland --verify-config -c "$PWD/hypr/hyprland.lua"
+./dotfiles-manager.sh status
+```
+
+`--verify-config` catches unknown config keys as well as Lua syntax errors, so
+it is worth running before a reload rather than finding out from a live session.
