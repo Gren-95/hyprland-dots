@@ -44,6 +44,10 @@ hl.config({
 hl.config({
     misc = {
         vrr = 2,
+        -- Frame rate for windows carrying the `render_unfocused` rule (see
+        -- rules.lua). Only needs to be high enough to keep frame callbacks
+        -- flowing to a hidden game so it can't block in Present().
+        render_unfocused_fps = 30,
     },
     cursor = {
         no_hardware_cursors = false,

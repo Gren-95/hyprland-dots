@@ -228,6 +228,18 @@ hl.window_rule({
     fullscreen = true,
 })
 
+-- Skyrim runs borderless with its own vsync (SSE Display Tweaks EnableVSync=true),
+-- so it blocks in Present() waiting for a frame callback. Hyprland stops sending
+-- those to windows on a hidden workspace, so switching away froze the game with no
+-- way back. Keep rendering it while it's not visible (misc:render_unfocused_fps)
+-- so the callbacks keep arriving and it can never stall.
+hl.window_rule({
+    match = {
+        class = "^(skyrimse\\.exe|skyrimvr\\.exe)$",
+    },
+    render_unfocused = true,
+})
+
 -- Decorations
 hl.window_rule({
     match = {
