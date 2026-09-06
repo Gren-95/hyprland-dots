@@ -15,7 +15,7 @@ jobs:
     name: shell scripts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Pinned to the version used locally so CI and `shellcheck` on a laptop
       # agree; Ubuntu's packaged build lags and reports a different set.
@@ -44,7 +44,7 @@ jobs:
     name: lua syntax
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: sudo apt-get update && sudo apt-get install -y lua5.4
       # Cheap syntax-only gate. The hyprland-config job below is the real
       # check, but it depends on Arch shipping a compatible Hyprland; this
@@ -63,7 +63,7 @@ jobs:
       - name: Install Hyprland
         run: pacman -Syu --noconfirm --needed hyprland git
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # `--verify-config` parses the config and exits non-zero on both Lua
       # syntax errors and unknown config keys. Hyprland refuses to run as
@@ -79,7 +79,7 @@ jobs:
     name: repo hygiene
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # A hardcoded home directory makes the config work only for its author.
       # Docs may spell out real paths; fish/functions/_tide_* and
