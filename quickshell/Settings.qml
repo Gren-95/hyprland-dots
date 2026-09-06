@@ -104,7 +104,12 @@ Scope {
     // Same states as bar items, but "overflow" (the default) means the
     // Quick Actions panel itself; "bar" promotes the item to its own icon
     // in the bar's right group.
-    function qaPlacementOf(key)     { return qaPlacement[key] ?? "overflow"; }
+    //
+    // Per-key defaults for anything the user has never placed. Clipboard is
+    // reached by reflex often enough that opening a panel to find it is a
+    // click too many; anything the user has actually placed still wins.
+    readonly property var _qaPlacementDefaults: ({ clipboard: "bar" })
+    function qaPlacementOf(key)     { return qaPlacement[key] ?? _qaPlacementDefaults[key] ?? "overflow"; }
 
     readonly property var _schema: [
         { name: "activityIconsVisible", file: "activity-icons.enabled", type: "bool" },
