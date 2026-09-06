@@ -1,0 +1,107 @@
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shell:
+    name: shell scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pinned to the version used locally so CI and `shellcheck` on a laptop
+      # agree; Ubuntu's packaged build lags and reports a different set.
+      - name: Install ShellCheck v0.11.0
+        run: |
+          curl -fsSL "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz" \
+            | tar -xJ
+          sudo install -m755 shellcheck-v0.11.0/shellcheck /usr/local/bin/shellcheck
+          shellcheck --version
+
+      # ranger/scope.sh is ranger's upstream file (it differs from
+      # /usr/share/doc/ranger/config/scope.sh only in the shebang), so its
+      # warnings are not ours to fix.
+      - name: ShellCheck
+        shell: bash
+        run: |
+          mapfile -t files < <(git ls-files '*.sh' | grep -v '^ranger/scope\.sh$')
+          shellcheck -S warning "${files[@]}"
+
+      - name: Parse every script
+        shell: bash
+        run: |
+          while read -r f; do bash -n "$f"; done < <(git ls-files '*.sh')
+
+  lua:
+    name: lua syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y lua5.4
+      # Cheap syntax-only gate. The hyprland-config job below is the real
+      # check, but it depends on Arch shipping a compatible Hyprland; this
+      # one still catches a typo if that job ever has to be dropped.
+      - name: luac -p
+        shell: bash
+        run: |
+          mapfile -t files < <(git ls-files '*.lua')
+          luac5.4 -p "${files[@]}"
+
+  hyprland-config:
+    name: hyprland config
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install Hyprland
+        run: pacman -Syu --noconfirm --needed hyprland git
+
+      - uses: actions/checkout@v4
+
+      # `--verify-config` parses the config and exits non-zero on both Lua
+      # syntax errors and unknown config keys. Hyprland refuses to run as
+      # root without an insulting opt-out flag, so use an unprivileged user.
+      - name: Hyprland --verify-config
+        run: |
+          Hyprland --version | head -1
+          useradd -m ci
+          chmod -R a+rX "$GITHUB_WORKSPACE"
+          su ci -c "XDG_RUNTIME_DIR=/tmp Hyprland --verify-config -c '$GITHUB_WORKSPACE/hypr/hyprland.lua'"
+
+  hygiene:
+    name: repo hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # A hardcoded home directory makes the config work only for its author.
+      # Docs may spell out real paths; fish/functions/_tide_* and
+      # fish/functions/tide/ are vendored from the tide prompt.
+      - name: No hardcoded home directories
+        run: |
+          if git grep -InE '/home/[a-z_][a-z0-9_-]*' -- . ':!*.md' ':!screenshots' ':!fish/functions/_tide_*' ':!fish/functions/tide'; then
+            echo "::error::hardcoded home directory - use \$HOME or os.getenv(\"HOME\")"
+            exit 1
+          fi
+
+      - name: No secrets assigned to literals
+        run: |
+          if git grep -InE '(PASSWORD|PASSWD|SECRET|API_KEY|APIKEY|TOKEN)[[:space:]]*=[[:space:]]*["'"'"']?[A-Za-z0-9+/_-]{8,}' -- . ':!*.md'; then
+            echo "::error::secret assigned to a literal - read it from the environment instead"
+            exit 1
+          fi
+
+      # These hold real credentials and are gitignored; catch the day someone
+      # commits one with `git add -f`.
+      - name: Credential files stay untracked
+        run: |
+          if git ls-files | grep -E '^(immich/auth\.yml|jellyfin/sync\.conf|scripts/util\.env|quickshell/calendar\.url)$'; then
+            echo "::error::credential file is tracked - remove it from the index"
+            exit 1
+          fi
