@@ -42,6 +42,9 @@ QuickActions QuickActions.qml
 RegionSelector RegionSelector.qml
 ScreenRecorder ScreenRecorder.qml
 ScreenshotActions ScreenshotActions.qml
+SectionLabel SectionLabel.qml
+ServiceRow ServiceRow.qml
+ServicesModule ServicesModule.qml
 Settings Settings.qml
 Spinner Spinner.qml
 Spotlight Spotlight.qml

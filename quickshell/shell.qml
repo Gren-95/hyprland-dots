@@ -325,6 +325,13 @@ Scope {
                             { id: "battery",      label: "Battery",       glyph: () => batteryIcon.glyph, color: () => batteryIcon.color,    open: (a) => apMod.openTab("power", a) },
                         ]
                     }
+
+                    // Sits beside Quick Actions on purpose: that panel is for
+                    // flipping things, this one is for seeing what is up.
+                    ServicesModule {
+                        id: servicesMod
+                        parentBar: bar
+                    }
                     BarSep { visible: settingsStore.placement("network") === "bar" || settingsStore.placement("wifi") === "bar" || settingsStore.placement("vpn") === "bar" }
 
                     ConnectivityModule {
@@ -573,6 +580,12 @@ Scope {
                     name: "screenshot-region"
                     description: "Pick a region with the Quickshell region selector"
                     onPressed: regionSelector.start()
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "services"
+                    description: "Toggle background services panel"
+                    onPressed: servicesMod.popupOpen = !servicesMod.popupOpen
                 }
                 GlobalShortcut {
                     appid: "quickshell"

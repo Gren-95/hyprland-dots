@@ -190,6 +190,20 @@ Pattern:
 Keybinds, Wallpaper). Bound to `Super+A`. Do Not Disturb and Stay Awake used
 to live here; they sit in the day panel now, next to what they govern.
 
+`ServicesModule` sits beside Quick Actions and is the read-out to its remote
+control: the five daemons `restart.sh` starts at login, the two scheduled
+syncs, and the two on-demand services. Quick Actions can flip four of these;
+what it cannot say is whether `dotwatch` survived the last session or when the
+Jellyfin timer next fires. One probe backs the whole panel —
+`scripts/services-status.sh` prints `key=value` pairs on one line, so no shell
+pipeline lives in a QML string literal. A running daemon is not clickable
+(there is nothing to do); a dead one starts on click, detached, because a
+daemon parented to Quickshell would die with the next reload — which is the
+very failure the panel exists to report. The bar glyph turns orange only for a
+session daemon that should be up and isn't; everything else being off is a
+choice, not a fault. Openable as `quickshell:services` (no key bound by
+default).
+
 `MediaCard` is the MPRIS now-playing card at the top of the day panel's
 notification column: art, title/artist, scrub bar, prev/play-pause/next. It
 has no visibility setting — it shows whenever something is playing and

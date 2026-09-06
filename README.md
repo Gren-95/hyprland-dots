@@ -176,7 +176,10 @@ password=yourpassword
 
 ## Background Daemons
 
-These run automatically on login via `restart.sh` and restart cleanly on each session.
+These run automatically on login via `restart.sh` and restart cleanly on each
+session. The sync icon beside Quick Actions in the bar shows all of them at a
+glance — plus the scheduled syncs and the on-demand services — and starts any
+daemon that has died.
 
 | Script | Purpose |
 |---|---|
