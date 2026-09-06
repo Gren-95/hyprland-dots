@@ -214,11 +214,19 @@ and the keyboard map; the two panes are pure views over the `IcsCalendar` and
   leading edge.
 - `WeatherCard` sits under the calendar header — the header row is already a
   title plus four controls, and the reading has more to say than fits between
-  them. `WeatherService` pulls current conditions and today's daily block in
-  one open-meteo request, so feels-like, high/low, humidity, wind, rain chance
-  and sun times cost no extra round trip. Condition glyphs take their bucket's
-  accent and temperatures run through `tempColor`, a deliberately coarse
-  warm-to-cool ramp. Hidden entirely when no location is configured.
+  them. `WeatherService` pulls current conditions, today's daily block and the
+  hourly series in one open-meteo request, so feels-like, high/low, humidity,
+  wind, sun times and the next twelve hours cost no extra round trip. Condition
+  glyphs take their bucket's accent and temperatures run through `tempColor`, a
+  deliberately coarse warm-to-cool ramp. Hidden entirely when no location is
+  configured.
+- The hourly strip answers "when does it rain" twice over: `rainSummary` says
+  it in words (`Rain 19:00–23:00 · peak 85%`), and the bars say it in shape.
+  The bars plot one measure — chance of rain as height — so colour is not a
+  second copy of it: every bar is the same hue, dim below `rainThreshold` and
+  full above, which leaves the hours worth caring about as the ones that stand
+  out. Only the peak is labelled; hovering a bar swaps the summary line for
+  that hour. A dry day is a hairline baseline and nothing else.
 - Do Not Disturb and Stay Awake are pills under the notification header.
   Neither is in the Quick Actions grid any more: DND decides what lands in
   the list right below it, and Stay Awake is the other "stop interrupting

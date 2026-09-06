@@ -57,7 +57,9 @@ Scope {
         anchorItem: root.anchorItem
         open: root.open && root.anchorBar !== null
         cardWidth: settingsStore.flyoutSize("daypanel", "w", 860)
-        cardHeight: settingsStore.flyoutSize("daypanel", "h", 660)
+        // 720 rather than 660: the weather card took the slack the events
+        // list used to have, and two events plus the strip is the point.
+        cardHeight: settingsStore.flyoutSize("daypanel", "h", 720)
         pinned: root.pinned
         onDismissed: root.close()
         onKeyPressed: (e) => {

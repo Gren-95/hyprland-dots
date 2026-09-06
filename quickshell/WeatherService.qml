@@ -2,9 +2,9 @@
 // location name once per change, then refreshes every 30 minutes.
 // Empty location = service off.
 //
-// One request carries both `current` and today's `daily` block, so the card
-// can show feels-like, high/low, humidity, wind and rain chance without a
-// second round trip.
+// One request carries `current`, today's `daily` block and the hourly series,
+// so feels-like, high/low, rain chance and the next twelve hours all arrive
+// without a second round trip.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -26,6 +26,11 @@ Scope {
     property string sunset: ""
     property bool daylight: true
     property int code: -1
+    // Next 12 hours from the current one: { hh, prob, mm, temp }.
+    property var hours: []
+
+    // A bar at or above this reads as "it will rain" in the summary line.
+    readonly property int rainThreshold: 30
     readonly property bool ready: located && code >= 0
     readonly property string unit: settingsStore.weatherFahrenheit ? "°F" : "°C"
     readonly property string windUnit: settingsStore.weatherFahrenheit ? "mph" : "km/h"
@@ -78,6 +83,44 @@ Scope {
         return Theme.accent.red;
     }
 
+    // Contiguous runs of hours at or above the threshold. An hour's bar covers
+    // the hour it starts, so a run of 16,17,18 ends at 19:00.
+    function rainWindows() {
+        const out = [];
+        let start = -1;
+        for (let i = 0; i < hours.length; i++) {
+            const wet = hours[i].prob >= rainThreshold;
+            if (wet && start < 0) start = i;
+            if (!wet && start >= 0) { out.push([start, i]); start = -1; }
+        }
+        if (start >= 0) out.push([start, hours.length]);
+        return out;
+    }
+    function _span(w) {
+        const from = hours[w[0]].hh + ":00";
+        // One past the last wet hour. A run that reaches the end of the
+        // series has no known end, so it is left open rather than guessed.
+        if (w[1] >= hours.length) return "from " + from;
+        return from + "–" + hours[w[1]].hh + ":00";
+    }
+    readonly property string rainSummary: {
+        if (!ready || hours.length === 0) return "";
+        const w = rainWindows();
+        if (w.length === 0) return "No rain in the next 12 h";
+        let peak = 0;
+        for (const h of hours) peak = Math.max(peak, h.prob);
+        const spans = w.length === 1 ? _span(w[0])
+            : w.length === 2 ? _span(w[0]) + " and " + _span(w[1])
+            : _span(w[0]) + " and " + (w.length - 1) + " more";
+        return "Rain " + spans + " · peak " + peak + "%";
+    }
+    readonly property int peakHour: {
+        let idx = -1, best = 0;
+        for (let i = 0; i < hours.length; i++)
+            if (hours[i].prob > best) { best = hours[i].prob; idx = i; }
+        return idx;
+    }
+
     // Re-geocode whenever the location setting changes.
     property string _lastLocation: ""
     function checkLocation() {
@@ -128,7 +171,8 @@ Scope {
             + ",wind_speed_10m,weather_code,is_day"
             + "&daily=temperature_2m_max,temperature_2m_min"
             + ",precipitation_probability_max,sunrise,sunset"
-            + "&timezone=auto&forecast_days=1"
+            + "&hourly=temperature_2m,precipitation_probability"
+            + "&timezone=auto&forecast_days=2"
             + "&temperature_unit=" + (settingsStore.weatherFahrenheit ? "fahrenheit" : "celsius")
             + "&wind_speed_unit=" + (settingsStore.weatherFahrenheit ? "mph" : "kmh")]
         running: false
@@ -146,6 +190,23 @@ Scope {
                     // Set last: `code` is what flips `ready`, so everything
                     // the card reads is already in place when it turns on.
                     svc.code = c.weather_code;
+
+                    // Start at the hour we are in, so the strip always reads
+                    // left-to-right from now.
+                    const hr = j.hourly;
+                    if (hr && hr.time) {
+                        const key = Qt.formatDateTime(new Date(), "yyyy-MM-ddTHH:00");
+                        let at = hr.time.indexOf(key);
+                        if (at < 0) at = 0;
+                        const out = [];
+                        for (let i = at; i < Math.min(at + 12, hr.time.length); i++)
+                            out.push({
+                                hh: String(hr.time[i]).slice(11, 13),
+                                prob: hr.precipitation_probability[i],
+                                temp: hr.temperature_2m[i]
+                            });
+                        svc.hours = out;
+                    }
 
                     const d = j.daily;
                     if (d && d.time && d.time.length > 0) {
