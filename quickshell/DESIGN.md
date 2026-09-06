@@ -271,6 +271,25 @@ Each modal exposes:
 Cross-modal Ctrl+Left/Right navigation is wired in `shell.qml` via
 `navigateNext` / `navigatePrev` signals on each module.
 
+### Spotlight's second mode: picking a default app
+
+`Default browser` / `terminal` / `editor` / `file manager` in the command
+palette do not open anything — they call `spotlight.startPick(role)`, which
+keeps the launcher up and turns the same list into a chooser: apps filtered to
+the role's freedesktop category, Enter assigns instead of launching, Escape
+backs out to the normal list rather than closing.
+
+Two details make it behave:
+- `activate()` skips its usual `close()` when the action left `pickRole` set,
+  otherwise the launcher would shut the instant the mode opened.
+- The assignment goes through `scripts/default-app.sh set`, never straight to
+  a config file. Browser and file manager have real XDG defaults, so that
+  script writes those too — picking a browser here also changes what a link in
+  another app opens. Terminal and editor have no such standard, which is why
+  the Hyprland binds call `default-app.sh run <role>` instead of naming a
+  command: `var_terminal` and `var_fileManager` in `general.lua` route through
+  it, so a pick takes effect without editing the config.
+
 ### Notable modals (post-initial-doc additions)
 
 - **`SystemMonitor`** (`Super+M`) — CPU + per-core grid, RAM, all mounted

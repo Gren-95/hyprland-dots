@@ -93,6 +93,10 @@ Scope {
                     keywords: t.action, isToggle: false,
                     run: () => quickMod.performAction(t.action),
                 }))).concat(servicesMod.spotlightActions).concat([
+                    { name: "Default browser",      glyph: "󰖟", accent: Theme.accent.blue,   keywords: "default app browser web",    isToggle: false, run: () => spotlight.startPick("browser") },
+                    { name: "Default terminal",     glyph: "󰆍", accent: Theme.accent.teal,   keywords: "default app terminal shell", isToggle: false, run: () => spotlight.startPick("terminal") },
+                    { name: "Default editor",       glyph: "󰷈", accent: Theme.accent.orange, keywords: "default app editor text",    isToggle: false, run: () => spotlight.startPick("editor") },
+                    { name: "Default file manager", glyph: "󰉋", accent: Theme.accent.yellow, keywords: "default app files folder",   isToggle: false, run: () => spotlight.startPick("filemanager") },
                     { name: "Bluetooth",      glyph: "󰂯", accent: Theme.accent.blue,   keywords: "bt network devices",              isToggle: false, run: () => btMod.openTab("bluetooth") },
                     { name: "Wi-Fi",          glyph: "󰖩", accent: Theme.accent.green,  keywords: "wifi network internet",           isToggle: false, run: () => btMod.openTab("wifi", wifiIcon.visible ? wifiIcon : null) },
                     { name: "VPN",            glyph: "󰒃", accent: Theme.accent.purple, keywords: "tailscale vpn exit node",         isToggle: false, run: () => btMod.openTab("vpn", vpnIcon.visible ? vpnIcon : null) },

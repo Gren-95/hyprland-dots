@@ -6,7 +6,7 @@ the modules. Split for readability — every module is small and self-contained.
 
 | File | Owns | Notable contents |
 |---|---|---|
-| `general.lua` | Program shortcut vars + Hyprland general/decoration/animations | `var_terminal`, `var_fileManager`, `var_colorpicker`, `var_lockscreen`, `var_screenshotocr`, `var_externalscript1` (restart.sh), `var_externalscript2` (wallpaper.sh). Gaps, border colors, animation curves. |
+| `general.lua` | Program shortcut vars + Hyprland general/decoration/animations | `var_terminal`, `var_fileManager` (both route through `default-app.sh run`, so the runner's default-app pickers take effect without editing this file), `var_colorpicker`, `var_lockscreen`, `var_screenshotocr`, `var_externalscript1` (restart.sh), `var_externalscript2` (wallpaper.sh). Gaps, border colors, animation curves. |
 | `appearance.lua` | Look-and-feel | Border radius, blur, shadow, opacity. Not visible by default; tweak when changing theme. |
 | `monitors.lua` | Per-monitor layout | `hl.monitor()` entries. Adjust here when a display is added/removed. The fallback `FALLBACK,1920x1080@60,auto,1` is set from `restart.sh`. |
 | `input.lua` | Keyboard, mouse, touchpad | XKB layout, key repeat, follow-mouse, natural scroll. |

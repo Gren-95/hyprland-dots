@@ -21,9 +21,37 @@ Scope {
     // live state; everything else runs/opens and the launcher closes
     // (flyout-openers close it via the single-open policy anyway).
     property var shellActions: []
+
+    // ===== Default-app picking =====
+    // A second mode for the same list: instead of launching the highlighted
+    // app, assign it to a role. Roles the desktop has no standard for
+    // (terminal, editor) are why default-app.sh exists at all — see it for
+    // where each choice is written.
+    property string pickRole: ""
+    readonly property var pickRoles: ({
+        browser:     { label: "browser",      category: "WebBrowser" },
+        terminal:    { label: "terminal",     category: "TerminalEmulator" },
+        editor:      { label: "editor",       category: "TextEditor" },
+        filemanager: { label: "file manager", category: "FileManager" }
+    })
+    readonly property string pickLabel: pickRole !== "" ? pickRoles[pickRole].label : ""
+    function startPick(role) {
+        root.pickRole = role;
+        root.query = "";
+        root.selectedIndex = 0;
+        root.open = true;
+    }
+    function cancelPick() {
+        root.pickRole = "";
+        root.query = "";
+        root.selectedIndex = 0;
+    }
+    Process { id: setDefaultProc; command: [] }
+
     readonly property var matchedActions: {
         const q = root.query.trim().toLowerCase();
-        if (!q) return [];
+        // Picking a default is a list of apps and nothing else.
+        if (root.pickRole !== "" || !q) return [];
         return shellActions.filter(a =>
             a.name.toLowerCase().includes(q)
             || (a.keywords && a.keywords.indexOf(q) >= 0)
@@ -48,14 +76,16 @@ Scope {
         } catch (e) {}
         return "";
     }
-    readonly property bool hasCalc: root.calcResult !== ""
+    readonly property bool hasCalc: root.pickRole === "" && root.calcResult !== ""
 
     readonly property var filtered: {
         if (!DesktopEntries.applications) return [];
         const all = DesktopEntries.applications.values || [];
         const q = root.query.toLowerCase();
+        const cat = root.pickRole !== "" ? root.pickRoles[root.pickRole].category : "";
         return all
             .filter(a => !a.noDisplay)
+            .filter(a => cat === "" || (a.categories || []).indexOf(cat) >= 0)
             .filter(a => {
                 if (!q) return true;
                 const name = (a.name || "").toLowerCase();
@@ -88,7 +118,7 @@ Scope {
         selectedIndex = idx < 0 ? Math.max(0, root.totalRows - 1)
                                 : Math.min(idx, Math.max(0, root.totalRows - 1));
     }
-    function close() { open = false; }
+    function close() { open = false; pickRole = ""; }
     // The highlighted shell-toggle action, if any (drives Space-to-toggle).
     function highlightedToggle() {
         const ai = selectedIndex - calcOffset;
@@ -106,10 +136,19 @@ Scope {
         if (ai >= 0 && ai < matchedActions.length) {
             const a = matchedActions[ai];
             a.run();
-            if (!a.isToggle) close();
+            // An action that put us into pick mode wants the launcher to stay
+            // up — the list it just narrowed is the point.
+            if (!a.isToggle && root.pickRole === "") close();
             return;
         }
         const item = filtered[i - appOffset];
+        if (item && root.pickRole !== "") {
+            setDefaultProc.command = ["bash", Quickshell.env("HOME")
+                + "/.config/scripts/default-app.sh", "set", root.pickRole, item.id];
+            setDefaultProc.startDetached();
+            close();
+            return;
+        }
         if (item) item.execute();
         close();
     }
@@ -126,7 +165,9 @@ Scope {
         onKeyPressed: (e) => {
             const n = root.totalRows;
             const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
-            if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
+            if (e.key === Qt.Key_Escape && root.pickRole !== "") {
+                root.cancelPick(); e.accepted = true;
+            } else if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
                 root.navigateNext(); e.accepted = true;
             } else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
                 root.navigatePrev(); e.accepted = true;
@@ -164,7 +205,7 @@ Scope {
 
                     Text {
                         Layout.fillWidth: true
-                        text: "Launcher"
+                        text: root.pickRole === "" ? "Launcher" : "Default " + root.pickLabel
                         color: Theme.fg
                         font.family: Theme.font
                         font.pixelSize: Theme.fontSize.md
@@ -183,7 +224,8 @@ Scope {
                         }
                         Text {
                             Layout.fillWidth: true
-                            text: root.query || "Spotlight Search"
+                            text: root.query || (root.pickRole === "" ? "Spotlight Search"
+                            : "Pick a " + root.pickLabel)
                             color: root.query ? Theme.fg : Theme.mutedDeep
                             font.family: Theme.font
                             font.pixelSize: Theme.fontSize.xxl
@@ -196,7 +238,9 @@ Scope {
                 Text {
                     id: hintFooter
                     anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 10 }
-                    text: "type to search · ↑/↓ navigate · ↵ launch · Esc close"
+                    text: root.pickRole === ""
+                        ? "type to search · ↑/↓ navigate · ↵ launch · Esc close"
+                        : "↵ set as default " + root.pickLabel + " · Esc back"
                     color: Theme.disabled
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.xs

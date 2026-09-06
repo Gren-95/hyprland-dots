@@ -1,5 +1,9 @@
-var_terminal = "kitty"
-var_fileManager = "nautilus"
+-- Both run through default-app.sh, so the "Default terminal" / "Default file
+-- manager" pickers in the runner take effect without editing this file. The
+-- script falls back to kitty and nautilus when nothing has been chosen.
+local scripts = os.getenv("HOME") .. "/.config/scripts"
+var_terminal = "bash " .. scripts .. "/default-app.sh run terminal"
+var_fileManager = "bash " .. scripts .. "/default-app.sh run filemanager"
 var_colorpicker = "hyprpicker -a"
 var_mainMod = "SUPER"
 var_lockscreen = "bash -c 'bash ~/.config/scripts/hyprlock-art.sh; hyprlock'"

@@ -30,6 +30,7 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 
 | File | Triggered by | What it does |
 |---|---|---|
+| `default-app.sh` | Hyprland binds (`run`), Spotlight's default-app pickers (`set`) | Which app fills a role — browser, terminal, editor, filemanager. `get` prefers XDG's own answer where one exists; `set` writes `~/.config/default-apps.conf` and registers the XDG default for browser/file manager; `run` resolves the entry across the XDG application directories and launches it, falling back to kitty/nautilus when nothing is chosen. |
 | `services-status.sh` | Quickshell Services panel | One probe for the whole panel: prints `key=value` pairs on a single line — each session daemon's pgrep state, wayvnc, the WinApps container, both sync schedules, and the Jellyfin timer's next run as a unix timestamp. |
 | `wayvnc-toggle.sh` | Services panel "Remote access" toggle, or `Super+Ctrl+R` | Starts wayvnc if not running, kills it if it is. Notifies with the local IP on start. |
 | `sync-toggle.sh` | Services panel "Immich/Jellyfin sync" toggles | Manages cron entries between `# QSSYNC:<kind>` markers. Commands: `status [all\|<kind>]`, `toggle <kind>`, `enable <kind>`, `disable <kind>`, `schedule <kind> '<cron-expr>'`. Self-installs commented-out lines on first call. |

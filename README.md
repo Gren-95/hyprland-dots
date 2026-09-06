@@ -134,6 +134,15 @@ Put your wallpapers in `~/Pictures/wallpapers/`. They are preloaded automaticall
 $EDITOR hypr/hypridle.conf
 ```
 
+### Default apps
+
+Open the launcher (`Super+R`) and type `default` — Browser, Terminal, Editor
+and File manager each open a picker listing the apps that declare themselves
+for that role. Browser and file manager also become the XDG default, so links
+and folders opened from other apps follow the same choice. `Super+T` and
+`Super+E` route through `scripts/default-app.sh`, so a pick takes effect
+without touching the config.
+
 ### Keybinds
 
 ```bash
