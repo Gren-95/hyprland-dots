@@ -32,13 +32,13 @@ jobs:
       - name: ShellCheck
         shell: bash
         run: |
-          mapfile -t files < <(git ls-files '*.sh' | grep -v '^ranger/scope\.sh$')
+          mapfile -t files < <(git ls-files '*.sh' .githooks | grep -v '^ranger/scope\.sh$')
           shellcheck -S warning "${files[@]}"
 
       - name: Parse every script
         shell: bash
         run: |
-          while read -r f; do bash -n "$f"; done < <(git ls-files '*.sh')
+          while read -r f; do bash -n "$f"; done < <(git ls-files '*.sh' .githooks)
 
   lua:
     name: lua syntax

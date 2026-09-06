@@ -1,0 +1,87 @@
+#!/bin/bash
+# Mirrors .github/workflows/lint.yml so a failing commit is caught here rather
+# than a minute later in CI. Enable with:
+#
+#   git config core.hooksPath .githooks
+#
+# Checks run against the *index*, not the working tree, so a partially staged
+# file is judged by what is actually being committed. Skip with --no-verify.
+set -uo pipefail
+
+fail=0
+ok()   { printf '  \033[0;32mok\033[0m   %s\n' "$1"; }
+bad()  { printf '  \033[0;31mFAIL\033[0m %s\n' "$1" >&2; fail=1; }
+skip() { printf '  \033[0;33mskip\033[0m %s (%s not installed)\n' "$1" "$2"; }
+
+# What would be committed, materialised so the config parser can follow
+# `require` across files.
+staged=$(mktemp -d)
+trap 'rm -rf "$staged"' EXIT
+git checkout-index -a -f --prefix="$staged/"
+
+# ranger/scope.sh is ranger's upstream file; its warnings are not ours to fix.
+mapfile -t sh_files < <(git ls-files '*.sh' .githooks | grep -v '^ranger/scope\.sh$')
+mapfile -t all_sh   < <(git ls-files '*.sh' .githooks)
+mapfile -t lua_files < <(git ls-files '*.lua')
+
+if ((${#sh_files[@]})); then
+    if ! command -v shellcheck >/dev/null; then
+        skip "shellcheck" shellcheck
+    elif (cd "$staged" && shellcheck -S warning "${sh_files[@]}"); then
+        ok "shellcheck (${#sh_files[@]} scripts)"
+    else
+        bad "shellcheck"
+    fi
+
+    for f in "${all_sh[@]}"; do
+        bash -n "$staged/$f" || { bad "bash -n $f"; break; }
+    done
+fi
+
+if ((${#lua_files[@]})); then
+    luac=$(command -v luac || command -v luac5.4 || true)
+    if [[ -z "$luac" ]]; then
+        skip "luac -p" luac
+    elif (cd "$staged" && "$luac" -p "${lua_files[@]}"); then
+        ok "luac -p (${#lua_files[@]} files)"
+    else
+        bad "luac -p"
+    fi
+fi
+
+if [[ -f "$staged/hypr/hyprland.lua" ]]; then
+    if ! command -v Hyprland >/dev/null; then
+        skip "Hyprland --verify-config" Hyprland
+    elif out=$(Hyprland --verify-config -c "$staged/hypr/hyprland.lua" 2>&1) \
+         && grep -q "config ok" <<<"$out"; then
+        ok "Hyprland --verify-config"
+    else
+        bad "Hyprland --verify-config"
+        sed -n '/Config parsing result/,$p' <<<"$out" >&2
+    fi
+fi
+
+# Hygiene, straight off the index. Docs may spell out real paths;
+# fish/functions/_tide_* and fish/functions/tide/ are vendored.
+if git grep --cached -InE '/home/[a-z_][a-z0-9_-]*' -- . ':!*.md' ':!screenshots' ':!fish/functions/_tide_*' ':!fish/functions/tide' >&2; then
+    bad "hardcoded home directory - use \$HOME or os.getenv(\"HOME\")"
+else
+    ok "no hardcoded home directories"
+fi
+
+if git grep --cached -InE '(PASSWORD|PASSWD|SECRET|API_KEY|APIKEY|TOKEN)[[:space:]]*=[[:space:]]*["'"'"']?[A-Za-z0-9+/_-]{8,}' -- . ':!*.md' >&2; then
+    bad "secret assigned to a literal - read it from the environment instead"
+else
+    ok "no secrets assigned to literals"
+fi
+
+if git ls-files | grep -E '^(immich/auth\.yml|jellyfin/sync\.conf|scripts/util\.env|quickshell/calendar\.url)$' >&2; then
+    bad "credential file is tracked - remove it from the index"
+else
+    ok "credential files untracked"
+fi
+
+if ((fail)); then
+    printf '\ncommit aborted; fix the above or re-run with --no-verify\n' >&2
+    exit 1
+fi

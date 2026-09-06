@@ -258,6 +258,19 @@ setup_scripts() {
     fi
 }
 
+# Point git at the tracked hooks. .git/hooks is not version controlled, so the
+# pre-commit check only exists for a clone that opts in.
+setup_git_hooks() {
+    if [[ ! -d "$SCRIPT_DIR/.git" ]]; then
+        return 0
+    fi
+
+    print_info "Enabling the tracked git hooks..."
+    chmod +x "$SCRIPT_DIR"/.githooks/*
+    git -C "$SCRIPT_DIR" config core.hooksPath .githooks
+    print_success "core.hooksPath set to .githooks"
+}
+
 # Initial system setup
 system_setup() {
     print_info "Running initial system setup..."
@@ -368,6 +381,9 @@ main() {
 
     # Set up scripts
     setup_scripts
+
+    # Enable the tracked git hooks
+    setup_git_hooks
 
     # System setup
     echo ""

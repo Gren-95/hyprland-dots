@@ -265,7 +265,17 @@ actually frees the VM's 6 GB of RAM. Needs `docker` and `freerdp`.
 ## Development
 
 [`.github/workflows/lint.yml`](.github/workflows/lint.yml) runs on every push and
-pull request. The same checks run locally:
+pull request. [`.githooks/pre-commit`](.githooks/pre-commit) runs the same checks
+against the index at commit time — `setup.sh` enables it, or turn it on by hand:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Each check is skipped with a note when its tool is missing, so the hook still
+works on a machine without Hyprland. Bypass it with `git commit --no-verify`.
+
+The checks by hand:
 
 ```bash
 shellcheck -S warning $(git ls-files '*.sh' | grep -v '^ranger/scope.sh$')
