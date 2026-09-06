@@ -143,6 +143,13 @@ and folders opened from other apps follow the same choice. `Super+T` and
 `Super+E` route through `scripts/default-app.sh`, so a pick takes effect
 without touching the config.
 
+### Hiding apps from the launcher
+
+`Ctrl+D` on a highlighted entry drops it from the launcher. To get one back,
+type `hidden` in the launcher and pick it from the list. The list is scoped to
+the launcher — it does not write `NoDisplay` into the desktop entry, so other
+menus are unaffected.
+
 ### Keybinds
 
 ```bash

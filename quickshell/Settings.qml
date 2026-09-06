@@ -50,6 +50,7 @@ Scope {
     property var barPlacement: ({})            // module id -> "bar"|"overflow"|"hidden"
     property var trayPlacement: ({})           // tray app id -> same
     property var qaPlacement: ({})             // quick-action key -> "bar"|"overflow"|"hidden"
+    property var hiddenApps: ({})              // desktop id -> true; dropped from the launcher
     property bool clock24h: true
     property bool clockShowSeconds: false
     property string clockDateFormat: "ddd, dd MMM"
@@ -111,6 +112,21 @@ Scope {
     readonly property var _qaPlacementDefaults: ({ clipboard: "bar" })
     function qaPlacementOf(key)     { return qaPlacement[key] ?? _qaPlacementDefaults[key] ?? "overflow"; }
 
+    // ===== Launcher app visibility =====
+    // Launcher-scoped, not a NoDisplay override written into
+    // ~/.local/share/applications: hiding an app must never risk clobbering an
+    // entry that is already there (the WinApps ones live exactly there), and
+    // un-hiding must be a value change rather than a file deletion.
+    function isAppHidden(id)        { return hiddenApps[id] === true; }
+    readonly property int hiddenAppCount: Object.keys(hiddenApps).length
+    function setAppHidden(id, hidden) {
+        if (!id) return;
+        const next = {};                       // reassigned, never mutated
+        for (const k in hiddenApps) next[k] = hiddenApps[k];
+        if (hidden) next[id] = true; else delete next[id];
+        hiddenApps = next;
+    }
+
     readonly property var _schema: [
         { name: "activityIconsVisible", file: "activity-icons.enabled", type: "bool" },
         { name: "toastTimeout",         file: "toast-timeout",          type: "int"  },
@@ -129,6 +145,7 @@ Scope {
         { name: "barPlacement",         file: "bar-placement.json",     type: "json" },
         { name: "trayPlacement",        file: "tray-placement.json",    type: "json" },
         { name: "qaPlacement",          file: "qa-placement.json",      type: "json" },
+        { name: "hiddenApps",           file: "hidden-apps.json",       type: "json" },
         { name: "clock24h",             file: "clock-24h",              type: "bool" },
         { name: "clockShowSeconds",     file: "clock-seconds",          type: "bool" },
         { name: "clockDateFormat",      file: "clock-date-format",      type: "string" },

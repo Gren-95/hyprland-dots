@@ -290,6 +290,22 @@ Two details make it behave:
   command: `var_terminal` and `var_fileManager` in `general.lua` route through
   it, so a pick takes effect without editing the config.
 
+### Hiding apps from the launcher
+
+`Ctrl+D` drops the highlighted app; `Hidden apps` in the palette reopens the
+same list showing only what is hidden, where Enter puts one back. Both stay
+open after acting — hiding a run of entries should not mean reopening the
+launcher between each one.
+
+The list is `settingsStore.hiddenApps`, a desktop-id → true map, and it is
+launcher-scoped on purpose. The alternative, writing `NoDisplay=true` into
+`~/.local/share/applications/<id>.desktop` the way a menu editor does, would
+apply everywhere — but it risks clobbering an entry that already lives there
+(the WinApps ones do), and un-hiding would become a file deletion rather than
+a value change.
+
+`Ctrl+H` was not available for this: it is already the flyout ring's vim-left.
+
 ### Notable modals (post-initial-doc additions)
 
 - **`SystemMonitor`** (`Super+M`) — CPU + per-core grid, RAM, all mounted
