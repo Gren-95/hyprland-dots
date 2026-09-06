@@ -31,8 +31,8 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | File | Triggered by | What it does |
 |---|---|---|
 | `services-status.sh` | Quickshell Services panel | One probe for the whole panel: prints `key=value` pairs on a single line — each session daemon's pgrep state, wayvnc, the WinApps container, both sync schedules, and the Jellyfin timer's next run as a unix timestamp. |
-| `wayvnc-toggle.sh` | Quick Actions "Remote access" toggle, or `Super+Ctrl+R` | Starts wayvnc if not running, kills it if it is. Notifies with the local IP on start. |
-| `sync-toggle.sh` | Quick Actions "Immich/Jellyfin sync" toggles | Manages cron entries between `# QSSYNC:<kind>` markers. Commands: `status [all\|<kind>]`, `toggle <kind>`, `enable <kind>`, `disable <kind>`, `schedule <kind> '<cron-expr>'`. Self-installs commented-out lines on first call. |
+| `wayvnc-toggle.sh` | Services panel "Remote access" toggle, or `Super+Ctrl+R` | Starts wayvnc if not running, kills it if it is. Notifies with the local IP on start. |
+| `sync-toggle.sh` | Services panel "Immich/Jellyfin sync" toggles | Manages cron entries between `# QSSYNC:<kind>` markers. Commands: `status [all\|<kind>]`, `toggle <kind>`, `enable <kind>`, `disable <kind>`, `schedule <kind> '<cron-expr>'`. Self-installs commented-out lines on first call. |
 
 ## One-shots (keybind-triggered)
 

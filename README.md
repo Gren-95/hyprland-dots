@@ -252,7 +252,7 @@ You will be prompted for your Jellyfin server URL and API key on first run. Conf
 ### Windows VM (WinApps)
 
 `winvm-toggle.sh` starts and stops the `dockur/windows` container that backs
-WinApps, exposed as a Quick Actions toggle. Stopping the container is what
+WinApps, exposed in the Services panel. Stopping the container is what
 actually frees the VM's 6 GB of RAM. Needs `docker` and `freerdp`.
 
 ## Dotfiles Manager

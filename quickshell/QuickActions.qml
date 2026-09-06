@@ -17,18 +17,6 @@ Item {
     // per-open override (overflow rows). Fallback: own chevron.
     property Item flyoutAnchor: null
     property Item _openAnchor: null
-    property bool immichOn: false    // immich cron entry enabled
-    property bool jellyfinOn: false  // jellyfin cron entry enabled
-    property bool wayvncOn: false    // wayvnc daemon running
-    property bool winvmOn: false     // WinApps Windows/Office VM container running
-    // Start/stop of the VM takes seconds-to-minutes, far longer than the
-    // shared 800ms toggleInFlight window, so it gets its own phase flag:
-    // the probe keeps polling and only clears it once reality agrees.
-    property string winvmPhase: ""   // "" | "starting" | "stopping"
-    // When a toggle is mid-flight (script not yet committed), skip the
-    // periodic daemonCheck so its stale read doesn't briefly revert the
-    // optimistic UI flip.
-    property bool toggleInFlight: false
     readonly property var micSrc: Pipewire.defaultAudioSource
     PwObjectTracker { objects: [Pipewire.defaultAudioSource] }
     signal navigateNext()
@@ -41,10 +29,6 @@ Item {
     // rebuilds this array and the Repeater never recreates its rows (which is
     // what made the panel jump/flicker on every toggle).
     readonly property var allToggles: [
-        { glyph: "󰋩", offGlyph: "󰋩", label: "Immich sync",    accent: "#f59e0b",           action: "immich" },
-        { glyph: "󰝚", offGlyph: "󰝚", label: "Jellyfin sync",  accent: "#818cf8",           action: "jellyfin" },
-        { glyph: "󰢹", offGlyph: "󰢹", label: "Remote access",  accent: Theme.accent.orange, action: "wayvnc" },
-        { glyph: "󰖳", offGlyph: "󰖳", label: "Windows VM",     accent: Theme.accent.blue,   action: "winvm" },
         { glyph: "󰍬", offGlyph: "󰍭", label: "Microphone",     accent: Theme.accent.orange, action: "mic" },
         { glyph: "󰈈", offGlyph: "󰈉", label: "Activity icons", accent: Theme.accent.teal,   action: "activityicons" },
     ]
@@ -71,9 +55,6 @@ Item {
     readonly property var oneShots: allOneShots.filter(t => settingsStore.qaPlacementOf(t.action) === "overflow")
     readonly property var promotedItems: allToggles.concat(allOneShots)
         .filter(t => settingsStore.qaPlacementOf(t.action) === "bar")
-    // Promoted TOGGLES need daemon state even while the panel is closed
-    // (their bar icons show on/off), so the probe keeps polling slowly.
-    readonly property bool hasPromotedToggles: allToggles.some(t => settingsStore.qaPlacementOf(t.action) === "bar")
     // Whether an action key belongs to the toggle family (drives bar-icon state color).
     function isToggleAction(key) { return allToggles.some(t => t.action === key); }
 
@@ -82,10 +63,6 @@ Item {
     // properties, so the bindings stay reactive.
     function toggleState(action) {
         switch (action) {
-        case "immich":    return actions.immichOn;
-        case "jellyfin":  return actions.jellyfinOn;
-        case "wayvnc":    return actions.wayvncOn;
-        case "winvm":     return actions.winvmOn;
         case "mic":       return actions.micSrc && actions.micSrc.audio ? !actions.micSrc.audio.muted : false;
         case "activityicons": return settingsStore.activityIconsVisible;
         }
@@ -93,12 +70,6 @@ Item {
     }
     function toggleDesc(action) {
         switch (action) {
-        case "immich":    return actions.immichOn ? "Uploading photos hourly" : "Background sync stopped";
-        case "jellyfin":  return actions.jellyfinOn ? "Syncing music every 2h" : "Background sync stopped";
-        case "wayvnc":    return actions.wayvncOn ? "WayVNC server running on :5900" : "Remote access stopped";
-        case "winvm":     return actions.winvmPhase === "starting" ? "Booting Windows…"
-            : actions.winvmPhase === "stopping" ? "Shutting down…"
-            : actions.winvmOn ? "Office VM up · holding 6 GB" : "Stopped · 6 GB free";
         case "mic":       return (actions.micSrc && actions.micSrc.audio && !actions.micSrc.audio.muted) ? "Microphone live" : "Microphone muted";
         case "activityicons": return settingsStore.activityIconsVisible ? "Camera/mic/sync icons shown" : "Hidden";
         }
@@ -174,27 +145,7 @@ Item {
             entry._open(from);
             return;
         }
-        if (entry.action === "immich") {
-            actions.immichOn = !actions.immichOn;
-            actions.toggleInFlight = true;
-            clearInFlightTimer.restart();
-            immichToggleProc.startDetached();
-        } else if (entry.action === "jellyfin") {
-            actions.jellyfinOn = !actions.jellyfinOn;
-            actions.toggleInFlight = true;
-            clearInFlightTimer.restart();
-            jellyfinToggleProc.startDetached();
-        } else if (entry.action === "wayvnc") {
-            actions.wayvncOn = !actions.wayvncOn;
-            actions.toggleInFlight = true;
-            clearInFlightTimer.restart();
-            wayvncToggleProc.startDetached();
-        } else if (entry.action === "winvm") {
-            actions.winvmPhase = actions.winvmOn ? "stopping" : "starting";
-            actions.winvmOn = !actions.winvmOn;
-            winvmToggleProc.running = true;
-            winvmPhaseTimeout.restart();
-        } else if (entry.action === "mic") {
+        if (entry.action === "mic") {
             if (actions.micSrc && actions.micSrc.audio)
                 actions.micSrc.audio.muted = !actions.micSrc.audio.muted;
         } else if (entry.action === "activityicons") {
@@ -224,107 +175,9 @@ Item {
         if (totalItems <= 0) return;
         selectedIndex = (selectedIndex + delta + totalItems) % totalItems;
     }
-    onPopupOpenChanged: if (popupOpen) {
-        selectedIndex = 0;
-        daemonCheckProc.running = true;
-    }
+    onPopupOpenChanged: if (popupOpen) selectedIndex = 0
 
     Process { id: runProc; command: [] }
-
-    // Immich + Jellyfin sync state is managed via cron entries; the
-    // sync-toggle.sh helper installs/comments/uncomments the relevant crontab
-    // lines. "On" = the cron line is uncommented. The bar status icons show
-    // the resulting state, so no toggle notification is sent.
-    Process {
-        id: immichToggleProc
-        command: ["bash", Quickshell.env("HOME") + "/.config/scripts/sync-toggle.sh", "toggle", "immich"]
-        running: false
-    }
-    Process {
-        id: wayvncToggleProc
-        command: ["bash", Quickshell.env("HOME") + "/.config/scripts/wayvnc-toggle.sh"]
-        running: false
-    }
-    Process {
-        // Not startDetached(): the script refuses to stop the VM while Office
-        // windows are open (unsaved documents), and we need its exit code to
-        // undo the optimistic flip immediately instead of waiting out the
-        // phase timeout.
-        id: winvmToggleProc
-        command: ["bash", Quickshell.env("HOME") + "/.config/scripts/winvm-toggle.sh", "toggle"]
-        running: false
-        onExited: (exitCode, exitStatus) => {
-            if (exitCode !== 0) {
-                actions.winvmPhase = "";
-                winvmPhaseTimeout.stop();
-                daemonCheckProc.running = true;
-            }
-        }
-    }
-    Timer {
-        // Safety net: if the container never reaches the requested state
-        // (image pull, disk pressure), stop believing the optimistic flip.
-        id: winvmPhaseTimeout
-        interval: 180000
-        repeat: false
-        onTriggered: { actions.winvmPhase = ""; daemonCheckProc.running = true }
-    }
-    Process {
-        id: jellyfinToggleProc
-        command: ["bash", Quickshell.env("HOME") + "/.config/scripts/sync-toggle.sh", "toggle", "jellyfin"]
-        running: false
-    }
-    // Clears the in-flight flag a beat after the toggle starts so periodic
-    // daemonCheck can resume and reconcile state. 800ms is enough for the
-    // sync-toggle.sh write + a daemonCheck round-trip.
-    Timer {
-        id: clearInFlightTimer
-        interval: 800
-        repeat: false
-        onTriggered: { actions.toggleInFlight = false; daemonCheckProc.running = true }
-    }
-    Process {
-        // Combined probe: hypridle process + immich/jellyfin cron schedule state.
-        // Output format: "idle=0|1 immich=0|1 jellyfin=0|1"
-        id: daemonCheckProc
-        command: ["sh", "-c",
-            "printf 'wayvnc=%s ' $(pgrep -x wayvnc >/dev/null && echo 1 || echo 0); " +
-            "printf 'winvm=%s ' $(bash ~/.config/scripts/winvm-toggle.sh status); " +
-            "bash ~/.config/scripts/sync-toggle.sh status all"]
-        running: false
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const m = {};
-                for (const kv of text.trim().split(/\s+/)) {
-                    const [k, v] = kv.split("=");
-                    m[k] = v === "1";
-                }
-                if (m.wayvnc !== undefined)   actions.wayvncOn = m.wayvnc;
-                if (m.immich !== undefined)   actions.immichOn = m.immich;
-                if (m.jellyfin !== undefined) actions.jellyfinOn = m.jellyfin;
-                if (m.winvm !== undefined) {
-                    // Mid-transition the container still reports its old state;
-                    // accept the probe only once it agrees with what was asked.
-                    if (actions.winvmPhase === "") {
-                        actions.winvmOn = m.winvm;
-                    } else if (m.winvm === actions.winvmOn) {
-                        actions.winvmPhase = "";
-                        winvmPhaseTimeout.stop();
-                    }
-                }
-            }
-        }
-    }
-    Timer {
-        // Fast poll while the panel is open; slow background poll while any
-        // toggle is promoted to a bar icon (its on/off state must stay live).
-        running: (actions.popupOpen || actions.hasPromotedToggles || actions.winvmPhase !== "")
-            && !actions.toggleInFlight
-        interval: actions.popupOpen ? 1500 : 4000
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: daemonCheckProc.running = true
-    }
 
     HoverHandler { id: qaHover }
     BarTooltip {

@@ -48,6 +48,16 @@ Item {
         { key: "winvm",  glyph: "󰖳", label: "Windows VM",    accent: Theme.accent.blue,   detail: "WinApps container" }
     ]
 
+    // The four services that used to be Quick Actions toggles stay reachable
+    // by name in the Spotlight palette — moving them out of that panel should
+    // not make them harder to find.
+    readonly property var spotlightActions: scheduled.concat(onDemand).map(e => ({
+        name: e.label, glyph: e.glyph, accent: e.accent, keywords: e.key,
+        isToggle: true,
+        state: () => mod.up(e.key),
+        run: () => mod.toggle(e.key)
+    }))
+
     function up(key) { return st[key] === true }
     readonly property int daemonsDown: {
         let n = 0;

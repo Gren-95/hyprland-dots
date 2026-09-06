@@ -184,11 +184,15 @@ Pattern:
 - Exposes `parentBar`, `popupOpen`, `pinned` properties
 - Exposes `openTab(name)` for tab-switching consumers
 
-`QuickActions` is the catch-all overflow panel: stateful toggles
-(Immich/Jellyfin sync, Remote access, Windows VM, Microphone, Activity icons)
-+ a 3-column grid of one-shots (Clipboard, Screenshot, Record, Color picker,
-Keybinds, Wallpaper). Bound to `Super+A`. Do Not Disturb and Stay Awake used
-to live here; they sit in the day panel now, next to what they govern.
+`QuickActions` is the catch-all overflow panel: stateful toggles (Microphone,
+Activity icons) + a 3-column grid of one-shots (Clipboard, Screenshot, Record,
+Color picker, Keybinds, Wallpaper). Bound to `Super+A`. Two sets of toggles
+have moved out to sit beside what they describe: Do Not Disturb and Stay Awake
+are in the day panel, and Immich/Jellyfin sync, Remote access and Windows VM
+are in `ServicesModule` — duplicating them here left two places to look and
+two probes polling the same scripts. All of them stay searchable in Spotlight,
+which now concatenates `servicesMod.spotlightActions` onto the Quick Actions
+arrays.
 
 `ServicesModule` sits beside Quick Actions and is the read-out to its remote
 control: the five daemons `restart.sh` starts at login, the two scheduled

@@ -92,7 +92,7 @@ Scope {
                     name: t.label, glyph: t.glyph, accent: t.accent,
                     keywords: t.action, isToggle: false,
                     run: () => quickMod.performAction(t.action),
-                }))).concat([
+                }))).concat(servicesMod.spotlightActions).concat([
                     { name: "Bluetooth",      glyph: "󰂯", accent: Theme.accent.blue,   keywords: "bt network devices",              isToggle: false, run: () => btMod.openTab("bluetooth") },
                     { name: "Wi-Fi",          glyph: "󰖩", accent: Theme.accent.green,  keywords: "wifi network internet",           isToggle: false, run: () => btMod.openTab("wifi", wifiIcon.visible ? wifiIcon : null) },
                     { name: "VPN",            glyph: "󰒃", accent: Theme.accent.purple, keywords: "tailscale vpn exit node",         isToggle: false, run: () => btMod.openTab("vpn", vpnIcon.visible ? vpnIcon : null) },
