@@ -1,6 +1,7 @@
 // Bar icon for notifications. Just a clickable bell + unread badge.
-// The actual notification-center panel lives in Notifications.qml; this
-// component only toggles its `centerOpen` state.
+// The history it counts lives in Notifications.qml and is read in the day
+// panel (DayPanel.qml), which this only opens — left click toggles the panel,
+// right click flips Do Not Disturb.
 import QtQuick
 import QtQuick.Layouts
 
@@ -8,22 +9,12 @@ Item {
     id: bell
     property var parentBar
     property var notifs: null
+    property var panel: null
     Layout.fillHeight: true
     implicitWidth: row.implicitWidth + 14
     scale: bellMa.pressed ? 0.88 : 1.0
     Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
 
-    // Anchor the notification-center flyout to this bell (also covers the
-    // Super+N global shortcut, which only calls toggleCenter()). Live
-    // binding: when the bell is hidden via placement, fall back to
-    // bar-center instead of anchoring to an invisible item.
-    // anchorBar is bound to the active monitor's bar centrally in shell.qml;
-    // the bell only supplies its own item as the (uncentered) anchor target.
-    Component.onCompleted: {
-        if (bell.notifs) {
-            bell.notifs.anchorItem = Qt.binding(() => bell.visible ? bell : null);
-        }
-    }
 
     // Ring the bell whenever the unread count climbs.
     property int _lastCount: 0
@@ -97,7 +88,7 @@ Item {
         onClicked: (e) => {
             if (!bell.notifs) return;
             if (e.button === Qt.RightButton) bell.notifs.dnd = !bell.notifs.dnd;
-            else bell.notifs.toggleCenter();
+            else if (bell.panel) bell.panel.toggleFrom(bell.visible ? bell : null);
         }
     }
 }

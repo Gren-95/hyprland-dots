@@ -1,8 +1,8 @@
-// MediaCard.qml — MPRIS "now playing" card for the notification panel.
+// MediaCard.qml — MPRIS "now playing" card for the day panel.
 // Self-contained: drives the active MPRIS player (prev / play-pause / next,
-// scrub, cycle between players). Collapses to zero height when nothing is
-// playing. Gated by settingsStore.mediaKeysVisible so the Quick Actions
-// "Media keys" toggle still shows/hides it — just in the panel now, not the bar.
+// scrub, cycle between players). Shown whenever something is playing and
+// collapsed to zero height when nothing is — no toggle, since an empty card
+// costs nothing and a hidden one is just a missing control.
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -55,7 +55,7 @@ Item {
         selectedIdx = ((curIdx >= 0 ? curIdx : 0) + delta + controllable.length) % controllable.length;
     }
 
-    visible: hasPlayer && settingsStore.mediaKeysVisible
+    visible: hasPlayer
     implicitHeight: visible ? card.implicitHeight : 0
     clip: true
 

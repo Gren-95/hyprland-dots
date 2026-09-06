@@ -10,9 +10,11 @@ add a new modal" or "where do I change X" — not a tutorial.
 | **Singletons** | `Theme.qml`, `Hypr.qml`, `TailscaleService.qml` | Design tokens (with user-tunable knobs), hyprctl dispatch helper, Tailscale CLI wrapper |
 | **Root stores** | `Settings.qml` (`settingsStore`), `PopupManager.qml` (`popupManager`) | Persisted user settings + single-open flyout policy. Instantiated FIRST in shell.qml and resolved via the id scope chain — NOT singletons (see warning below) |
 | **Primitives** | `BarFlyout.qml`, `PopupCard.qml`, `TabStrip.qml`, `SproutBg.qml`, `SegmentedControl.qml` | The flyout envelope, the top-drawer envelope, the speech-bubble shape, settings controls |
-| **Bar items** | `BarIcon.qml`, `BarSep.qml`, `WorkspaceStrip.qml`, `MediaKeys.qml` | Leaf widgets that sit on the top bar |
+| **Bar items** | `BarIcon.qml`, `BarSep.qml`, `WorkspaceStrip.qml` | Leaf widgets that sit on the top bar |
 | **Bar modules** | `ConnectivityModule.qml`, `AudioPowerModule.qml`, `NotifBell.qml`, `QuickActions.qml` | Bar entry points that open their own flyout |
-| **Flyout modals** | `Spotlight.qml`, `Clipboard.qml`, `Keybinds.qml`, `IcsCalendar.qml`, `Notifications.qml`, `SystemMonitor.qml`, `WallpaperPicker.qml`, `SettingsPanel.qml` | Scope-level services whose UI opens as a flyout under a bar item |
+| **Flyout modals** | `Spotlight.qml`, `Clipboard.qml`, `Keybinds.qml`, `DayPanel.qml`, `SystemMonitor.qml`, `WallpaperPicker.qml` | Scope-level services whose UI opens as a flyout under a bar item |
+| **Services (headless)** | `IcsCalendar.qml`, `Notifications.qml`, `WeatherService.qml`, `IdleService.qml`, `AccentService.qml` | State and system plumbing with no surface of their own; panes read them |
+| **Panes** | `CalendarPane.qml`, `NotifPane.qml`, `MediaCard.qml` | Views over a service, composed into a flyout |
 | **Drawers & overlays** | `WorkspaceOverview.qml` (top drawer strip), `PolkitPrompt.qml` (top-center drawer), `ScreenshotActions.qml` (top-right sheet), `ScreenRecorder.qml`, `Osd.qml`, `RegionSelector.qml` | Everything not anchored to a specific bar icon |
 | **Reusable widgets** | `TabPill`, `PinButton`, `BtToggle`, `VolumeSlider`, `BrightnessRow`, `ProfileSelector`, `*Row` files | Pieces composed into modules |
 
@@ -143,8 +145,8 @@ directly — it breaks the `open: mod.popupOpen` binding and the popup can't
 reopen.
 
 **Anchor wiring for Scope-level modals**: modals instantiated in `shell.qml`
-(Spotlight, Clipboard, Keybinds, SystemMonitor, WallpaperPicker, IcsCalendar,
-Notifications) expose `anchorBar` / `anchorItem` properties, assigned once
+(Spotlight, Clipboard, Keybinds, SystemMonitor, WallpaperPicker, DayPanel)
+expose `anchorBar` / `anchorItem` properties, assigned once
 from the bar's `Component.onCompleted` (or the anchor item's, for the
 clock/bell). Their flyout binds
 `open: root.open && root.anchorBar !== null`.
@@ -184,19 +186,40 @@ Pattern:
 - Exposes `parentBar`, `popupOpen`, `pinned` properties
 - Exposes `openTab(name)` for tab-switching consumers
 
-`QuickActions` is the catch-all overflow panel: stateful toggles (DnD, Stay
-Awake, Immich/Jellyfin sync, Remote access, Media keys) + a 3-column grid of
-one-shots (Clipboard, Screenshot, Record, Color picker, Keybinds, Wallpaper).
-Bound to `Super+A`.
+`QuickActions` is the catch-all overflow panel: stateful toggles
+(Immich/Jellyfin sync, Remote access, Windows VM, Microphone, Activity icons)
++ a 3-column grid of one-shots (Clipboard, Screenshot, Record, Color picker,
+Keybinds, Wallpaper). Bound to `Super+A`. Do Not Disturb and Stay Awake used
+to live here; they sit in the day panel now, next to what they govern.
 
-`MediaKeys` is a special bar item — it sits in the gap between the centered
-clock and the right systray (positioned via a wrapper Item with anchors
-`left: clockAnchor.right, right: rightGroup.left`, MediaKeys `anchors.centerIn`).
-Compact MPRIS-driven chip with optional track title + prev/play-pause/next
-buttons. Visibility bound to `Settings.mediaKeysVisible` (toggled from
-Quick Actions). Auto-prefers Playing player when multiple exist; wheel-scroll
-on the chip cycles through controllable players; inline `N/M` counter shown
-when >1 player.
+`MediaCard` is the MPRIS now-playing card at the top of the day panel's
+notification column: art, title/artist, scrub bar, prev/play-pause/next. It
+has no visibility setting — it shows whenever something is playing and
+collapses to zero height when nothing is. Auto-prefers the Playing player when
+multiple exist; wheel-scroll cycles through controllable players; an inline
+`N/M` counter appears when there is more than one.
+
+## The day panel
+
+`DayPanel.qml` is the one flyout behind both `Super+D` and `Super+N`: the
+calendar column (`CalendarPane`) on the left, the notification column
+(`NotifPane`) on the right, split by a hairline. It owns the open/pinned state
+and the keyboard map; the two panes are pure views over the `IcsCalendar` and
+`Notifications` services, which hold every piece of state between them.
+
+- Opening re-centres the calendar on today and marks the history seen —
+  `notifs.panelOpen` is bound to the panel's `open`, so the unread badge
+  clears and the app groups collapse without anyone calling a method.
+- Unmodified arrow keys, `PgUp`/`PgDn`, `T` and `Home` drive the calendar
+  column; `Ctrl+←/→` still walks the flyout nav ring.
+- The single pin lives in the calendar header, since that's the panel's
+  leading edge.
+- Do Not Disturb and Stay Awake are pills under the notification header.
+  Neither is in the Quick Actions grid any more: DND decides what lands in
+  the list right below it, and Stay Awake is the other "stop interrupting
+  me" switch, so both read better here. Stay Awake names its automatic
+  condition (media / AC) when something other than the manual switch is
+  holding sleep off. Both remain searchable in the Spotlight palette.
 
 ## Modals
 
@@ -205,9 +228,9 @@ opacity `0 → 1`, `transformOrigin: Item.Top` (grow out of the bar),
 `Theme.duration.normal`, `Theme.easing.standard`.
 
 Flyout anchor map: launcher icon → Spotlight, Clipboard, Keybinds ·
-clock → IcsCalendar · bell → Notifications center · clock cluster →
+clock and bell → DayPanel (both land on the same surface) · clock cluster →
 SystemMonitor · Quick Actions chevron → WallpaperPicker, QuickActions ·
-their own bar icons → ConnectivityModule, AudioPowerModule, MediaKeys.
+their own bar icons → ConnectivityModule, AudioPowerModule.
 
 Each modal exposes:
 - `property bool open: false`
@@ -315,7 +338,7 @@ close the popup.
 7. Instantiate it once at the top of `shell.qml`: `MyModal { id: myModal }`.
 8. Wire keybind: add `GlobalShortcut { name: "mymodal"; onPressed: myModal.toggle() }`
    in the bar, and `bind = $mainMod, X, global, quickshell:mymodal` in
-   `hypr/modules/keys.conf`.
+   `hypr/modules/keys.lua`.
 
 ## Adding a new bar icon
 

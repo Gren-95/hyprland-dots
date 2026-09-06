@@ -1,5 +1,7 @@
+// Notifications — the DBus notification server, the on-screen toast stack, and
+// the history the day panel reads. Toasts expire on their own clock; history
+// keeps them until dismissed. The center UI lives in NotifPane.qml.
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
@@ -15,19 +17,17 @@ Scope {
     property var historyList: []
     property int maxHistory: settingsStore.notifHistoryCap
     property bool dnd: false
-    property bool pinned: false
     property int unreadCount: 0
-    property bool centerOpen: false
-    // Set by NotifBell so the center flyout hangs under the bar bell.
-    property var anchorBar: null
-    property var anchorItem: null
-    signal navigateNext()
-    signal navigatePrev()
+    // Bound to the day panel's open state (DayPanel owns the surface). Reading
+    // the panel is what marks history seen and collapses the app groups.
+    property bool panelOpen: false
+    onPanelOpenChanged: {
+        if (panelOpen) unreadCount = 0;
+        else expandedGroups = ({});
+    }
 
-    // Toast-only: a notification gets exactly one showing in the stack and is
-    // never written to historyList, so the center stays empty by design.
-    function _push(n) {
-        const entry = {
+    function _entryFor(n) {
+        return {
             id: n.id,
             time: new Date(),
             appName: n.appName || "",
@@ -38,25 +38,57 @@ Scope {
             urgency: n.urgency,
             ref: n,
         };
-        activeList = [entry, ...activeList].slice(0, settingsStore.toastMax);
     }
-    function openCenter() { centerOpen = true; unreadCount = 0; }
-    function closeCenter() { centerOpen = false; expandedGroups = ({}); }
-    function toggleCenter() { centerOpen = !centerOpen; if (centerOpen) unreadCount = 0; }
+    // Toast + history. The toast expires on its own clock; the history entry
+    // stays until dismissed, so a notification missed in passing is still
+    // readable in the panel.
+    function _push(n) {
+        const entry = _entryFor(n);
+        activeList = [entry, ...activeList].slice(0, settingsStore.toastMax);
+        _file(entry);
+    }
+    // History only — no toast. Used for anything whose moment has passed or
+    // that must not interrupt (see onNotification).
+    function _pushHistory(n) { _file(_entryFor(n)); }
+    function _file(entry) {
+        historyList = [entry, ...historyList].slice(0, maxHistory);
+        if (!panelOpen) unreadCount += 1;
+    }
+    // Clearing history closes the underlying notifications too. They stay
+    // tracked (and so replayable) until something dismisses them, so without
+    // this a config reload would file everything straight back in.
+    //
+    // An entry whose notification the server already destroyed keeps a stale
+    // wrapper: `ref` is still truthy but nothing on it is callable, and
+    // touching it throws. That must not abort the sweep — it would leave the
+    // list half-cleared, which is exactly what "Clear all" doing nothing
+    // looked like.
+    function _closeEntries(pred) {
+        for (const e of historyList) {
+            if (!pred(e)) continue;
+            try { e.ref.dismiss(); } catch (err) { /* already gone */ }
+        }
+    }
     function dismissHistoryEntry(id) {
+        _closeEntries(e => e.id === id);
         historyList = historyList.filter(e => e.id !== id);
     }
     function _remove(id) {
         activeList = activeList.filter(e => e.id !== id);
     }
-    function clearHistory() { historyList = []; }
+    function clearHistory() {
+        _closeEntries(e => true);
+        historyList = [];
+    }
 
     // Drop every notification matching `pred` from the toast stack *and* the
     // center history, closing the underlying server notification so it can't
     // come back on the next repaint.
     function _dismissMatching(pred) {
-        for (const e of activeList)
-            if (pred(e) && e.ref) e.ref.dismiss();
+        for (const e of activeList) {
+            if (!pred(e)) continue;
+            try { e.ref.dismiss(); } catch (err) { /* already gone */ }
+        }
         activeList = activeList.filter(e => !pred(e));
         historyList = historyList.filter(e => !pred(e));
         if (unreadCount > historyList.length) unreadCount = historyList.length;
@@ -107,6 +139,7 @@ Scope {
         return groups;
     }
     function clearApp(app) {
+        _closeEntries(e => (e.appName || "unknown") === app);
         historyList = historyList.filter(e => (e.appName || "unknown") !== app);
     }
     function toggleGroup(app) {
@@ -141,14 +174,14 @@ Scope {
         persistenceSupported: true
 
         onNotification: (n) => {
-            // Carried over from the previous config generation — it already
-            // had its one showing, so close it instead of toasting again.
-            // Same for anything arriving under DND: with no history there is
-            // nowhere to read it later.
-            if (n.lastGeneration || root.dnd) { n.dismiss(); return; }
             n.tracked = true;
-            root._push(n);
             n.closed.connect(() => root._remove(n.id));
+            // Carried over from the previous config generation: it already had
+            // its showing, so file it in history rather than toasting it a
+            // second time. Anything arriving under DND takes the same path —
+            // DND suppresses the interruption, not the notification.
+            if (n.lastGeneration || root.dnd) { root._pushHistory(n); return; }
+            root._push(n);
         }
     }
 
@@ -189,319 +222,6 @@ Scope {
                     }
                 }
             }
-        }
-    }
-
-    // ============ Notification center: flyout hanging under the bar bell ============
-    BarFlyout {
-        id: centerFlyout
-        parentBar: root.anchorBar
-        anchorItem: root.anchorItem
-        open: root.centerOpen && root.anchorBar !== null
-        cardWidth: settingsStore.flyoutSize("notifications", "w", 420)
-        cardHeight: settingsStore.flyoutSize("notifications", "h", 620)
-        pinned: root.pinned
-        onDismissed: root.closeCenter()
-        onKeyPressed: (e) => {
-            const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
-            if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) { root.navigateNext(); e.accepted = true; }
-            else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) { root.navigatePrev(); e.accepted = true; }
-        }
-
-                ColumnLayout {
-                    id: centerHeader
-                    anchors { top: parent.top; left: parent.left; right: parent.right }
-                    anchors.margins: Theme.spacing.lg
-                    spacing: Theme.spacing.md
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.spacing.md
-                        PinButton {
-                            pinned: root.pinned
-                            onToggled: root.pinned = !root.pinned
-                        }
-                        Text {
-                            text: "󰂚"
-                            color: Theme.muted
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xxl
-                        }
-                        Text {
-                            text: "Notifications"
-                            color: Theme.fg
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.lg
-                            font.bold: true
-                        }
-                        Text {
-                            text: root.historyList.length + " items"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.sm
-                        }
-                        Item { Layout.fillWidth: true }
-                        Rectangle {
-                            visible: root.historyList.length > 0
-                            implicitWidth: clearText.implicitWidth + 16
-                            implicitHeight: 26
-                            radius: 4 * Theme.radiusScale
-                            color: clearMouse.containsMouse ? "#7f1d1d" : "transparent"
-                            border.color: "#7f1d1d"
-                            border.width: 1
-                            Text {
-                                id: clearText
-                                anchors.centerIn: parent
-                                text: "Clear all"
-                                color: clearMouse.containsMouse ? Theme.fg : "#f87171"
-                                font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.sm
-                            }
-                            MouseArea {
-                                id: clearMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.clearHistory()
-                            }
-                        }
-                    }
-                    Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderStrong }
-                }
-
-                // MPRIS now-playing card (moved here from the bar). Collapses to
-                // zero height when nothing is playing.
-                MediaCard {
-                    id: mediaCard
-                    anchors {
-                        top: centerHeader.bottom
-                        left: parent.left
-                        right: parent.right
-                        topMargin: mediaCard.visible ? Theme.spacing.md : 0
-                        leftMargin: Theme.spacing.lg
-                        rightMargin: Theme.spacing.lg
-                    }
-                }
-
-                Flickable {
-                    id: historyView
-                    anchors {
-                        top: mediaCard.visible ? mediaCard.bottom : centerHeader.bottom
-                        left: parent.left
-                        right: parent.right
-                        bottom: parent.bottom
-                        topMargin: 6
-                        leftMargin: 8
-                        rightMargin: 8
-                        bottomMargin: 8
-                    }
-                    contentHeight: historyCol.implicitHeight
-                    clip: true
-                    ColumnLayout {
-                        id: historyCol
-                        width: parent.width
-                        spacing: Theme.spacing.xs
-                        // Flat list when grouping is off.
-                        Repeater {
-                            model: settingsStore.notifGroupByApp ? [] : root.historyList
-                            delegate: HistoryRow {
-                                required property var modelData
-                                entry: modelData
-                                Layout.fillWidth: true
-                                onDismissed: root.dismissHistoryEntry(modelData.id)
-                            }
-                        }
-                        // Grouped by app: header (name · count · clear) for
-                        // multi-entry groups, max 3 rows until expanded.
-                        Repeater {
-                            model: settingsStore.notifGroupByApp ? root.groupedHistory : []
-                            delegate: ColumnLayout {
-                                id: grp
-                                required property var modelData
-                                readonly property string app: modelData.app
-                                readonly property int total: modelData.entries.length
-                                readonly property bool expanded: root.expandedGroups[app] === true
-                                readonly property int shown: expanded ? total : Math.min(3, total)
-                                Layout.fillWidth: true
-                                spacing: Theme.spacing.xs
-
-                                RowLayout {
-                                    visible: grp.total > 1
-                                    Layout.fillWidth: true
-                                    Layout.topMargin: 4
-                                    Layout.leftMargin: 4
-                                    Layout.rightMargin: 4
-                                    spacing: Theme.spacing.sm
-                                    Text {
-                                        text: grp.app
-                                        color: Theme.muted
-                                        font.family: Theme.font
-                                        font.pixelSize: Theme.fontSize.xs
-                                        font.bold: true
-                                        font.letterSpacing: 1
-                                        elide: Text.ElideRight
-                                        Layout.maximumWidth: 200
-                                    }
-                                    Rectangle {
-                                        implicitWidth: grpCount.implicitWidth + 10
-                                        implicitHeight: 16
-                                        radius: 8 * Theme.radiusScale
-                                        color: Theme.bgDeep
-                                        border.color: Theme.borderSubtle
-                                        border.width: 1
-                                        Text {
-                                            id: grpCount
-                                            anchors.centerIn: parent
-                                            text: grp.total
-                                            color: Theme.mutedDeep
-                                            font.family: Theme.font
-                                            font.pixelSize: Theme.fontSize.xs
-                                        }
-                                    }
-                                    Item { Layout.fillWidth: true }
-                                    Rectangle {
-                                        implicitWidth: 18; implicitHeight: 18; radius: 9 * Theme.radiusScale
-                                        color: grpClearMa.containsMouse ? Theme.borderStrong : "transparent"
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: "×"
-                                            color: Theme.muted
-                                            font.family: Theme.font
-                                            font.pixelSize: Theme.fontSize.md
-                                        }
-                                        MouseArea {
-                                            id: grpClearMa
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: root.clearApp(grp.app)
-                                        }
-                                    }
-                                }
-
-                                Repeater {
-                                    model: grp.modelData.entries.slice(0, grp.shown)
-                                    delegate: HistoryRow {
-                                        required property var modelData
-                                        entry: modelData
-                                        Layout.fillWidth: true
-                                        onDismissed: root.dismissHistoryEntry(modelData.id)
-                                    }
-                                }
-
-                                Rectangle {
-                                    visible: grp.total > 3
-                                    Layout.fillWidth: true
-                                    implicitHeight: 26
-                                    radius: 8 * Theme.radiusScale
-                                    color: moreMa.containsMouse ? Theme.bgHover : "transparent"
-                                    border.color: Theme.borderSubtle
-                                    border.width: 1
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: grp.expanded ? "Show less"
-                                            : (grp.total - grp.shown) + " more…"
-                                        color: Theme.fgMuted
-                                        font.family: Theme.font
-                                        font.pixelSize: Theme.fontSize.sm
-                                    }
-                                    MouseArea {
-                                        id: moreMa
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.toggleGroup(grp.app)
-                                    }
-                                }
-                            }
-                        }
-                        Text {
-                            visible: root.historyList.length === 0
-                            text: "No notifications"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.md
-                            Layout.alignment: Qt.AlignHCenter
-                            Layout.topMargin: 32
-                        }
-                    }
-                }
-    }
-
-    component HistoryRow: Rectangle {
-        id: hist
-        property var entry
-        signal dismissed()
-        implicitHeight: histCol.implicitHeight + 16
-        radius: 8 * Theme.radiusScale
-        color: histHover.containsMouse ? Theme.bgHover : Theme.bg
-        border.color: Theme.border
-        border.width: 1
-
-        ColumnLayout {
-            id: histCol
-            anchors.fill: parent
-            anchors.margins: Theme.spacing.md
-            spacing: Theme.spacing.xs
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Theme.spacing.md
-                IconImage {
-                    visible: source != ""
-                    source: root.iconFor(hist.entry)
-                    implicitSize: 18
-                }
-                Text {
-                    Layout.fillWidth: true
-                    text: hist.entry ? (hist.entry.summary || hist.entry.appName) : ""
-                    color: Theme.fg
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.md
-                    font.bold: true
-                    elide: Text.ElideRight
-                }
-                Text {
-                    text: hist.entry ? Qt.formatTime(hist.entry.time, "hh:mm") : ""
-                    color: Theme.mutedDeep
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xs
-                }
-                Rectangle {
-                    implicitWidth: 20; implicitHeight: 20; radius: 10 * Theme.radiusScale
-                    color: dismissMouse.containsMouse ? Theme.borderStrong : "transparent"
-                    Text {
-                        anchors.centerIn: parent
-                        text: "×"
-                        color: Theme.muted
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.xl
-                    }
-                    MouseArea {
-                        id: dismissMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: hist.dismissed()
-                    }
-                }
-            }
-            Text {
-                visible: hist.entry && hist.entry.body
-                Layout.fillWidth: true
-                text: hist.entry ? hist.entry.body : ""
-                color: Theme.fgMuted
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.base
-                wrapMode: Text.WordWrap
-                textFormat: Text.PlainText
-                maximumLineCount: 3
-                elide: Text.ElideRight
-            }
-        }
-        MouseArea {
-            id: histHover
-            anchors.fill: parent
-            hoverEnabled: true
-            acceptedButtons: Qt.NoButton
         }
     }
 

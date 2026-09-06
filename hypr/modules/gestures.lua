@@ -40,6 +40,7 @@ hl.gesture({
 hl.gesture({
     fingers = 2,
     direction = "pinch",
+    mods = "ALT",
     action = "cursorZoom",
     zoom_level = 1,
     mode = "live",

@@ -3,7 +3,7 @@ hl.env("HYPRCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_THEME", "rose-pine-hyprcursor")
 hl.env("XCURSOR_THEME", "BreezeX-RosePine-Linux")
 hl.env("QT_QPA_PLATFORMTHEME", "hyprqt6engine")
-hl.env("QML_IMPORT_PATH", "/home/ghost/.local/lib64/qt6/qml")
+hl.env("QML_IMPORT_PATH", os.getenv("HOME") .. "/.local/lib64/qt6/qml")
 
 -- Silence Quickshell's per-desktop-entry parse warnings — they come from
 

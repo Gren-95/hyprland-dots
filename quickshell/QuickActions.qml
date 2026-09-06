@@ -41,14 +41,11 @@ Item {
     // rebuilds this array and the Repeater never recreates its rows (which is
     // what made the panel jump/flicker on every toggle).
     readonly property var allToggles: [
-        { glyph: "󰂛", offGlyph: "󰂚", label: "Do Not Disturb", accent: Theme.accent.orange, action: "dnd" },
-        { glyph: "󰒲", offGlyph: "󰒳", label: "Stay Awake",     accent: Theme.accent.purple, action: "idle" },
         { glyph: "󰋩", offGlyph: "󰋩", label: "Immich sync",    accent: "#f59e0b",           action: "immich" },
         { glyph: "󰝚", offGlyph: "󰝚", label: "Jellyfin sync",  accent: "#818cf8",           action: "jellyfin" },
         { glyph: "󰢹", offGlyph: "󰢹", label: "Remote access",  accent: Theme.accent.orange, action: "wayvnc" },
         { glyph: "󰖳", offGlyph: "󰖳", label: "Windows VM",     accent: Theme.accent.blue,   action: "winvm" },
         { glyph: "󰍬", offGlyph: "󰍭", label: "Microphone",     accent: Theme.accent.orange, action: "mic" },
-        { glyph: "󰎈", offGlyph: "󰎈", label: "Now playing",    accent: Theme.accent.purple, action: "mediakeys" },
         { glyph: "󰈈", offGlyph: "󰈉", label: "Activity icons", accent: Theme.accent.teal,   action: "activityicons" },
     ]
 
@@ -85,23 +82,17 @@ Item {
     // properties, so the bindings stay reactive.
     function toggleState(action) {
         switch (action) {
-        case "dnd":       return notifService.dnd;
-        case "idle":      return idleService.effectiveInhibited;
         case "immich":    return actions.immichOn;
         case "jellyfin":  return actions.jellyfinOn;
         case "wayvnc":    return actions.wayvncOn;
         case "winvm":     return actions.winvmOn;
         case "mic":       return actions.micSrc && actions.micSrc.audio ? !actions.micSrc.audio.muted : false;
-        case "mediakeys": return settingsStore.mediaKeysVisible;
         case "activityicons": return settingsStore.activityIconsVisible;
         }
         return false;
     }
     function toggleDesc(action) {
         switch (action) {
-        case "dnd":       return notifService.dnd ? "Notifications muted" : "Notifications enabled";
-        case "idle":      return idleService.effectiveInhibited
-            ? "Awake · " + (idleService.reason || "manual") : "Idle sleep enabled";
         case "immich":    return actions.immichOn ? "Uploading photos hourly" : "Background sync stopped";
         case "jellyfin":  return actions.jellyfinOn ? "Syncing music every 2h" : "Background sync stopped";
         case "wayvnc":    return actions.wayvncOn ? "WayVNC server running on :5900" : "Remote access stopped";
@@ -109,7 +100,6 @@ Item {
             : actions.winvmPhase === "stopping" ? "Shutting down…"
             : actions.winvmOn ? "Office VM up · holding 6 GB" : "Stopped · 6 GB free";
         case "mic":       return (actions.micSrc && actions.micSrc.audio && !actions.micSrc.audio.muted) ? "Microphone live" : "Microphone muted";
-        case "mediakeys": return settingsStore.mediaKeysVisible ? "Now-playing card in notification panel" : "Hidden";
         case "activityicons": return settingsStore.activityIconsVisible ? "Camera/mic/sync icons shown" : "Hidden";
         }
         return "";
@@ -184,11 +174,7 @@ Item {
             entry._open(from);
             return;
         }
-        if (entry.action === "dnd") {
-            notifService.dnd = !notifService.dnd;
-        } else if (entry.action === "idle") {
-            idleService.toggleManual();
-        } else if (entry.action === "immich") {
+        if (entry.action === "immich") {
             actions.immichOn = !actions.immichOn;
             actions.toggleInFlight = true;
             clearInFlightTimer.restart();
@@ -211,8 +197,6 @@ Item {
         } else if (entry.action === "mic") {
             if (actions.micSrc && actions.micSrc.audio)
                 actions.micSrc.audio.muted = !actions.micSrc.audio.muted;
-        } else if (entry.action === "mediakeys") {
-            settingsStore.mediaKeysVisible = !settingsStore.mediaKeysVisible;
         } else if (entry.action === "activityicons") {
             settingsStore.activityIconsVisible = !settingsStore.activityIconsVisible;
         } else if (entry.action === "keybinds") {

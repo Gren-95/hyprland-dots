@@ -33,7 +33,6 @@ import Quickshell.Io
 
 Scope {
     id: settings
-    property bool mediaKeysVisible: true
     property bool activityIconsVisible: true
     property int toastTimeout: 10000           // hard ceiling: every toast, critical included, dies here
     property int notifHistoryCap: 50
@@ -93,10 +92,9 @@ Scope {
     }
 
     // ===== Bar item placement: "bar" | "overflow" | "hidden" =====
-    // mediakeys/activityicons bridge to their legacy bool flags (2-state),
-    // so old cache files and the Quick Actions toggles keep working.
+    // activityicons bridges to its legacy bool flag (2-state), so old cache
+    // files and the Quick Actions toggle keep working.
     function placement(id) {
-        if (id === "mediakeys")     return mediaKeysVisible ? "bar" : "hidden";
         if (id === "activityicons") return activityIconsVisible ? "bar" : "hidden";
         return barPlacement[id] ?? "bar";
     }
@@ -109,7 +107,6 @@ Scope {
     function qaPlacementOf(key)     { return qaPlacement[key] ?? "overflow"; }
 
     readonly property var _schema: [
-        { name: "mediaKeysVisible",     file: "media-keys.enabled",     type: "bool" },
         { name: "activityIconsVisible", file: "activity-icons.enabled", type: "bool" },
         { name: "toastTimeout",         file: "toast-timeout",          type: "int"  },
         { name: "notifHistoryCap",      file: "notif-history-cap",      type: "int"  },

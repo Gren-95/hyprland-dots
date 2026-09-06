@@ -23,13 +23,13 @@ for setup time.
 |---|---|
 | `Super+R` / `Alt+Space` | App launcher (Spotlight) |
 | `Super+V` | Clipboard history |
-| `Super+N` | Toggle notification center |
+| `Super+N` | Toggle the day panel (calendar + notifications) |
 | `Super+A` | Quick actions panel |
 | `Super+Shift+B` | Bluetooth menu (Network modal, BT tab) |
 | `Super+F1` | This keybinds viewer |
 | `Super+M` | System monitor (CPU / RAM / temps / fans / uptime) |
 | `Super+S` | Audio & Power panel (Sound tab) |
-| `Super+D` | Calendar (with ICS sync) |
+| `Super+D` | Toggle the day panel (same surface as `Super+N`) |
 | `Super+W` | Wallpaper picker |
 | `Super+Tab` | Workspace overview (cycle next while held) |
 | `Super+Shift+Tab` | Workspace overview (cycle previous) |

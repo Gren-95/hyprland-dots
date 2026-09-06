@@ -40,7 +40,8 @@ Scope {
     WeatherService { id: weatherService }
     AccentService { id: accentService }
     Notifications { id: notifService }
-    IcsCalendar { id: cal }
+    IcsCalendar { id: calService }
+    DayPanel { id: dayPanel; cal: calService; notifs: notifService }
     Spotlight { id: spotlight }
     Clipboard { id: clipboard }
     Osd { id: osd }
@@ -78,7 +79,7 @@ Scope {
                 // monitor-focus change fires.
                 if (onActiveMonitor || !shellRoot.activeBar) shellRoot.activeBar = bar;
                 spotlight.anchorBar = Qt.binding(() => shellRoot.activeBar); spotlight.anchorItem = launcherIcon;
-                notifService.anchorBar = Qt.binding(() => shellRoot.activeBar);
+                dayPanel.anchorBar = Qt.binding(() => shellRoot.activeBar);
                 // Command palette: every Quick Actions item (auto-synced from
                 // its arrays) + the flyout destinations;
                 // panels open at their own home anchors (own icon / QA chevron).
@@ -97,8 +98,12 @@ Scope {
                     { name: "VPN",            glyph: "󰒃", accent: Theme.accent.purple, keywords: "tailscale vpn exit node",         isToggle: false, run: () => btMod.openTab("vpn", vpnIcon.visible ? vpnIcon : null) },
                     { name: "Sound",          glyph: "󰕾", accent: Theme.accent.blue,   keywords: "audio volume output input",       isToggle: false, run: () => apMod.openTab("sound") },
                     { name: "Power",          glyph: "󰐥", accent: Theme.accent.red,    keywords: "battery profile sleep reboot shutdown session", isToggle: false, run: () => apMod.openTab("power", batteryIcon.visible ? batteryIcon : null) },
-                    { name: "Calendar",       glyph: "󰃭", accent: Theme.accent.blue,   keywords: "date events schedule",            isToggle: false, run: () => cal.openAt(0) },
-                    { name: "Notifications",  glyph: "󰂚", accent: Theme.accent.orange, keywords: "notification center history",     isToggle: false, run: () => notifService.openCenter() },
+                    { name: "Do Not Disturb", glyph: "󰂛", accent: Theme.accent.orange, keywords: "dnd mute quiet notifications",    isToggle: true,
+                      state: () => notifService.dnd, run: () => notifService.dnd = !notifService.dnd },
+                    { name: "Stay Awake",     glyph: "󰒲", accent: Theme.accent.purple, keywords: "idle sleep inhibit caffeine",     isToggle: true,
+                      state: () => idleService.effectiveInhibited, run: () => idleService.toggleManual() },
+                    { name: "Calendar",       glyph: "󰃭", accent: Theme.accent.blue,   keywords: "date events schedule",            isToggle: false, run: () => dayPanel.openFrom(clockAnchor) },
+                    { name: "Notifications",  glyph: "󰂚", accent: Theme.accent.orange, keywords: "notification center history",     isToggle: false, run: () => dayPanel.openFrom(null) },
                     { name: "System monitor", glyph: "󰍛", accent: Theme.accent.green,  keywords: "cpu ram disk temps sysmon",       isToggle: false, run: () => sysmon.toggle() },
                 ]);
                 // Quick-Actions residents default to the QA chevron, but the
@@ -173,7 +178,7 @@ Scope {
                     anchors.verticalCenter: parent.verticalCenter
                     implicitWidth: clockRow.implicitWidth + 12
                     implicitHeight: clockRow.implicitHeight + 4
-                    Component.onCompleted: { cal.anchorBar = Qt.binding(() => shellRoot.activeBar); cal.anchorItem = clockAnchor; }
+                    Component.onCompleted: { dayPanel.anchorBar = Qt.binding(() => shellRoot.activeBar); dayPanel.anchorItem = clockAnchor; }
 
                     HoverHandler { id: clockHover }
                     BarTooltip {
@@ -181,7 +186,7 @@ Scope {
                         target: clockAnchor
                         text: "Calendar · Super+D"
                               + (weatherService.ready ? "  ·  " + weatherService.display + " " + weatherService.label : "")
-                        active: clockHover.hovered && !cal.open
+                        active: clockHover.hovered && !dayPanel.open
                     }
 
                     RowLayout {
@@ -214,17 +219,14 @@ Scope {
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    cal.anchorBar = Qt.binding(() => shellRoot.activeBar);
-                                    cal.anchorItem = clockAnchor;
-                                    cal.toggle();
-                                }
+                                onClicked: dayPanel.toggleFrom(clockAnchor)
                             }
                         }
 
                         NotifBell {
                             parentBar: bar
                             notifs: notifService
+                            panel: dayPanel
                             visible: settingsStore.placement("bell") === "bar"
                         }
 
@@ -500,22 +502,17 @@ Scope {
                 Connections {
                     target: quickMod
                     function onNavigateNext() { quickMod.popupOpen = false; btMod.setTab("bluetooth"); btMod.openAt(0) }
-                    function onNavigatePrev() { quickMod.popupOpen = false; notifService.openCenter() }
+                    function onNavigatePrev() { quickMod.popupOpen = false; dayPanel.openAt(0) }
                 }
                 Connections {
                     target: spotlight
-                    function onNavigateNext() { spotlight.close(); cal.openAt(0) }
+                    function onNavigateNext() { spotlight.close(); dayPanel.openAt(0) }
                     function onNavigatePrev() { spotlight.close(); apMod.openAt("power") }
                 }
                 Connections {
-                    target: notifService
-                    function onNavigateNext() { notifService.closeCenter(); quickMod.openAt(0) }
-                    function onNavigatePrev() { notifService.closeCenter(); cal.openAt(0) }
-                }
-                Connections {
-                    target: cal
-                    function onNavigateNext() { cal.close(); notifService.openCenter() }
-                    function onNavigatePrev() { cal.close(); spotlight.openAt(0) }
+                    target: dayPanel
+                    function onNavigateNext() { dayPanel.close(); quickMod.openAt(0) }
+                    function onNavigatePrev() { dayPanel.close(); spotlight.openAt(0) }
                 }
                 GlobalShortcut {
                     appid: "quickshell"
@@ -563,7 +560,7 @@ Scope {
                     appid: "quickshell"
                     name: "calendar"
                     description: "Toggle calendar popup"
-                    onPressed: { cal.anchorBar = Qt.binding(() => shellRoot.activeBar); cal.anchorItem = clockAnchor; cal.toggle() }
+                    onPressed: dayPanel.toggleFrom(clockAnchor)
                 }
                 GlobalShortcut {
                     appid: "quickshell"
@@ -587,7 +584,7 @@ Scope {
                     appid: "quickshell"
                     name: "notifications"
                     description: "Toggle notification center"
-                    onPressed: notifService.toggleCenter()
+                    onPressed: dayPanel.toggleFrom(null)
                 }
                 // Classic Super+Tab: open + cycle on Tab presses, release Super commits.
                 GlobalShortcut {
