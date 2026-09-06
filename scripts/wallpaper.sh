@@ -1,18 +1,17 @@
 #!/bin/bash
 set -euo pipefail
 
-# List your monitor names here (as seen in hyprctl monitors)
 # Dynamically detect connected monitor names using hyprctl
-MONITORS=($(hyprctl monitors -j | jq -r '.[].name'))
+mapfile -t MONITORS < <(hyprctl monitors -j | jq -r '.[].name')
 WALLPAPER_DIR="$HOME/Pictures/wallpapers"
 
 # Wait for hyprpaper socket to appear (max 10 seconds)
-SOCKET=$(find /run/user/$(id -u)/hypr/ -name '*.hyprpaper.sock' 2>/dev/null | head -n 1)
+SOCKET=$(find "/run/user/$(id -u)/hypr/" -name '*.hyprpaper.sock' 2>/dev/null | head -n 1)
 TIMEOUT=10
 while [ -z "$SOCKET" ] && [ $TIMEOUT -gt 0 ]; do
     sleep 1
     TIMEOUT=$((TIMEOUT-1))
-    SOCKET=$(find /run/user/$(id -u)/hypr/ -name '*.hyprpaper.sock' 2>/dev/null | head -n 1)
+    SOCKET=$(find "/run/user/$(id -u)/hypr/" -name '*.hyprpaper.sock' 2>/dev/null | head -n 1)
 done
 
 if [ -z "$SOCKET" ]; then

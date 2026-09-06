@@ -119,12 +119,11 @@ sync_music() {
     local downloaded=0 skipped=0 failed=0
 
     while IFS= read -r item; do
-        local id name artist album ext dest_dir dest_file server_path
+        local id name artist ext dest_file server_path
 
         id=$(echo "$item"     | jq -r '.Id')
         name=$(echo "$item"   | jq -r '.Name')
         artist=$(echo "$item" | jq -r '.AlbumArtist // "Unknown Artist"')
-        album=$(echo "$item"  | jq -r '.Album // "Unknown Album"')
         server_path=$(echo "$item" | jq -r '.Path // ""')
 
         ext="${server_path##*.}"

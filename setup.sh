@@ -108,7 +108,8 @@ create_symlinks() {
 
     # Avatar symlink: point ~/.config/hypr/avatar.png to AccountsService icon.
     local avatar_link="$HOME/.config/hypr/avatar.png"
-    local avatar_source="/var/lib/AccountsService/icons/$(whoami)"
+    local avatar_source
+    avatar_source="/var/lib/AccountsService/icons/$(whoami)"
     ln -sf "$avatar_source" "$avatar_link"
     print_success "Avatar symlink -> $avatar_source"
 }

@@ -137,7 +137,8 @@ verify_dots_dir() {
 
 # Check disk space (requires at least 100MB free)
 check_disk_space() {
-    local available=$(df -BM "$CONFIG_DIR" | awk 'NR==2 {print $4}' | sed 's/M//')
+    local available
+    available=$(df -BM "$CONFIG_DIR" | awk 'NR==2 {print $4}' | sed 's/M//')
     if [[ $available -lt 100 ]]; then
         log_error "Insufficient disk space. Available: ${available}MB, Required: 100MB"
         exit 1
@@ -176,7 +177,8 @@ confirm() {
 
 # Initialize log file
 init_log() {
-    local timestamp=$(get_timestamp)
+    local timestamp
+    timestamp=$(get_timestamp)
     cat > "$LOG_FILE" <<EOF
 {
   "version": "1.0",
@@ -192,7 +194,8 @@ log_operation() {
     local item="$1"
     local action="$2"
     local backup_path="$3"
-    local timestamp=$(get_timestamp)
+    local timestamp
+    timestamp=$(get_timestamp)
 
     if [[ "$DRY_RUN" == true ]]; then
         return
@@ -204,7 +207,8 @@ log_operation() {
     fi
 
     # Add operation to log
-    local temp_log=$(mktemp)
+    local temp_log
+    temp_log=$(mktemp)
     jq --arg item "$item" \
        --arg action "$action" \
        --arg backup "$backup_path" \
@@ -229,13 +233,16 @@ check_symlink() {
     local item="$1"
     local target="$CONFIG_DIR/$item"
     local source="$DOTS_DIR/$item"
-    local canonical_source=$(get_canonical_path "$source")
+    local canonical_source
+    canonical_source=$(get_canonical_path "$source")
 
     if [[ ! -e "$target" && ! -L "$target" ]]; then
         echo "MISSING"
     elif [[ -L "$target" ]]; then
-        local link_target=$(readlink "$target")
-        local canonical_link=$(get_canonical_path "$target")
+        local link_target
+        link_target=$(readlink "$target")
+        local canonical_link
+        canonical_link=$(get_canonical_path "$target")
 
         if [[ ! -e "$target" ]]; then
             echo "BROKEN"
@@ -257,7 +264,8 @@ check_symlink() {
 backup_directory() {
     local item="$1"
     local target="$CONFIG_DIR/$item"
-    local timestamp=$(get_timestamp)
+    local timestamp
+    timestamp=$(get_timestamp)
     local backup_name="${item}_bak_${timestamp}"
     local backup_path="$CONFIG_DIR/$backup_name"
 
@@ -308,8 +316,10 @@ create_symlink() {
     }
 
     # Verify symlink
-    local canonical_target=$(get_canonical_path "$target")
-    local canonical_source=$(get_canonical_path "$source")
+    local canonical_target
+    canonical_target=$(get_canonical_path "$target")
+    local canonical_source
+    canonical_source=$(get_canonical_path "$source")
 
     if [[ "$canonical_target" != "$canonical_source" ]]; then
         log_error "Symlink verification failed for $item"
@@ -389,7 +399,8 @@ cmd_backup() {
     for item in "${CONFIG_ITEMS[@]}"; do
         local source="$DOTS_DIR/$item"
         local target="$CONFIG_DIR/$item"
-        local status=$(check_symlink "$item")
+        local status
+        status=$(check_symlink "$item")
 
         verbose "Processing: $item (status: $status)"
 
@@ -496,7 +507,8 @@ cmd_undo() {
     fi
 
     # Get operations from log
-    local operations=$(jq -r '.operations | length' "$LOG_FILE")
+    local operations
+    operations=$(jq -r '.operations | length' "$LOG_FILE")
 
     if [[ $operations -eq 0 ]]; then
         log_info "No operations to undo."
@@ -519,9 +531,12 @@ cmd_undo() {
 
     # Process operations in reverse order
     while IFS= read -r op; do
-        local item=$(echo "$op" | jq -r '.item')
-        local action=$(echo "$op" | jq -r '.action')
-        local backup_path=$(echo "$op" | jq -r '.backup_path')
+        local item
+        item=$(echo "$op" | jq -r '.item')
+        local action
+        action=$(echo "$op" | jq -r '.action')
+        local backup_path
+        backup_path=$(echo "$op" | jq -r '.backup_path')
 
         verbose "Undoing: $action $item"
 
@@ -545,7 +560,8 @@ cmd_undo() {
 
     # Archive log file
     if [[ "$DRY_RUN" == false ]]; then
-        local archive="${LOG_FILE}.$(get_timestamp)"
+        local archive
+        archive="${LOG_FILE}.$(get_timestamp)"
         mv "$LOG_FILE" "$archive"
         log_info "Log archived: $archive"
     fi
@@ -576,7 +592,8 @@ cmd_status() {
     local issues=0
 
     for item in "${CONFIG_ITEMS[@]}"; do
-        local status=$(check_symlink "$item")
+        local status
+        status=$(check_symlink "$item")
         local target="$CONFIG_DIR/$item"
         local details=""
 
@@ -586,12 +603,14 @@ cmd_status() {
                 ((ok++))
                 ;;
             INCONSISTENT)
-                local link_target=$(readlink "$target")
+                local link_target
+                link_target=$(readlink "$target")
                 details="${YELLOW}Points to: $link_target${NC}"
                 ((issues++))
                 ;;
             BROKEN)
-                local link_target=$(readlink "$target")
+                local link_target
+                link_target=$(readlink "$target")
                 details="${RED}Broken link to: $link_target${NC}"
                 ((issues++))
                 ;;
@@ -639,7 +658,8 @@ cmd_fix() {
     local skipped=0
 
     for item in "${CONFIG_ITEMS[@]}"; do
-        local status=$(check_symlink "$item")
+        local status
+        status=$(check_symlink "$item")
 
         if [[ "$status" == "INCONSISTENT" || "$status" == "BROKEN" ]]; then
             log_info "Fixing: $item"

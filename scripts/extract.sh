@@ -17,6 +17,7 @@ _extract() {
     local pattern=$1 exec=$2; shift 2
     local files=()
     shopt -s nullglob
+    # shellcheck disable=SC2206  # unquoted on purpose: $pattern is a glob to expand
     files=($pattern)
     shopt -u nullglob
     (( ${#files[@]} == 0 )) && return

@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2034  # every constant here is consumed by the scripts that source this file
 # Canonical path definitions — source this file to get consistent absolute paths
 #
 # Usage in other scripts:
