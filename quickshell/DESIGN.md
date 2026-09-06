@@ -39,6 +39,11 @@ via `Variants { model: Quickshell.screens }`.
 
 ## Singletons
 
+`qmldir` lists every type in this directory. Quickshell does not need it —
+it resolves file-local types itself — but qmllint cannot resolve them without
+it, so add an entry when you add a file.
+
+
 ### `Theme.qml`
 All design tokens. Read these instead of hard-coding values.
 
@@ -83,13 +88,6 @@ Single-open policy for flyouts. `BarFlyout` registers itself in
 `onOpenChanged`; opening one flyout closes whatever else was open
 (close-then-open so focus grabs never overlap). `popupManager.closeAll()`
 force-closes the current one.
-
-### `SettingsPanel.qml` (`quickshell:settings`, Super+,)
-Tabbed settings flyout under the Quick Actions chevron (also opened from
-the gear tile). Tabs: **General** (clock, notifications, power), **Bar**
-(bar items, Quick Actions items, live tray apps — Bar/Tuck/Hide), **Appearance**
-(highlight accent swatches, font scale, bar height, font family),
-**Tuning** (module knobs, calendar URL, wallpaper dir, flyout sizes).
 
 ### Overflow model (no chevron)
 Quick Actions is the single overflow surface: tucked bar modules render as

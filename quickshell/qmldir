@@ -1,0 +1,64 @@
+# Every QML type in this directory, listed so that qmllint (and editors) can
+# resolve them. Quickshell resolves file-local types on its own, so this file
+# changes nothing at runtime — it exists purely for tooling.
+#
+# Keep in sync when adding or removing a .qml file here. `pragma Singleton`
+# types must be listed with the `singleton` prefix: Theme, Hypr and
+# TailscaleService. Settings.qml is deliberately NOT a singleton (see its
+# header) and is listed as a plain type.
+
+AccentService AccentService.qml
+AudioDeviceRow AudioDeviceRow.qml
+AudioPowerModule AudioPowerModule.qml
+AudioSection AudioSection.qml
+BarFlyout BarFlyout.qml
+BarIcon BarIcon.qml
+BarSep BarSep.qml
+BarTooltip BarTooltip.qml
+BrightnessRow BrightnessRow.qml
+BtDeviceRow BtDeviceRow.qml
+BtToggle BtToggle.qml
+CalendarPane CalendarPane.qml
+Clipboard Clipboard.qml
+ConnectivityModule ConnectivityModule.qml
+DayPanel DayPanel.qml
+EventToasts EventToasts.qml
+singleton Hypr Hypr.qml
+IcsCalendar IcsCalendar.qml
+IdleService IdleService.qml
+Keybinds Keybinds.qml
+MediaCard MediaCard.qml
+NotifBell NotifBell.qml
+NotifPane NotifPane.qml
+Notifications Notifications.qml
+Osd Osd.qml
+PinButton PinButton.qml
+PolkitPrompt PolkitPrompt.qml
+PopupCard PopupCard.qml
+PopupManager PopupManager.qml
+ProfileSelector ProfileSelector.qml
+QuickActionIcon QuickActionIcon.qml
+QuickActions QuickActions.qml
+RegionSelector RegionSelector.qml
+ScreenRecorder ScreenRecorder.qml
+ScreenshotActions ScreenshotActions.qml
+Settings Settings.qml
+Spinner Spinner.qml
+Spotlight Spotlight.qml
+SproutBg SproutBg.qml
+StatusIndicators StatusIndicators.qml
+SystemMonitor SystemMonitor.qml
+TabPill TabPill.qml
+TabStrip TabStrip.qml
+singleton TailscaleService TailscaleService.qml
+singleton Theme Theme.qml
+ThinScrollBar ThinScrollBar.qml
+TrayItem TrayItem.qml
+VolumeSlider VolumeSlider.qml
+VpnPeerRow VpnPeerRow.qml
+WallpaperPicker WallpaperPicker.qml
+WeatherService WeatherService.qml
+WifiNetworkRow WifiNetworkRow.qml
+WiredRow WiredRow.qml
+WorkspaceOverview WorkspaceOverview.qml
+WorkspaceStrip WorkspaceStrip.qml
