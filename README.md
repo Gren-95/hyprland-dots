@@ -24,21 +24,16 @@ Modals reachable from keybindings or the bar:
     <td align="center"><img src="screenshots/gallery/systemmonitor.png" width="100%"/><br><strong>System Monitor</strong><br><kbd>Super</kbd>+<kbd>M</kbd></td>
   </tr>
   <tr>
-    <td align="center"><img src="screenshots/gallery/notifications.png" width="100%"/><br><strong>Day Panel</strong> — notifications<br><kbd>Super</kbd>+<kbd>N</kbd></td>
-    <td align="center"><img src="screenshots/gallery/calendar.png" width="100%"/><br><strong>Day Panel</strong> — calendar<br><kbd>Super</kbd>+<kbd>D</kbd></td>
+    <td align="center"><img src="screenshots/gallery/daypanel.png" width="100%"/><br><strong>Day Panel</strong><br>calendar + notifications<br><kbd>Super</kbd>+<kbd>N</kbd> / <kbd>Super</kbd>+<kbd>D</kbd></td>
     <td align="center"><img src="screenshots/gallery/powermenu.png" width="100%"/><br><strong>Power Menu</strong><br><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd></td>
+    <td align="center"><img src="screenshots/gallery/keybinds.png" width="100%"/><br><strong>Keybinds Viewer</strong><br><kbd>Super</kbd>+<kbd>F1</kbd></td>
   </tr>
   <tr>
-    <td align="center"><img src="screenshots/gallery/keybinds.png" width="100%"/><br><strong>Keybinds Viewer</strong><br><kbd>Super</kbd>+<kbd>F1</kbd></td>
     <td align="center"><img src="screenshots/gallery/wallpaper.png" width="100%"/><br><strong>Wallpaper Picker</strong><br><kbd>Super</kbd>+<kbd>W</kbd></td>
     <td align="center"><img src="screenshots/gallery/toast.png" width="100%"/><br><strong>Notification Toast</strong><br>auto-shown on incoming notification</td>
+    <td></td>
   </tr>
 </table>
-
-> [!NOTE]
-> Calendar and notifications are one surface — the day panel. `Super+N` opens it
-> on notifications, `Super+D` on the calendar. The two shots above predate the
-> merge and show the older separate chrome.
 
 > [!TIP]
 > Use `setup.sh` for automated installation, or `dotfiles-manager.sh` for managing symlinks.
