@@ -36,16 +36,18 @@ Item {
                 font.bold: true
                 elide: Text.ElideRight
             }
-            Text {
-                visible: weatherService.ready
-                text: weatherService.glyph + " " + weatherService.display
-                color: Theme.fgMuted
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.md
-            }
             NavBtn { glyph: "‹"; onClicked: pane.cal.prevMonth() }
             NavBtn { glyph: "·"; onClicked: pane.cal.today(); wide: false }
             NavBtn { glyph: "›"; onClicked: pane.cal.nextMonth() }
+        }
+
+        // ====== Weather ======
+        // Under the header rather than in it: the header row is already
+        // title plus four controls, and the reading has more to say than
+        // fits between them.
+        WeatherCard {
+            Layout.fillWidth: true
+            visible: weatherService.ready
         }
 
         GridLayout {

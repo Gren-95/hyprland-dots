@@ -1,6 +1,10 @@
 // Current conditions via open-meteo (keyless). Geocodes the configured
-// location name once per change, then refreshes temperature + WMO code
-// every 30 minutes. Empty location = service off.
+// location name once per change, then refreshes every 30 minutes.
+// Empty location = service off.
+//
+// One request carries both `current` and today's `daily` block, so the card
+// can show feels-like, high/low, humidity, wind and rain chance without a
+// second round trip.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -12,21 +16,32 @@ Scope {
     property real lon: 0
     property bool located: false
     property real temp: 0
+    property real feelsLike: 0
+    property real high: 0
+    property real low: 0
+    property int humidity: -1
+    property real wind: 0
+    property int precipProb: -1
+    property string sunrise: ""
+    property string sunset: ""
+    property bool daylight: true
     property int code: -1
     readonly property bool ready: located && code >= 0
     readonly property string unit: settingsStore.weatherFahrenheit ? "°F" : "°C"
+    readonly property string windUnit: settingsStore.weatherFahrenheit ? "mph" : "km/h"
     readonly property string display: ready ? Math.round(temp) + "°" : ""
 
-    // WMO weather code buckets → glyph + label.
-    function glyphFor(c) {
-        if (c === 0) return "󰖙";                     // clear
-        if (c <= 2) return "󰖕";                      // partly cloudy
-        if (c === 3) return "󰖐";                     // overcast
-        if (c <= 48) return "󰖑";                     // fog
-        if (c <= 57) return "󰖗";                     // drizzle
+    // WMO weather code buckets → glyph + label + colour. Clear skies get a
+    // moon after sunset; every other bucket looks the same day or night.
+    function glyphFor(c, day) {
+        if (c === 0) return day ? "󰖙" : "󰖔";          // clear
+        if (c <= 2) return day ? "󰖕" : "󰼱";           // partly cloudy
+        if (c === 3) return "󰖐";                       // overcast
+        if (c <= 48) return "󰖑";                       // fog
+        if (c <= 57) return "󰖗";                       // drizzle
         if (c <= 67 || (c >= 80 && c <= 82)) return "󰖖";  // rain
         if (c <= 77 || c === 85 || c === 86) return "󰖘";  // snow
-        return "󰖓";                                  // thunder
+        return "󰖓";                                    // thunder
     }
     function labelFor(c) {
         if (c === 0) return "clear";
@@ -38,8 +53,30 @@ Scope {
         if (c <= 77 || c === 85 || c === 86) return "snow";
         return "thunderstorm";
     }
-    readonly property string glyph: ready ? glyphFor(code) : ""
+    function colorFor(c, day) {
+        if (c === 0) return day ? Theme.accent.yellow : Theme.accent.purple;
+        if (c <= 2) return day ? Theme.accent.blueBright : Theme.accent.purple;
+        if (c <= 48) return Theme.accent.slate;        // overcast + fog
+        if (c <= 57) return Theme.accent.teal;         // drizzle
+        if (c <= 67 || (c >= 80 && c <= 82)) return Theme.accent.blue;
+        if (c <= 77 || c === 85 || c === 86) return Theme.accent.blueBright;
+        return Theme.accent.purple;                    // thunder
+    }
+    readonly property string glyph: ready ? glyphFor(code, daylight) : ""
     readonly property string label: ready ? labelFor(code) : ""
+    readonly property color accent: ready ? colorFor(code, daylight) : Theme.muted
+
+    // Warm-to-cool ramp for the reading itself, so a glance at the colour
+    // says as much as reading the number.
+    function tempColor(t) {
+        const c = settingsStore.weatherFahrenheit ? (t - 32) * 5 / 9 : t;
+        if (c <= 0)  return Theme.accent.blueBright;
+        if (c <= 10) return Theme.accent.blue;
+        if (c <= 18) return Theme.accent.teal;
+        if (c <= 25) return Theme.accent.green;
+        if (c <= 30) return Theme.accent.orange;
+        return Theme.accent.red;
+    }
 
     // Re-geocode whenever the location setting changes.
     property string _lastLocation: ""
@@ -65,6 +102,9 @@ Scope {
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
+                // curl writes nothing when the network is down; parsing that
+                // only produces log noise, so treat it as "not now".
+                if (text.trim() === "") return;
                 try {
                     const r = JSON.parse(text).results;
                     if (r && r.length > 0) {
@@ -84,15 +124,37 @@ Scope {
         command: ["curl", "-fsSL", "--max-time", "10",
             "https://api.open-meteo.com/v1/forecast?latitude=" + svc.lat
             + "&longitude=" + svc.lon
-            + "&current=temperature_2m,weather_code"
-            + "&temperature_unit=" + (settingsStore.weatherFahrenheit ? "fahrenheit" : "celsius")]
+            + "&current=temperature_2m,apparent_temperature,relative_humidity_2m"
+            + ",wind_speed_10m,weather_code,is_day"
+            + "&daily=temperature_2m_max,temperature_2m_min"
+            + ",precipitation_probability_max,sunrise,sunset"
+            + "&timezone=auto&forecast_days=1"
+            + "&temperature_unit=" + (settingsStore.weatherFahrenheit ? "fahrenheit" : "celsius")
+            + "&wind_speed_unit=" + (settingsStore.weatherFahrenheit ? "mph" : "kmh")]
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
+                if (text.trim() === "") return;
                 try {
-                    const c = JSON.parse(text).current;
+                    const j = JSON.parse(text);
+                    const c = j.current;
                     svc.temp = c.temperature_2m;
+                    svc.feelsLike = c.apparent_temperature;
+                    svc.humidity = c.relative_humidity_2m;
+                    svc.wind = c.wind_speed_10m;
+                    svc.daylight = c.is_day === 1;
+                    // Set last: `code` is what flips `ready`, so everything
+                    // the card reads is already in place when it turns on.
                     svc.code = c.weather_code;
+
+                    const d = j.daily;
+                    if (d && d.time && d.time.length > 0) {
+                        svc.high = d.temperature_2m_max[0];
+                        svc.low = d.temperature_2m_min[0];
+                        svc.precipProb = d.precipitation_probability_max[0];
+                        svc.sunrise = String(d.sunrise[0]).slice(11, 16);
+                        svc.sunset = String(d.sunset[0]).slice(11, 16);
+                    }
                 } catch (e) { console.warn("weather fetch failed:", e); }
             }
         }

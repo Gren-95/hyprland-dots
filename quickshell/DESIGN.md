@@ -212,6 +212,13 @@ and the keyboard map; the two panes are pure views over the `IcsCalendar` and
   column; `Ctrl+←/→` still walks the flyout nav ring.
 - The single pin lives in the calendar header, since that's the panel's
   leading edge.
+- `WeatherCard` sits under the calendar header — the header row is already a
+  title plus four controls, and the reading has more to say than fits between
+  them. `WeatherService` pulls current conditions and today's daily block in
+  one open-meteo request, so feels-like, high/low, humidity, wind, rain chance
+  and sun times cost no extra round trip. Condition glyphs take their bucket's
+  accent and temperatures run through `tempColor`, a deliberately coarse
+  warm-to-cool ramp. Hidden entirely when no location is configured.
 - Do Not Disturb and Stay Awake are pills under the notification header.
   Neither is in the Quick Actions grid any more: DND decides what lands in
   the list right below it, and Stay Awake is the other "stop interrupting
