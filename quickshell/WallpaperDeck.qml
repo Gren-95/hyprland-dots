@@ -1,13 +1,12 @@
 // Wallpaper deck — the wallpaper chooser, on Super+W.
 //
 // Same shape as the workspace overview: hold Super to keep the deck up, tap W
-// to turn over the next card, release Super to apply whatever is on top. The
-// deal order is a shuffle, so W walks the whole collection without repeats
-// rather than stepping through it alphabetically.
+// to turn over the next card (Shift+W to deal back), release Super to apply
+// whatever is on top. The deal order is a shuffle, so W walks the whole
+// collection without repeats rather than stepping through it alphabetically.
 //
-// Commit-on-release comes from a release bind in hypr/modules/keys.lua, with
-// an evdev poll of the actual key state as the backstop — see settleTimer for
-// why neither the shortcut's own release event nor a plain timer was enough.
+// Commit-on-release comes from SuperWatch, which polls the real key state —
+// see that file for why the compositor cannot tell us.
 //
 // Owns the whole job: listing $wallpaperDir, the shuffle, and handing the
 // chosen file to scripts/wallpaper.sh.
@@ -90,7 +89,7 @@ Scope {
     // fresh shuffle; the rest turn over the next card.
     function step() {
         if (root.files.length === 0) return;
-        settleTimer.restart();
+        superWatch.poke();
         if (!root.open) {
             root._reshuffle();
             root.open = true;
@@ -101,64 +100,31 @@ Scope {
         }
         root.pos = (root.pos + 1) % root.order.length;
     }
+    // The other direction. Overshooting a card you liked is the obvious way to
+    // lose it, and taking it back before you let go beats applying the wrong
+    // one and reverting afterwards. A no-op with the deck closed — this is a
+    // browse control, not a way in.
+    function stepBack() {
+        if (!root.open || root.order.length === 0) return;
+        superWatch.poke();
+        const n = root.order.length;
+        root.pos = (root.pos - 1 + n) % n;
+    }
     // Super came up. Same entry point WorkspaceOverview uses, and a no-op
     // unless the deck is actually showing.
     function commitIfOpen() {
-        settleTimer.stop();
         if (!root.open) return;
         root.open = false;
         if (root.topFile !== "") root._apply(root.topFile);
     }
-    function close() { settleTimer.stop(); root.open = false; }
+    function close() { root.open = false; }
 
-    // Hyprland never delivers the Super-release event for a global shortcut —
-    // measured: quickshell sees "pressed" for the SUPER + Super_L bind and
-    // never the matching release — so the deck is not told when the key came
-    // up. The key state itself is readable though: evdev knows, and evtest
-    // --query reports it in about 3ms without root for anyone in the input
-    // group. So poll it rather than guessing from a delay, and the deck stays
-    // up for as long as Super is genuinely held, however long you pause.
-    //
-    // The release bind in hypr/modules/keys.lua normally beats the poll to it.
-    // Whichever gets there first wins: commitIfOpen closes the deck, so the
-    // other is a no-op.
-    property bool probeUsable: true
-    readonly property int pollInterval: 120     // while the probe works
-    readonly property int settleDelay: 500      // fallback: time since last W
-    Timer {
-        id: settleTimer
-        interval: root.probeUsable ? root.pollInterval : root.settleDelay
-        repeat: false
-        onTriggered: {
-            if (!root.probeUsable) { root.commitIfOpen(); return; }
-            superProbe.running = false;
-            superProbe.running = true;
-        }
-    }
-    // Exits 10 while either Super key is down, 0 once both are up. Any other
-    // code means the probe is unusable here — no evtest, no readable device —
-    // and the deck falls back to committing on a quiet half second, which is
-    // how it behaved before.
-    Process {
-        id: superProbe
-        command: ["sh", "-c",
-            "for d in /dev/input/by-path/*-event-kbd; do " +
-            "[ -r \"$d\" ] || continue; " +
-            "evtest --query \"$d\" EV_KEY KEY_LEFTMETA;  [ $? -eq 10 ] && exit 10; " +
-            "evtest --query \"$d\" EV_KEY KEY_RIGHTMETA; [ $? -eq 10 ] && exit 10; " +
-            "done; exit 0"]
-        running: false
-        onExited: (code) => {
-            if (!root.open) return;
-            if (code === 10) { settleTimer.restart(); return; }        // still held
-            if (code !== 0) {
-                console.warn("wallpaper deck: Super probe unusable (exit", code + "), falling back to a timer");
-                root.probeUsable = false;
-                settleTimer.restart();
-                return;
-            }
-            root.commitIfOpen();
-        }
+    // Super coming back up is what applies the card in hand; SuperWatch is
+    // what notices. commitIfOpen no-ops when the deck is closed, so it does
+    // not matter that the overview hears the same signal.
+    Connections {
+        target: superWatch
+        function onReleased() { root.commitIfOpen() }
     }
 
     // Built once at startup so the very first Super+W of a session already
@@ -289,7 +255,7 @@ Scope {
                     Text {
                         id: hint
                         anchors.centerIn: parent
-                        text: "W  next    ·    ↵ / Space  apply    ·    Esc  cancel"
+                        text: "W  next    ·    ⇧W  back    ·    ↵  apply    ·    Esc  cancel"
                         color: Theme.muted
                         font.family: Theme.font
                         font.pixelSize: Theme.fontSize.sm

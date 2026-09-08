@@ -26,6 +26,7 @@ Scope {
     // Super+Tab cycling: opens overlay on first press, cycles on each subsequent
     // Super+Tab. The held-Super tracker commits on Super release.
     function cycleOrOpen(direction) {
+        superWatch.poke();
         if (open) { cycle(direction); return; }
         refresh(() => {
             const n = root.workspaces.length;
@@ -37,6 +38,15 @@ Scope {
         });
     }
     function commitIfOpen() { if (open) activate(focusedIndex); }
+    // Releasing Super lands on the highlighted workspace. This used to hang
+    // off the quickshell:supertap shortcut's released event, which Hyprland
+    // never sends — so the overview only ever committed via Enter or a click,
+    // despite the keybind hint promising otherwise. SuperWatch reads the key
+    // state directly instead.
+    Connections {
+        target: superWatch
+        function onReleased() { root.commitIfOpen() }
+    }
     function close() { open = false }
     function activate(idx) {
         const ws = root.workspaces[idx];
@@ -50,6 +60,7 @@ Scope {
         if (idx >= 0) activate(idx);
     }
     function cycle(dir) {
+        superWatch.poke();
         const n = root.workspaces.length;
         if (n === 0) return;
         root.focusedIndex = (root.focusedIndex + dir + n) % n;

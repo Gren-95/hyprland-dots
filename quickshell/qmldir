@@ -49,6 +49,7 @@ ServicesModule ServicesModule.qml
 Settings Settings.qml
 Spinner Spinner.qml
 Spotlight Spotlight.qml
+SuperWatch SuperWatch.qml
 SproutBg SproutBg.qml
 StatusIndicators StatusIndicators.qml
 SystemMonitor SystemMonitor.qml

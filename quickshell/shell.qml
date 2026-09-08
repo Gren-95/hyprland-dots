@@ -51,6 +51,9 @@ Scope {
     PolkitPrompt { id: polkit }
     SystemMonitor { id: sysmon }
     WallpaperDeck { id: wallpaperDeck }
+    // Active whenever a hold-to-browse overlay is up; it emits released() once
+    // Super is genuinely off and both overlays listen.
+    SuperWatch { id: superWatch; active: wallpaperDeck.open || workspaceOverview.open }
     RegionSelector { id: regionSelector }
     ScreenshotActions { id: screenshotActions }
 
@@ -591,6 +594,12 @@ Scope {
                 }
                 GlobalShortcut {
                     appid: "quickshell"
+                    name: "wallpaper-back"
+                    description: "Deal the previous wallpaper card"
+                    onPressed: wallpaperDeck.stepBack()
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
                     name: "wallpaper-cancel"
                     description: "Dismiss the wallpaper deck without applying"
                     onPressed: wallpaperDeck.close()
@@ -631,15 +640,6 @@ Scope {
                     name: "overview-cycle-prev"
                     description: "Open overview / cycle previous workspace"
                     onPressed: workspaceOverview.cycleOrOpen(-1)
-                }
-                // Listens to Super press/release via bindi. Press is a no-op,
-                // release commits whichever hold-to-browse overlay is open —
-                // the workspace overview or the wallpaper deck.
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "supertap"
-                    description: "Commit overview selection on Super release"
-                    onReleased: workspaceOverview.commitIfOpen()
                 }
             }
         }
