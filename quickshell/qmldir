@@ -23,6 +23,7 @@ Clipboard Clipboard.qml
 ConnectivityModule ConnectivityModule.qml
 DayPanel DayPanel.qml
 EventToasts EventToasts.qml
+EventsPane EventsPane.qml
 singleton Hypr Hypr.qml
 IcsCalendar IcsCalendar.qml
 IdleService IdleService.qml

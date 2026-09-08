@@ -64,6 +64,9 @@ Scope {
     property int toastMax: 5                   // visible toast stack cap
     property int toastWidth: 380
     property bool notifGroupByApp: true        // center groups history by app
+    property bool notifAutoExpire: true        // matched notifications leave the center on their own
+    property string notifAutoExpireMatch: "Claude Code"   // substring of appName/summary; empty = off
+    property int notifAutoExpireDelay: 10000   // ms a matched notification survives in the center
     property bool weekStartMonday: true
     property int windowTitleWidth: 400         // bar window-title cap; 0 = hidden
     property int osdBottomMargin: 60
@@ -159,6 +162,9 @@ Scope {
         { name: "toastMax",             file: "toast-max",              type: "int"  },
         { name: "toastWidth",           file: "toast-width",            type: "int"  },
         { name: "notifGroupByApp",      file: "notif-group-by-app",     type: "bool" },
+        { name: "notifAutoExpire",      file: "notif-auto-expire",      type: "bool" },
+        { name: "notifAutoExpireMatch", file: "notif-auto-expire-match", type: "string" },
+        { name: "notifAutoExpireDelay", file: "notif-auto-expire-delay", type: "int"  },
         { name: "weekStartMonday",      file: "week-start-monday",      type: "bool" },
         { name: "windowTitleWidth",     file: "window-title-width",     type: "int"  },
         { name: "osdBottomMargin",      file: "osd-bottom-margin",      type: "int"  },
