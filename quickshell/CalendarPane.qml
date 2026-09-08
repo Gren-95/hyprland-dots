@@ -1,5 +1,5 @@
-// Calendar column of the day panel: month header, month grid, then the
-// selected day's events followed by what's coming up.
+// Calendar column of the day panel: month header, weather, month grid. The
+// selected day's events render in EventsPane, the column next to this one.
 //
 // Pure view. Every piece of state (selected date, parsed events, month
 // navigation) lives in the IcsCalendar service handed in as `cal`, so the
@@ -52,6 +52,9 @@ Item {
 
         GridLayout {
             Layout.fillWidth: true
+            // Takes the height the events strip used to occupy, so the cells
+            // grow into it instead of leaving a gap above the hint line.
+            Layout.fillHeight: true
             columns: 7
             columnSpacing: 2
             rowSpacing: 2
@@ -105,90 +108,15 @@ Item {
                             cellDate.getMonth() === sel.getMonth() &&
                             cellDate.getDate() === sel.getDate();
                     }
-                    eventCount: pane.cal ? pane.cal.eventsOnDay(cellDate).length : 0
+                    readonly property var dayEvents: pane.cal ? pane.cal.eventsOnDay(cellDate) : []
+                    eventCount: dayEvents.length
+                    eventColors: dayEvents.slice(0, 3)
+                        .map(e => pane.cal.colorFor(e.calIndex))
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 48
+                    Layout.fillHeight: true
+                    Layout.minimumHeight: 48
                     onClicked: pane.cal.selectDay(cellDate.getFullYear(),
                         cellDate.getMonth(), cellDate.getDate())
-                }
-            }
-        }
-
-        // ====== Divider between grid and events ======
-        Rectangle {
-            Layout.fillWidth: true
-            implicitHeight: 1
-            color: Theme.border
-        }
-
-        // ====== Events for selected day + upcoming ======
-        Text {
-            text: pane.cal ? Qt.formatDate(pane.cal.selectedDate, "dddd, d MMMM yyyy") : ""
-            color: Theme.fg
-            font.family: Theme.font
-            font.pixelSize: Theme.fontSize.md
-            font.bold: true
-        }
-
-        Flickable {
-            id: eventsFlick
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            contentWidth: width
-            contentHeight: eventsCol.implicitHeight
-            clip: true
-            boundsBehavior: Flickable.StopAtBounds
-
-            ColumnLayout {
-                id: eventsCol
-                width: eventsFlick.width
-                spacing: Theme.spacing.sm
-
-                Text {
-                    Layout.fillWidth: true
-                    visible: pane.cal && pane.cal.eventsOnDay(pane.cal.selectedDate).length === 0
-                    text: (pane.cal && pane.cal.icsUrls.length === 0)
-                        ? "Set ~/.config/quickshell/calendar.url\nto enable"
-                        : "No events"
-                    color: Theme.disabled
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.base
-                    horizontalAlignment: Text.AlignHCenter
-                    Layout.topMargin: 16
-                    wrapMode: Text.WordWrap
-                }
-
-                Repeater {
-                    model: pane.cal ? pane.cal.eventsOnDay(pane.cal.selectedDate) : []
-                    delegate: EventRow {
-                        required property var modelData
-                        event: modelData
-                        Layout.fillWidth: true
-                    }
-                }
-
-                // Upcoming section (only shown if today has nothing
-                // and the selected day is today)
-                Text {
-                    Layout.fillWidth: true
-                    Layout.topMargin: 12
-                    visible: pane.cal && pane.cal.icsUrls.length > 0 && upcomingRepeater.count > 0
-                    text: "UPCOMING"
-                    color: Theme.mutedDeep
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xs
-                    font.letterSpacing: 1
-                    font.bold: true
-                }
-                Repeater {
-                    id: upcomingRepeater
-                    model: pane.cal ? pane.cal.upcomingEvents() : []
-                    delegate: EventRow {
-                        required property var modelData
-                        event: modelData
-                        showDate: true
-                        Layout.fillWidth: true
-                    }
                 }
             }
         }
@@ -239,6 +167,7 @@ Item {
         property bool isToday: false
         property bool isSelected: false
         property int eventCount: 0
+        property var eventColors: []   // feed color per dot, up to 3
         readonly property bool hasEvent: eventCount > 0
         signal clicked()
         implicitHeight: 48
@@ -274,18 +203,17 @@ Item {
             spacing: 2
             visible: cell.hasEvent
             Repeater {
-                model: Math.min(cell.eventCount, 3)
+                model: cell.eventColors
                 delegate: Rectangle {
+                    required property var modelData
                     width: 4; height: 4; radius: 2 * Theme.radiusScale
-                    color: cell.outsideMonth ? Theme.border
-                         : cell.isSelected ? Theme.accentPrimary
-                         : Theme.accent.blue
+                    color: cell.outsideMonth ? Theme.border : modelData
                 }
             }
             Text {
                 visible: cell.eventCount > 3
                 text: "+" + (cell.eventCount - 3)
-                color: cell.outsideMonth ? Theme.border : Theme.accent.blue
+                color: cell.outsideMonth ? Theme.border : Theme.mutedDeep
                 font.family: Theme.font
                 font.pixelSize: 7
                 font.bold: true
@@ -301,80 +229,4 @@ Item {
         }
     }
 
-    component EventRow: Rectangle {
-        id: er
-        property var event
-        property bool showDate: false
-        implicitHeight: erCol.implicitHeight + 14
-        radius: 6 * Theme.radiusScale
-        color: Theme.bgHover
-        border.color: Theme.border
-        border.width: 1
-
-        ColumnLayout {
-            id: erCol
-            anchors.fill: parent
-            anchors.margins: Theme.spacing.md
-            spacing: 3
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Theme.spacing.md
-                Rectangle {
-                    Layout.preferredWidth: 3
-                    Layout.preferredHeight: 18
-                    Layout.alignment: Qt.AlignTop
-                    Layout.topMargin: 1
-                    radius: 1.5 * Theme.radiusScale
-                    color: Theme.accent.blue
-                }
-                Text {
-                    Layout.fillWidth: true
-                    text: er.event ? (er.event.summary || "(no title)") : ""
-                    color: Theme.fg
-                    wrapMode: Text.WordWrap
-                    maximumLineCount: 2
-                    elide: Text.ElideRight
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.md
-                    font.bold: true
-                }
-            }
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.leftMargin: 11
-                spacing: Theme.spacing.md
-                Text {
-                    text: {
-                        if (!er.event) return "";
-                        if (er.event.allDay) return "all day";
-                        const start = Qt.formatTime(er.event.start, "HH:mm");
-                        const end = er.event.end ? Qt.formatTime(er.event.end, "HH:mm") : "";
-                        return end ? start + "–" + end : start;
-                    }
-                    color: Theme.accent.blue
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.sm
-                    font.bold: true
-                }
-                Text {
-                    visible: er.showDate && er.event
-                    text: er.event ? Qt.formatDate(er.event.start, "ddd d MMM") : ""
-                    color: Theme.muted
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.sm
-                }
-                Item { Layout.fillWidth: true }
-            }
-            Text {
-                Layout.fillWidth: true
-                Layout.leftMargin: 11
-                visible: !!(er.event && er.event.location)
-                text: er.event && er.event.location ? "󰍎  " + er.event.location : ""
-                color: Theme.muted
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.sm
-                elide: Text.ElideRight
-            }
-        }
-    }
 }

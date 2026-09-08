@@ -1,12 +1,14 @@
 // Day panel — the calendar and the notification center as one flyout.
 //
-// Left column is the month grid and its events; right column is the
-// now-playing card and the notification history. Opened from the clock
+// Left column is the month grid, the middle one the selected day's events,
+// the right one the now-playing card and notification history. Clicking a day
+// fills the middle column. Opened from the clock
 // (Super+D) or from the bell (Super+N) — both land on the same surface, so
 // "what's on today" and "what just happened" are one glance instead of two.
 //
-// This owns the open/pinned state and the keyboard map; CalendarPane and
-// NotifPane are pure views over the IcsCalendar and Notifications services.
+// This owns the open/pinned state and the keyboard map; CalendarPane,
+// EventsPane and NotifPane are pure views over the IcsCalendar and
+// Notifications services.
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -23,9 +25,10 @@ Scope {
     signal navigateNext()
     signal navigatePrev()
 
-    // Width given to the calendar column; the notification column takes the
-    // rest of the card.
+    // Fixed widths for the two leading columns; the notification column takes
+    // whatever is left of the card.
     readonly property int calendarWidth: 400
+    readonly property int eventsWidth: 320
 
     // Opening re-centres the calendar on today, so the panel always comes up
     // showing now rather than wherever the month grid was left.
@@ -56,9 +59,10 @@ Scope {
         parentBar: root.anchorBar
         anchorItem: root.anchorItem
         open: root.open && root.anchorBar !== null
-        cardWidth: settingsStore.flyoutSize("daypanel", "w", 860)
-        // 720 rather than 660: the weather card took the slack the events
-        // list used to have, and two events plus the strip is the point.
+        cardWidth: settingsStore.flyoutSize("daypanel", "w", 1180)
+        // Three columns now: the month grid, the selected day's events, and
+        // the notification history — 1180 wide fits them without squeezing
+        // notification bodies down to one line.
         cardHeight: settingsStore.flyoutSize("daypanel", "h", 720)
         pinned: root.pinned
         onDismissed: root.close()
@@ -87,6 +91,18 @@ Scope {
                 pinned: root.pinned
                 onPinToggled: root.pinned = !root.pinned
                 Layout.preferredWidth: root.calendarWidth
+                Layout.fillHeight: true
+            }
+
+            Rectangle {
+                Layout.fillHeight: true
+                implicitWidth: 1
+                color: Theme.border
+            }
+
+            EventsPane {
+                cal: root.cal
+                Layout.preferredWidth: root.eventsWidth
                 Layout.fillHeight: true
             }
 

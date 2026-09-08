@@ -10,8 +10,24 @@ Scope {
     id: root
 
     property var icsUrls: []         // ICS feed URLs, one per line in calendar.url
-    property var events: []          // array of {start: Date, end: Date, summary, location, allDay: bool}
+    property var events: []          // array of {start: Date, end: Date, summary, location, allDay: bool, calIndex: int}
     property date selectedDate: new Date()
+
+    // Per-feed accent colors, indexed by the feed's position in calendar.url,
+    // so each subscription reads as its own color in the grid and event rows.
+    readonly property var feedColors: [
+        Theme.accent.blue,
+        Theme.accent.orange,
+        Theme.accent.red,
+        Theme.accent.green,
+        Theme.accent.purple,
+        Theme.accent.pink,
+        Theme.accent.teal
+    ]
+
+    // Marker curl writes after every transfer, used to split the concatenated
+    // response back into one chunk per feed.
+    readonly property string feedBoundary: "__QS_FEED_BOUNDARY__"
 
     // ====== Config file: ~/.config/quickshell/calendar.url ======
     // One ICS URL per line; blank lines and #-comments are ignored.
@@ -27,10 +43,13 @@ Scope {
     Process {
         id: fetcher
         // All feeds go through one curl call. curl concatenates the response
-        // bodies and keeps going past a failing URL, and _parseIcs only looks
-        // for VEVENT blocks, so back-to-back VCALENDARs parse correctly.
+        // bodies and keeps going past a failing URL; --write-out appends the
+        // boundary marker after every transfer — including failed ones, whose
+        // body -f suppresses — so the chunks stay aligned with icsUrls and
+        // each event can be attributed to the feed it came from.
         command: root.icsUrls.length > 0
-            ? ["curl", "-fsSL", "--max-time", "10"].concat(root.icsUrls)
+            ? ["curl", "-fsSL", "--max-time", "10",
+               "-w", "\n" + root.feedBoundary + "\n"].concat(root.icsUrls)
             : []
         running: false
         stdout: StdioCollector {
@@ -65,13 +84,25 @@ Scope {
 
     function _parseIcs(text) {
         if (!text) return;
+        const chunks = text.split(new RegExp("\\r?\\n" + root.feedBoundary + "\\r?\\n"));
+        let all = [];
+        for (let i = 0; i < chunks.length; i++)
+            all = all.concat(_parseFeed(chunks[i], i));
+        // Sort by start ascending
+        all.sort((a, b) => a.start - b.start);
+        root.events = all;
+    }
+
+    // Parses one feed's body; calIndex is its line number in calendar.url.
+    function _parseFeed(text, calIndex) {
+        if (!text) return [];
         // Unfold continuation lines (lines starting with space or tab)
         const unfolded = text.replace(/\r?\n[ \t]/g, "");
         const lines = unfolded.split(/\r?\n/);
         const out = [];
         let cur = null;
         for (const line of lines) {
-            if (line === "BEGIN:VEVENT") { cur = {}; continue; }
+            if (line === "BEGIN:VEVENT") { cur = { calIndex: calIndex }; continue; }
             if (line === "END:VEVENT") {
                 if (cur && cur.start) out.push(cur);
                 cur = null;
@@ -96,9 +127,7 @@ Scope {
                 cur.end = d.date;
             }
         }
-        // Sort by start ascending
-        out.sort((a, b) => a.start - b.start);
-        root.events = out;
+        return out;
     }
 
     function _unescape(s) {
@@ -129,6 +158,11 @@ Scope {
     }
 
     // ====== Public API ======
+    // Accent color of the feed an event came from.
+    function colorFor(calIndex) {
+        if (calIndex === undefined || calIndex < 0) return root.feedColors[0];
+        return root.feedColors[calIndex % root.feedColors.length];
+    }
     function eventsOnDay(day) {
         const y = day.getFullYear(), m = day.getMonth(), d = day.getDate();
         return root.events.filter(e => {
@@ -158,10 +192,28 @@ Scope {
         d.setDate(d.getDate() + delta);
         selectedDate = d;
     }
-    // Aggregated upcoming events from today onward, capped at 8.
-    function upcomingEvents() {
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        return root.events.filter(e => e.start >= today).slice(0, 8);
+    // Events on the days *after* the selected one, bucketed by day so the
+    // events pane can head each bucket with its date instead of repeating it
+    // on every row. The selected day is excluded — it already has the column
+    // above. Capped at six days so "upcoming" stays a preview, not the year.
+    function upcomingByDay() {
+        const sel = new Date(root.selectedDate.getFullYear(),
+                             root.selectedDate.getMonth(),
+                             root.selectedDate.getDate());
+        const groups = [];
+        const idx = {};
+        // root.events is sorted by start, so the buckets come out in order.
+        for (const e of root.events) {
+            const d = new Date(e.start.getFullYear(), e.start.getMonth(), e.start.getDate());
+            if (d <= sel) continue;
+            const k = d.getTime();
+            if (idx[k] === undefined) {
+                if (groups.length >= 6) break;
+                idx[k] = groups.length;
+                groups.push({ key: k, date: d, events: [] });
+            }
+            groups[idx[k]].events.push(e);
+        }
+        return groups;
     }
 }

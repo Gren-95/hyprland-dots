@@ -44,6 +44,19 @@ Scope {
     // readable in the panel.
     function _push(n) {
         const entry = _entryFor(n);
+        // Stamp the toast deadline here, not in the card: activeList is a plain
+        // JS array, so every reassignment (a new toast, a close, an auto-expiry
+        // sweep) rebuilds the Repeater's delegates. A card that re-derived its
+        // own countdown would restart it each time, and a busy stack would
+        // leave toasts up indefinitely. The entry object outlives the delegate,
+        // so the deadline on it is stable.
+        //
+        // Everything expires, critical urgency included. An app may ask for
+        // less than toastTimeout, never for more (and never for "forever").
+        const ttl = n.expireTimeout > 0
+            ? Math.min(n.expireTimeout, settingsStore.toastTimeout)
+            : settingsStore.toastTimeout;
+        entry.toastUntil = Date.now() + ttl;
         activeList = [entry, ...activeList].slice(0, settingsStore.toastMax);
         _file(entry);
     }
@@ -51,8 +64,42 @@ Scope {
     // that must not interrupt (see onNotification).
     function _pushHistory(n) { _file(_entryFor(n)); }
     function _file(entry) {
+        if (_autoExpires(entry)) entry.expiresAt = Date.now() + settingsStore.notifAutoExpireDelay;
         historyList = [entry, ...historyList].slice(0, maxHistory);
         if (!panelOpen) unreadCount += 1;
+    }
+
+    // ===== Auto-expiry. Some senders are chatty enough that their history
+    // entries are noise within a minute — Claude Code's agent pings arrive in
+    // bursts and pile the center full. Matched entries carry a deadline and
+    // leave on their own, toast and history together.
+    //
+    // The match is a substring of appName + summary because a terminal agent
+    // has no app name of its own: kitty forwards Claude Code's OSC 99 to the
+    // notification server as appName "kitty", summary "Claude Code".
+    function _autoExpires(entry) {
+        if (!settingsStore.notifAutoExpire) return false;
+        const pat = (settingsStore.notifAutoExpireMatch || "").toLowerCase();
+        if (pat === "") return false;
+        const hay = ((entry.appName || "") + " " + (entry.summary || "")).toLowerCase();
+        return hay.indexOf(pat) >= 0;
+    }
+    readonly property bool _hasExpiring:
+        historyList.some(e => e.expiresAt > 0) || activeList.some(e => e.expiresAt > 0)
+    // One sweep for the whole list rather than a timer per entry, and it only
+    // runs while something is actually pending.
+    Timer {
+        interval: 500
+        repeat: true
+        running: root._hasExpiring
+        onTriggered: {
+            const now = Date.now();
+            const due = e => e.expiresAt > 0 && e.expiresAt <= now;
+            // _dismissMatching reassigns both lists, so don't call it on a
+            // tick where nothing is actually due.
+            if (root.historyList.some(due) || root.activeList.some(due))
+                root._dismissMatching(due);
+        }
     }
     // Clearing history closes the underlying notifications too. They stay
     // tracked (and so replayable) until something dismisses them, so without
@@ -125,22 +172,44 @@ Scope {
     }
 
     // ===== Grouping (center view): history bucketed by appName, newest
-    // group first. expandedGroups tracks per-app "N more…" state and
-    // resets when the center closes.
+    // group first, and within each app bucketed again by summary — a
+    // screenshot tool firing ten times is one stack, not ten rows.
+    // expandedGroups tracks both levels of "N more…" state (keyed by app
+    // for the group, by groupKey() for the stack) and resets when the
+    // center closes.
     property var expandedGroups: ({})
+    // Stack identity: same app, same summary. NUL-joined so an app name
+    // containing the separator can't collide with a summary.
+    function groupKey(app, summary) { return app + "\u0000" + summary; }
     readonly property var groupedHistory: {
         const groups = [];
         const idx = {};
         for (const e of historyList) {
             const k = e.appName || "unknown";
-            if (idx[k] === undefined) { idx[k] = groups.length; groups.push({ app: k, entries: [] }); }
-            groups[idx[k]].entries.push(e);
+            if (idx[k] === undefined) {
+                idx[k] = groups.length;
+                groups.push({ app: k, entries: [], clusters: [], clusterIdx: {} });
+            }
+            const g = groups[idx[k]];
+            g.entries.push(e);
+            const ck = e.summary || "";
+            if (g.clusterIdx[ck] === undefined) {
+                g.clusterIdx[ck] = g.clusters.length;
+                g.clusters.push({ key: root.groupKey(k, ck), summary: ck, entries: [] });
+            }
+            g.clusters[g.clusterIdx[ck]].entries.push(e);
         }
         return groups;
     }
     function clearApp(app) {
         _closeEntries(e => (e.appName || "unknown") === app);
         historyList = historyList.filter(e => (e.appName || "unknown") !== app);
+    }
+    // Dismiss a whole stack: every entry the collapsed row stands for.
+    function clearCluster(app, summary) {
+        const hit = e => (e.appName || "unknown") === app && (e.summary || "") === summary;
+        _closeEntries(hit);
+        historyList = historyList.filter(e => !hit(e));
     }
     function toggleGroup(app) {
         const m = Object.assign({}, expandedGroups);
@@ -365,12 +434,11 @@ Scope {
             }
         }
 
-        // Everything expires, critical urgency included. An app may ask for
-        // less than toastTimeout, never for more (and never for "forever").
+        // Counts down to the deadline stamped in _push. Date.now() is not
+        // reactive, so this is evaluated once per delegate — on a rebuild the
+        // card picks up the time already served instead of starting over.
         Timer {
-            interval: card.entry && card.entry.ref && card.entry.ref.expireTimeout > 0
-                ? Math.min(card.entry.ref.expireTimeout, settingsStore.toastTimeout)
-                : settingsStore.toastTimeout
+            interval: Math.max(1, (card.entry ? card.entry.toastUntil : 0) - Date.now())
             running: true
             repeat: false
             onTriggered: if (card.entry && card.entry.ref) card.dismiss();

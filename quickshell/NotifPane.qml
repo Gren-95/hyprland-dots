@@ -136,8 +136,11 @@ Item {
                         required property var modelData
                         readonly property string app: modelData.app
                         readonly property int total: modelData.entries.length
+                        // The cap counts stacks, not notifications: three rows
+                        // of "Screenshot" are one stack and take one slot.
+                        readonly property int stacks: modelData.clusters.length
                         readonly property bool expanded: pane.notifs.expandedGroups[app] === true
-                        readonly property int shown: expanded ? total : Math.min(3, total)
+                        readonly property int shown: expanded ? stacks : Math.min(3, stacks)
                         Layout.fillWidth: true
                         spacing: Theme.spacing.xs
 
@@ -196,17 +199,47 @@ Item {
                         }
 
                         Repeater {
-                            model: grp.modelData.entries.slice(0, grp.shown)
-                            delegate: HistoryRow {
+                            model: grp.modelData.clusters.slice(0, grp.shown)
+                            delegate: ColumnLayout {
+                                id: stack
                                 required property var modelData
-                                entry: modelData
+                                readonly property int count: modelData.entries.length
+                                readonly property bool expanded:
+                                    pane.notifs.expandedGroups[modelData.key] === true
                                 Layout.fillWidth: true
-                                onDismissed: pane.notifs.dismissHistoryEntry(modelData.id)
+                                spacing: Theme.spacing.xs
+
+                                // The newest entry stands for the whole stack.
+                                // Collapsed it carries the ×N badge and the
+                                // dismiss hits every entry behind it; expanded
+                                // the rest unfold underneath, so this row is
+                                // never a duplicate of one of them.
+                                HistoryRow {
+                                    Layout.fillWidth: true
+                                    entry: stack.modelData.entries[0]
+                                    stackCount: stack.count
+                                    stackExpanded: stack.expanded
+                                    onDismissed: stack.count > 1 && !stack.expanded
+                                        ? pane.notifs.clearCluster(grp.app, stack.modelData.summary)
+                                        : pane.notifs.dismissHistoryEntry(stack.modelData.entries[0].id)
+                                    onActivated: pane.notifs.toggleGroup(stack.modelData.key)
+                                }
+                                Repeater {
+                                    model: stack.count > 1 && stack.expanded
+                                        ? stack.modelData.entries.slice(1) : []
+                                    delegate: HistoryRow {
+                                        required property var modelData
+                                        entry: modelData
+                                        Layout.fillWidth: true
+                                        Layout.leftMargin: Theme.spacing.lg
+                                        onDismissed: pane.notifs.dismissHistoryEntry(modelData.id)
+                                    }
+                                }
                             }
                         }
 
                         Rectangle {
-                            visible: grp.total > 3
+                            visible: grp.stacks > 3
                             Layout.fillWidth: true
                             implicitHeight: 26
                             radius: 8 * Theme.radiusScale
@@ -216,7 +249,7 @@ Item {
                             Text {
                                 anchors.centerIn: parent
                                 text: grp.expanded ? "Show less"
-                                    : (grp.total - grp.shown) + " more…"
+                                    : (grp.stacks - grp.shown) + " more…"
                                 color: Theme.fgMuted
                                 font.family: Theme.font
                                 font.pixelSize: Theme.fontSize.sm
@@ -298,81 +331,192 @@ Item {
         }
     }
 
-    component HistoryRow: Rectangle {
+    component HistoryRow: Item {
         id: hist
         property var entry
+        // Number of notifications this row stands for. 1 (or 0) is a plain
+        // row; more than that draws the stack — chevron gutter, sheets, ×N.
+        property int stackCount: 1
+        property bool stackExpanded: false
+        readonly property bool stacked: hist.stackCount > 1
+        readonly property bool showSheets: hist.stacked && !hist.stackExpanded
+        // Cards peeking out below the front one. Two is enough to read as
+        // "several"; a taller pile just eats vertical space in the list.
+        readonly property int sheets: hist.showSheets ? Math.min(2, hist.stackCount - 1) : 0
+        readonly property int sheetStep: 7
         signal dismissed()
-        implicitHeight: histCol.implicitHeight + 16
-        radius: 8 * Theme.radiusScale
-        color: histHover.containsMouse ? Theme.bgHover : Theme.bg
-        border.color: Theme.border
-        border.width: 1
+        signal activated()
+        // The item reserves room for the sheets, so they peek into the gap
+        // below rather than under the next row.
+        implicitHeight: card.implicitHeight + hist.sheets * hist.sheetStep
+        Behavior on implicitHeight { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
 
-        ColumnLayout {
-            id: histCol
-            anchors.fill: parent
-            anchors.margins: Theme.spacing.md
-            spacing: Theme.spacing.xs
+        // The two cards behind, declared before the front one so it paints
+        // over their tops. Each sits one step lower and one step narrower on
+        // *both* sides — geometry is explicit rather than anchored so the
+        // inset stays symmetric. They stay dark: the panel body behind them
+        // is lighter than a card, so a lighter sheet would vanish into it.
+        Rectangle {
+            visible: hist.sheets >= 2
+            x: 2 * hist.sheetStep
+            y: 2 * hist.sheetStep
+            width: Math.max(0, hist.width - 4 * hist.sheetStep)
+            height: card.implicitHeight
+            radius: 8 * Theme.radiusScale
+            color: Theme.bgDeep
+            border.color: Theme.borderStrong
+            border.width: 1
+        }
+        Rectangle {
+            visible: hist.sheets >= 1
+            x: hist.sheetStep
+            y: hist.sheetStep
+            width: Math.max(0, hist.width - 2 * hist.sheetStep)
+            height: card.implicitHeight
+            radius: 8 * Theme.radiusScale
+            color: Theme.bg
+            border.color: Theme.borderStrong
+            border.width: 1
+        }
+
+        Rectangle {
+            id: card
+            width: parent.width
+            implicitHeight: cardRow.implicitHeight
+            height: implicitHeight
+            radius: 8 * Theme.radiusScale
+            color: histHover.containsMouse ? Theme.bgHover : Theme.bg
+            border.color: hist.stacked && histHover.containsMouse ? Theme.borderStrong : Theme.border
+            border.width: 1
+
             RowLayout {
-                Layout.fillWidth: true
-                spacing: Theme.spacing.md
-                IconImage {
-                    visible: source != ""
-                    source: pane.notifs ? pane.notifs.iconFor(hist.entry) : ""
-                    implicitSize: 18
-                }
-                Text {
-                    Layout.fillWidth: true
-                    text: hist.entry ? (hist.entry.summary || hist.entry.appName) : ""
-                    color: Theme.fg
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.md
-                    font.bold: true
-                    elide: Text.ElideRight
-                }
-                Text {
-                    text: hist.entry ? Qt.formatTime(hist.entry.time, "hh:mm") : ""
-                    color: Theme.mutedDeep
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xs
-                }
+                id: cardRow
+                anchors.fill: parent
+                spacing: 0
+
+                // Expand/collapse gutter: the chevron owns the whole left
+                // edge of a stack, so the affordance is a column you can hit
+                // anywhere rather than a glyph tucked into the title row.
                 Rectangle {
-                    implicitWidth: 20; implicitHeight: 20; radius: 10 * Theme.radiusScale
-                    color: dismissMouse.containsMouse ? Theme.borderStrong : "transparent"
+                    visible: hist.stacked
+                    Layout.preferredWidth: 30
+                    Layout.fillHeight: true
+                    color: histHover.containsMouse ? Theme.bgActive : Theme.bgDeep
+                    // Outlined like the badge, so the gutter reads as a
+                    // button. Its left/top/bottom edges trace the card's own
+                    // border; the right edge is what divides it from the text.
+                    border.color: histHover.containsMouse ? Theme.popupBorder : Theme.borderStrong
+                    border.width: 1
+                    Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }
+                    // Square off the edge that meets the content so the
+                    // gutter reads as part of the card, not a pill on it.
+                    topRightRadius: 0
+                    bottomRightRadius: 0
+                    topLeftRadius: card.radius
+                    bottomLeftRadius: card.radius
                     Text {
                         anchors.centerIn: parent
-                        text: "×"
-                        color: Theme.muted
+                        text: "󰍝"
+                        color: hist.stackExpanded || histHover.containsMouse
+                            ? Theme.accent.blue : Theme.fgMuted
                         font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.xl
+                        font.pixelSize: Theme.fontSize.xxl
+                        font.bold: true
+                        rotation: hist.stackExpanded ? 0 : -90
+                        Behavior on rotation { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+                        Behavior on color    { ColorAnimation  { duration: Theme.duration.fast } }
                     }
-                    MouseArea {
-                        id: dismissMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: hist.dismissed()
+                }
+
+                ColumnLayout {
+                    id: histCol
+                    Layout.fillWidth: true
+                    Layout.margins: Theme.spacing.md
+                    spacing: Theme.spacing.xs
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.spacing.md
+                        IconImage {
+                            visible: source != ""
+                            source: pane.notifs ? pane.notifs.iconFor(hist.entry) : ""
+                            implicitSize: 18
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: hist.entry ? (hist.entry.summary || hist.entry.appName) : ""
+                            color: Theme.fg
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.md
+                            font.bold: true
+                            elide: Text.ElideRight
+                        }
+                        Rectangle {
+                            visible: hist.stacked
+                            implicitWidth: stackBadge.implicitWidth + 12
+                            implicitHeight: 18
+                            radius: 9 * Theme.radiusScale
+                            color: histHover.containsMouse ? Theme.bgActive : Theme.bgDeep
+                            border.color: Theme.borderSubtle
+                            border.width: 1
+                            Text {
+                                id: stackBadge
+                                anchors.centerIn: parent
+                                text: "\u00d7" + hist.stackCount
+                                color: Theme.muted
+                                font.family: Theme.font
+                                font.pixelSize: Theme.fontSize.xs
+                            }
+                        }
+                        Text {
+                            text: hist.entry ? Qt.formatTime(hist.entry.time, "hh:mm") : ""
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.xs
+                        }
+                        Rectangle {
+                            implicitWidth: 20; implicitHeight: 20; radius: 10 * Theme.radiusScale
+                            color: dismissMouse.containsMouse ? Theme.borderStrong : "transparent"
+                            Text {
+                                anchors.centerIn: parent
+                                text: "\u00d7"
+                                color: Theme.muted
+                                font.family: Theme.font
+                                font.pixelSize: Theme.fontSize.xl
+                            }
+                            MouseArea {
+                                id: dismissMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: hist.dismissed()
+                            }
+                        }
+                    }
+                    Text {
+                        visible: hist.entry && hist.entry.body
+                        Layout.fillWidth: true
+                        text: hist.entry ? hist.entry.body : ""
+                        color: Theme.fgMuted
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize.base
+                        wrapMode: Text.WordWrap
+                        textFormat: Text.PlainText
+                        maximumLineCount: 3
+                        elide: Text.ElideRight
                     }
                 }
             }
-            Text {
-                visible: hist.entry && hist.entry.body
-                Layout.fillWidth: true
-                text: hist.entry ? hist.entry.body : ""
-                color: Theme.fgMuted
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.base
-                wrapMode: Text.WordWrap
-                textFormat: Text.PlainText
-                maximumLineCount: 3
-                elide: Text.ElideRight
+
+            MouseArea {
+                id: histHover
+                anchors.fill: parent
+                hoverEnabled: true
+                // Only a stack is clickable; a lone notification keeps the
+                // plain hover-highlight it had before.
+                acceptedButtons: hist.stacked ? Qt.LeftButton : Qt.NoButton
+                cursorShape: hist.stacked ? Qt.PointingHandCursor : Qt.ArrowCursor
+                onClicked: hist.activated()
             }
-        }
-        MouseArea {
-            id: histHover
-            anchors.fill: parent
-            hoverEnabled: true
-            acceptedButtons: Qt.NoButton
         }
     }
 }
