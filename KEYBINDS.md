@@ -30,7 +30,9 @@ for setup time.
 | `Super+M` | System monitor (CPU / RAM / temps / fans / uptime) |
 | `Super+S` | Audio & Power panel (Sound tab) |
 | `Super+D` | Toggle the day panel (same surface as `Super+N`) |
-| `Super+W` | Wallpaper picker |
+| `Super+W` | Wallpaper deck — hold Super, W deals the next card, release applies |
+| `Super+Enter` / `Super+Space` | Apply the card in hand (wallpaper deck) |
+| `Super+Esc` | Dismiss the wallpaper deck without applying |
 | `Super+Tab` | Workspace overview (cycle next while held) |
 | `Super+Shift+Tab` | Workspace overview (cycle previous) |
 

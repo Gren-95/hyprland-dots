@@ -28,7 +28,23 @@ hl.bind(var_mainMod .. " + M", hl.dsp.global("quickshell:sysmon"))
 hl.bind(var_mainMod .. " + A", hl.dsp.global("quickshell:quickactions"))
 hl.bind(var_mainMod .. " + S", hl.dsp.global("quickshell:audiopower"))
 hl.bind(var_mainMod .. " + D", hl.dsp.global("quickshell:calendar"))
+-- Wallpaper deck: hold Super, W turns over the next card, releasing Super
+-- applies it (via the supertap bind below). Enter/Space and Escape are bound
+-- with Super because Super is held for the whole interaction anyway, and the
+-- deck surface is click-through — it never has focus to read plain keys from.
 hl.bind(var_mainMod .. " + W", hl.dsp.global("quickshell:wallpaper"))
+hl.bind(var_mainMod .. " + Return", hl.dsp.global("quickshell:wallpaper-apply"))
+hl.bind(var_mainMod .. " + space", hl.dsp.global("quickshell:wallpaper-apply"))
+hl.bind(var_mainMod .. " + Escape", hl.dsp.global("quickshell:wallpaper-cancel"))
+-- Releasing Super applies. This has to be a release bind rather than the
+-- hyprland-global-shortcuts "released" event: that event is never delivered
+-- (measured — quickshell sees "pressed" for SUPER + Super_L and never the
+-- matching release), which is why the deck used to need a second Super press.
+-- A bindr dispatches on key-up, and a dispatch always arrives as "pressed".
+hl.bind("SUPER + Super_L", hl.dsp.global("quickshell:wallpaper-apply"), {
+    release = true,
+    ignore_mods = true,
+})
 
 -- Utility
 hl.bind(var_mainMod .. " + SHIFT + R", hl.dsp.exec_cmd("bash ~/.config/scripts/screenrecord.sh"))

@@ -51,6 +51,7 @@ Scope {
     PolkitPrompt { id: polkit }
     SystemMonitor { id: sysmon }
     WallpaperPicker { id: wallpaperPicker }
+    WallpaperDeck { id: wallpaperDeck; picker: wallpaperPicker }
     RegionSelector { id: regionSelector }
     ScreenshotActions { id: screenshotActions }
 
@@ -577,8 +578,24 @@ Scope {
                 GlobalShortcut {
                     appid: "quickshell"
                     name: "wallpaper"
-                    description: "Toggle wallpaper picker"
-                    onPressed: wallpaperPicker.toggle()
+                    description: "Deal the next wallpaper card (hold Super, release to apply)"
+                    onPressed: wallpaperDeck.step()
+                }
+                // Apply / cancel for the wallpaper deck. Global shortcuts
+                // rather than keys on the deck's own surface: it is
+                // click-through and never focused, and grabbing the keyboard to
+                // read them broke the Super-release commit.
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "wallpaper-apply"
+                    description: "Apply the wallpaper card in hand"
+                    onPressed: wallpaperDeck.commitIfOpen()
+                }
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "wallpaper-cancel"
+                    description: "Dismiss the wallpaper deck without applying"
+                    onPressed: wallpaperDeck.close()
                 }
                 GlobalShortcut {
                     appid: "quickshell"
@@ -618,7 +635,8 @@ Scope {
                     onPressed: workspaceOverview.cycleOrOpen(-1)
                 }
                 // Listens to Super press/release via bindi. Press is a no-op,
-                // release commits the highlighted workspace if overview is open.
+                // release commits whichever hold-to-browse overlay is open —
+                // the workspace overview or the wallpaper deck.
                 GlobalShortcut {
                     appid: "quickshell"
                     name: "supertap"
