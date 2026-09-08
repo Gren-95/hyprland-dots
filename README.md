@@ -29,7 +29,7 @@ Modals reachable from keybindings or the bar:
     <td align="center"><img src="screenshots/gallery/keybinds.png" width="100%"/><br><strong>Keybinds Viewer</strong><br><kbd>Super</kbd>+<kbd>F1</kbd></td>
   </tr>
   <tr>
-    <td align="center"><img src="screenshots/gallery/wallpaper.png" width="100%"/><br><strong>Wallpaper Picker</strong><br><kbd>Super</kbd>+<kbd>W</kbd></td>
+    <td align="center"><img src="screenshots/gallery/wallpaper.png" width="100%"/><br><strong>Wallpaper Deck</strong><br>hold <kbd>Super</kbd>, tap <kbd>W</kbd> to deal, release to apply</td>
     <td align="center"><img src="screenshots/gallery/toast.png" width="100%"/><br><strong>Notification Toast</strong><br>auto-shown on incoming notification</td>
     <td></td>
   </tr>
