@@ -219,13 +219,27 @@ Scope {
     // Resolve a usable icon source for a notification entry: prefer embedded
     // image data, then the app icon (a file path as-is, or a theme name via
     // iconPath), finally a generic fallback so every notification shows one.
+    // A filesystem path has to be handed over as an explicit file:// URL.
+    // Passed bare, QML resolves it against the component's base URL — which
+    // for a Quickshell type is qrc: — and the icon silently fails to load as
+    // "qrc:/usr/lib64/kitty/logo/kitty.png". Anything already carrying a
+    // scheme is left alone.
+    function _iconUrl(s) {
+        if (s.indexOf("://") >= 0) return s;
+        if (s.charAt(0) === "~") return "file://" + Quickshell.env("HOME") + s.slice(1);
+        if (s.charAt(0) === "/") return "file://" + s;
+        return "";   // not a path — caller resolves it as a theme name
+    }
     function iconFor(entry) {
         if (!entry) return "";
-        if (entry.image) return entry.image;
+        if (entry.image) {
+            const img = _iconUrl(entry.image);
+            if (img !== "") return img;
+        }
         const ic = entry.appIcon || "";
         if (ic !== "") {
-            if (ic.charAt(0) === "/" || ic.indexOf("://") >= 0 || ic.charAt(0) === "~")
-                return ic;
+            const asPath = _iconUrl(ic);
+            if (asPath !== "") return asPath;
             return Quickshell.iconPath(ic, "dialog-information");
         }
         return Quickshell.iconPath("dialog-information", "");
