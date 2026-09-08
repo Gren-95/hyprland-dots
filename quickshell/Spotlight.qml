@@ -54,6 +54,13 @@ Scope {
     // puts one back. The list stays open either way — hiding a run of
     // entries should not mean reopening the launcher between each one.
     property bool manageHidden: false
+    // Left/Right flip between the two lists. The query survives the flip, so
+    // it reads as one list with a filter on it rather than two places to be.
+    function toggleHiddenView() {
+        if (root.pickRole !== "") return;      // the default-app picker owns its list
+        root.manageHidden = !root.manageHidden;
+        root.selectedIndex = 0;
+    }
     function manageHiddenApps() {
         root.manageHidden = true;
         root.pickRole = "";
@@ -200,6 +207,8 @@ Scope {
             if (e.key === Qt.Key_Escape && (root.pickRole !== "" || root.manageHidden)) {
                 root.manageHidden = false;
                 root.cancelPick(); e.accepted = true;
+            } else if (!ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_Right)) {
+                root.toggleHiddenView(); e.accepted = true;
             } else if (ctrl && e.key === Qt.Key_D) {
                 root.toggleHidden(root.selectedIndex); e.accepted = true;
             } else if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
@@ -278,9 +287,9 @@ Scope {
                     id: hintFooter
                     anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 10 }
                     text: root.manageHidden
-                        ? "↵ show again · Esc back"
+                        ? "↵ show again · ←/→ back to all · Esc close"
                         : root.pickRole === ""
-                        ? "type to search · ↑/↓ navigate · ↵ launch · Ctrl+D hide · Esc close"
+                        ? "↑/↓ navigate · ↵ launch · Ctrl+D hide · ←/→ hidden · Esc close"
                         : "↵ set as default " + root.pickLabel + " · Esc back"
                     color: Theme.disabled
                     font.family: Theme.font
