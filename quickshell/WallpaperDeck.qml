@@ -115,7 +115,12 @@ Scope {
     function commitIfOpen() {
         if (!root.open) return;
         root.open = false;
-        if (root.topFile !== "") root._apply(root.topFile);
+        // Read the position directly rather than through the topFile binding.
+        // In a change handler that binding can still hold the previous card,
+        // and which file lands on the desktop should not depend on binding
+        // evaluation order.
+        const pick = root._at(0);
+        if (pick !== "") root._apply(pick);
     }
     function close() { root.open = false; }
 
