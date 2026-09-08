@@ -534,6 +534,16 @@ Scope {
                     description: "Toggle app launcher"
                     onPressed: spotlight.toggle()
                 }
+                // Pairs with Ctrl+D inside the launcher, which is what hides
+                // an app. Getting back to one previously needed the launcher
+                // open and an arrow press, which is a lot of steps for undoing
+                // a single keystroke.
+                GlobalShortcut {
+                    appid: "quickshell"
+                    name: "unhide"
+                    description: "Open the hidden-apps list to show one again"
+                    onPressed: spotlight.manageHiddenApps()
+                }
                 GlobalShortcut {
                     appid: "quickshell"
                     name: "clipboard"

@@ -21,7 +21,8 @@ for setup time.
 
 | Key | Action |
 |---|---|
-| `Super+R` / `Alt+Space` | App launcher (Spotlight) — `Ctrl+D` hides the highlighted app, type `hidden` to bring one back |
+| `Super+R` / `Alt+Space` | App launcher (Spotlight) — `Ctrl+D` hides the highlighted app, `←`/`→` flips to the hidden ones |
+| `Super+Shift+D` | Hidden apps — pick one to show again (`↵`) |
 | `Super+V` | Clipboard history |
 | `Super+N` | Toggle the day panel (calendar + notifications) |
 | `Super+A` | Quick actions panel |
