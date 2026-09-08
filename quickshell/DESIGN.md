@@ -12,7 +12,7 @@ add a new modal" or "where do I change X" — not a tutorial.
 | **Primitives** | `BarFlyout.qml`, `PopupCard.qml`, `TabStrip.qml`, `SproutBg.qml`, `SegmentedControl.qml` | The flyout envelope, the top-drawer envelope, the speech-bubble shape, settings controls |
 | **Bar items** | `BarIcon.qml`, `BarSep.qml`, `WorkspaceStrip.qml` | Leaf widgets that sit on the top bar |
 | **Bar modules** | `ConnectivityModule.qml`, `AudioPowerModule.qml`, `NotifBell.qml`, `QuickActions.qml` | Bar entry points that open their own flyout |
-| **Flyout modals** | `Spotlight.qml`, `Clipboard.qml`, `Keybinds.qml`, `DayPanel.qml`, `SystemMonitor.qml`, `WallpaperPicker.qml` | Scope-level services whose UI opens as a flyout under a bar item |
+| **Flyout modals** | `Spotlight.qml`, `Clipboard.qml`, `Keybinds.qml`, `DayPanel.qml`, `SystemMonitor.qml` | Scope-level services whose UI opens as a flyout under a bar item |
 | **Services (headless)** | `IcsCalendar.qml`, `Notifications.qml`, `WeatherService.qml`, `IdleService.qml`, `AccentService.qml` | State and system plumbing with no surface of their own; panes read them |
 | **Panes** | `CalendarPane.qml`, `NotifPane.qml`, `MediaCard.qml` | Views over a service, composed into a flyout |
 | **Drawers & overlays** | `WorkspaceOverview.qml` (top drawer strip), `PolkitPrompt.qml` (top-center drawer), `ScreenshotActions.qml` (top-right sheet), `ScreenRecorder.qml`, `Osd.qml`, `RegionSelector.qml` | Everything not anchored to a specific bar icon |
@@ -143,7 +143,7 @@ directly — it breaks the `open: mod.popupOpen` binding and the popup can't
 reopen.
 
 **Anchor wiring for Scope-level modals**: modals instantiated in `shell.qml`
-(Spotlight, Clipboard, Keybinds, SystemMonitor, WallpaperPicker, DayPanel)
+(Spotlight, Clipboard, Keybinds, SystemMonitor, DayPanel)
 expose `anchorBar` / `anchorItem` properties, assigned once
 from the bar's `Component.onCompleted` (or the anchor item's, for the
 clock/bell). Their flyout binds
@@ -260,7 +260,7 @@ opacity `0 → 1`, `transformOrigin: Item.Top` (grow out of the bar),
 
 Flyout anchor map: launcher icon → Spotlight, Clipboard, Keybinds ·
 clock and bell → DayPanel (both land on the same surface) · clock cluster →
-SystemMonitor · Quick Actions chevron → WallpaperPicker, QuickActions ·
+SystemMonitor · Quick Actions chevron → QuickActions ·
 their own bar icons → ConnectivityModule, AudioPowerModule.
 
 Each modal exposes:
@@ -311,9 +311,11 @@ a value change.
 - **`SystemMonitor`** (`Super+M`) — CPU + per-core grid, RAM, all mounted
   filesystems, CPU/NVMe temps, fans, uptime. Backed by `scripts/sysinfo.sh`
   emitting a single JSON line every 1.5s.
-- **`WallpaperPicker`** — 3-column scrolling grid of thumbnails from
-  `~/Pictures/wallpapers`. Click sets via `scripts/wallpaper.sh <path>`.
-  Opened from Quick Actions' Wallpaper tile.
+- **`WallpaperDeck`** (`Super+W`) — a fanned hand of wallpaper cards along
+  the bottom of the focused monitor. Hold Super and tap W to turn over the
+  next card, dealt from a shuffle of `~/Pictures/wallpapers`; releasing Super
+  applies it via `scripts/wallpaper.sh <path>`. Not a flyout — a bottom-
+  anchored, click-through overlay with no anchor item.
 - **`RegionSelector`** (`Super+Shift+S`) — full-screen dim overlay with
   click-drag region selection, live dimensions readout, multi-monitor-aware
   coordinate translation. Pipes the resulting `"X,Y WxH"` to

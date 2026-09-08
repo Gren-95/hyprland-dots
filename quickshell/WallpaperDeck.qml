@@ -1,16 +1,16 @@
-// Wallpaper deck — the Super+W half of the wallpaper picker.
+// Wallpaper deck — the wallpaper chooser, on Super+W.
 //
 // Same shape as the workspace overview: hold Super to keep the deck up, tap W
 // to turn over the next card, release Super to apply whatever is on top. The
 // deal order is a shuffle, so W walks the whole collection without repeats
 // rather than stepping through it alphabetically.
 //
-// Commit-on-release rides the quickshell:supertap shortcut, which is bound to
-// Super itself — see commitIfOpen(), the same entry point WorkspaceOverview
-// uses.
+// Commit-on-release comes from a release bind in hypr/modules/keys.lua, with
+// an evdev poll of the actual key state as the backstop — see settleTimer for
+// why neither the shortcut's own release event nor a plain timer was enough.
 //
-// The file list and the apply command live in WallpaperPicker, handed in as
-// `picker` — this is the shuffle interaction and nothing else.
+// Owns the whole job: listing $wallpaperDir, the shuffle, and handing the
+// chosen file to scripts/wallpaper.sh.
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
@@ -20,15 +20,40 @@ import Quickshell.Wayland
 Scope {
     id: root
 
-    property var picker
     property bool open: false
 
-    // Shuffled positions into picker.wallpapers, dealt in order — a real
+    // Every image under the wallpaper dir, sorted; the deck deals from these.
+    property var wallpapers: []
+    function refresh() { if (!listProc.running) listProc.running = true }
+
+    Process {
+        id: listProc
+        command: ["sh", "-c",
+            "find " + settingsStore.wallpaperDir + " -type f \\( " +
+            "-iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' " +
+            "-o -iname '*.webp' \\) | sort"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.wallpapers = text.trim().split("\n").filter(s => s.length > 0);
+            }
+        }
+    }
+
+    // Detached: wallpaper.sh outlives the call, and nothing here waits on it.
+    Process { id: setProc; command: [] }
+    function _apply(path) {
+        setProc.command = ["bash", Quickshell.env("HOME") + "/.config/scripts/wallpaper.sh", path];
+        setProc.startDetached();
+        accentService.refreshSoon();   // re-extract the auto accent
+    }
+
+    // Shuffled positions into wallpapers, dealt in order — a real
     // shuffle, so nothing repeats until the deck runs out.
     property var order: []
     property int pos: 0
 
-    readonly property var files: root.picker ? root.picker.wallpapers : []
+    readonly property var files: root.wallpapers
     // Offset is signed: the fan shows cards either side of the one in hand.
     function _at(offset) {
         const n = root.order.length;
@@ -64,14 +89,14 @@ Scope {
     // Every W press while Super is down. The first one opens the deck on a
     // fresh shuffle; the rest turn over the next card.
     function step() {
-        if (!root.picker || root.files.length === 0) return;
+        if (root.files.length === 0) return;
         settleTimer.restart();
         if (!root.open) {
             root._reshuffle();
             root.open = true;
             // Re-list in the background while this deck is up, so wallpapers
             // added since the last deal show up in the next one.
-            root.picker.refresh();
+            root.refresh();
             return;
         }
         root.pos = (root.pos + 1) % root.order.length;
@@ -82,7 +107,7 @@ Scope {
         settleTimer.stop();
         if (!root.open) return;
         root.open = false;
-        if (root.topFile !== "") root.picker.apply(root.topFile);
+        if (root.topFile !== "") root._apply(root.topFile);
     }
     function close() { settleTimer.stop(); root.open = false; }
 
@@ -136,10 +161,9 @@ Scope {
         }
     }
 
-    // The list is otherwise only built when the picker opens, and the first
-    // Super+W of a session would have nothing to deal — so ask for it once at
-    // startup and the very first press turns over a card.
-    Component.onCompleted: if (root.picker) root.picker.refresh()
+    // Built once at startup so the very first Super+W of a session already
+    // has a card to turn over.
+    Component.onCompleted: root.refresh()
 
     Variants {
         model: Quickshell.screens

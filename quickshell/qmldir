@@ -61,7 +61,6 @@ TrayItem TrayItem.qml
 VolumeSlider VolumeSlider.qml
 VpnPeerRow VpnPeerRow.qml
 WallpaperDeck WallpaperDeck.qml
-WallpaperPicker WallpaperPicker.qml
 WeatherCard WeatherCard.qml
 WeatherService WeatherService.qml
 WifiNetworkRow WifiNetworkRow.qml

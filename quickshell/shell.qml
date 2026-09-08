@@ -50,8 +50,7 @@ Scope {
     ScreenRecorder { id: recorder }
     PolkitPrompt { id: polkit }
     SystemMonitor { id: sysmon }
-    WallpaperPicker { id: wallpaperPicker }
-    WallpaperDeck { id: wallpaperDeck; picker: wallpaperPicker }
+    WallpaperDeck { id: wallpaperDeck }
     RegionSelector { id: regionSelector }
     ScreenshotActions { id: screenshotActions }
 
@@ -120,7 +119,6 @@ Scope {
                 const qaOr = () => quickMod.visible ? quickMod : null;
                 clipboard.anchorBar = Qt.binding(() => shellRoot.activeBar);       clipboard.anchorItem = Qt.binding(qaOr);
                 keybinds.anchorBar = Qt.binding(() => shellRoot.activeBar);        keybinds.anchorItem = Qt.binding(qaOr);
-                wallpaperPicker.anchorBar = Qt.binding(() => shellRoot.activeBar); wallpaperPicker.anchorItem = Qt.binding(qaOr);
                 sysmon.anchorBar = Qt.binding(() => shellRoot.activeBar);          sysmon.anchorItem = clockAnchor;
             }
 
