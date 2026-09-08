@@ -14,6 +14,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Io
 import Quickshell.Wayland
 
 Scope {
@@ -87,21 +88,52 @@ Scope {
 
     // Hyprland never delivers the Super-release event for a global shortcut —
     // measured: quickshell sees "pressed" for the SUPER + Super_L bind and
-    // never the matching release — so the deck cannot be told when the key
-    // came up. This is the fallback that makes the gesture work anyway: a
-    // second with no further W press is read as "they let go", and the card in
-    // hand is applied. Half a second: long enough to tap W again at any
-    // sensible speed, short enough that letting go feels immediate.
+    // never the matching release — so the deck is not told when the key came
+    // up. The key state itself is readable though: evdev knows, and evtest
+    // --query reports it in about 3ms without root for anyone in the input
+    // group. So poll it rather than guessing from a delay, and the deck stays
+    // up for as long as Super is genuinely held, however long you pause.
     //
-    // The release bind in hypr/modules/keys.lua normally beats it there.
-    // Whichever arrives first wins: commitIfOpen closes the deck, so the other
-    // is a no-op.
-    readonly property int settleDelay: 500
+    // The release bind in hypr/modules/keys.lua normally beats the poll to it.
+    // Whichever gets there first wins: commitIfOpen closes the deck, so the
+    // other is a no-op.
+    property bool probeUsable: true
+    readonly property int pollInterval: 120     // while the probe works
+    readonly property int settleDelay: 500      // fallback: time since last W
     Timer {
         id: settleTimer
-        interval: root.settleDelay
+        interval: root.probeUsable ? root.pollInterval : root.settleDelay
         repeat: false
-        onTriggered: root.commitIfOpen()
+        onTriggered: {
+            if (!root.probeUsable) { root.commitIfOpen(); return; }
+            superProbe.running = false;
+            superProbe.running = true;
+        }
+    }
+    // Exits 10 while either Super key is down, 0 once both are up. Any other
+    // code means the probe is unusable here — no evtest, no readable device —
+    // and the deck falls back to committing on a quiet half second, which is
+    // how it behaved before.
+    Process {
+        id: superProbe
+        command: ["sh", "-c",
+            "for d in /dev/input/by-path/*-event-kbd; do " +
+            "[ -r \"$d\" ] || continue; " +
+            "evtest --query \"$d\" EV_KEY KEY_LEFTMETA;  [ $? -eq 10 ] && exit 10; " +
+            "evtest --query \"$d\" EV_KEY KEY_RIGHTMETA; [ $? -eq 10 ] && exit 10; " +
+            "done; exit 0"]
+        running: false
+        onExited: (code) => {
+            if (!root.open) return;
+            if (code === 10) { settleTimer.restart(); return; }        // still held
+            if (code !== 0) {
+                console.warn("wallpaper deck: Super probe unusable (exit", code + "), falling back to a timer");
+                root.probeUsable = false;
+                settleTimer.restart();
+                return;
+            }
+            root.commitIfOpen();
+        }
     }
 
     // The list is otherwise only built when the picker opens, and the first
