@@ -39,6 +39,19 @@ if status is-interactive
     abbr -a nf  fastfetch
     abbr -a cls clear
 
+    # ===== fzf =====
+    # Colours from quickshell/Theme.qml. bg:-1 keeps the terminal's own
+    # background so kitty's transparency still shows through. The behaviour
+    # flags mirror what fzf.fish would otherwise set as its defaults - setting
+    # this variable at all means the plugin stops supplying them.
+    set -gx FZF_DEFAULT_OPTS "\
+--cycle --layout=reverse --border --height=90% --preview-window=wrap --marker='*' \
+--color=fg:#d6d3d1,fg+:#fafaf9,bg:-1,bg+:#332e2b \
+--color=hl:#3b82f6,hl+:#60a5fa \
+--color=info:#78716c,prompt:#3b82f6,pointer:#3b82f6 \
+--color=marker:#22c55e,spinner:#a78bfa,header:#78716c \
+--color=border:#3a3633,query:#fafaf9"
+
     # ===== Directory jumping =====
     # zoxide replaces the old `z` plugin. Guarded because this config syncs to
     # machines that may not have the binary installed yet.
