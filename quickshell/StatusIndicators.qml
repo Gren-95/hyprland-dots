@@ -134,6 +134,6 @@ RowLayout {
     Dot { glyph: "󰑊"; tint: Theme.accent.red;    on: si.recording;   pulse: true; tip: "Screen recording" }
     Dot { glyph: "󰢹"; tint: Theme.accent.blue;   on: si.remoteOn;     tip: "Remote access · WayVNC :5900" }
     Dot { glyph: "󰅶"; tint: Theme.accent.yellow; on: si.sleepInhibit; tip: si.sleepReason }
-    Dot { glyph: "󰋩"; tint: "#f59e0b";           on: si.immichOn;     tip: "Immich photo sync on" }
-    Dot { glyph: "󰝚"; tint: "#818cf8";           on: si.jellyfinOn;   tip: "Jellyfin music sync on" }
+    Dot { glyph: "󰋩"; tint: Theme.accent.orange;           on: si.immichOn;     tip: "Immich photo sync on" }
+    Dot { glyph: "󰝚"; tint: Theme.accent.purple;           on: si.jellyfinOn;   tip: "Jellyfin music sync on" }
 }

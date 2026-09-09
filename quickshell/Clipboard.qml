@@ -310,14 +310,14 @@ Scope {
                             implicitWidth: wipeText.implicitWidth + 16
                             implicitHeight: 20
                             radius: 4 * Theme.radiusScale
-                            color: wipeMouse.containsMouse ? "#7f1d1d" : "transparent"
-                            border.color: "#7f1d1d"
+                            color: wipeMouse.containsMouse ? Theme.accent.redDeep : "transparent"
+                            border.color: Theme.accent.redDeep
                             border.width: 1
                             Text {
                                 id: wipeText
                                 anchors.centerIn: parent
                                 text: "󰩺  Delete all"
-                                color: wipeMouse.containsMouse ? Theme.fg : "#f87171"
+                                color: wipeMouse.containsMouse ? Theme.fg : Theme.accent.redSoft
                                 font.family: Theme.font
                                 font.pixelSize: Theme.fontSize.sm
                             }

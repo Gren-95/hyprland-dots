@@ -333,7 +333,7 @@ Scope {
             Text {
                 anchors.centerIn: parent
                 text: ws.workspace ? ws.workspace.name.replace(/^#/, "") : ""
-                color: (ws.isActive || ws.highlighted) ? "#0a0a0a" : Theme.fgMuted
+                color: (ws.isActive || ws.highlighted) ? Theme.fgOnAccent : Theme.fgMuted
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSize.base
                 font.bold: true
@@ -350,7 +350,7 @@ Scope {
             }
             height: ws.previewH - 12
             radius: 6 * Theme.radiusScale
-            color: "#0c0a09"
+            color: Theme.fgOnAccent
             border.color: Theme.border
             border.width: 1
             clip: true
@@ -369,7 +369,7 @@ Scope {
                     Rectangle {
                         anchors.fill: parent
                         radius: 3 * Theme.radiusScale
-                        color: modelData.focused ? "#1e293b" : Theme.bg
+                        color: modelData.focused ? Theme.bgActive : Theme.bg
                         border.color: modelData.focused ? Theme.accent.blue : Theme.border
                         border.width: 1
                         clip: true

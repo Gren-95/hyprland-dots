@@ -123,7 +123,7 @@ Rectangle {
             Text {
                 anchors.centerIn: parent
                 text: "↗"
-                color: vrow.isExitNode ? "#0a0a0a" : Theme.muted
+                color: vrow.isExitNode ? Theme.fgOnAccent : Theme.muted
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSize.sm
                 font.bold: true

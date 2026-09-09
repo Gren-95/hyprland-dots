@@ -128,7 +128,7 @@ Scope {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 42
                         radius: 8 * Theme.radiusScale
-                        color: "#0c0a09"
+                        color: Theme.fgOnAccent
                         border.color: passwordField.activeFocus ? Theme.accent.purple : Theme.border
                         border.width: 1
                         visible: root.flow && root.flow.isResponseRequired
@@ -187,7 +187,7 @@ Scope {
                         Layout.fillWidth: true
                         visible: root.flow && root.flow.supplementaryMessage
                         text: root.flow ? root.flow.supplementaryMessage : ""
-                        color: root.flow && root.flow.supplementaryIsError ? "#f87171" : Theme.muted
+                        color: root.flow && root.flow.supplementaryIsError ? Theme.accent.redSoft : Theme.muted
                         font.family: Theme.font
                         font.pixelSize: Theme.fontSize.sm
                         wrapMode: Text.WordWrap
@@ -229,11 +229,11 @@ Scope {
                             Layout.preferredWidth: 110
                             Layout.preferredHeight: 32
                             radius: 8 * Theme.radiusScale
-                            color: okMouse.containsMouse ? "#7c3aed" : Theme.accent.purple
+                            color: okMouse.containsMouse ? Theme.accent.purpleDeep : Theme.accent.purple
                             Text {
                                 anchors.centerIn: parent
                                 text: "Authenticate"
-                                color: "#0a0a0a"
+                                color: Theme.fgOnAccent
                                 font.family: Theme.font
                                 font.pixelSize: Theme.fontSize.base
                                 font.bold: true

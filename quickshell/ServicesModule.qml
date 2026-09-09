@@ -40,8 +40,8 @@ Item {
         { key: "dotwatch",           glyph: "󰼂", label: "Dotwatch",         detail: "hot-reloads edited dotfiles",     script: "dotwatch.sh" }
     ]
     readonly property var scheduled: [
-        { key: "immich",   glyph: "󰋩", label: "Immich sync",   accent: "#f59e0b",         detail: "photos, hourly (cron)" },
-        { key: "jellyfin", glyph: "󰝚", label: "Jellyfin sync", accent: "#818cf8",         detail: "" }
+        { key: "immich",   glyph: "󰋩", label: "Immich sync",   accent: Theme.accent.orange,         detail: "photos, hourly (cron)" },
+        { key: "jellyfin", glyph: "󰝚", label: "Jellyfin sync", accent: Theme.accent.purple,         detail: "" }
     ]
     readonly property var onDemand: [
         { key: "wayvnc", glyph: "󰢹", label: "Remote access", accent: Theme.accent.orange, detail: "VNC on :5900" },

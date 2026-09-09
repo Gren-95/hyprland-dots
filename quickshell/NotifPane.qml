@@ -48,14 +48,14 @@ Item {
                 implicitWidth: clearText.implicitWidth + 16
                 implicitHeight: 26
                 radius: 4 * Theme.radiusScale
-                color: clearMouse.containsMouse ? "#7f1d1d" : "transparent"
-                border.color: "#7f1d1d"
+                color: clearMouse.containsMouse ? Theme.accent.redDeep : "transparent"
+                border.color: Theme.accent.redDeep
                 border.width: 1
                 Text {
                     id: clearText
                     anchors.centerIn: parent
                     text: "Clear all"
-                    color: clearMouse.containsMouse ? Theme.fg : "#f87171"
+                    color: clearMouse.containsMouse ? Theme.fg : Theme.accent.redSoft
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.sm
                 }

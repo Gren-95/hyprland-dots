@@ -9,7 +9,7 @@ Rectangle {
     signal moved()
     implicitHeight: 18
     radius: height / 2
-    color: "#1f1c1a"
+    color: Theme.bgInset
     border.color: Theme.borderStrong
     border.width: 1
     Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }

@@ -52,6 +52,9 @@ Singleton {
     readonly property color muted:     "#a8a29e"
     readonly property color mutedDeep: "#78716c"
     readonly property color disabled:  "#57534e"
+    // Text and glyphs drawn on top of an accent or otherwise light fill,
+    // where fg would disappear.
+    readonly property color fgOnAccent: "#0c0a09"
 
     // Accents
     readonly property QtObject accent: QtObject {
@@ -65,6 +68,15 @@ Singleton {
         readonly property color pink:   "#f472b6"
         readonly property color teal:   "#34d399"
         readonly property color slate:  "#94a3b8"
+        // "Deep" variants back a filled control — an active toggle, the hover
+        // state of a destructive button. "Soft" variants are for text and
+        // glyphs sitting on a dark surface, where the base accent reads too
+        // heavy. Both were in use as bare literals across the shell before
+        // they were named here.
+        readonly property color redDeep:    "#7f1d1d"
+        readonly property color redSoft:    "#f87171"
+        readonly property color blueDeep:   "#1d4ed8"
+        readonly property color purpleDeep: "#7c3aed"
     }
 
     // Typography (scaled by the user's fontScale)

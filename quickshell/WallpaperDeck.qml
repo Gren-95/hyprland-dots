@@ -282,8 +282,8 @@ Scope {
         radius: 12 * Theme.radiusScale
         // A playing card's white border, so the fan reads as cards rather
         // than as floating thumbnails.
-        color: dc.highlighted ? "#f5f3f0" : "#c9c5c0"
-        border.color: dc.highlighted ? Theme.accentPrimary : "#8a8580"
+        color: dc.highlighted ? Theme.fg : Theme.fgMuted
+        border.color: dc.highlighted ? Theme.accentPrimary : Theme.mutedDeep
         border.width: dc.highlighted ? 3 : 1
         antialiasing: true
         Behavior on color        { ColorAnimation { duration: Theme.duration.fast } }

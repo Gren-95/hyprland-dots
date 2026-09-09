@@ -510,7 +510,7 @@ Scope {
                 Layout.preferredWidth: 32
                 Layout.preferredHeight: 32
                 radius: 6 * Theme.radiusScale
-                color: "#1d4ed8"
+                color: Theme.accent.blueDeep
                 Text {
                     anchors.centerIn: parent
                     text: "="

@@ -378,7 +378,7 @@ Scope {
                 Layout.preferredHeight: 26
                 Layout.alignment: Qt.AlignVCenter
                 radius: 5 * Theme.radiusScale
-                color: row.highlighted ? Theme.bg : "#1a1715"
+                color: row.highlighted ? Theme.bg : Theme.bgInset
                 border.color: row.highlighted ? Theme.disabled : Theme.border
                 border.width: 1
                 clip: true
@@ -419,7 +419,7 @@ Scope {
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
                 text: row.entry ? row.entry.action : ""
-                color: row.highlighted ? Theme.fgMuted : "#8d8985"
+                color: row.highlighted ? Theme.fgMuted : Theme.muted
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSize.base
                 elide: Text.ElideRight

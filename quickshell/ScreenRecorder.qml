@@ -119,7 +119,7 @@ Scope {
                 implicitHeight: hudRow.implicitHeight + 14
                 radius: 18 * Theme.radiusScale
                 color: Theme.bg
-                border.color: root._justStarted ? "#7f1d1d" : Theme.border
+                border.color: root._justStarted ? Theme.accent.redDeep : Theme.border
                 border.width: 1
                 opacity: root._showHud ? 1.0 : 0.0
                 Behavior on opacity { NumberAnimation { duration: Theme.duration.normal } }
@@ -158,14 +158,14 @@ Scope {
                         Layout.preferredWidth: stopText.implicitWidth + 18
                         Layout.preferredHeight: 24
                         radius: 12 * Theme.radiusScale
-                        color: stopMouse.containsMouse ? "#7f1d1d" : "transparent"
-                        border.color: "#7f1d1d"
+                        color: stopMouse.containsMouse ? Theme.accent.redDeep : "transparent"
+                        border.color: Theme.accent.redDeep
                         border.width: 1
                         Text {
                             id: stopText
                             anchors.centerIn: parent
                             text: "󰓛  Stop"
-                            color: stopMouse.containsMouse ? Theme.fg : "#f87171"
+                            color: stopMouse.containsMouse ? Theme.fg : Theme.accent.redSoft
                             font.family: Theme.font
                             font.pixelSize: Theme.fontSize.sm
                             font.bold: true
