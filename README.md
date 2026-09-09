@@ -76,7 +76,9 @@ Modals reachable from keybindings or the bar:
 
 Fish plugins are declared in [`fish/fish_plugins`](fish/fish_plugins) and restored by
 [fisher](https://github.com/jorgebucaran/fisher); the prompt is
-[tide](https://github.com/IlanCosman/tide).
+[tide](https://github.com/IlanCosman/tide). Its colours come from
+[`fish/tide-stone`](fish/tide-stone) — `fish_variables` is gitignored, so on a new
+machine apply them with `fish ~/.config/fish/tide-stone/apply.fish`.
 
 ## Install Dependencies (Nobara 44)
 
