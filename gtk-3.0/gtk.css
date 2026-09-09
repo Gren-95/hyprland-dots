@@ -5,13 +5,13 @@ menu,
     border: 1px solid #44403c;
     border-radius: 0.5rem;
     padding: 4px 0;
-    color: #f5f5f4;
+    color: #fafaf9;
 }
 
 menuitem,
 .menuitem {
     background-color: transparent;
-    color: #f5f5f4;
+    color: #fafaf9;
     padding: 6px 12px;
     border-radius: 0;
 }
@@ -19,7 +19,7 @@ menuitem,
 menuitem:hover,
 .menuitem:hover {
     background-color: #292524;
-    color: #f5f5f4;
+    color: #fafaf9;
 }
 
 menuitem:disabled,
