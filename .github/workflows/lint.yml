@@ -83,10 +83,12 @@ jobs:
 
       # A hardcoded home directory makes the config work only for its author.
       # Docs may spell out real paths; fish/functions/_tide_* and
-      # fish/functions/tide/ are vendored from the tide prompt.
+      # fish/functions/tide/ are vendored from the tide prompt, and
+      # btop/btop.conf is rewritten by btop itself and ships a
+      # disk_filter example spelling out a home path.
       - name: No hardcoded home directories
         run: |
-          if git grep -InE '/home/[a-z_][a-z0-9_-]*' -- . ':!*.md' ':!screenshots' ':!fish/functions/_tide_*' ':!fish/functions/tide'; then
+          if git grep -InE '/home/[a-z_][a-z0-9_-]*' -- . ':!*.md' ':!screenshots' ':!fish/functions/_tide_*' ':!fish/functions/tide' ':!btop/btop.conf'; then
             echo "::error::hardcoded home directory - use \$HOME or os.getenv(\"HOME\")"
             exit 1
           fi
