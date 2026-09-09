@@ -17,12 +17,15 @@ hl.config({
         gaps_in = 4,
         gaps_out = 4,
         border_size = 4,
+        -- Palette from quickshell/Theme.qml: the focused window carries
+        -- accentPrimary (blue -> blueBright), unfocused ones fade back to
+        -- Theme.borderStrong so focus is the only thing that draws the eye.
         col = {
             active_border = {
-                colors = {"rgba(33ccffee)", "rgba(00ff99ee)"},
+                colors = {"rgba(3b82f6ee)", "rgba(60a5faee)"},
                 angle = 45,
             },
-            inactive_border = "rgba(595959aa)",
+            inactive_border = "rgba(44403caa)",
         },
         allow_tearing = true,
         resize_on_border = true,
