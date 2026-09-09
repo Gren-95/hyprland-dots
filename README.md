@@ -72,6 +72,7 @@ Modals reachable from keybindings or the bar:
 - `fish` `fzf` `zoxide` — shell, fuzzy finder, directory jumping
 - `wayvnc` — optional VNC server (`Super+Ctrl+R`)
 - `ranger` — optional TUI file manager
+- `btop` — optional TUI system monitor
 
 Fish plugins are declared in [`fish/fish_plugins`](fish/fish_plugins) and restored by
 [fisher](https://github.com/jorgebucaran/fisher); the prompt is

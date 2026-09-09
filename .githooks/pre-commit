@@ -62,8 +62,10 @@ if [[ -f "$staged/hypr/hyprland.lua" ]]; then
 fi
 
 # Hygiene, straight off the index. Docs may spell out real paths;
-# fish/functions/_tide_* and fish/functions/tide/ are vendored.
-if git grep --cached -InE '/home/[a-z_][a-z0-9_-]*' -- . ':!*.md' ':!screenshots' ':!fish/functions/_tide_*' ':!fish/functions/tide' >&2; then
+# fish/functions/_tide_* and fish/functions/tide/ are vendored, and
+# btop/btop.conf is rewritten by btop itself and its shipped comments
+# spell out a disk_filter example containing a home path.
+if git grep --cached -InE '/home/[a-z_][a-z0-9_-]*' -- . ':!*.md' ':!screenshots' ':!fish/functions/_tide_*' ':!fish/functions/tide' ':!btop/btop.conf' >&2; then
     bad "hardcoded home directory - use \$HOME or os.getenv(\"HOME\")"
 else
     ok "no hardcoded home directories"

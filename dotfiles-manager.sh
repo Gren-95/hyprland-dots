@@ -21,6 +21,7 @@ CONFIG_ITEMS=(
     "wayvnc"
     "fish"
     "ranger"
+    "btop"
     "gtk-3.0"
     "gtk-4.0"
     "kdeglobals"
