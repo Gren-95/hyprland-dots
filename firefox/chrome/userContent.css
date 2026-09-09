@@ -1,0 +1,145 @@
+/* userContent.css — Firefox's built-in about: pages recoloured to the
+ * quickshell palette. Scoped to about: URLs only, so real websites keep
+ * their own colours.
+ *
+ * Tokens mirror quickshell/Theme.qml — keep in sync with userChrome.css.
+ * Variable names verified against the design-system stylesheets shipped in
+ * /usr/lib64/firefox/omni.ja (Firefox 155): the old --in-content-* set is
+ * gone, replaced by --background-color-*, --text-color-*, --button-* and
+ * --color-accent-*. New tab keeps its own --newtab-* set.
+ */
+
+@-moz-document url-prefix("about:") {
+  :root {
+    --qs-bg:            #1c1917;
+    --qs-bg-alt:        #292524;
+    --qs-bg-deep:       #16130f;
+    --qs-bg-hover:      #231f1d;
+    --qs-bg-active:     #332e2b;
+    --qs-border:        #3a3633;
+    --qs-border-subtle: #2a2624;
+    --qs-popup-border:  #78716c;
+    --qs-fg:            #fafaf9;
+    --qs-fg-muted:      #d6d3d1;
+    --qs-muted:         #a8a29e;
+    --qs-muted-deep:    #78716c;
+    --qs-disabled:      #57534e;
+    --qs-accent:        #3b82f6;
+    --qs-accent-bright: #60a5fa;
+    --qs-green:         #22c55e;
+    --qs-red:           #ef4444;
+
+    /* Shared design-system surfaces */
+    --background-color-canvas:         var(--qs-bg) !important;
+    --background-color-box:            var(--qs-bg-alt) !important;
+    --background-color-dimmed:         var(--qs-bg-hover) !important;
+    --background-color-dimmed-further: var(--qs-bg-active) !important;
+    --background-color-critical: color-mix(in srgb, var(--qs-red) 25%, var(--qs-bg)) !important;
+    --background-color-success:  color-mix(in srgb, var(--qs-green) 25%, var(--qs-bg)) !important;
+
+    --text-color:              var(--qs-fg) !important;
+    --text-color-deemphasized: var(--qs-muted) !important;
+    --text-color-disabled:     var(--qs-disabled) !important;
+
+    --border-color:              var(--qs-border) !important;
+    --border-color-deemphasized: var(--qs-border-subtle) !important;
+    --border-color-interactive:  var(--qs-border) !important;
+    --border-color-selected:     var(--qs-accent) !important;
+
+    --color-accent-primary:        var(--qs-accent) !important;
+    --color-accent-primary-hover:  var(--qs-accent-bright) !important;
+    --color-accent-primary-active: var(--qs-accent-bright) !important;
+    --focus-outline-color:         var(--qs-accent) !important;
+    --icon-color:                  var(--qs-fg-muted) !important;
+
+    --link-color:        var(--qs-accent-bright) !important;
+    --link-color-hover:  var(--qs-accent) !important;
+    --link-color-active: var(--qs-accent) !important;
+
+    --button-background-color:        var(--qs-bg-alt) !important;
+    --button-background-color-hover:  var(--qs-bg-hover) !important;
+    --button-background-color-active: var(--qs-bg-active) !important;
+    --button-text-color:              var(--qs-fg) !important;
+    --button-border-color:            var(--qs-border) !important;
+    --button-background-color-primary:       var(--qs-accent) !important;
+    --button-background-color-primary-hover: var(--qs-accent-bright) !important;
+    --button-text-color-primary:             #ffffff !important;
+
+    --input-text-border-color: var(--qs-border) !important;
+    --input-border-color:      var(--qs-border) !important;
+    --table-background-color:  var(--qs-bg-alt) !important;
+    --table-border-color:      var(--qs-border) !important;
+
+    /* New tab / home */
+    --newtab-background-color:           var(--qs-bg) !important;
+    --newtab-background-color-secondary: var(--qs-bg-alt) !important;
+    --newtab-background-card:            var(--qs-bg-alt) !important;
+    --newtab-element-hover-color:        var(--qs-bg-hover) !important;
+    --newtab-element-active-color:       var(--qs-bg-active) !important;
+    --newtab-element-secondary-color:    var(--qs-bg-alt) !important;
+    --newtab-text-primary-color:         var(--qs-fg) !important;
+    --newtab-contextual-text-primary-color:   var(--qs-fg) !important;
+    --newtab-contextual-text-secondary-color: var(--qs-muted) !important;
+    --newtab-primary-action-background:  var(--qs-accent) !important;
+    --newtab-button-background:          var(--qs-bg-alt) !important;
+    --newtab-button-hover-background:    var(--qs-bg-hover) !important;
+    --newtab-button-active-background:   var(--qs-bg-active) !important;
+    --newtab-button-text:                var(--qs-fg) !important;
+    --newtab-button-static-background:       var(--qs-bg-alt) !important;
+    --newtab-button-static-hover-background: var(--qs-bg-hover) !important;
+
+    scrollbar-width: thin;
+    scrollbar-color: var(--qs-muted-deep) transparent;
+  }
+
+  body {
+    background-color: var(--qs-bg) !important;
+    color: var(--qs-fg) !important;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--qs-accent) 45%, transparent) !important;
+  }
+
+  /* Text fields on about: pages read as inset wells, like the URL bar.
+   * Some of them (the Settings search box) hardcode their own dark grey
+   * instead of taking a token, so they need an element rule. */
+  input[type="text"],
+  input[type="search"],
+  input[type="url"],
+  input[type="number"],
+  input[type="password"],
+  textarea,
+  select,
+  #searchInput {
+    background-color: var(--qs-bg-deep) !important;
+    color: var(--qs-fg) !important;
+    border-color: var(--qs-border) !important;
+  }
+}
+
+/* Kill the white flash on blank documents. */
+@-moz-document url("about:blank"), url("about:newtab"), url("about:home") {
+  :root,
+  body {
+    background-color: #1c1917 !important;
+  }
+}
+
+/* The new-tab search box reads as an inset well, like the URL bar. */
+@-moz-document url("about:newtab"), url("about:home") {
+  .search-wrapper .search-handoff-button,
+  .search-wrapper input {
+    background-color: #16130f !important;
+    border: 1px solid #3a3633 !important;
+    border-radius: 6px !important;
+    color: #fafaf9 !important;
+    box-shadow: none !important;
+  }
+
+  .top-site-outer .tile,
+  .card-outer {
+    background-color: #292524 !important;
+    border: 1px solid #3a3633 !important;
+  }
+}

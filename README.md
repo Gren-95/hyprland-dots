@@ -124,6 +124,19 @@ The setup script will:
 - Configure GTK theme
 - Optionally generate an initials avatar for the lock screen
 
+Firefox is the one config the setup script cannot link for you: its
+chrome directory lives inside a profile whose name is generated at
+install time. Point it at the repo by hand, then restart Firefox:
+
+```bash
+cd ~/.config/mozilla/firefox
+profile=$(awk -F= '/^\[Install/{i=1} i && /^Default=/{print $2; exit}' profiles.ini)
+ln -s ~/dotfiles/firefox/chrome "$profile/chrome"
+```
+
+`toolkit.legacyUserProfileCustomizations.stylesheets` must be `true`
+in `about:config` for the stylesheets to load.
+
 ### Wallpapers
 
 Put your wallpapers in `~/Pictures/wallpapers/`. They are preloaded automatically on startup — no manual config needed. The lock screen background also updates to the current wallpaper automatically.

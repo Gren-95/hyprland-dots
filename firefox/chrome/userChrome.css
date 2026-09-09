@@ -1,0 +1,371 @@
+/* userChrome.css — Firefox browser UI recoloured to the quickshell palette.
+ *
+ * Tokens are copied from quickshell/Theme.qml (warm stone dark). Keep the two
+ * in sync: if Theme.qml changes, change the --qs-* block below.
+ * Requires toolkit.legacyUserProfileCustomizations.stylesheets = true (set in
+ * the profile's user.js).
+ *
+ * Surface language mirrors the shell: bar-like toolbars on Theme.bg, inset
+ * wells (the URL bar) on Theme.bgDeep, and popup surfaces on Theme.bgAlt with
+ * sharp corners and a 1px Theme.popupBorder frame (see PopupCard.qml).
+ *
+ * Two Firefox-specific constraints shaped this file, both verified against
+ * Firefox 155 on this machine:
+ *   - No default @namespace. browser.xhtml's root element is XHTML since
+ *     Firefox 70, so declaring the XUL namespace as default stops :root —
+ *     and everything keyed off it — from matching at all.
+ *   - ::part(content) does not match from a user stylesheet, and popup
+ *     colours are declared on the popup element rather than on :root, so
+ *     panels have to be reached through the variables in their own scope.
+ *     See the "Panels, menus, popups" section.
+ *
+ * Variable names were taken from the shipped stylesheets in
+ * /usr/lib64/firefox/omni.ja and /usr/lib64/firefox/browser/omni.ja; Firefox
+ * declares them inside @layer tokens-*, so unlayered rules here take
+ * precedence. !important additionally keeps them ahead of the active
+ * lightweight theme.
+ */
+
+:root {
+  /* ===== Palette — mirrors quickshell/Theme.qml ===== */
+  --qs-bg:            #1c1917;
+  --qs-bg-alt:        #292524;
+  --qs-bg-deep:       #16130f;
+  --qs-bg-hover:      #231f1d;
+  --qs-bg-active:     #332e2b;
+  --qs-bg-inset:      #1a1716;
+
+  --qs-border:        #3a3633;
+  --qs-border-subtle: #2a2624;
+  --qs-border-strong: #44403c;
+  --qs-popup-border:  #78716c;
+
+  --qs-fg:            #fafaf9;
+  --qs-fg-dim:        #e7e5e4;
+  --qs-fg-muted:      #d6d3d1;
+  --qs-muted:         #a8a29e;
+  --qs-muted-deep:    #78716c;
+  --qs-disabled:      #57534e;
+
+  /* accentPrimary = "blue" in quickshell/settings/accent-primary */
+  --qs-accent:        #3b82f6;
+  --qs-accent-bright: #60a5fa;
+  --qs-red:           #ef4444;
+  --qs-green:         #22c55e;
+
+  --qs-radius-sm:     6px;
+  --qs-radius-md:     8px;
+
+  /* ===== Window & toolbars ===== */
+  --lwt-accent-color:          var(--qs-bg) !important;
+  --lwt-accent-color-inactive: var(--qs-bg) !important;
+  --lwt-text-color:            var(--qs-fg) !important;
+  --toolbar-background-color:  var(--qs-bg) !important;
+  --toolbar-text-color:        var(--qs-fg) !important;
+  --tabpanel-background-color: var(--qs-bg) !important;
+  --chrome-content-separator-color: var(--qs-border) !important;
+
+  --toolbarbutton-icon-fill:              var(--qs-fg-muted) !important;
+  --toolbarbutton-icon-fill-attention:    var(--qs-accent-bright) !important;
+  --toolbarbutton-background-color-hover:  var(--qs-bg-hover) !important;
+  --toolbarbutton-background-color-active: var(--qs-bg-active) !important;
+  --toolbarbutton-outline-color-hover:     transparent !important;
+  --toolbarbutton-outline-color-active:    transparent !important;
+  --toolbarbutton-border-radius:           var(--qs-radius-sm) !important;
+
+  /* ===== Tabs ===== */
+  --tab-background-color-selected: var(--qs-bg-active) !important;
+  --tab-background-color-hover:    var(--qs-bg-hover) !important;
+  --tab-selected-textcolor:        var(--qs-fg) !important;
+  --tab-selected-outline-color:    transparent !important;
+  --tab-box-shadow-selected:       none !important;
+  --tab-border-radius:             var(--qs-radius-sm) !important;
+
+  /* ===== URL bar & its results view ===== */
+  --toolbar-field-background-color:       var(--qs-bg-deep) !important;
+  --toolbar-field-background-color-focus: var(--qs-bg-deep) !important;
+  --toolbar-field-text-color:             var(--qs-fg) !important;
+  --toolbar-field-text-color-focus:       var(--qs-fg) !important;
+  --toolbar-field-border-color:           var(--qs-border) !important;
+  --toolbar-field-border-color-focus:     var(--qs-accent) !important;
+
+  --urlbar-border-radius:                  var(--qs-radius-sm) !important;
+  --urlbar-box-background-color:           var(--qs-bg-alt) !important;
+  --urlbar-box-background-color-hover:     var(--qs-bg-hover) !important;
+  --urlbar-box-background-color-active:    var(--qs-bg-active) !important;
+  --urlbar-box-background-color-focus:     var(--qs-bg-active) !important;
+  --urlbar-box-text-color:                 var(--qs-fg-muted) !important;
+  --urlbar-box-text-color-hover:           var(--qs-fg) !important;
+
+  --urlbarview-background-color-selected: var(--qs-bg-active) !important;
+  --urlbarview-text-color-selected:       var(--qs-fg) !important;
+  --urlbarview-background-color-hover:    var(--qs-bg-hover) !important;
+  --urlbarview-text-color-secondary:      var(--qs-muted) !important;
+  --urlbarview-separator-color:           var(--qs-border) !important;
+
+  /* ===== Shared design-system surfaces ===== */
+  --background-color-canvas:      var(--qs-bg) !important;
+  --background-color-box:         var(--qs-bg-alt) !important;
+  --background-color-dimmed:      var(--qs-bg-hover) !important;
+  --background-color-dimmed-further: var(--qs-bg-active) !important;
+  --text-color:                   var(--qs-fg) !important;
+  --text-color-deemphasized:      var(--qs-muted) !important;
+  --text-color-disabled:          var(--qs-disabled) !important;
+  --border-color:                 var(--qs-border) !important;
+  --border-color-deemphasized:    var(--qs-border-subtle) !important;
+  --border-color-interactive:     var(--qs-border-strong) !important;
+  --border-color-selected:        var(--qs-accent) !important;
+  --focus-outline-color:          var(--qs-accent) !important;
+  --color-accent-primary:         var(--qs-accent) !important;
+  --color-accent-primary-hover:   var(--qs-accent-bright) !important;
+  --color-accent-primary-active:  var(--qs-accent-bright) !important;
+  --link-color:                   var(--qs-accent-bright) !important;
+  --link-color-hover:             var(--qs-accent) !important;
+  --icon-color:                   var(--qs-fg-muted) !important;
+
+  --button-background-color:        var(--qs-bg-alt) !important;
+  --button-background-color-hover:  var(--qs-bg-hover) !important;
+  --button-background-color-active: var(--qs-bg-active) !important;
+  --button-text-color:              var(--qs-fg) !important;
+  --button-border-color:            var(--qs-border) !important;
+  --button-border-radius:           var(--qs-radius-sm) !important;
+  --button-background-color-primary:       var(--qs-accent) !important;
+  --button-background-color-primary-hover: var(--qs-accent-bright) !important;
+  --button-text-color-primary:             #ffffff !important;
+
+  --input-text-border-color: var(--qs-border) !important;
+  --input-border-color:      var(--qs-border) !important;
+
+  /* ===== Sidebar ===== */
+  --sidebar-background-color: var(--qs-bg) !important;
+  --sidebar-text-color:       var(--qs-fg) !important;
+  --sidebar-border-color:     var(--qs-border) !important;
+
+  /* Thin, low-contrast scrollbars, like ThinScrollBar.qml. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--qs-muted-deep) transparent;
+}
+
+/* ===== Window & toolbar surfaces ===== */
+#main-window,
+#browser,
+#tabbrowser-tabbox {
+  background-color: var(--qs-bg) !important;
+}
+
+#navigator-toolbox {
+  background-color: var(--qs-bg) !important;
+  border-bottom: 1px solid var(--qs-border-subtle) !important;
+}
+
+#TabsToolbar,
+#nav-bar,
+#PersonalToolbar {
+  background-color: var(--qs-bg) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* The shell separates stacked surfaces with a hairline, not a shadow. */
+#nav-bar {
+  border-top: 1px solid var(--qs-border-subtle) !important;
+}
+
+/* ===== Tabs ===== */
+.tabbrowser-tab .tab-background {
+  border-radius: var(--qs-radius-sm) var(--qs-radius-sm) 0 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin-block: 2px 0 !important;
+}
+
+.tabbrowser-tab:hover:not([selected]) .tab-background {
+  background-color: var(--qs-bg-hover) !important;
+}
+
+/* Selected tab reads like an active pill: raised surface + accent edge. */
+.tabbrowser-tab[selected] .tab-background,
+.tabbrowser-tab[multiselected] .tab-background {
+  background-color: var(--qs-bg-active) !important;
+  background-image: none !important;
+  box-shadow: inset 0 2px 0 0 var(--qs-accent) !important;
+}
+
+.tab-label {
+  color: var(--qs-fg-muted) !important;
+}
+
+.tabbrowser-tab[selected] .tab-label {
+  color: var(--qs-fg) !important;
+}
+
+.tabbrowser-tab[pending] .tab-label {
+  color: var(--qs-muted) !important;
+}
+
+.tab-close-button:hover {
+  background-color: var(--qs-red) !important;
+  fill: #ffffff !important;
+}
+
+/* ===== URL bar & search ===== */
+#urlbar-background,
+#searchbar {
+  background-color: var(--qs-bg-deep) !important;
+  border: 1px solid var(--qs-border) !important;
+  border-radius: var(--qs-radius-sm) !important;
+  box-shadow: none !important;
+}
+
+#urlbar[focused="true"] > #urlbar-background {
+  border-color: var(--qs-accent) !important;
+  outline: 1px solid color-mix(in srgb, var(--qs-accent) 45%, transparent) !important;
+  outline-offset: -2px !important;
+}
+
+#urlbar-input,
+#searchbar .searchbar-textbox {
+  color: var(--qs-fg) !important;
+}
+
+#urlbar-input::selection,
+.searchbar-textbox::selection {
+  background-color: color-mix(in srgb, var(--qs-accent) 45%, transparent) !important;
+  color: var(--qs-fg) !important;
+}
+
+.urlbarView {
+  background-color: var(--qs-bg-alt) !important;
+  border-top: 1px solid var(--qs-border) !important;
+}
+
+.urlbarView-title {
+  color: var(--qs-fg) !important;
+}
+
+.urlbarView-secondary,
+.urlbarView-url {
+  color: var(--qs-muted) !important;
+}
+
+/* ===== Bookmarks toolbar ===== */
+.bookmark-item {
+  color: var(--qs-fg-muted) !important;
+  border-radius: var(--qs-radius-sm) !important;
+}
+
+.bookmark-item:hover {
+  background-color: var(--qs-bg-hover) !important;
+}
+
+/* ===== Panels, menus, popups =====
+ * Firefox declares these on the popup element itself (toolkit popup.css),
+ * not on :root, so they have to be set in the popup's own scope — a :root
+ * override never reaches them.
+ */
+menupopup,
+panel {
+  --panel-background-color: var(--qs-bg-alt) !important;
+  --panel-text-color:       var(--qs-fg) !important;
+  --panel-border-color:     var(--qs-popup-border) !important;
+  --panel-separator-color:  var(--qs-border) !important;
+  /* Popup surfaces are sharp-cornered in the shell (PopupCard.qml). */
+  --panel-border-radius:    0 !important;
+  --menuitem-border-radius: var(--qs-radius-sm) !important;
+
+  --background-color-canvas: var(--qs-bg-alt) !important;
+  --background-color-box:    var(--qs-bg-alt) !important;
+  --text-color:              var(--qs-fg) !important;
+  --text-color-deemphasized: var(--qs-muted) !important;
+  --text-color-disabled:     var(--qs-disabled) !important;
+  --border-color:            var(--qs-border) !important;
+  --button-background-color:        var(--qs-bg-active) !important;
+  --button-background-color-hover:  var(--qs-bg-hover) !important;
+  --button-background-color-active: var(--qs-bg-active) !important;
+}
+
+/* Native menu rows use the -moz-menuhover system colours, which no variable
+ * covers — they need element rules. */
+menu[_moz-menuactive]:not([disabled]),
+menuitem[_moz-menuactive]:not([disabled]) {
+  background-color: var(--qs-bg-active) !important;
+  color: var(--qs-fg) !important;
+}
+
+menu[disabled],
+menuitem[disabled] {
+  color: var(--qs-disabled) !important;
+}
+
+menuseparator,
+toolbarseparator,
+.panel-separator {
+  border-color: var(--qs-border) !important;
+  background-color: var(--qs-border) !important;
+}
+
+toolbarbutton.subviewbutton:hover,
+.panel-subview-body toolbarbutton:hover {
+  background-color: var(--qs-bg-active) !important;
+  color: var(--qs-fg) !important;
+}
+
+.panel-header {
+  color: var(--qs-fg) !important;
+  border-bottom: 1px solid var(--qs-border) !important;
+}
+
+/* ===== Sidebar ===== */
+#sidebar-box,
+#sidebar-header,
+#sidebar {
+  background-color: var(--qs-bg) !important;
+  color: var(--qs-fg) !important;
+}
+
+#sidebar-header {
+  border-bottom: 1px solid var(--qs-border) !important;
+}
+
+#sidebar-splitter {
+  border: none !important;
+  background-color: var(--qs-border-subtle) !important;
+}
+
+/* ===== Findbar & status ===== */
+findbar {
+  background-color: var(--qs-bg-alt) !important;
+  color: var(--qs-fg) !important;
+  border-top: 1px solid var(--qs-border) !important;
+}
+
+findbar .findbar-textbox {
+  background-color: var(--qs-bg-deep) !important;
+  color: var(--qs-fg) !important;
+  border: 1px solid var(--qs-border) !important;
+  border-radius: var(--qs-radius-sm) !important;
+}
+
+findbar .findbar-textbox[status="notfound"] {
+  background-color: color-mix(in srgb, var(--qs-red) 25%, var(--qs-bg-deep)) !important;
+}
+
+#statuspanel-label {
+  background-color: var(--qs-bg-alt) !important;
+  color: var(--qs-fg-muted) !important;
+  border: 1px solid var(--qs-border) !important;
+  border-radius: 0 !important;
+}
+
+tooltip {
+  background-color: var(--qs-bg-alt) !important;
+  color: var(--qs-fg) !important;
+  border: 1px solid var(--qs-popup-border) !important;
+  border-radius: 0 !important;
+}
+
+#customization-container {
+  background-color: var(--qs-bg) !important;
+  color: var(--qs-fg) !important;
+}
