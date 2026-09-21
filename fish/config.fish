@@ -62,9 +62,12 @@ if status is-interactive
     # Reload (full restart, not just source — clears stale state).
     alias reload 'exec fish'
 
+    # Claude Code without permission prompts (`command claude` for the prompted version).
+    alias claude 'claude --dangerously-skip-permissions'
+
 end
 
 # Outside is-interactive: scripts + non-interactive shells (Claude Code,
 # editor terminals) inherit these.
-set -gx PATH $HOME/.local/bin $HOME/bin $HOME/.nix-profile/bin ~/.npm-global/bin $PATH
+set -gx PATH $HOME/.bun/bin $HOME/.local/bin $HOME/bin $HOME/.nix-profile/bin ~/.npm-global/bin $PATH
 set -gx RUSTC_WRAPPER sccache
