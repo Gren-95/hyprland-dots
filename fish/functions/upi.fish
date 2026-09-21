@@ -1,9 +1,3 @@
-function upi --description "Update everything: backup, dnf, flatpak, fisher"
-    echo "Updating system..."
-    sudo timeshift --create
-    and sudo dnf update
-    and flatpak update
-    and sudo dnf autoremove
-    and flatpak remove --unused
-    and fisher update
+function upi --description "Update everything: snapshot, dnf, flatpak, npm, uv, bun, fisher"
+    $HOME/.config/scripts/update-all.sh $argv
 end
