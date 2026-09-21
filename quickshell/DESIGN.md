@@ -64,10 +64,10 @@ Hyprland dispatch wrapper. `Hypr.dispatch("workspace e+1")` instead of
 spawning `hyprctl dispatch …` by hand.
 
 ### `TailscaleService.qml`
-Wraps the `tailscale` CLI. Properties: `state`, `tailnet`, `host`, `selfIPs`,
-`peers`, `exitNodeId`, `daemonOk`, `running`. Methods: `refresh()`, `toggle()`,
-`setExitNode(id)`, `copyIp(ip)`. Background poll every 15s, fast poll every 4s
-while the VPN tab is open.
+Read-only `tailscale status` poll (every 15s) behind the "VPN up/down" event
+toasts. Properties: `state`, `tailnet`, `running`. Method: `refresh()`.
+Control (on/off) is nm-applet's job in the tray, through the NetworkManager
+Tailscale VPN plugin.
 
 ### `Settings.qml` (instantiated as `settingsStore`)
 Typed schema-driven settings engine. One tiny file per setting under
@@ -156,16 +156,15 @@ default, `edge: "right"` for toast-like sheets. Used by `PolkitPrompt`
 Pass content via `contentComponent: Component { … }`.
 
 ### `TabStrip`
-Rounded pill container for tab navigation. Used by `ConnectivityModule` and
-`AudioPowerModule`.
+Rounded pill container for tab navigation. Used by `AudioPowerModule`.
 
 ```qml
 TabStrip {
     activeId: mod.activeTab
     onPicked: (id) => mod.setTab(id)
     tabs: [
-        { glyph: "󰂯", label: "Bluetooth", accent: Theme.accent.blue, id: "bluetooth" },
-        { glyph: "󰖩", label: "Wi-Fi",     accent: Theme.accent.green, id: "wifi" }
+        { glyph: "󰕾", label: "Sound", accent: Theme.accent.blue, id: "sound" },
+        { glyph: "󰐥", label: "Power", accent: Theme.accent.red,  id: "power" }
     ]
 }
 ```

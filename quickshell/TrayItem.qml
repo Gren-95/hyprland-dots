@@ -13,6 +13,10 @@ Item {
     // tray context menu (a separate window) is open — otherwise the focus
     // grab would dismiss the flyout and destroy the menu under the cursor.
     readonly property bool menuOpen: menuAnchor.visible
+    // Papirus panel icons (nm-applet's nm-signal-*) colour themselves via a
+    // KDE ColorScheme stylesheet that Qt's SVG renderer ignores, so they draw
+    // black on the dark bar. Tint those apps to the theme text colour.
+    readonly property bool tinted: !!tray.item && tray.item.id === "nm-applet"
     Layout.fillHeight: true
     implicitWidth: 28
 
@@ -36,8 +40,11 @@ Item {
         asynchronous: true
         layer.enabled: true
         layer.effect: MultiEffect {
-            brightness: 0.6
-            saturation: -0.6
+            // Colorization keeps lightness, so lift the black glyph first.
+            brightness: tray.tinted ? 0.85 : 0.6
+            saturation: tray.tinted ? 0 : -0.6
+            colorization: tray.tinted ? 1 : 0
+            colorizationColor: Theme.fgMuted
         }
     }
 

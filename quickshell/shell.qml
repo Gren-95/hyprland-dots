@@ -101,9 +101,7 @@ Scope {
                     { name: "Default terminal",     glyph: "󰆍", accent: Theme.accent.teal,   keywords: "default app terminal shell", isToggle: false, run: () => spotlight.startPick("terminal") },
                     { name: "Default editor",       glyph: "󰷈", accent: Theme.accent.orange, keywords: "default app editor text",    isToggle: false, run: () => spotlight.startPick("editor") },
                     { name: "Default file manager", glyph: "󰉋", accent: Theme.accent.yellow, keywords: "default app files folder",   isToggle: false, run: () => spotlight.startPick("filemanager") },
-                    { name: "Bluetooth",      glyph: "󰂯", accent: Theme.accent.blue,   keywords: "bt network devices",              isToggle: false, run: () => btMod.openTab("bluetooth") },
-                    { name: "Wi-Fi",          glyph: "󰖩", accent: Theme.accent.green,  keywords: "wifi network internet",           isToggle: false, run: () => btMod.openTab("wifi", wifiIcon.visible ? wifiIcon : null) },
-                    { name: "VPN",            glyph: "󰒃", accent: Theme.accent.purple, keywords: "tailscale vpn exit node",         isToggle: false, run: () => btMod.openTab("vpn", vpnIcon.visible ? vpnIcon : null) },
+                    { name: "Bluetooth",      glyph: "󰂯", accent: Theme.accent.blue,   keywords: "bt devices",                      isToggle: false, run: () => btMod.toggleOpen() },
                     { name: "Sound",          glyph: "󰕾", accent: Theme.accent.blue,   keywords: "audio volume output input",       isToggle: false, run: () => apMod.openTab("sound") },
                     { name: "Power",          glyph: "󰐥", accent: Theme.accent.red,    keywords: "battery profile sleep reboot shutdown session", isToggle: false, run: () => apMod.openTab("power", batteryIcon.visible ? batteryIcon : null) },
                     { name: "Do Not Disturb", glyph: "󰂛", accent: Theme.accent.orange, keywords: "dnd mute quiet notifications",    isToggle: true,
@@ -325,9 +323,7 @@ Scope {
                         flyoutAnchor: null
                         // Bar modules that render as grid tiles when tucked.
                         moduleEntries: [
-                            { id: "network",      label: "Network",       glyph: () => "󰂯",              color: () => Theme.fgMuted,        open: (a) => btMod.openTab("bluetooth", a) },
-                            { id: "wifi",         label: "Wi-Fi",         glyph: () => wifiIcon.glyph,    color: () => wifiIcon.color,       open: (a) => btMod.openTab("wifi", a) },
-                            { id: "vpn",          label: "VPN",           glyph: () => vpnIcon.glyph,     color: () => vpnIcon.color,        open: (a) => btMod.openTab("vpn", a) },
+                            { id: "network",      label: "Bluetooth",     glyph: () => "󰂯",              color: () => Theme.fgMuted,        open: (a) => btMod.toggleOpen(a) },
                             { id: "audiopower",   label: "Sound",         glyph: () => "󰕾",              color: () => Theme.fgMuted,        open: (a) => apMod.openTab("sound", a) },
                             { id: "battery",      label: "Battery",       glyph: () => batteryIcon.glyph, color: () => batteryIcon.color,    open: (a) => apMod.openTab("power", a) },
                         ]
@@ -339,64 +335,15 @@ Scope {
                         id: servicesMod
                         parentBar: bar
                     }
-                    BarSep { visible: settingsStore.placement("network") === "bar" || settingsStore.placement("wifi") === "bar" || settingsStore.placement("vpn") === "bar" }
+                    BarSep { visible: settingsStore.placement("network") === "bar" }
 
                     ConnectivityModule {
                         id: btMod
                         parentBar: bar
                         visible: settingsStore.placement("network") === "bar"
                         flyoutAnchor: visible ? null : (quickMod.visible ? quickMod : null)
-                        // Ring: tabs are individual stops (bt -> wifi -> vpn).
-                        onNavigateNext: {
-                            if (activeTab === "bluetooth") setTab("wifi");
-                            else if (activeTab === "wifi") setTab("vpn");
-                            else { popupOpen = false; apMod.openAt("sound"); }
-                        }
-                        onNavigatePrev: {
-                            if (activeTab === "vpn") setTab("wifi");
-                            else if (activeTab === "wifi") setTab("bluetooth");
-                            else { popupOpen = false; quickMod.openAt(0); }
-                        }
-                    }
-
-                    // Wi-Fi indicator — opens the same popup as Bluetooth but
-                    // on the Wi-Fi tab.
-                    BarIcon {
-                        id: wifiIcon
-                        parentBar: bar
-                        visible: settingsStore.placement("wifi") === "bar"
-                        readonly property var dev: btMod.wifiDevice
-                        readonly property bool enabled: btMod.wifiEnabled
-                        readonly property bool connected: btMod.wifiConnected
-                        glyph: !enabled ? "󰖪"
-                            : connected ? "󰖩"
-                            : "󰤨"
-                        color: !enabled ? Theme.mutedDeep
-                            : connected ? Theme.accent.green
-                            : Theme.muted
-                        pixelSize: Theme.fontSize.md
-                        tooltip: (!enabled ? "Wi-Fi off"
-                            : connected && btMod.activeNetwork ? btMod.activeNetwork.name
-                            : "Wi-Fi")
-                        onClicked: btMod.openTab("wifi", wifiIcon)
-                    }
-
-                    // VPN indicator — a network satellite like the Wi-Fi icon:
-                    // always present, state shown by color, click opens the
-                    // Network flyout's VPN tab (toggle, peers, exit nodes).
-                    BarIcon {
-                        id: vpnIcon
-                        parentBar: bar
-                        visible: settingsStore.placement("vpn") === "bar"
-                        glyph: "󰒃"
-                        color: !TailscaleService.daemonOk ? Theme.mutedDeep
-                             : TailscaleService.running ? Theme.accent.purple
-                             : Theme.muted
-                        pixelSize: Theme.fontSize.md
-                        tooltip: (!TailscaleService.daemonOk ? "VPN daemon down"
-                            : TailscaleService.running ? (TailscaleService.tailnet || "VPN up")
-                            : "VPN off")
-                        onClicked: btMod.openTab("vpn", vpnIcon)
+                        onNavigateNext: { popupOpen = false; apMod.openAt("sound"); }
+                        onNavigatePrev: { popupOpen = false; quickMod.openAt(0); }
                     }
 
                     BarSep { visible: settingsStore.placement("audiopower") === "bar" || settingsStore.placement("battery") === "bar" || (micIcon.unmuted && settingsStore.placement("mic") === "bar") }
@@ -413,7 +360,7 @@ Scope {
                         }
                         onNavigatePrev: {
                             if (activeTab === "power") setTab("sound");
-                            else { popupOpen = false; btMod.setTab("vpn"); btMod.openAt(0); }
+                            else { popupOpen = false; btMod.openAt(0); }
                         }
                     }
 
@@ -515,7 +462,7 @@ Scope {
 
                 Connections {
                     target: quickMod
-                    function onNavigateNext() { quickMod.popupOpen = false; btMod.setTab("bluetooth"); btMod.openAt(0) }
+                    function onNavigateNext() { quickMod.popupOpen = false; btMod.openAt(0) }
                     function onNavigatePrev() { quickMod.popupOpen = false; dayPanel.openAt(0) }
                 }
                 Connections {
@@ -630,7 +577,7 @@ Scope {
                     appid: "quickshell"
                     name: "bluetooth"
                     description: "Toggle bluetooth menu"
-                    onPressed: btMod.openTab("bluetooth")
+                    onPressed: btMod.toggleOpen()
                 }
                 GlobalShortcut {
                     appid: "quickshell"

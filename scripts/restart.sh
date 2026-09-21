@@ -60,6 +60,7 @@ pkill -f power-auto.sh                 2>/dev/null
 pkill -f battery-notify.sh             2>/dev/null
 pkill -f dotwatch.sh                   2>/dev/null
 pkill -f "wl-paste.*cliphist"          2>/dev/null
+pkill -x nm-applet                     2>/dev/null
 # These two trap SIGTERM to release their D-Bus inhibitor. Signal them now and
 # SIGKILL further down: the work in between is the grace period, so we no
 # longer pay a dedicated sleep for it.
@@ -131,6 +132,10 @@ bash "$SCRIPTS/media-inhibit.sh"          >/dev/null 2>&1 &
 bash "$SCRIPTS/fullscreen-inhibit.sh"     >/dev/null 2>&1 &
 bash "$SCRIPTS/dotwatch.sh"               >/dev/null 2>&1 &
 wl-paste --watch cliphist store           >/dev/null 2>&1 &
+# nm-applet owns Wi-Fi, wired, the Wi-Fi password prompt and Tailscale (via
+# the NetworkManager Tailscale VPN plugin). Started after Quickshell, which
+# hosts the tray.
+nm-applet --indicator                     >/dev/null 2>&1 &
 # power-auto.sh is ALSO started by autostart.lua on hyprland.start. Starting it
 # here too raced the two copies at login; the pkill above clears any existing
 # one and this is the single owner.
@@ -160,6 +165,7 @@ report "media-inhibit"       "media-inhibit.sh"
 report "fullscreen-inhibit"  "fullscreen-inhibit.sh"
 report "cliphist"            "wl-paste.*cliphist"
 report "dotwatch"            "dotwatch.sh"
+report "nm-applet"           "nm-applet"            -x
 
 # WayVNC is not auto-started; stop a stale one (restart with Super+Shift+V).
 printf 'Running: %-22s ... ' "wayvnc"

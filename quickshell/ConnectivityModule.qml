@@ -2,30 +2,23 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell.Bluetooth
-import Quickshell.Networking
 
+// Bluetooth flyout. Wi-Fi, wired and Tailscale are handled by the nm-applet
+// tray app, not by the shell.
 Item {
     id: bt
     property var parentBar
     property bool popupOpen: false
     property bool pinned: false
     // Default flyout anchor (placement-aware, bound from shell.qml) and a
-    // per-open override set by openTab(name, from). Fallback: own icon.
+    // per-open override set by toggleOpen(from). Fallback: own icon.
     property Item flyoutAnchor: null
     property Item _openAnchor: null
-    // activeTab: "bluetooth", "wifi" or "vpn"
-    property string activeTab: "bluetooth"
-    // tabIndex: 0 = primary toggle (BT power / wifi enable), 1 = secondary
-    // toggle (scan / refresh), 2+ = item in the current tab's list. On the
-    // wifi tab a wired adapter (when present) is the first list item, the
-    // Wi-Fi networks follow shifted by wiredOffset.
+    // tabIndex: 0 = power toggle, 1 = scan toggle, 2+ = device in the list.
     property int tabIndex: 0
     signal navigateNext()
     signal navigatePrev()
-    readonly property var currentItems: activeTab === "wifi" ? (wiredDevice ? [wiredDevice] : []).concat(visibleNetworks)
-                                      : activeTab === "vpn"  ? TailscaleService.peers
-                                      : visibleDevices
-    readonly property int tabStopCount: 2 + currentItems.length
+    readonly property int tabStopCount: 2 + visibleDevices.length
     readonly property int selectedIndex: tabIndex >= 2 ? tabIndex - 2 : -1
     readonly property var adapter: Bluetooth.defaultAdapter
     readonly property bool powered: adapter && adapter.enabled
@@ -46,96 +39,19 @@ Item {
         });
     }
 
-    // ===== Wifi =====
-    readonly property var wifiDevice: {
-        const devs = Networking.devices ? Networking.devices.values : [];
-        for (const d of devs) {
-            if (d.type === DeviceType.Wifi) return d;
-        }
-        return null;
-    }
-    readonly property bool wifiEnabled: Networking.wifiEnabled
-    readonly property bool wifiConnected: wifiDevice ? wifiDevice.connected : false
-    readonly property var visibleNetworks: {
-        if (!wifiDevice || !wifiDevice.networks) return [];
-        const all = wifiDevice.networks.values || [];
-        return all.slice().sort((a, b) => {
-            if (a.connected !== b.connected) return a.connected ? -1 : 1;
-            if (a.known !== b.known) return a.known ? -1 : 1;
-            return (a.name || "").localeCompare(b.name || "");
-        });
-    }
-    readonly property var activeNetwork: {
-        for (const n of visibleNetworks) if (n.connected) return n;
-        return null;
-    }
-
-    // ===== Ethernet =====
-    // nmManaged filter keeps virtual wired devices (docker veth, bridges)
-    // out — only a real (built-in / USB / dock) adapter should show here.
-    readonly property var wiredDevice: {
-        const devs = Networking.devices ? Networking.devices.values : [];
-        for (const d of devs) {
-            if (d.type === DeviceType.Wired && d.nmManaged) return d;
-        }
-        return null;
-    }
-    readonly property bool wiredConnected: wiredDevice ? wiredDevice.connected : false
-    // Row-index shift the pinned wired row adds to the wifi list.
-    readonly property int wiredOffset: wiredDevice ? 1 : 0
-    function toggleWired() {
-        if (!wiredDevice) return;
-        if (wiredConnected) wiredDevice.disconnect();
-        else if (wiredDevice.network) wiredDevice.network.connect();
-    }
-
-    // Fast poll while the VPN tab is open (4 s).
-    Timer {
-        running: bt.popupOpen && bt.activeTab === "vpn"
-        interval: 4000
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: TailscaleService.refresh()
-    }
-
-    function setTab(name) {
-        if (activeTab === name) return;
-        activeTab = name;
-        tabIndex = 0;
-        if (name === "wifi" && wifiDevice) wifiDevice.scannerEnabled = true;
-        if (name === "vpn") TailscaleService.refresh();
-    }
-    // Toggle the popup; if it's already on this tab, close it. Otherwise
-    // switch to the tab and open. Called from the per-tab bar icons.
-    // `from` (optional) re-anchors the flyout under the bar item that opened
-    // it (wifi/vpn satellite icons, overflow rows) so the tail points at
-    // what was actually clicked. Omitted → default anchor.
-    function openTab(name, from) {
+    // Toggle the popup. `from` (optional) re-anchors the flyout under the
+    // bar item that opened it (overflow rows, spotlight). Omitted → default.
+    function toggleOpen(from) {
         _openAnchor = from ?? null;
-        if (popupOpen && activeTab === name) { popupOpen = false; }
-        else { setTab(name); popupOpen = true; }
+        popupOpen = !popupOpen;
     }
 
-    onPopupOpenChanged: {
-        if (popupOpen) {
-            tabIndex = 0;
-            if (activeTab === "wifi" && wifiDevice) wifiDevice.scannerEnabled = true;
-            if (activeTab === "vpn") TailscaleService.refresh();
-        } else {
-            if (wifiDevice) wifiDevice.scannerEnabled = false;
-        }
-    }
+    onPopupOpenChanged: if (popupOpen) tabIndex = 0
 
     function cycleTab(delta) {
         const n = tabStopCount;
         if (n <= 0) return;
         tabIndex = (tabIndex + delta + n) % n;
-    }
-    // Switch the active tab (Bluetooth → Wi-Fi → VPN), wrapping.
-    function cycleActiveTab(delta) {
-        const order = ["bluetooth", "wifi", "vpn"];
-        const i = order.indexOf(activeTab);
-        setTab(order[(i + delta + order.length) % order.length]);
     }
     function openAt(idx) {
         _openAnchor = null;   // ring hops open at the module's own anchor
@@ -149,47 +65,11 @@ Item {
         if (d.connected) d.disconnect();
         else d.connect();
     }
-    function activateNetwork(i) {
-        if (i < 0 || i >= visibleNetworks.length) return;
-        const n = visibleNetworks[i];
-        if (n.connected) {
-            n.disconnect();
-        } else {
-            n.connect();
-            // Close the popup so NetworkManager's password dialog (if it
-            // needs one) isn't hidden under our overlay surface.
-            popupOpen = false;
-        }
-    }
-    function togglePrimary() {
-        if (activeTab === "wifi") Networking.wifiEnabled = !Networking.wifiEnabled;
-        else if (activeTab === "vpn") TailscaleService.toggle();
-        else if (adapter) adapter.enabled = !adapter.enabled;
-    }
-    function toggleSecondary() {
-        if (activeTab === "wifi") { if (wifiDevice) wifiDevice.scannerEnabled = !wifiDevice.scannerEnabled; }
-        else if (activeTab === "vpn") TailscaleService.refresh();
-        else if (adapter) adapter.discovering = !adapter.discovering;
-    }
-    function activateCurrent(i) {
-        if (activeTab === "wifi") {
-            if (wiredDevice && i === 0) toggleWired();
-            else activateNetwork(i - wiredOffset);
-        }
-        else if (activeTab === "vpn") {
-            const p = TailscaleService.peers[i];
-            if (p) TailscaleService.copyIp(p.ips[0] || "");
-        }
-        else activateDevice(i);
-    }
-    function forgetCurrent(i) {
-        if (activeTab === "wifi") {
-            const n = visibleNetworks[i - wiredOffset];
-            if (n && n.known) n.forget();
-        } else if (activeTab === "bluetooth") {
-            const d = visibleDevices[i];
-            if (d) d.forget();
-        }
+    function togglePrimary() { if (adapter) adapter.enabled = !adapter.enabled; }
+    function toggleSecondary() { if (adapter) adapter.discovering = !adapter.discovering; }
+    function forgetDevice(i) {
+        const d = visibleDevices[i];
+        if (d) d.forget();
     }
 
     Layout.fillHeight: true
@@ -224,9 +104,7 @@ Item {
                 if (bt.adapter) bt.adapter.enabled = !bt.adapter.enabled;
                 return;
             }
-            // Open / close the popup, but always land on the Bluetooth tab
-            // when clicking the Bluetooth bar icon.
-            bt.openTab("bluetooth");
+            bt.toggleOpen();
         }
     }
 
@@ -234,7 +112,7 @@ Item {
     BarTooltip {
         bar: bt.parentBar
         target: bt
-        text: "Network · Super+Shift+B"
+        text: "Bluetooth · Super+Shift+B"
         active: btHover.hovered && !bt.popupOpen
     }
 
@@ -244,12 +122,11 @@ Item {
         anchorItem: bt._openAnchor ?? bt.flyoutAnchor ?? bt
         open: bt.popupOpen
         cardWidth: settingsStore.flyoutSize("network", "w", 360)
-        // Fixed height so switching tabs doesn't resize the Wayland surface.
         cardHeight: settingsStore.flyoutSize("network", "h", 460)
         pinned: bt.pinned
         onDismissed: bt.popupOpen = false
         onKeyPressed: (e) => {
-            const n = bt.currentItems.length;
+            const n = bt.visibleDevices.length;
             const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
             if (e.key === Qt.Key_Escape) {
                 bt.popupOpen = false;
@@ -260,18 +137,6 @@ Item {
             } else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
                 bt.navigatePrev();
                 e.accepted = true;
-            } else if (e.key === Qt.Key_Tab) {
-                // Tab = next tab. Shift+Tab arrives as Key_Tab+Shift on some
-                // setups, so honour the modifier here too.
-                bt.cycleActiveTab((e.modifiers & Qt.ShiftModifier) ? -1 : 1);
-                e.accepted = true;
-            } else if (e.key === Qt.Key_Backtab) {
-                // Shift+Tab on X11/Wayland usually emits Key_Backtab.
-                bt.cycleActiveTab(-1); e.accepted = true;
-            } else if ((e.modifiers & Qt.ShiftModifier) && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
-                bt.cycleActiveTab(1); e.accepted = true;
-            } else if ((e.modifiers & Qt.ShiftModifier) && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
-                bt.cycleActiveTab(-1); e.accepted = true;
             } else if (e.key === Qt.Key_Right || e.key === Qt.Key_L) {
                 bt.cycleTab(1); e.accepted = true;
             } else if (e.key === Qt.Key_Left || e.key === Qt.Key_H) {
@@ -279,7 +144,7 @@ Item {
             } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
                 if (bt.tabIndex === 0) bt.togglePrimary();
                 else if (bt.tabIndex === 1) bt.toggleSecondary();
-                else bt.activateCurrent(bt.selectedIndex);
+                else bt.activateDevice(bt.selectedIndex);
                 e.accepted = true;
             } else if (e.key === Qt.Key_Down || e.key === Qt.Key_J) {
                 if (n > 0) bt.tabIndex = bt.tabIndex < 2 ? 2 :
@@ -287,480 +152,142 @@ Item {
                 e.accepted = true;
             } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
                 // From the toggle row (tabIndex 0/1), Up wraps to the LAST
-                // list item rather than diving into the first one (which is
-                // what Down does). Was previously identical to Down.
+                // list item rather than diving into the first one.
                 if (n > 0) bt.tabIndex = bt.tabIndex < 2 ? (1 + n) :
                     (bt.selectedIndex > 0 ? bt.tabIndex - 1 : 1 + n);
                 e.accepted = true;
             } else if (e.key === Qt.Key_Delete || e.key === Qt.Key_Backspace) {
-                bt.forgetCurrent(bt.selectedIndex); e.accepted = true;
+                bt.forgetDevice(bt.selectedIndex); e.accepted = true;
             }
         }
 
         ColumnLayout {
-                id: contentCol
-                anchors.fill: parent
-                anchors.margins: Theme.spacing.lg
-                spacing: Theme.spacing.md
+            anchors.fill: parent
+            anchors.margins: Theme.spacing.lg
+            spacing: Theme.spacing.md
 
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Theme.spacing.md
+                PinButton {
+                    pinned: bt.pinned
+                    onToggled: bt.pinned = !bt.pinned
+                }
                 Text {
                     Layout.fillWidth: true
-                    text: "Network"
+                    text: "Bluetooth"
                     color: Theme.fg
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.md
                     font.bold: true
                     horizontalAlignment: Text.AlignHCenter
                 }
+            }
 
-                // ===== Header with pin + tab strip =====
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Theme.spacing.md
-                    PinButton {
-                        pinned: bt.pinned
-                        onToggled: bt.pinned = !bt.pinned
-                    }
-
-                    // Tab strip: pills sharing a single rounded container
-                    TabStrip {
-                        Layout.fillWidth: true
-                        activeId: bt.activeTab
-                        onPicked: (id) => bt.setTab(id)
-                        tabs: [
-                            { glyph: "󰂯", label: "Bluetooth", accent: Theme.accent.blue,   id: "bluetooth" },
-                            { glyph: bt.wifiEnabled ? "󰖩" : "󰖪", label: "Wi-Fi", accent: Theme.accent.green, id: "wifi" },
-                            { glyph: "󰒃", label: "VPN", accent: Theme.accent.purple, id: "vpn" }
-                        ]
-                    }
-                }
-
-                // ===== Tab content =====
-                // Loader.sourceComponent reassignment occasionally leaves
-                // a stale item visible during the swap on some Qt versions.
-                // Force a clean rebuild by clearing first via a Binding.
-                Loader {
-                    id: paneLoader
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    active: bt.popupOpen
-                    // Start hidden + slightly shrunk; paneInAnim plays the
-                    // tab-content in whenever the loaded item changes.
-                    opacity: 0
-                    transformOrigin: Item.Top
-                    sourceComponent: !bt.popupOpen ? null
-                                   : bt.activeTab === "wifi" ? wifiPane
-                                   : bt.activeTab === "vpn"  ? vpnPane
-                                   : btPane
-                    onLoaded: paneInAnim.restart()
-                    ParallelAnimation {
-                        id: paneInAnim
-                        NumberAnimation { target: paneLoader; property: "opacity"; from: 0.0; to: 1.0; duration: Theme.duration.normal; easing.type: Theme.easing.standard }
-                        NumberAnimation { target: paneLoader; property: "scale"; from: 0.97; to: 1.0; duration: Theme.duration.normal; easing.type: Theme.easing.standard }
-                    }
-                }
-
-                // Keyboard hint footer
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Theme.spacing.md
                 Text {
-                    Layout.fillWidth: true
-                    text: "Tab tabs · ↑↓ move · ↵ select · esc close"
-                    color: Theme.mutedDeep
+                    text: !bt.adapter ? "No adapter"
+                        : bt.powered
+                            ? (bt.adapter.discovering ? "Scanning…" : (bt.connectedDevices.length + " connected"))
+                            : "Bluetooth is off"
+                    color: Theme.muted
                     font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xs
-                    horizontalAlignment: Text.AlignHCenter
-                    opacity: 0.65
+                    font.pixelSize: Theme.fontSize.base
                 }
+                Item { Layout.fillWidth: true }
+                BtToggle {
+                    visible: bt.powered
+                    label: bt.adapter && bt.adapter.discovering ? "Stop" : "Scan"
+                    active: bt.adapter && bt.adapter.discovering
+                    highlighted: bt.tabIndex === 1
+                    onClicked: { bt.tabIndex = 1; bt.toggleSecondary() }
+                }
+                BtToggle {
+                    label: bt.powered ? "On" : "Off"
+                    active: bt.powered
+                    highlighted: bt.tabIndex === 0
+                    onClicked: { bt.tabIndex = 0; bt.togglePrimary() }
+                }
+            }
 
-                Component {
-                    id: btPane
-                    ColumnLayout {
-                        spacing: Theme.spacing.md
+            Rectangle { Layout.fillWidth: true; height: 1; color: Theme.border }
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: Theme.spacing.md
-                            Text {
-                                text: !bt.adapter ? "No adapter"
-                                    : bt.powered
-                                        ? (bt.adapter.discovering ? "Scanning…" : (bt.connectedDevices.length + " connected"))
-                                        : "Bluetooth is off"
-                                color: Theme.muted
-                                font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.base
-                            }
-                            Item { Layout.fillWidth: true }
-                            BtToggle {
-                                visible: bt.powered
-                                label: bt.adapter && bt.adapter.discovering ? "Stop" : "Scan"
-                                active: bt.adapter && bt.adapter.discovering
-                                highlighted: bt.tabIndex === 1
-                                onClicked: { bt.tabIndex = 1; bt.toggleSecondary() }
-                            }
-                            BtToggle {
-                                label: bt.powered ? "On" : "Off"
-                                active: bt.powered
-                                highlighted: bt.tabIndex === 0
-                                onClicked: { bt.tabIndex = 0; bt.togglePrimary() }
-                            }
+            Text {
+                Layout.fillWidth: true
+                visible: bt.powered && bt.visibleDevices.length === 0
+                text: "No known devices"
+                color: Theme.mutedDeep
+                font.family: Theme.font
+                font.pixelSize: Theme.fontSize.base
+                horizontalAlignment: Text.AlignHCenter
+            }
+
+            Text {
+                visible: bt.powered
+                text: "PAIRED DEVICES"
+                color: Theme.mutedDeep
+                font.family: Theme.font
+                font.pixelSize: Theme.fontSize.xs
+                font.letterSpacing: 1
+                font.bold: true
+            }
+
+            Flickable {
+                id: btFlick
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.topMargin: -8
+                visible: bt.powered
+                clip: true
+                contentWidth: width
+                contentHeight: btRowsCol.implicitHeight
+                boundsBehavior: Flickable.StopAtBounds
+                ScrollBar.vertical: ThinScrollBar {}
+                ColumnLayout {
+                    id: btRowsCol
+                    width: btFlick.width
+                    spacing: 2
+                    Repeater {
+                        id: btRepeater
+                        model: bt.visibleDevices
+                        delegate: BtDeviceRow {
+                            required property var modelData
+                            required property int index
+                            device: modelData
+                            highlighted: bt.selectedIndex === index
+                            onHovered: bt.tabIndex = index + 2
                         }
-
-                        Rectangle { Layout.fillWidth: true; height: 1; color: Theme.border }
-
-                        Text {
-                            Layout.fillWidth: true
-                            visible: bt.powered && bt.visibleDevices.length === 0
-                            text: "No known devices"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.base
-                            horizontalAlignment: Text.AlignHCenter
-                        }
-
-                        Text {
-                            visible: bt.powered
-                            text: "PAIRED DEVICES"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xs
-                            font.letterSpacing: 1
-                            font.bold: true
-                        }
-
-                        Flickable {
-                            id: btFlick
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            Layout.topMargin: -8
-                            visible: bt.powered
-                            clip: true
-                            contentWidth: width
-                            contentHeight: btRowsCol.implicitHeight
-                            boundsBehavior: Flickable.StopAtBounds
-                            ScrollBar.vertical: ThinScrollBar {}
-                            ColumnLayout {
-                                id: btRowsCol
-                                width: btFlick.width
-                                spacing: 2
-                                Repeater {
-                                    id: btRepeater
-                                    model: bt.visibleDevices
-                                    delegate: BtDeviceRow {
-                                        required property var modelData
-                                        required property int index
-                                        device: modelData
-                                        highlighted: bt.selectedIndex === index
-                                        onHovered: bt.tabIndex = index + 2
-                                    }
-                                }
-                            }
-                            // Keep the keyboard-selected row scrolled into view.
-                            Connections {
-                                target: bt
-                                function onTabIndexChanged() { Qt.callLater(btFlick.ensureVisible) }
-                            }
-                            function ensureVisible() {
-                                if (bt.selectedIndex < 0) return;
-                                const it = btRepeater.itemAt(bt.selectedIndex);
-                                if (!it) return;
-                                const top = it.y, bot = top + it.height;
-                                if (top < btFlick.contentY) btFlick.contentY = Math.max(0, top - 4);
-                                else if (bot > btFlick.contentY + btFlick.height)
-                                    btFlick.contentY = Math.min(Math.max(0, btFlick.contentHeight - btFlick.height), bot - btFlick.height + 4);
-                            }
-                        }
-                        // Keep content top-aligned when the list is hidden.
-                        Item { Layout.fillHeight: true; visible: !bt.powered }
                     }
                 }
-
-                Component {
-                    id: wifiPane
-                    ColumnLayout {
-                        spacing: Theme.spacing.md
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: Theme.spacing.md
-                            Text {
-                                text: !bt.wifiDevice ? "No wireless adapter"
-                                    : !bt.wifiEnabled ? "Wi-Fi is off"
-                                    : bt.activeNetwork ? "Connected · " + bt.activeNetwork.name
-                                    : (bt.visibleNetworks.length + " networks")
-                                color: Theme.muted
-                                font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.base
-                                elide: Text.ElideRight
-                                Layout.fillWidth: true
-                            }
-                            BtToggle {
-                                visible: bt.wifiEnabled && bt.wifiDevice
-                                label: bt.wifiDevice && bt.wifiDevice.scannerEnabled ? "Stop" : "Scan"
-                                active: bt.wifiDevice && bt.wifiDevice.scannerEnabled
-                                highlighted: bt.tabIndex === 1
-                                onClicked: { bt.tabIndex = 1; bt.toggleSecondary() }
-                            }
-                            BtToggle {
-                                label: bt.wifiEnabled ? "On" : "Off"
-                                active: bt.wifiEnabled
-                                highlighted: bt.tabIndex === 0
-                                onClicked: { bt.tabIndex = 0; bt.togglePrimary() }
-                            }
-                        }
-
-                        Rectangle { Layout.fillWidth: true; height: 1; color: Theme.border }
-
-                        // Pinned wired row — shown regardless of Wi-Fi state
-                        // so a dock/USB adapter stays reachable with Wi-Fi off.
-                        Text {
-                            visible: !!bt.wiredDevice
-                            text: "WIRED"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xs
-                            font.letterSpacing: 1
-                            font.bold: true
-                        }
-                        WiredRow {
-                            Layout.topMargin: -8
-                            visible: !!bt.wiredDevice
-                            device: bt.wiredDevice
-                            highlighted: bt.selectedIndex === 0 && bt.wiredOffset === 1
-                            onHovered: bt.tabIndex = 2
-                            onPicked: bt.toggleWired()
-                            // Right-click → NetworkManager's editor; close the
-                            // popup so the editor window isn't under our overlay.
-                            onEditRequested: {
-                                Hypr.execute("nm-connection-editor");
-                                bt.popupOpen = false;
-                            }
-                        }
-
-                        Text {
-                            Layout.fillWidth: true
-                            visible: bt.wifiEnabled && bt.visibleNetworks.length === 0
-                            text: "Scanning for networks…"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.base
-                            horizontalAlignment: Text.AlignHCenter
-                        }
-                        Text {
-                            Layout.fillWidth: true
-                            visible: !bt.wifiEnabled
-                            text: "Turn on Wi-Fi to see networks"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.base
-                            horizontalAlignment: Text.AlignHCenter
-                        }
-
-                        Text {
-                            visible: bt.wifiEnabled
-                            text: "AVAILABLE NETWORKS"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xs
-                            font.letterSpacing: 1
-                            font.bold: true
-                        }
-
-                        Flickable {
-                            id: wifiFlick
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            Layout.topMargin: -8
-                            visible: bt.wifiEnabled
-                            clip: true
-                            contentWidth: width
-                            contentHeight: wifiRowsCol.implicitHeight
-                            boundsBehavior: Flickable.StopAtBounds
-                            ScrollBar.vertical: ThinScrollBar {}
-                            ColumnLayout {
-                                id: wifiRowsCol
-                                width: wifiFlick.width
-                                spacing: 2
-                                Repeater {
-                                    id: wifiRepeater
-                                    model: bt.visibleNetworks
-                                    delegate: WifiNetworkRow {
-                                        required property var modelData
-                                        required property int index
-                                        network: modelData
-                                        highlighted: bt.selectedIndex === index + bt.wiredOffset
-                                        onHovered: bt.tabIndex = index + 2 + bt.wiredOffset
-                                        onPicked: bt.activateNetwork(index)
-                                        onForgetRequested: if (network) network.forget()
-                                    }
-                                }
-                            }
-                            Connections {
-                                target: bt
-                                function onTabIndexChanged() { Qt.callLater(wifiFlick.ensureVisible) }
-                            }
-                            function ensureVisible() {
-                                // Wired row sits above the Flickable and is
-                                // always on screen; only scroll for networks.
-                                const li = bt.selectedIndex - bt.wiredOffset;
-                                if (li < 0) return;
-                                const it = wifiRepeater.itemAt(li);
-                                if (!it) return;
-                                const top = it.y, bot = top + it.height;
-                                if (top < wifiFlick.contentY) wifiFlick.contentY = Math.max(0, top - 4);
-                                else if (bot > wifiFlick.contentY + wifiFlick.height)
-                                    wifiFlick.contentY = Math.min(Math.max(0, wifiFlick.contentHeight - wifiFlick.height), bot - wifiFlick.height + 4);
-                            }
-                        }
-                        // Keep content top-aligned when the list is hidden.
-                        Item { Layout.fillHeight: true; visible: !bt.wifiEnabled }
-                    }
+                // Keep the keyboard-selected row scrolled into view.
+                Connections {
+                    target: bt
+                    function onTabIndexChanged() { Qt.callLater(btFlick.ensureVisible) }
                 }
-
-                Component {
-                    id: vpnPane
-                    ColumnLayout {
-                        spacing: Theme.spacing.md
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: Theme.spacing.md
-                            Text {
-                                Layout.fillWidth: true
-                                text: !TailscaleService.daemonOk ? "tailscaled is not running"
-                                    : !TailscaleService.running ? "Tailscale is off"
-                                    : TailscaleService.tailnet ? TailscaleService.tailnet
-                                    : "Connected"
-                                color: Theme.muted
-                                font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.base
-                                elide: Text.ElideRight
-                            }
-                            BtToggle {
-                                visible: TailscaleService.daemonOk
-                                label: "Refresh"
-                                active: false
-                                highlighted: bt.tabIndex === 1
-                                onClicked: { bt.tabIndex = 1; TailscaleService.refresh() }
-                            }
-                            BtToggle {
-                                visible: TailscaleService.daemonOk
-                                label: TailscaleService.running ? "On" : "Off"
-                                active: TailscaleService.running
-                                highlighted: bt.tabIndex === 0
-                                onClicked: { bt.tabIndex = 0; TailscaleService.toggle() }
-                            }
-                        }
-
-                        Rectangle { Layout.fillWidth: true; height: 1; color: Theme.border }
-
-                        Text {
-                            visible: TailscaleService.daemonOk && TailscaleService.running && TailscaleService.selfIPs.length > 0
-                            text: "THIS DEVICE"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xs
-                            font.letterSpacing: 1
-                            font.bold: true
-                        }
-
-                        // Self info + daemon hint
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            Layout.topMargin: -8
-                            spacing: 2
-                            visible: TailscaleService.daemonOk && TailscaleService.running && TailscaleService.selfIPs.length > 0
-                            Text {
-                                text: TailscaleService.host
-                                color: Theme.fg
-                                font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.base
-                                font.bold: true
-                            }
-                            Text {
-                                text: TailscaleService.selfIPs.join("  ·  ")
-                                color: Theme.mutedDeep
-                                font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.xs
-                            }
-                        }
-
-                        Text {
-                            Layout.fillWidth: true
-                            visible: !TailscaleService.daemonOk
-                            text: "sudo systemctl enable --now tailscaled"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xs
-                            horizontalAlignment: Text.AlignHCenter
-                        }
-
-                        Text {
-                            Layout.fillWidth: true
-                            visible: TailscaleService.daemonOk && TailscaleService.running && TailscaleService.peers.length === 0
-                            text: "No peers"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.base
-                            horizontalAlignment: Text.AlignHCenter
-                        }
-
-                        Text {
-                            visible: TailscaleService.daemonOk && TailscaleService.running && TailscaleService.peers.length > 0
-                            text: "PEERS"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xs
-                            font.letterSpacing: 1
-                            font.bold: true
-                        }
-
-                        Flickable {
-                            id: vpnFlick
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            Layout.topMargin: -8
-                            visible: TailscaleService.daemonOk && TailscaleService.running
-                            clip: true
-                            contentWidth: width
-                            contentHeight: vpnRowsCol.implicitHeight
-                            boundsBehavior: Flickable.StopAtBounds
-                            ScrollBar.vertical: ThinScrollBar {}
-                            ColumnLayout {
-                                id: vpnRowsCol
-                                width: vpnFlick.width
-                                spacing: 2
-                                Repeater {
-                                    id: vpnRepeater
-                                    model: TailscaleService.peers
-                                    delegate: VpnPeerRow {
-                                        required property var modelData
-                                        required property int index
-                                        entry: modelData
-                                        isExitNode: modelData.id === TailscaleService.exitNodeId
-                                        highlighted: bt.selectedIndex === index
-                                        onHovered: bt.tabIndex = index + 2
-                                        onCopied: TailscaleService.copyIp(modelData.ips[0] || "")
-                                        onExitToggled: TailscaleService.setExitNode(modelData.id === TailscaleService.exitNodeId ? "" : modelData.id)
-                                    }
-                                }
-                            }
-                            Connections {
-                                target: bt
-                                function onTabIndexChanged() { Qt.callLater(vpnFlick.ensureVisible) }
-                            }
-                            function ensureVisible() {
-                                if (bt.selectedIndex < 0) return;
-                                const it = vpnRepeater.itemAt(bt.selectedIndex);
-                                if (!it) return;
-                                const top = it.y, bot = top + it.height;
-                                if (top < vpnFlick.contentY) vpnFlick.contentY = Math.max(0, top - 4);
-                                else if (bot > vpnFlick.contentY + vpnFlick.height)
-                                    vpnFlick.contentY = Math.min(Math.max(0, vpnFlick.contentHeight - vpnFlick.height), bot - vpnFlick.height + 4);
-                            }
-                        }
-                        // Keep content top-aligned when the peer list is hidden.
-                        Item { Layout.fillHeight: true; visible: !(TailscaleService.daemonOk && TailscaleService.running) }
-                    }
+                function ensureVisible() {
+                    if (bt.selectedIndex < 0) return;
+                    const it = btRepeater.itemAt(bt.selectedIndex);
+                    if (!it) return;
+                    const top = it.y, bot = top + it.height;
+                    if (top < btFlick.contentY) btFlick.contentY = Math.max(0, top - 4);
+                    else if (bot > btFlick.contentY + btFlick.height)
+                        btFlick.contentY = Math.min(Math.max(0, btFlick.contentHeight - btFlick.height), bot - btFlick.height + 4);
                 }
+            }
+            // Keep content top-aligned when the list is hidden.
+            Item { Layout.fillHeight: true; visible: !bt.powered }
+
+            Text {
+                Layout.fillWidth: true
+                text: "↑↓ move · ↵ select · del forget · esc close"
+                color: Theme.mutedDeep
+                font.family: Theme.font
+                font.pixelSize: Theme.fontSize.xs
+                horizontalAlignment: Text.AlignHCenter
+                opacity: 0.65
             }
         }
     }
+}

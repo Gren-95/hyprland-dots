@@ -1,4 +1,4 @@
-// Tab pill used in the Bluetooth/Wi-Fi/VPN tab strip. The active background is
+// Tab pill used in the Sound/Power tab strip. The active background is
 // drawn by TabStrip's sliding indicator; this pill only owns its glyph/label
 // (colour-eased on activation) plus hover tint and a press-scale tap.
 import QtQuick

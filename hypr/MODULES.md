@@ -13,7 +13,7 @@ the modules. Split for readability — every module is small and self-contained.
 | `gestures.lua` | Touchpad gestures | 3-finger workspace swipe, 4-finger fullscreen-state lambdas, ALT+pinch cursorZoom. |
 | `keys.lua` | All keybindings | See `KEYBINDS.md` at the repo root for a flat reference. |
 | `rules.lua` | Window rules | `hl.window_rule()` entries — float/tile overrides, opacity for specific apps. |
-| `autostart.lua` | exec-once + env vars | Cursor theme/size, Qt platform theme, QML import path. Starts `restart.sh` (which fans out to everything else) and `nm-applet`. |
+| `autostart.lua` | exec-once + env vars | Cursor theme/size, Qt platform theme, QML import path. Starts `restart.sh` (which fans out to everything else, including the nm-applet tray app). |
 
 The other `hypr/*.conf` files (hypridle, hyprlock, hyprpaper, hyprqt6engine)
 are separate tools that still use hyprlang — do not convert them to Lua.

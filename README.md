@@ -19,7 +19,7 @@ Modals reachable from keybindings or the bar:
     <td align="center" width="33%"><img src="screenshots/gallery/quickactions.png" width="100%"/><br><strong>Quick Actions</strong><br><kbd>Super</kbd>+<kbd>A</kbd></td>
   </tr>
   <tr>
-    <td align="center"><img src="screenshots/gallery/network.png" width="100%"/><br><strong>Connectivity</strong><br>Wi-Fi + Bluetooth tabs<br><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></td>
+    <td align="center"><img src="screenshots/gallery/network.png" width="100%"/><br><strong>Bluetooth</strong><br>Paired devices, scan, power<br><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></td>
     <td align="center"><img src="screenshots/gallery/audiopower.png" width="100%"/><br><strong>Audio &amp; Power</strong><br><kbd>Super</kbd>+<kbd>S</kbd></td>
     <td align="center"><img src="screenshots/gallery/systemmonitor.png" width="100%"/><br><strong>System Monitor</strong><br><kbd>Super</kbd>+<kbd>M</kbd></td>
   </tr>

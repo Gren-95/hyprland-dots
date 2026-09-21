@@ -85,6 +85,7 @@ install_dependencies() {
         hyprpaper hyprpicker hypridle hyprlock grim slurp \
         swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard firefox \
         brightnessctl playerctl powerprofilesctl gpu-screen-recorder \
+        network-manager-applet \
         gnome-keyring jq inotify-tools \
         fish ranger python3 python3-pillow
 

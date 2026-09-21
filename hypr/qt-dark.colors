@@ -1,6 +1,6 @@
 # Dark Qt palette matching quickshell/Theme.qml (stone neutrals, blue accent).
 # Loaded by hyprqt6engine (theme:color_scheme) so Qt widgets, including the
-# tray context menus Quickshell draws for nm-applet/Trayscale, stay dark.
+# tray context menus Quickshell draws for nm-applet, stay dark.
 [General]
 ColorScheme=QuickshellDark
 Name=Quickshell Dark

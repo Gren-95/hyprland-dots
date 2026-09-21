@@ -60,11 +60,8 @@ singleton Theme Theme.qml
 ThinScrollBar ThinScrollBar.qml
 TrayItem TrayItem.qml
 VolumeSlider VolumeSlider.qml
-VpnPeerRow VpnPeerRow.qml
 WallpaperDeck WallpaperDeck.qml
 WeatherCard WeatherCard.qml
 WeatherService WeatherService.qml
-WifiNetworkRow WifiNetworkRow.qml
-WiredRow WiredRow.qml
 WorkspaceOverview WorkspaceOverview.qml
 WorkspaceStrip WorkspaceStrip.qml
