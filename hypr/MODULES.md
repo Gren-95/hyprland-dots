@@ -15,5 +15,5 @@ the modules. Split for readability — every module is small and self-contained.
 | `rules.lua` | Window rules | `hl.window_rule()` entries — float/tile overrides, opacity for specific apps. |
 | `autostart.lua` | exec-once + env vars | Cursor theme/size, Qt platform theme, QML import path. Starts `restart.sh` (which fans out to everything else, including the nm-applet tray app). |
 
-The other `hypr/*.conf` files (hypridle, hyprlock, hyprpaper, hyprqt6engine)
+The other `hypr/*.conf` files (hypridle, hyprlock, hyprqt6engine)
 are separate tools that still use hyprlang — do not convert them to Lua.

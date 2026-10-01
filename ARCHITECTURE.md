@@ -34,7 +34,7 @@ Bird's-eye view of how the pieces fit together. For widget-level detail see
 3. `autostart.lua` fires `scripts/restart.sh`, which orchestrates every
    userspace service.
 4. `restart.sh` starts in sequence: xdg-desktop-portal, gnome-keyring,
-   Quickshell, hyprpaper, hypridle, battery-notify, media-inhibit, cliphist,
+   Quickshell, awww-daemon, hypridle, battery-notify, media-inhibit, cliphist,
    dotwatch, and the tray app `nm-applet --indicator` (Wi-Fi/wired, Wi-Fi
    password prompts, and Tailscale via the NetworkManager Tailscale VPN
    plugin). Logs OK/FAILED per step.

@@ -14,8 +14,8 @@ Scope {
         extractProc.running = false;
         extractProc.running = true;
     }
-    // Wallpaper swaps take a moment (hyprpaper preload + set); let the
-    // new image land before asking hyprpaper what's active.
+    // Wallpaper swaps take a moment (awww transition); let the
+    // new image land before asking awww what's active.
     function refreshSoon() { soonTimer.restart() }
     Timer { id: soonTimer; interval: 2500; onTriggered: svc.refresh() }
 
@@ -24,7 +24,7 @@ Scope {
     Process {
         id: extractProc
         command: ["sh", "-c",
-            'p=$(hyprctl hyprpaper listactive | head -1 | sed "s/^[^:]*: //"); '
+            'p=$(awww query | head -1 | sed -n "s/.*image: //p"); '
             + '[ -n "$p" ] && magick "$p" -resize 64x64 -colors 8 -depth 8 -format "%c" histogram:info:']
         running: false
         stdout: StdioCollector { onStreamFinished: svc._pick(text) }

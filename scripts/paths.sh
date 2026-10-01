@@ -22,7 +22,6 @@ HYPR_DIR="$HOME/.config/hypr"
 
 # Cache / runtime
 CACHE_DIR="$HOME/.cache"
-HYPRPAPER_CACHE="$HOME/.cache/hyprpaper.conf"
 LOCK_ART="/tmp/hyprlock-art.jpg"
 LOCK_BG="$HOME/.config/hypr/lockbg"
 SCREENRECORD_PID="/tmp/screenrecord.pid"

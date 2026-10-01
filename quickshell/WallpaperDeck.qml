@@ -30,7 +30,7 @@ Scope {
         command: ["sh", "-c",
             "find " + settingsStore.wallpaperDir + " -type f \\( " +
             "-iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' " +
-            "-o -iname '*.webp' \\) | sort"]
+            "-o -iname '*.webp' -o -iname '*.gif' \\) | sort"]
         running: false
         stdout: StdioCollector {
             onStreamFinished: {

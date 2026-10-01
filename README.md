@@ -58,7 +58,7 @@ Modals reachable from keybindings or the bar:
 - `kitty` — terminal
 - `nautilus` — file manager
 - `cliphist` + `wl-clipboard` — clipboard history (Quickshell shows the picker)
-- `hyprpaper` `hyprpicker` `hypridle` `hyprlock` — wallpaper, color picker, idle daemon, lock screen
+- `awww` `hyprpicker` `hypridle` `hyprlock` — wallpaper, color picker, idle daemon, lock screen
 - `grim` `slurp` `swappy` — screenshots
 - `tesseract` — OCR from screenshots
 - `gpu-screen-recorder` — screen recording
@@ -93,7 +93,7 @@ sudo dnf copr enable errornointernet/quickshell  # quickshell (or build from sou
 
 ```bash
 sudo dnf install hyprland hyprland-devel quickshell kitty nautilus cliphist \
-  hyprpaper hyprpicker hypridle hyprlock grim slurp swappy tesseract \
+  awww hyprpicker hypridle hyprlock grim slurp swappy tesseract \
   wl-clipboard firefox brightnessctl playerctl \
   gnome-keyring jq \
   powerprofilesctl gpu-screen-recorder inotify-tools \

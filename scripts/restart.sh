@@ -54,7 +54,7 @@ echo "======================================"
 pkill -f xdg-desktop-portal            2>/dev/null
 pkill -x gnome-keyring-daemon          2>/dev/null
 pkill -f "qs -p"                       2>/dev/null
-killall hyprpaper                      2>/dev/null
+killall awww-daemon                    2>/dev/null
 killall hypridle                       2>/dev/null
 pkill -f power-auto.sh                 2>/dev/null
 pkill -f battery-notify.sh             2>/dev/null
@@ -107,25 +107,15 @@ wait_for_dbus org.freedesktop.portal.Desktop 300
 QT_QPA_PLATFORMTHEME=hyprqt6engine qs -p "$HOME/.config/quickshell/shell.qml" -d >/dev/null 2>&1
 
 ################################################################################
-# 5. Regenerate the hyprpaper config. One find pass, not two.
-################################################################################
-mkdir -p "$CACHE_DIR"
-mapfile -t WALLPAPERS < <(find "$WALLPAPER_DIR" -type f \
-    \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.webp" \) 2>/dev/null | sort)
-{
-    echo "splash = false"
-    for f in "${WALLPAPERS[@]}"; do echo "preload = $f"; done
-    [[ ${#WALLPAPERS[@]} -gt 0 ]] && echo "wallpaper = ,${WALLPAPERS[0]}"
-} > "$HYPRPAPER_CACHE"
-
-################################################################################
-# 6. Start the rest. All independent of each other, so start them back to back
+# 5. Start the rest. All independent of each other, so start them back to back
 #    and verify afterwards rather than one-at-a-time.
 ################################################################################
 pkill -KILL -f media-inhibit.sh      2>/dev/null
 pkill -KILL -f fullscreen-inhibit.sh 2>/dev/null
 
-hyprpaper -c "$HYPRPAPER_CACHE"           >/dev/null 2>&1 &
+awww-daemon                               >/dev/null 2>&1 &
+# awww-daemon starts blank; once its socket answers, put back the last wallpaper.
+( for _ in $(seq 40); do awww query >/dev/null 2>&1 && break; sleep 0.25; done; awww restore ) >/dev/null 2>&1 &
 hypridle                                  >/dev/null 2>&1 &
 bash "$SCRIPTS/battery-notify.sh"         >/dev/null 2>&1 &
 bash "$SCRIPTS/media-inhibit.sh"          >/dev/null 2>&1 &
@@ -142,7 +132,7 @@ nm-applet --indicator                     >/dev/null 2>&1 &
 bash "$SCRIPTS/power-auto.sh"             >/dev/null 2>&1 &
 
 ################################################################################
-# 7. One-shot settings. Measured at ~0.04 s combined, so they stay inline.
+# 6. One-shot settings. Measured at ~0.04 s combined, so they stay inline.
 ################################################################################
 nmcli radio wifi on >/dev/null 2>&1
 dbus-update-activation-environment --systemd --all >/dev/null 2>&1
@@ -153,11 +143,11 @@ hyprctl keyword monitor "FALLBACK,1920x1080@60,auto,1" >/dev/null 2>&1
 bash "$SCRIPTS/wallpaper.sh" >/dev/null 2>&1
 
 ################################################################################
-# 8. Verify. By now most daemons are already up, so these return immediately.
+# 7. Verify. By now most daemons are already up, so these return immediately.
 ################################################################################
 report "quickshell"          "qs -p"
 report "xdg-desktop-portal"  "xdg-desktop-portal"
-report "hyprpaper"           "hyprpaper"            -x
+report "awww-daemon"        "awww-daemon"          -x
 report "hypridle"            "hypridle"             -x
 report "power-auto"          "power-auto.sh"
 report "battery-notify"      "battery-notify.sh"
