@@ -26,6 +26,8 @@ if ! sudo timeshift --create --comments "pre-update"; then
     exit 1
 fi
 
+_step "dnf clean metadata"  sudo dnf5 clean metadata
+_step "dnf makecache"       sudo dnf5 makecache --refresh
 _step "dnf update"          sudo dnf update
 _step "dnf autoremove"      sudo dnf autoremove
 _step "flatpak update"      flatpak update
