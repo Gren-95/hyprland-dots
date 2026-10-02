@@ -40,7 +40,7 @@ hl.monitor({
 hl.bind("switch:on:Lid Switch", hl.dsp.dpms("off eDP-1"), {
     locked = true,
 })
-hl.bind("switch:off:Lid Switch", hl.dsp.exec_cmd("hyprctl dispatch dpms on eDP-1 && brightnessctl -r"), {
+hl.bind("switch:off:Lid Switch", hl.dsp.exec_cmd("hyprctl dispatch 'hl.dsp.dpms(\"on eDP-1\")' && brightnessctl -r"), {
     locked = true,
 })
 

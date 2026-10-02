@@ -1,17 +1,15 @@
 hl.config({
     decoration = {
-        rounding = 10,
         rounding_power = 2,
         active_opacity = 1,
-        inactive_opacity = 0.95,
+        -- rounding, inactive_opacity, shadow.enabled and blur.enabled live in
+        -- hyprland-gui.lua (HyprMod), which loads last and wins.
         shadow = {
-            enabled = true,
             range = 6,
             render_power = 3,
             color = "rgba(16130fee)",
         },
         blur = {
-            enabled = false,
             size = 4,
             passes = 2,
             vibrancy = 0.18,

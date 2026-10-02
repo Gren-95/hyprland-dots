@@ -50,35 +50,10 @@ hl.window_rule({
         class = "^(xwaylandvideobridge)$",
     },
     opacity = "0.0 override",
-})
-hl.window_rule({
-    match = {
-        class = "^(xwaylandvideobridge)$",
-    },
     no_anim = true,
-})
-hl.window_rule({
-    match = {
-        class = "^(xwaylandvideobridge)$",
-    },
     no_initial_focus = true,
-})
-hl.window_rule({
-    match = {
-        class = "^(xwaylandvideobridge)$",
-    },
     max_size = "1 1",
-})
-hl.window_rule({
-    match = {
-        class = "^(xwaylandvideobridge)$",
-    },
     no_blur = true,
-})
-hl.window_rule({
-    match = {
-        class = "^(xwaylandvideobridge)$",
-    },
     no_focus = true,
 })
 
@@ -88,23 +63,8 @@ hl.window_rule({
         title = "^(Calendar)$",
     },
     float = true,
-})
-hl.window_rule({
-    match = {
-        title = "^(Calendar)$",
-    },
     pin = true,
-})
-hl.window_rule({
-    match = {
-        title = "^(Calendar)$",
-    },
     size = "400 400",
-})
-hl.window_rule({
-    match = {
-        title = "^(Calendar)$",
-    },
     move = "39% 12%",
 })
 
@@ -114,11 +74,6 @@ hl.window_rule({
         class = "^(org\\.gnome\\.)",
     },
     rounding = 12,
-})
-hl.window_rule({
-    match = {
-        class = "^(org\\.gnome\\.)",
-    },
     decorate = false,
 })
 
@@ -148,11 +103,6 @@ hl.window_rule({
         class = "^(xdg-desktop-portal)$",
     },
     float = true,
-})
-hl.window_rule({
-    match = {
-        class = "^(xdg-desktop-portal)$",
-    },
     center = 1,
 })
 hl.window_rule({
@@ -160,6 +110,22 @@ hl.window_rule({
         class = "^(zoom)$",
     },
     float = true,
+})
+
+-- Dialogs that should never tile: audio mixer, polkit prompts, file pickers.
+hl.window_rule({
+    match = {
+        class = "^(org\\.pulseaudio\\.pavucontrol|pavucontrol|polkit-gnome-authentication-agent-1|org\\.kde\\.polkit-kde-authentication-agent-1)$",
+    },
+    float = true,
+    center = 1,
+})
+hl.window_rule({
+    match = {
+        title = "^(Open File|Open Folder|Save As|Save File|Select Folder|Choose Files?)$",
+    },
+    float = true,
+    center = 1,
 })
 
 -- Proton/Wine desktop tools (MO2, BodySlide, xEdit/SSEEdit, Creation Kit, etc.)
@@ -178,11 +144,6 @@ hl.window_rule({
         class = ".*\\.exe$",
     },
     float = true,
-})
-hl.window_rule({
-    match = {
-        class = ".*\\.exe$",
-    },
     center = 1,
 })
 

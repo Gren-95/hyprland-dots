@@ -75,7 +75,7 @@ hl.bind(var_mainMod .. " + bracketright", hl.dsp.focus({ workspace = "m+1" }))
 
 -- Alt+Tab keeps muscle memory via native cyclenext (no overlay).
 hl.bind("ALT + Tab", hl.dsp.window.cycle_next())
-hl.bind("ALT + SHIFT + Tab", hl.dsp.window.cycle_next())
+hl.bind("ALT + SHIFT + Tab", hl.dsp.window.cycle_next({ next = false }))
 
 -- Super+Tab opens the workspace overview and cycles on each press.
 

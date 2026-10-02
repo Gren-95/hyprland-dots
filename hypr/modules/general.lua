@@ -14,9 +14,8 @@ var_externalscript2 = "bash ~/.config/scripts/wallpaper.sh"
 -- ## PROGRAM SHORTCUTS ###
 hl.config({
     general = {
-        gaps_in = 4,
-        gaps_out = 4,
-        border_size = 4,
+        -- gaps / border_size / layout are set in hyprland-gui.lua (HyprMod),
+        -- which loads last and wins.
         -- Palette from quickshell/Theme.qml: the focused window carries
         -- accentPrimary (blue -> blueBright), unfocused ones fade back to
         -- Theme.borderStrong so focus is the only thing that draws the eye.
@@ -29,7 +28,6 @@ hl.config({
         },
         allow_tearing = true,
         resize_on_border = true,
-        layout = "dwindle",
     },
     misc = {
         force_default_wallpaper = -1,
