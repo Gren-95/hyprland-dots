@@ -14,24 +14,24 @@ Modals reachable from keybindings or the bar:
 
 <table>
   <tr>
-    <td align="center" width="33%"><img src="screenshots/gallery/spotlight.png" width="100%"/><br><strong>Spotlight</strong><br><kbd>Super</kbd>+<kbd>R</kbd></td>
-    <td align="center" width="33%"><img src="screenshots/gallery/clipboard.png" width="100%"/><br><strong>Clipboard</strong><br><kbd>Super</kbd>+<kbd>V</kbd></td>
-    <td align="center" width="33%"><img src="screenshots/gallery/quickactions.png" width="100%"/><br><strong>Quick Actions</strong><br><kbd>Super</kbd>+<kbd>A</kbd></td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/spotlight.png" width="100%"/><br><strong>Launcher</strong><br>apps, actions, calculator<br><kbd>Super</kbd>+<kbd>R</kbd></td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/clipboard.png" width="100%"/><br><strong>Clipboard</strong><br>history with thumbnails<br><kbd>Super</kbd>+<kbd>V</kbd></td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/quickactions.png" width="100%"/><br><strong>Quick Actions</strong><br>toggles and one-shots<br><kbd>Super</kbd>+<kbd>A</kbd></td>
   </tr>
   <tr>
-    <td align="center"><img src="screenshots/gallery/network.png" width="100%"/><br><strong>Bluetooth</strong><br>Paired devices, scan, power<br><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></td>
-    <td align="center"><img src="screenshots/gallery/audiopower.png" width="100%"/><br><strong>Audio &amp; Power</strong><br><kbd>Super</kbd>+<kbd>S</kbd></td>
-    <td align="center"><img src="screenshots/gallery/systemmonitor.png" width="100%"/><br><strong>System Monitor</strong><br><kbd>Super</kbd>+<kbd>M</kbd></td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/network.png" width="100%"/><br><strong>Bluetooth</strong><br>paired devices, scan, pairing<br><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/sound.png" width="100%"/><br><strong>Sound</strong><br>output, input, device dropdowns<br><kbd>Super</kbd>+<kbd>S</kbd></td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/power.png" width="100%"/><br><strong>Power</strong><br>battery, profile, backlight, session<br><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd></td>
   </tr>
   <tr>
-    <td align="center"><img src="screenshots/gallery/daypanel.png" width="100%"/><br><strong>Day Panel</strong><br>calendar + notifications<br><kbd>Super</kbd>+<kbd>N</kbd> / <kbd>Super</kbd>+<kbd>D</kbd></td>
-    <td align="center"><img src="screenshots/gallery/powermenu.png" width="100%"/><br><strong>Power Menu</strong><br><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd></td>
-    <td align="center"><img src="screenshots/gallery/keybinds.png" width="100%"/><br><strong>Keybinds Viewer</strong><br><kbd>Super</kbd>+<kbd>F1</kbd></td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/systemmonitor.png" width="100%"/><br><strong>System Monitor</strong><br>gauges, cores, storage, thermals<br><kbd>Super</kbd>+<kbd>M</kbd></td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/services.png" width="100%"/><br><strong>Services</strong><br>background daemons and sync<br>bar button</td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/daypanel.png" width="100%"/><br><strong>Day Panel</strong><br>calendar, weather, media, notifications<br><kbd>Super</kbd>+<kbd>N</kbd> / <kbd>Super</kbd>+<kbd>D</kbd></td>
   </tr>
   <tr>
-    <td align="center"><img src="screenshots/gallery/wallpaper.png" width="100%"/><br><strong>Wallpaper Deck</strong><br>hold <kbd>Super</kbd>, tap <kbd>W</kbd> to deal, release to apply</td>
-    <td align="center"><img src="screenshots/gallery/toast.png" width="100%"/><br><strong>Notification Toast</strong><br>auto-shown on incoming notification</td>
-    <td></td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/keybinds.png" width="100%"/><br><strong>Keybinds Viewer</strong><br>search, filter, click to run<br><kbd>Super</kbd>+<kbd>F1</kbd></td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/wallpaper.png" width="100%"/><br><strong>Wallpaper Deck</strong><br>hold <kbd>Super</kbd>, tap <kbd>W</kbd> to deal, release to apply</td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/toast.png" width="100%"/><br><strong>Notification Toast</strong><br>auto-shown on incoming notification</td>
   </tr>
 </table>
 
