@@ -1,8 +1,9 @@
-// Quick Actions overflow panel. Bar chevron opens a flyout hanging under it
-// with two sections: stateful toggles up top (with explicit on/off state),
-// then a 3-column grid of one-shot actions below.
+// Quick Actions overflow panel. Bar chevron opens a flyout with hidden tray
+// apps up top and a 3-column grid of tiles below: stateful toggles (with
+// explicit on/off state), one-shot actions and tucked bar modules.
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Pipewire
@@ -100,7 +101,7 @@ Item {
                      action: "__module_" + e.id, _open: e.open }))
 
     readonly property int totalItems: toggles.length + oneShots.length + tuckedModules.length
-    readonly property int gridColumns: 4
+    readonly property int gridColumns: 3
     readonly property var gridItems: toggles.concat(oneShots).concat(tuckedModules)
 
     Layout.fillHeight: true
@@ -187,14 +188,20 @@ Item {
         active: qaHover.hovered && !actions.popupOpen
     }
 
+    // Popup height follows the content (up to what the screen allows), so
+    // there is never empty space under the last control.
+    readonly property real fitHeight: Math.min(
+        parentBar && parentBar.screen ? parentBar.screen.height - 160 : 700,
+        contentCol.implicitHeight + Theme.spacing.xl * 2)
+
     BarFlyout {
         id: actionsPopup
         parentBar: actions.parentBar
         anchorItem: actions._openAnchor ?? actions.flyoutAnchor ?? actions
         open: actions.popupOpen
         pinned: actions.pinned || actions.menusOpen > 0
-        cardWidth: settingsStore.flyoutSize("quickactions", "w", 420)
-        cardHeight: panel.implicitHeight + 28
+        cardWidth: settingsStore.flyoutSize("quickactions", "w", 460)
+        cardHeight: settingsStore.flyoutSize("quickactions", "h", actions.fitHeight)
         onDismissed: actions.popupOpen = false
 
         onKeyPressed: (e) => {
@@ -217,150 +224,156 @@ Item {
         }
 
         ColumnLayout {
-                id: panel
-                anchors {
-                    top: parent.top
-                    left: parent.left
-                    right: parent.right
-                    margins: Theme.spacing.lg
-                }
-                spacing: Theme.spacing.lg
+            id: contentCol
+            anchors.fill: parent
+            anchors.margins: Theme.spacing.xl
+            spacing: Theme.spacing.lg
 
-                // Header
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Theme.spacing.md
-                    PinButton {
-                        pinned: actions.pinned
-                        onToggled: actions.pinned = !actions.pinned
-                    }
-                    Text {
-                        text: "Quick actions"
-                        color: Theme.fg
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.md
-                        font.bold: true
-                    }
-                    Item { Layout.fillWidth: true }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Theme.spacing.md
+                PinButton {
+                    pinned: actions.pinned
+                    onToggled: actions.pinned = !actions.pinned
                 }
-
-                // Hidden tray apps (placement "Tuck" in the Bar tab).
-                RowLayout {
-                    visible: actions.overflowTray.length > 0
-                    Layout.fillWidth: true
-                    spacing: Theme.spacing.sm
-                    Repeater {
-                        model: actions.overflowTray
-                        delegate: TrayItem {
-                            required property var modelData
-                            item: modelData
-                            anchorWindow: actions.parentBar
-                            implicitHeight: 28
-                            onMenuOpenChanged: actions.menusOpen += menuOpen ? 1 : -1
-                        }
-                    }
-                    Item { Layout.fillWidth: true }
-                }
-
-                // ===== Tray grid: every item as a compact state tile =====
-                GridLayout {
-                    Layout.fillWidth: true
-                    columns: actions.gridColumns
-                    columnSpacing: Theme.spacing.sm
-                    rowSpacing: Theme.spacing.sm
-                    Repeater {
-                        model: actions.gridItems
-                        delegate: TrayTile {
-                            required property var modelData
-                            required property int index
-                            entry: modelData
-                            isToggle: actions.isToggleAction(modelData.action)
-                            on: isToggle && actions.toggleState(modelData.action)
-                            highlighted: actions.selectedIndex === index
-                            Layout.fillWidth: true
-                            onPicked: actions.activate(index)
-                            onHovered: actions.selectedIndex = index
-                        }
-                    }
-                }
-
-                // Status line for the highlighted item — replaces the old
-                // per-row descriptions in a single quiet footer.
                 Text {
                     Layout.fillWidth: true
-                    readonly property var cur: actions.gridItems[actions.selectedIndex]
-                    text: cur ? (actions.isToggleAction(cur.action) ? actions.toggleDesc(cur.action) : cur.label) : ""
-                    color: Theme.mutedDeep
+                    text: "Quick actions"
+                    color: Theme.fg
                     font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xs
-                    elide: Text.ElideRight
+                    font.pixelSize: Theme.fontSize.lg
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
+                }
+                // Balances the pin button so the title stays centered.
+                Item { implicitWidth: 22; implicitHeight: 22 }
+            }
+
+            Flickable {
+                id: flick
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.preferredHeight: col.implicitHeight
+                clip: true
+                contentWidth: width
+                contentHeight: col.implicitHeight
+                boundsBehavior: Flickable.StopAtBounds
+                ScrollBar.vertical: ThinScrollBar {
+                    policy: flick.contentHeight > flick.height + 2 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                }
+
+                ColumnLayout {
+                    id: col
+                    width: flick.width - Theme.spacing.md
+                    spacing: Theme.spacing.lg
+
+                    // Hidden tray apps (placement "Tuck" in the Bar tab).
+                    Rectangle {
+                        Layout.fillWidth: true
+                        visible: actions.overflowTray.length > 0
+                        implicitHeight: trayCol.implicitHeight + Theme.spacing.xl * 2
+                        radius: 10 * Theme.radiusScale
+                        color: Theme.bg
+                        border.color: Theme.border
+                        border.width: 1
+                        ColumnLayout {
+                            id: trayCol
+                            anchors.fill: parent
+                            anchors.margins: Theme.spacing.xl
+                            spacing: Theme.spacing.lg
+                            Text {
+                                text: "TRAY"
+                                color: Theme.mutedDeep
+                                font.family: Theme.font
+                                font.pixelSize: Theme.fontSize.sm
+                                font.letterSpacing: 1
+                                font.bold: true
+                            }
+                            Flow {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacing.sm
+                                Repeater {
+                                    model: actions.overflowTray
+                                    delegate: TrayItem {
+                                        required property var modelData
+                                        item: modelData
+                                        anchorWindow: actions.parentBar
+                                        implicitWidth: 44
+                                        implicitHeight: 44
+                                        onMenuOpenChanged: actions.menusOpen += menuOpen ? 1 : -1
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Every action as a state tile, with a status line for the
+                    // highlighted one.
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: gridCol.implicitHeight + Theme.spacing.xl * 2
+                        radius: 10 * Theme.radiusScale
+                        color: Theme.bg
+                        border.color: Theme.border
+                        border.width: 1
+                        ColumnLayout {
+                            id: gridCol
+                            anchors.fill: parent
+                            anchors.margins: Theme.spacing.xl
+                            spacing: Theme.spacing.lg
+                            Text {
+                                text: "ACTIONS"
+                                color: Theme.mutedDeep
+                                font.family: Theme.font
+                                font.pixelSize: Theme.fontSize.sm
+                                font.letterSpacing: 1
+                                font.bold: true
+                            }
+                            GridLayout {
+                                Layout.fillWidth: true
+                                columns: actions.gridColumns
+                                columnSpacing: Theme.spacing.md
+                                rowSpacing: Theme.spacing.md
+                                Repeater {
+                                    model: actions.gridItems
+                                    delegate: QaTile {
+                                        required property var modelData
+                                        required property int index
+                                        entry: modelData
+                                        isToggle: actions.isToggleAction(modelData.action)
+                                        on: isToggle && actions.toggleState(modelData.action)
+                                        highlighted: actions.selectedIndex === index
+                                        Layout.fillWidth: true
+                                        Layout.preferredWidth: 1
+                                        onPicked: actions.activate(index)
+                                        onHovered: actions.selectedIndex = index
+                                    }
+                                }
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                readonly property var cur: actions.gridItems[actions.selectedIndex]
+                                text: cur ? (actions.isToggleAction(cur.action) ? actions.toggleDesc(cur.action) : cur.label) : ""
+                                color: Theme.muted
+                                font.family: Theme.font
+                                font.pixelSize: Theme.fontSize.base
+                                elide: Text.ElideRight
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+                        }
+                    }
                 }
             }
-    }
 
-    // Compact tray tile — glyph on top, label below. Toggles fill with
-    // their accent while on; one-shots stay neutral until hover/highlight.
-    component TrayTile: Rectangle {
-        id: tile
-        property var entry
-        property bool isToggle: false
-        property bool on: false
-        property bool highlighted: false
-        signal picked()
-        signal hovered()
-        readonly property color accent: (tile.entry && tile.entry.accent !== undefined)
-            ? tile.entry.accent : Theme.fg
-        implicitHeight: 64
-        radius: 10 * Theme.radiusScale
-        color: tile.on
-            ? Theme.alpha(accent, 0.16)
-            : tile.highlighted
-                ? Theme.alpha(accent, 0.10)
-                : (tileMa.containsMouse ? Theme.bgHover : Theme.bgInset)
-        border.color: tile.on ? accent
-                    : tile.highlighted ? Theme.mutedDeep
-                    : Theme.borderSubtle
-        border.width: tile.on ? 2 : 1
-        scale: tileMa.pressed ? 0.95 : (tile.highlighted ? 1.03 : 1.0)
-        Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
-        Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
-        Behavior on border.color { ColorAnimation { duration: Theme.duration.normal } }
-
-        ColumnLayout {
-            anchors.centerIn: parent
-            spacing: 2
             Text {
-                Layout.alignment: Qt.AlignHCenter
-                text: tile.entry
-                    ? (tile.isToggle && !tile.on ? (tile.entry.offGlyph || tile.entry.glyph) : tile.entry.glyph)
-                    : ""
-                color: tile.on ? tile.accent
-                     : tile.highlighted || tileMa.containsMouse ? tile.accent
-                     : Theme.fgMuted
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.xl
-                Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
-            }
-            Text {
-                Layout.alignment: Qt.AlignHCenter
-                Layout.maximumWidth: tile.width - 10
-                text: tile.entry ? tile.entry.label : ""
-                color: tile.on || tile.highlighted ? Theme.fg : Theme.muted
+                Layout.fillWidth: true
+                text: "←→↑↓ move · ↵ select"
+                color: Theme.mutedDeep
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSize.xs
-                font.bold: tile.on || tile.highlighted
-                elide: Text.ElideRight
                 horizontalAlignment: Text.AlignHCenter
+                opacity: 0.65
             }
-        }
-
-        MouseArea {
-            id: tileMa
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: tile.picked()
-            onContainsMouseChanged: if (containsMouse) tile.hovered()
         }
     }
 }

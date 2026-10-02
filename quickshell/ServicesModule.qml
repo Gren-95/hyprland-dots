@@ -9,6 +9,7 @@
 // status.sh — so the QML never grows a shell pipeline in a string literal.
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 
@@ -168,6 +169,12 @@ Item {
     }
     Timer { id: probeSoon; interval: 1200; onTriggered: probe.running = true }
 
+    // Popup height follows the content (up to what the screen allows), so
+    // there is never empty space under the last row.
+    readonly property real fitHeight: Math.min(
+        parentBar && parentBar.screen ? parentBar.screen.height - 160 : 700,
+        contentCol.implicitHeight + Theme.spacing.xl * 2)
+
     // ============ Panel ============
     BarFlyout {
         id: flyout
@@ -175,101 +182,191 @@ Item {
         anchorItem: mod.flyoutAnchor ?? mod
         open: mod.popupOpen
         pinned: mod.pinned
-        cardWidth: settingsStore.flyoutSize("services", "w", 380)
-        cardHeight: panel.implicitHeight + 28
+        cardWidth: settingsStore.flyoutSize("services", "w", 460)
+        cardHeight: settingsStore.flyoutSize("services", "h", mod.fitHeight)
         onDismissed: mod.popupOpen = false
 
         ColumnLayout {
-            id: panel
-            anchors {
-                top: parent.top
-                left: parent.left
-                right: parent.right
-                margins: Theme.spacing.lg
-            }
-            spacing: Theme.spacing.sm
+            id: contentCol
+            anchors.fill: parent
+            anchors.margins: Theme.spacing.xl
+            spacing: Theme.spacing.lg
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: Theme.spacing.sm
+                spacing: Theme.spacing.md
                 PinButton {
                     pinned: mod.pinned
                     onToggled: mod.pinned = !mod.pinned
-                }
-                Text {
-                    text: "󰓦"
-                    color: Theme.accent.blue
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.lg
                 }
                 Text {
                     Layout.fillWidth: true
                     text: "Services"
                     color: Theme.fg
                     font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.md
+                    font.pixelSize: Theme.fontSize.lg
                     font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
                 }
-                Text {
-                    text: mod.daemonsDown > 0 ? mod.daemonsDown + " down" : "all up"
-                    color: mod.daemonsDown > 0 ? Theme.accent.orange : Theme.mutedDeep
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xs
-                }
+                // Balances the pin button so the title stays centered.
+                Item { implicitWidth: 22; implicitHeight: 22 }
             }
 
-            SectionLabel { text: "SESSION DAEMONS" }
-            Repeater {
-                model: mod.daemons
-                delegate: ServiceRow {
-                    required property var modelData
-                    Layout.fillWidth: true
-                    glyph: modelData.glyph
-                    label: modelData.label
-                    detail: mod.up(modelData.key) ? modelData.detail : "click to start · " + modelData.detail
-                    on: mod.up(modelData.key)
-                    busy: mod.busyKey === modelData.key
-                    accent: Theme.accent.green
-                    // A running daemon has nothing to do; only a dead one is
-                    // worth clicking.
-                    actionable: !mod.up(modelData.key)
-                    onActivated: mod.startDaemon(modelData)
+            Flickable {
+                id: flick
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.preferredHeight: col.implicitHeight
+                clip: true
+                contentWidth: width
+                contentHeight: col.implicitHeight
+                boundsBehavior: Flickable.StopAtBounds
+                ScrollBar.vertical: ThinScrollBar {
+                    policy: flick.contentHeight > flick.height + 2 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
                 }
-            }
 
-            SectionLabel { text: "SCHEDULED" }
-            Repeater {
-                model: mod.scheduled
-                delegate: ServiceRow {
-                    required property var modelData
-                    Layout.fillWidth: true
-                    glyph: modelData.glyph
-                    label: modelData.label
-                    detail: modelData.key === "jellyfin" ? mod.jellyfinDetail : modelData.detail
-                    on: mod.up(modelData.key)
-                    busy: mod.busyKey === modelData.key
-                    accent: modelData.accent
-                    stateOn: "enabled"
-                    stateOff: "disabled"
-                    onActivated: mod.toggle(modelData.key)
-                }
-            }
+                ColumnLayout {
+                    id: col
+                    width: flick.width - Theme.spacing.md
+                    spacing: Theme.spacing.lg
 
-            SectionLabel { text: "ON DEMAND" }
-            Repeater {
-                model: mod.onDemand
-                delegate: ServiceRow {
-                    required property var modelData
-                    Layout.fillWidth: true
-                    glyph: modelData.glyph
-                    label: modelData.label
-                    detail: modelData.detail
-                    on: mod.up(modelData.key)
-                    busy: mod.busyKey === modelData.key
-                    accent: modelData.accent
-                    stateOn: "on"
-                    stateOff: "off"
-                    onActivated: mod.toggle(modelData.key)
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: daemonCol.implicitHeight + Theme.spacing.xl * 2
+                        radius: 10 * Theme.radiusScale
+                        color: Theme.bg
+                        border.color: Theme.border
+                        border.width: 1
+                        ColumnLayout {
+                            id: daemonCol
+                            anchors.fill: parent
+                            anchors.margins: Theme.spacing.xl
+                            spacing: Theme.spacing.md
+                            RowLayout {
+                                Layout.fillWidth: true
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: "SESSION DAEMONS"
+                                    color: Theme.mutedDeep
+                                    font.family: Theme.font
+                                    font.pixelSize: Theme.fontSize.sm
+                                    font.letterSpacing: 1
+                                    font.bold: true
+                                }
+                                Text {
+                                    text: mod.daemonsDown > 0 ? mod.daemonsDown + " down" : "all up"
+                                    color: mod.daemonsDown > 0 ? Theme.accent.orange : Theme.mutedDeep
+                                    font.family: Theme.font
+                                    font.pixelSize: Theme.fontSize.sm
+                                    font.bold: mod.daemonsDown > 0
+                                    Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+                                }
+                            }
+                            Repeater {
+                                model: mod.daemons
+                                delegate: ServiceRow {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    glyph: modelData.glyph
+                                    label: modelData.label
+                                    detail: mod.up(modelData.key) ? modelData.detail : "click to start · " + modelData.detail
+                                    on: mod.up(modelData.key)
+                                    busy: mod.busyKey === modelData.key
+                                    accent: Theme.accent.green
+                                    // A running daemon has nothing to do; only a dead one is
+                                    // worth clicking.
+                                    actionable: !mod.up(modelData.key)
+                                    onActivated: mod.startDaemon(modelData)
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: schedCol.implicitHeight + Theme.spacing.xl * 2
+                        radius: 10 * Theme.radiusScale
+                        color: Theme.bg
+                        border.color: Theme.border
+                        border.width: 1
+                        ColumnLayout {
+                            id: schedCol
+                            anchors.fill: parent
+                            anchors.margins: Theme.spacing.xl
+                            spacing: Theme.spacing.md
+                            RowLayout {
+                                Layout.fillWidth: true
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: "SCHEDULED"
+                                    color: Theme.mutedDeep
+                                    font.family: Theme.font
+                                    font.pixelSize: Theme.fontSize.sm
+                                    font.letterSpacing: 1
+                                    font.bold: true
+                                }
+                            }
+                            Repeater {
+                                model: mod.scheduled
+                                delegate: ServiceRow {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    glyph: modelData.glyph
+                                    label: modelData.label
+                                    detail: modelData.key === "jellyfin" ? mod.jellyfinDetail : modelData.detail
+                                    on: mod.up(modelData.key)
+                                    busy: mod.busyKey === modelData.key
+                                    accent: modelData.accent
+                                    stateOn: "enabled"
+                                    stateOff: "disabled"
+                                    onActivated: mod.toggle(modelData.key)
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: demandCol.implicitHeight + Theme.spacing.xl * 2
+                        radius: 10 * Theme.radiusScale
+                        color: Theme.bg
+                        border.color: Theme.border
+                        border.width: 1
+                        ColumnLayout {
+                            id: demandCol
+                            anchors.fill: parent
+                            anchors.margins: Theme.spacing.xl
+                            spacing: Theme.spacing.md
+                            RowLayout {
+                                Layout.fillWidth: true
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: "ON DEMAND"
+                                    color: Theme.mutedDeep
+                                    font.family: Theme.font
+                                    font.pixelSize: Theme.fontSize.sm
+                                    font.letterSpacing: 1
+                                    font.bold: true
+                                }
+                            }
+                            Repeater {
+                                model: mod.onDemand
+                                delegate: ServiceRow {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    glyph: modelData.glyph
+                                    label: modelData.label
+                                    detail: modelData.detail
+                                    on: mod.up(modelData.key)
+                                    busy: mod.busyKey === modelData.key
+                                    accent: modelData.accent
+                                    stateOn: "on"
+                                    stateOff: "off"
+                                    onActivated: mod.toggle(modelData.key)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
