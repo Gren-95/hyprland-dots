@@ -44,3 +44,7 @@ fish/functions/ofs.fish
 gtk-4.0/servers
 gtk-3.0/bookmarks
 brave/
+
+# Python bytecode
+__pycache__/
+*.pyc
