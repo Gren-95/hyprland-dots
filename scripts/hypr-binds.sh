@@ -9,7 +9,7 @@
 #
 # Binds it can't resolve are passed through untouched.
 exec python3 - "$@" <<'PY'
-import json, re, subprocess, sys, pathlib
+import json, os, re, subprocess, sys, pathlib
 
 HYPR = pathlib.Path.home() / ".config/hypr"
 MODS = {"SHIFT": 1, "CAPS": 2, "CTRL": 4, "ALT": 8,
@@ -21,10 +21,15 @@ def lua_sources():
 
 
 def var_map(texts):
+    """Collect `var_*` assignments, including `..` concatenations that use a
+    `local x = os.getenv("HOME") .. "..."` prefix."""
+    home = os.environ.get("HOME", "")
     out = {}
     for t in texts:
-        for m in re.finditer(r'^\s*(var_\w+)\s*=\s*"([^"]*)"', t, re.M):
-            out[m.group(1)] = m.group(2)
+        for m in re.finditer(r'^\s*local\s+(\w+)\s*=\s*os\.getenv\("HOME"\)\s*\.\.\s*"([^"]*)"', t, re.M):
+            out[m.group(1)] = home + m.group(2)
+        for m in re.finditer(r'^\s*(var_\w+)\s*=\s*(.+)$', t, re.M):
+            out[m.group(1)] = resolve_str(m.group(2), out)
     return out
 
 
@@ -169,7 +174,10 @@ def build_index():
                 continue
             path = am.group(1).rstrip(".")
             inner_args = balanced(act, am.end() - 1) or ""
-            index[combo_key(combo)] = to_dispatcher(path, inner_args, vars_)
+            lua = re.sub(r"\bvar_\w+\b",
+                         lambda v: json.dumps(vars_[v.group(0)]) if v.group(0) in vars_ else v.group(0),
+                         act)
+            index[combo_key(combo)] = (*to_dispatcher(path, inner_args, vars_), lua)
     return index
 
 
@@ -190,7 +198,7 @@ def main():
             continue
         found = index.get((b.get("modmask", 0), str(b.get("key", "")).lower()))
         if found:
-            b["dispatcher"], b["arg"] = found
+            b["dispatcher"], b["arg"], b["lua"] = found
             hits += 1
     print(json.dumps(binds))
     print(f"hypr-binds: resolved {hits}/{len(binds)} binds", file=sys.stderr)

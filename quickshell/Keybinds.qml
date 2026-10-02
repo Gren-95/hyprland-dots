@@ -12,6 +12,7 @@ Scope {
     property string query: ""
     property int selectedIndex: 0
     property var entries: []
+    property bool pinned: false
     // Default anchor set from the bar (the Quick Actions chevron); openers
     // can pass their own item via toggle(from)/openMenu(from) so the flyout
     // hangs under whatever was actually clicked (QA tile, promoted icon).
@@ -32,6 +33,27 @@ Scope {
     }
     function close() { open = false; }
     function refresh() { bindsProc.running = true; }
+
+    // Run a bind's action by dispatching its original Lua expression. Mouse
+    // and lid-switch binds have no meaningful "run now" and are skipped.
+    property string _pendingLua: ""
+    function run(entry) {
+        if (!entry || !entry.runnable) return;
+        _pendingLua = entry.lua;
+        if (!pinned) close();
+        runDelay.restart();
+    }
+    Timer {
+        id: runDelay
+        // Let the flyout release its focus grab so focus-relative actions
+        // (killactive, movefocus) hit the window underneath.
+        interval: 150
+        onTriggered: {
+            runProc.command = ["hyprctl", "dispatch", root._pendingLua];
+            runProc.running = true;
+        }
+    }
+    Process { id: runProc }
 
     // Modmask bits as exposed by Hyprland.
     readonly property var modBits: ({ 1: "Shift", 2: "Caps", 4: "Ctrl", 8: "Alt", 16: "Mod2", 32: "Mod3", 64: "Super", 128: "Mod5" })
@@ -146,6 +168,9 @@ Scope {
                         catIcon: root._catIcon(cat),
                         catColor: root._catColor(cat),
                         description: b.description || "",
+                        lua: b.lua || "",
+                        runnable: !!b.lua && !b.mouse && !String(b.key).startsWith("switch:")
+                            && !String(b.key).startsWith("mouse"),
                     });
                 }
                 // Sort: category asc, then combo asc
@@ -162,6 +187,7 @@ Scope {
         parentBar: root.anchorBar
         anchorItem: root._openAnchor ?? root.anchorItem
         open: root.open && root.anchorBar !== null
+        pinned: root.pinned
         cardWidth: settingsStore.flyoutSize("keybinds", "w", 640)
         cardHeight: settingsStore.flyoutSize("keybinds", "h", 620)
         onDismissed: root.close()
@@ -178,6 +204,9 @@ Scope {
                 e.accepted = true;
             } else if (e.key === Qt.Key_PageUp) {
                 root.selectedIndex = Math.max(0, root.selectedIndex - 10);
+                e.accepted = true;
+            } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
+                if (n > 0) root.run(root.filtered[root.selectedIndex]);
                 e.accepted = true;
             } else if (e.key === Qt.Key_F5) {
                 root.refresh(); e.accepted = true;
@@ -199,14 +228,23 @@ Scope {
                     anchors.margins: Theme.spacing.lg
                     spacing: Theme.spacing.md
 
-                    Text {
+                    RowLayout {
                         Layout.fillWidth: true
-                        text: "Keybinds"
-                        color: Theme.fg
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.md
-                        font.bold: true
-                        horizontalAlignment: Text.AlignHCenter
+                        spacing: Theme.spacing.md
+                        PinButton {
+                            pinned: root.pinned
+                            onToggled: root.pinned = !root.pinned
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Keybinds"
+                            color: Theme.fg
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.md
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                        Item { implicitWidth: 22; implicitHeight: 22 }
                     }
 
                     RowLayout {
@@ -276,6 +314,7 @@ Scope {
                                 highlighted: root.selectedIndex === index
                                 Layout.fillWidth: true
                                 onHovered: root.selectedIndex = index
+                                onActivated: root.run(modelData)
                             }
                         }
 
@@ -325,6 +364,7 @@ Scope {
                         anchors.leftMargin: 14
                         anchors.rightMargin: 14
                         spacing: Theme.spacing.lg
+                        Text { text: "Click / Enter Run"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
                         Text { text: "↑↓ Navigate"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
                         Text { text: "F5 Refresh"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
                         Text { text: "Esc Close"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
@@ -339,6 +379,7 @@ Scope {
         property var entry
         property bool highlighted: false
         signal hovered()
+        signal activated()
         implicitHeight: 40
         radius: 6 * Theme.radiusScale
         color: row.highlighted ? Theme.bgActive : (hover.containsMouse ? Theme.bgHover : "transparent")
@@ -429,8 +470,9 @@ Scope {
             id: hover
             anchors.fill: parent
             hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
+            cursorShape: row.entry && row.entry.runnable ? Qt.PointingHandCursor : Qt.ArrowCursor
             onContainsMouseChanged: if (containsMouse) row.hovered()
+            onClicked: row.activated()
         }
     }
 }
