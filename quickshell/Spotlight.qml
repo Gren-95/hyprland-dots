@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 
@@ -192,12 +193,28 @@ Scope {
 
     Process { id: copyProc; command: [] }
 
+    // Popup height follows the list (up to what the screen allows), so there
+    // is no dead space under the last row; the footer stays pinned below it.
+    readonly property real fitHeight: Math.max(340, Math.min(
+        anchorBar && anchorBar.screen ? Math.min(anchorBar.screen.height - 160, 680) : 600,
+        contentCol.implicitHeight))
+
+    readonly property string emptyTitle: {
+        if (root.manageHidden) return settingsStore.hiddenAppCount > 0 ? "No hidden apps match" : "Nothing hidden";
+        if (root.pickRole !== "") return "No " + root.pickLabel + " apps found";
+        return "No results";
+    }
+    readonly property string emptySubtitle: {
+        if (root.manageHidden && settingsStore.hiddenAppCount === 0) return "Ctrl+D hides an app from the launcher";
+        return root.query !== "" ? "Nothing matches \u201c" + root.query + "\u201d" : "";
+    }
+
     BarFlyout {
         parentBar: root.anchorBar
         anchorItem: root.anchorItem
         open: root.open && root.anchorBar !== null
         cardWidth: settingsStore.flyoutSize("spotlight", "w", 560)
-        cardHeight: settingsStore.flyoutSize("spotlight", "h", 560)
+        cardHeight: settingsStore.flyoutSize("spotlight", "h", root.fitHeight)
         onDismissed: root.open = false
         onKeyPressed: (e) => {
             const n = root.totalRows;
@@ -236,178 +253,214 @@ Scope {
                 e.accepted = true;
             }
         }
-        Item {
-                id: contentRoot
-                anchors.fill: parent
-                ColumnLayout {
-                    id: headerCol
-                    anchors { top: parent.top; left: parent.left; right: parent.right }
-                    anchors.margins: Theme.spacing.lg
-                    spacing: Theme.spacing.md
 
-                    Text {
-                        Layout.fillWidth: true
-                        text: root.manageHidden ? "Hidden apps"
-                            : root.pickRole === "" ? "Launcher" : "Default " + root.pickLabel
-                        color: Theme.fg
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.md
-                        font.bold: true
-                        horizontalAlignment: Text.AlignHCenter
-                    }
+        ColumnLayout {
+            id: contentCol
+            anchors.fill: parent
+            anchors.margins: Theme.spacing.xl
+            spacing: Theme.spacing.lg
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.spacing.lg
-                        Text {
-                            text: "󰍉"
-                            color: Theme.muted
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.hero
-                        }
-                        Text {
-                            Layout.fillWidth: true
-                            text: root.query || (root.manageHidden
-                            ? (settingsStore.hiddenAppCount > 0 ? "Pick one to show again"
-                                                                : "Nothing hidden")
-                            : root.pickRole === "" ? "Spotlight Search"
-                            : "Pick a " + root.pickLabel)
-                            color: root.query ? Theme.fg : Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xxl
-                            elide: Text.ElideRight
-                        }
-                    }
-                    Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderStrong }
-                }
-
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Theme.spacing.md
                 Text {
-                    id: hintFooter
-                    anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 10 }
-                    text: root.manageHidden
-                        ? "↵ show again · ←/→ back to all · Esc close"
-                        : root.pickRole === ""
-                        ? "↑/↓ navigate · ↵ launch · Ctrl+D hide · ←/→ hidden · Esc close"
-                        : "↵ set as default " + root.pickLabel + " · Esc back"
-                    color: Theme.disabled
+                    Layout.fillWidth: true
+                    text: root.manageHidden ? "Hidden apps"
+                        : root.pickRole === "" ? "Launcher" : "Default " + root.pickLabel
+                    color: Theme.fg
                     font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xs
-                    horizontalAlignment: Text.AlignHCenter
+                    font.pixelSize: Theme.fontSize.lg
+                    font.bold: true
+                    elide: Text.ElideRight
                 }
+                LauncherChipButton {
+                    visible: root.pickRole === ""
+                    glyph: root.manageHidden ? "󰁍" : "󰈉"
+                    text: root.manageHidden ? "Back to apps"
+                        : settingsStore.hiddenAppCount > 0 ? "Hidden \u00b7 " + settingsStore.hiddenAppCount : "Hidden"
+                    active: root.manageHidden
+                    onClicked: root.toggleHiddenView()
+                }
+                LauncherChipButton {
+                    visible: root.pickRole !== ""
+                    glyph: "󰁍"
+                    text: "Cancel"
+                    onClicked: root.cancelPick()
+                }
+            }
+
+            LauncherSearchBar {
+                Layout.fillWidth: true
+                text: root.query
+                glyph: root.manageHidden ? "󰈉" : "󰍉"
+                placeholder: root.manageHidden
+                    ? (settingsStore.hiddenAppCount > 0 ? "Pick one to show again" : "Nothing hidden")
+                    : root.pickRole === "" ? "Search apps, actions, or type = to calculate"
+                    : "Pick a " + root.pickLabel
+                countText: root.totalRows > 0 ? String(root.totalRows) : ""
+                onCleared: { root.query = ""; root.selectedIndex = 0; }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.preferredHeight: listBox.height + 2
+                radius: 10 * Theme.radiusScale
+                color: Theme.bg
+                border.color: Theme.border
+                border.width: 1
+                clip: true
 
                 Flickable {
                     id: results
-                    anchors {
-                        top: headerCol.bottom
-                        left: parent.left
-                        right: parent.right
-                        bottom: hintFooter.top
-                        topMargin: 6
-                        leftMargin: 8
-                        rightMargin: 8
-                        bottomMargin: 6
-                    }
-                    contentHeight: resultsCol.implicitHeight
+                    anchors.fill: parent
+                    anchors.margins: 1
+                    contentWidth: width
+                    contentHeight: listBox.height
+                    boundsBehavior: Flickable.StopAtBounds
                     clip: true
-                    ColumnLayout {
-                        id: resultsCol
-                        width: parent.width
-                        spacing: 2
+                    ScrollBar.vertical: ThinScrollBar {}
 
-                        SpotlightCalcRow {
-                            visible: root.hasCalc
-                            expr: root.calcExpr
-                            result: root.calcResult
-                            highlighted: root.selectedIndex === 0
-                            Layout.fillWidth: true
-                            onPicked: root.activate(0)
-                            onHovered: root.selectedIndex = 0
+                    NumberAnimation {
+                        id: scrollAnim
+                        target: results
+                        property: "contentY"
+                        duration: Theme.duration.normal
+                        easing.type: Theme.easing.standard
+                    }
+
+                    Item {
+                        id: listBox
+                        readonly property int pad: Theme.spacing.md
+                        width: results.width
+                        height: root.totalRows === 0 ? 230 : resultsCol.implicitHeight + pad * 2
+
+                        LauncherSelection {
+                            id: selection
+                            inset: listBox.pad
+                            offsetY: listBox.pad
                         }
 
-                        Text {
-                            Layout.leftMargin: 6
-                            Layout.topMargin: 4
-                            visible: root.matchedActions.length > 0
-                            text: "SHELL"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xs
-                            font.letterSpacing: 1
-                            font.bold: true
-                        }
-                        Repeater {
-                            id: actionsRepeater
-                            model: root.matchedActions
-                            delegate: SpotlightActionRow {
-                                required property var modelData
-                                required property int index
-                                action: modelData
-                                highlighted: root.selectedIndex === (index + root.calcOffset)
+                        ColumnLayout {
+                            id: resultsCol
+                            x: listBox.pad
+                            y: listBox.pad
+                            width: parent.width - listBox.pad * 2
+                            spacing: 2
+                            onImplicitHeightChanged: Qt.callLater(contentCol.syncSelection)
+
+                            SpotlightCalcRow {
+                                id: calcRow
+                                visible: root.hasCalc
+                                expr: root.calcExpr
+                                result: root.calcResult
+                                highlighted: root.selectedIndex === 0
                                 Layout.fillWidth: true
-                                onPicked: root.activate(index + root.calcOffset)
-                                onHovered: root.selectedIndex = index + root.calcOffset
+                                onPicked: root.activate(0)
+                                onHovered: root.selectedIndex = 0
+                            }
+
+                            LauncherSectionHeader {
+                                Layout.fillWidth: true
+                                Layout.leftMargin: Theme.spacing.md
+                                Layout.rightMargin: Theme.spacing.md
+                                Layout.topMargin: Theme.spacing.xs
+                                visible: root.matchedActions.length > 0
+                                title: "SHELL"
+                                count: root.matchedActions.length
+                            }
+                            Repeater {
+                                id: actionsRepeater
+                                model: root.matchedActions
+                                onItemAdded: Qt.callLater(contentCol.syncSelection)
+                                delegate: SpotlightActionRow {
+                                    required property var modelData
+                                    required property int index
+                                    action: modelData
+                                    highlighted: root.selectedIndex === (index + root.calcOffset)
+                                    Layout.fillWidth: true
+                                    onPicked: root.activate(index + root.calcOffset)
+                                    onHovered: root.selectedIndex = index + root.calcOffset
+                                }
+                            }
+
+                            LauncherSectionHeader {
+                                Layout.fillWidth: true
+                                Layout.leftMargin: Theme.spacing.md
+                                Layout.rightMargin: Theme.spacing.md
+                                Layout.topMargin: Theme.spacing.xs
+                                visible: root.filtered.length > 0
+                                title: root.manageHidden ? "HIDDEN APPS" : "APPLICATIONS"
+                                count: root.filtered.length
+                            }
+                            Repeater {
+                                id: appsRepeater
+                                model: root.filtered.slice(0, settingsStore.spotlightCap)
+                                onItemAdded: Qt.callLater(contentCol.syncSelection)
+                                delegate: SpotlightAppRow {
+                                    required property var modelData
+                                    required property int index
+                                    entry: modelData
+                                    highlighted: root.selectedIndex === (index + root.appOffset)
+                                    Layout.fillWidth: true
+                                    onPicked: root.activate(index + root.appOffset)
+                                    onHovered: root.selectedIndex = index + root.appOffset
+                                }
                             }
                         }
 
-                        Text {
-                            Layout.leftMargin: 6
-                            Layout.topMargin: 4
-                            visible: root.filtered.length > 0
-                            text: "APPLICATIONS"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xs
-                            font.letterSpacing: 1
-                            font.bold: true
-                        }
-
-                        Repeater {
-                            id: appsRepeater
-                            model: root.filtered.slice(0, settingsStore.spotlightCap)
-                            delegate: SpotlightAppRow {
-                                required property var modelData
-                                required property int index
-                                entry: modelData
-                                highlighted: root.selectedIndex === (index + root.appOffset)
-                                Layout.fillWidth: true
-                                onPicked: root.activate(index + root.appOffset)
-                                onHovered: root.selectedIndex = index + root.appOffset
-                            }
+                        LauncherEmptyState {
+                            anchors.centerIn: parent
+                            visible: root.totalRows === 0
+                            glyph: root.manageHidden ? "󰈉" : "󰍉"
+                            title: root.emptyTitle
+                            subtitle: root.emptySubtitle
                         }
                     }
                 }
+            }
 
-                // Keep the highlighted row in view as arrows move selection.
-                Connections {
-                    target: root
-                    function onSelectedIndexChanged() { Qt.callLater(contentRoot.ensureVisible) }
-                }
-                function ensureVisible() {
-                    const idx = root.selectedIndex;
-                    // Calc row sits at the very top; pin to start.
-                    if (root.hasCalc && idx === 0) {
-                        results.contentY = 0;
-                        return;
-                    }
-                    const ai = idx - root.calcOffset;
-                    const item = ai < root.matchedActions.length
-                        ? actionsRepeater.itemAt(ai)
-                        : appsRepeater.itemAt(idx - root.appOffset);
-                    if (!item) return;
-                    const top = item.y;
-                    const bot = top + item.height;
-                    const viewTop = results.contentY;
-                    const viewBot = viewTop + results.height;
-                    const pad = 8;
-                    if (top < viewTop + pad) {
-                        results.contentY = Math.max(0, top - pad);
-                    } else if (bot > viewBot - pad) {
-                        results.contentY = Math.min(
-                            Math.max(0, results.contentHeight - results.height),
-                            bot - results.height + pad
-                        );
-                    }
-                }
+            LauncherFooter {
+                Layout.fillWidth: true
+                hints: root.manageHidden
+                    ? [{ key: "\u21b5", label: "show again" }, { key: "\u2190\u2192", label: "back to all" }, { key: "Esc", label: "close" }]
+                    : root.pickRole === ""
+                    ? [{ key: "\u2191\u2193", label: "navigate" }, { key: "\u21b5", label: "launch" },
+                       { key: "Ctrl+D", label: "hide" }, { key: "\u2190\u2192", label: "hidden" }, { key: "Esc", label: "close" }]
+                    : [{ key: "\u21b5", label: "set as default " + root.pickLabel }, { key: "Esc", label: "back" }]
+            }
+
+            Connections {
+                target: root
+                function onSelectedIndexChanged() { Qt.callLater(contentCol.syncSelection) }
+            }
+
+            // Point the selection plate at the highlighted row and keep that
+            // row inside the viewport.
+            function syncSelection() {
+                const idx = root.selectedIndex;
+                const ai = idx - root.calcOffset;
+                let item = null;
+                if (root.hasCalc && idx === 0) item = calcRow;
+                else if (ai >= 0 && ai < root.matchedActions.length) item = actionsRepeater.itemAt(ai);
+                else item = appsRepeater.itemAt(idx - root.appOffset);
+                selection.target = item;
+                if (!item) return;
+                const top = item.y + listBox.pad;
+                const bot = top + item.height;
+                const pad = 8;
+                const viewTop = results.contentY;
+                const viewBot = viewTop + results.height;
+                const maxY = Math.max(0, results.contentHeight - results.height);
+                let to = viewTop;
+                if (root.hasCalc && idx === 0) to = 0;
+                else if (top < viewTop + pad) to = Math.max(0, top - pad - (ai === 0 || idx === root.appOffset ? 32 : 0));
+                else if (bot > viewBot - pad) to = Math.min(maxY, bot - results.height + pad);
+                if (to === viewTop) return;
+                scrollAnim.stop();
+                scrollAnim.to = to;
+                scrollAnim.start();
+            }
         }
     }
 }

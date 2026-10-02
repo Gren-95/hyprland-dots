@@ -2,46 +2,45 @@
 import QtQuick
 import QtQuick.Layouts
 
-Rectangle {
+Item {
     id: crow
     property string expr: ""
     property string result: ""
     property bool highlighted: false
     signal picked()
     signal hovered()
-    implicitHeight: 60
-    radius: 8 * Theme.radiusScale
-    color: crow.highlighted ? Theme.bgActive : (cHover.containsMouse ? Theme.bgHover : "transparent")
-    border.color: Theme.accentPrimary
-    border.width: 1
+    implicitHeight: 72
+    scale: cHover.pressed ? 0.985 : 1.0
+    Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
 
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: 14
-        anchors.rightMargin: 14
+        anchors.leftMargin: Theme.spacing.xl
+        anchors.rightMargin: Theme.spacing.lg
         spacing: Theme.spacing.lg
         Rectangle {
-            Layout.preferredWidth: 32
-            Layout.preferredHeight: 32
-            radius: 6 * Theme.radiusScale
-            color: Theme.accent.blueDeep
+            Layout.preferredWidth: 44
+            Layout.preferredHeight: 44
+            radius: 10 * Theme.radiusScale
+            color: crow.highlighted ? Theme.accent.blueDeep : Theme.alpha(Theme.accent.blue, 0.2)
+            Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
             Text {
                 anchors.centerIn: parent
                 text: "="
                 color: Theme.fg
                 font.family: Theme.font
-                font.pixelSize: Theme.fontSize.xl
+                font.pixelSize: Theme.fontSize.xxl
                 font.bold: true
             }
         }
         ColumnLayout {
             Layout.fillWidth: true
-            spacing: 0
+            spacing: 1
             Text {
                 text: crow.result
                 color: Theme.fg
                 font.family: Theme.font
-                font.pixelSize: Theme.fontSize.xl
+                font.pixelSize: Theme.fontSize.xxl
                 font.bold: true
                 elide: Text.ElideRight
                 Layout.fillWidth: true
@@ -57,9 +56,10 @@ Rectangle {
         }
         Text {
             text: "↵ Copy"
-            color: Theme.mutedDeep
+            color: crow.highlighted ? Theme.accentPrimary : Theme.mutedDeep
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.base
+            Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
         }
     }
     MouseArea {
