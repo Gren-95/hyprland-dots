@@ -20,6 +20,7 @@ Scope {
         mem: { total: 0, used: 0, available: 0, cached: 0, buffers: 0, free: 0, swap_total: 0, swap_used: 0 },
         nvme_temp: 0, fan1: 0, fan2: 0,
         net: { iface: "", rx: 0, tx: 0 }, io: { read: 0, write: 0 }, ts_ms: 0,
+        gpu: { act: 0, max: 0, rc6_ms: 0 }, gpu_busy: 0,
         disks: [], procs: [], uptime: ""
     })
 
@@ -31,6 +32,7 @@ Scope {
     property var txHistory: []
     property var readHistory: []
     property var writeHistory: []
+    property var gpuHistory: []
     property real rxRate: 0
     property real txRate: 0
     property real readRate: 0
@@ -53,8 +55,12 @@ Scope {
         const pc = _previousCpu;
         const cpuPct = pc ? _cpuPercent(d.cpu.all, pc.all) : 0;
         const cores = pc ? d.cpu.cores.map((c, i) => _cpuPercent(c, pc.cores[i] || c)) : d.cpu.cores.map(() => 0);
+        let gpuBusy = data.gpu_busy;
         if (p && d.ts_ms > p.ts_ms) {
             const dt = (d.ts_ms - p.ts_ms) / 1000;
+            // Busy share of the iGPU: the part of the interval it was not in RC6 (idle).
+            gpuBusy = Math.max(0, Math.min(100, (1 - (d.gpu.rc6_ms - p.gpu.rc6_ms) / (dt * 1000)) * 100));
+            gpuHistory = _push(gpuHistory, gpuBusy);
             rxRate = Math.max(0, (d.net.rx - p.net.rx) / dt);
             txRate = Math.max(0, (d.net.tx - p.net.tx) / dt);
             readRate = Math.max(0, (d.io.read - p.io.read) / dt);
@@ -72,7 +78,7 @@ Scope {
         data = Object.assign({}, data, {
             cpu_pct: cpuPct, cpu_cores: cores, load: d.load, cpu_freq_mhz: d.cpu_freq_mhz,
             mem: d.mem, ram_pct: ramPct, ram_used_gb: d.mem.used, ram_total_gb: d.mem.total,
-            net: d.net, io: d.io, ts_ms: d.ts_ms
+            net: d.net, io: d.io, gpu: d.gpu, gpu_busy: gpuBusy, ts_ms: d.ts_ms
         });
     }
     // Slow probe (sysinfo.sh): processes, disk usage, temperatures.
@@ -81,7 +87,7 @@ Scope {
     }
     function _resetHistory() {
         cpuHistory = []; memHistory = []; rxHistory = []; txHistory = [];
-        readHistory = []; writeHistory = [];
+        readHistory = []; writeHistory = []; gpuHistory = [];
         rxRate = 0; txRate = 0; readRate = 0; writeRate = 0;
         _previous = null;
         _previousCpu = null;
@@ -435,16 +441,54 @@ Scope {
                                     }
                                 }
                             }
-                            Card {
-                                visible: settingsStore.sysmonShowThermal
-                                title: "THERMAL"
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    spacing: Theme.spacing.md
-                                    ThermalTile { glyph: "󰻠"; label: "CPU";   number: root.data.cpu_temp;  unit: "°C"; maxValue: 100; tint: root.tempColor(root.data.cpu_temp) }
-                                    ThermalTile { glyph: "󰋊"; label: "NVMe";  number: root.data.nvme_temp; unit: "°C"; maxValue: 100; tint: root.tempColor(root.data.nvme_temp) }
-                                    ThermalTile { glyph: "󰈐"; label: "Fan 1"; number: root.data.fan1;      unit: "rpm"; maxValue: 5000; tint: Theme.accent.blue }
-                                    ThermalTile { glyph: "󰈐"; label: "Fan 2"; number: root.data.fan2;      unit: "rpm"; maxValue: 5000; tint: Theme.accent.blue }
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacing.lg
+
+                                Card {
+                                    visible: root.data.gpu.max > 0
+                                    Layout.fillHeight: true
+                                    Layout.preferredWidth: 1
+                                    title: "GPU"
+                                    subtitle: "Intel iGPU"
+                                    headerData: [
+                                        Stat { label: "Clock"; value: root.data.gpu.act + " / " + root.data.gpu.max + " MHz" },
+                                        Text {
+                                            text: root.data.gpu_busy.toFixed(0) + "%"
+                                            color: root.pctColor(root.data.gpu_busy)
+                                            font.family: Theme.font
+                                            font.pixelSize: Theme.fontSize.xxl
+                                            font.bold: true
+                                            Behavior on color { ColorAnimation { duration: Theme.duration.slow } }
+                                        }
+                                    ]
+
+                                    SysGraph {
+                                        Layout.fillWidth: true
+                                        implicitHeight: 100
+                                        values: root.gpuHistory
+                                        maxValue: 100
+                                        samples: root.historyLength
+                                        scrollMs: root.paused ? 0 : root.sampleInterval
+                                        color: root.pctColor(root.data.gpu_busy)
+                                    }
+                                }
+
+                                Card {
+                                    visible: settingsStore.sysmonShowThermal
+                                    Layout.fillHeight: true
+                                    Layout.preferredWidth: 1
+                                    title: "THERMAL"
+                                    GridLayout {
+                                        Layout.fillWidth: true
+                                        columns: 2
+                                        rowSpacing: Theme.spacing.md
+                                        columnSpacing: Theme.spacing.md
+                                        ThermalTile { glyph: "󰻠"; label: "CPU";   number: root.data.cpu_temp;  unit: "°C"; maxValue: 100; tint: root.tempColor(root.data.cpu_temp) }
+                                        ThermalTile { glyph: "󰋊"; label: "NVMe";  number: root.data.nvme_temp; unit: "°C"; maxValue: 100; tint: root.tempColor(root.data.nvme_temp) }
+                                        ThermalTile { glyph: "󰈐"; label: "Fan 1"; number: root.data.fan1;      unit: "rpm"; maxValue: 5000; tint: Theme.accent.blue }
+                                        ThermalTile { glyph: "󰈐"; label: "Fan 2"; number: root.data.fan2;      unit: "rpm"; maxValue: 5000; tint: Theme.accent.blue }
+                                    }
                                 }
                             }
                         }
