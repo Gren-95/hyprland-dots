@@ -22,126 +22,132 @@ Item {
     // and tipping the next six days into it buries that day's events.
     property bool showUpcoming: false
 
-    ColumnLayout {
-        anchors.fill: parent
-        spacing: Theme.spacing.md
+    implicitHeight: scroll.naturalHeight
 
-        // ====== Header: the selected day, and how much is on it ======
-        RowLayout {
+    DayScroll {
+        id: scroll
+        anchors.fill: parent
+
+        // ====== The selected day, and how much is on it ======
+        DayCard {
             Layout.fillWidth: true
-            spacing: Theme.spacing.md
-            Text {
-                text: "󰃭"
-                color: Theme.muted
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.xxl
-            }
-            ColumnLayout {
+            RowLayout {
                 Layout.fillWidth: true
-                spacing: 0
+                spacing: Theme.spacing.lg
                 Text {
-                    Layout.fillWidth: true
-                    text: pane.cal ? Qt.formatDate(pane.cal.selectedDate, "dddd") : ""
-                    color: Theme.fg
+                    text: "󰃭"
+                    color: Theme.accentPrimary
                     font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.lg
-                    font.bold: true
-                    elide: Text.ElideRight
+                    font.pixelSize: Theme.fontSize.hero
                 }
-                Text {
+                ColumnLayout {
                     Layout.fillWidth: true
-                    text: pane.cal ? Qt.formatDate(pane.cal.selectedDate, "d MMMM yyyy") : ""
-                    color: Theme.mutedDeep
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.sm
-                    elide: Text.ElideRight
+                    spacing: 0
+                    Text {
+                        Layout.fillWidth: true
+                        text: pane.cal ? Qt.formatDate(pane.cal.selectedDate, "dddd") : ""
+                        color: Theme.fg
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize.xl
+                        font.bold: true
+                        elide: Text.ElideRight
+                    }
+                    Text {
+                        Layout.fillWidth: true
+                        text: pane.cal ? Qt.formatDate(pane.cal.selectedDate, "d MMMM yyyy") : ""
+                        color: Theme.muted
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize.base
+                        elide: Text.ElideRight
+                    }
                 }
-            }
-            Rectangle {
-                visible: pane.dayEvents.length > 0
-                implicitWidth: dayCount.implicitWidth + 14
-                implicitHeight: 20
-                radius: 10 * Theme.radiusScale
-                color: Theme.bgDeep
-                border.color: Theme.borderSubtle
-                border.width: 1
-                Text {
-                    id: dayCount
-                    anchors.centerIn: parent
-                    text: pane.dayEvents.length
-                    color: Theme.muted
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xs
-                    font.bold: true
+                Rectangle {
+                    visible: pane.dayEvents.length > 0
+                    implicitWidth: Math.max(28, dayCount.implicitWidth + 16)
+                    implicitHeight: 28
+                    radius: height / 2
+                    color: Theme.alpha(Theme.accentPrimary, 0.16)
+                    border.color: Theme.alpha(Theme.accentPrimary, 0.45)
+                    border.width: 1
+                    Text {
+                        id: dayCount
+                        anchors.centerIn: parent
+                        text: pane.dayEvents.length
+                        color: Theme.accentPrimary
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize.base
+                        font.bold: true
+                    }
                 }
             }
         }
 
-        Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Theme.borderStrong }
-
-        Flickable {
-            id: eventsFlick
+        // ====== Events of the day ======
+        DayCard {
             Layout.fillWidth: true
-            Layout.fillHeight: true
-            contentWidth: width
-            contentHeight: eventsCol.implicitHeight
-            clip: true
-            boundsBehavior: Flickable.StopAtBounds
+            title: "Events"
+            spacing: Theme.spacing.md
+
+            Text {
+                Layout.fillWidth: true
+                Layout.topMargin: Theme.spacing.md
+                Layout.bottomMargin: Theme.spacing.md
+                visible: pane.dayEvents.length === 0
+                text: pane.configured
+                    ? "Nothing on this day"
+                    : "Set ~/.config/quickshell/calendar.url\nto enable"
+                color: Theme.mutedDeep
+                font.family: Theme.font
+                font.pixelSize: Theme.fontSize.md
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.WordWrap
+            }
+
+            Repeater {
+                model: pane.dayEvents
+                delegate: EventRow {
+                    required property var modelData
+                    event: modelData
+                    accentColor: pane.cal.colorFor(modelData.calIndex)
+                    Layout.fillWidth: true
+                }
+            }
+        }
+
+        // ====== Upcoming, behind a toggle ======
+        DayCard {
+            Layout.fillWidth: true
+            visible: pane.configured && pane.upcoming.length > 0
+            title: "Upcoming"
 
             ColumnLayout {
-                id: eventsCol
-                width: eventsFlick.width
-                spacing: Theme.spacing.sm
+                Layout.fillWidth: true
+                spacing: 0
 
-                Text {
-                    Layout.fillWidth: true
-                    Layout.topMargin: 24
-                    visible: pane.dayEvents.length === 0
-                    text: pane.configured
-                        ? "Nothing on this day"
-                        : "Set ~/.config/quickshell/calendar.url\nto enable"
-                    color: Theme.disabled
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.base
-                    horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.WordWrap
-                }
-
-                Repeater {
-                    model: pane.dayEvents
-                    delegate: EventRow {
-                        required property var modelData
-                        event: modelData
-                        accentColor: pane.cal.colorFor(modelData.calIndex)
-                        Layout.fillWidth: true
-                    }
-                }
-
-                // ====== Upcoming, behind a toggle ======
                 Rectangle {
                     id: upBtn
-                    visible: pane.configured && pane.upcoming.length > 0
                     Layout.fillWidth: true
-                    Layout.topMargin: Theme.spacing.md
-                    implicitHeight: 30
-                    radius: 6 * Theme.radiusScale
-                    color: upMa.containsMouse ? Theme.bgHover : "transparent"
-                    border.color: upMa.containsMouse ? Theme.borderStrong : Theme.border
+                    implicitHeight: 40
+                    radius: 10 * Theme.radiusScale
+                    color: upMa.pressed ? Theme.bgActive : upMa.containsMouse ? Theme.bgHover : Theme.bgInset
+                    border.color: pane.showUpcoming ? Theme.accentPrimary : upMa.containsMouse ? Theme.borderStrong : Theme.borderSubtle
                     border.width: 1
+                    scale: upMa.pressed ? 0.98 : 1.0
+                    Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+                    Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }
+                    Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: Theme.spacing.md
-                        anchors.rightMargin: Theme.spacing.md
+                        anchors.leftMargin: Theme.spacing.lg
+                        anchors.rightMargin: Theme.spacing.lg
                         spacing: Theme.spacing.md
                         Text {
-                            text: "󰍝"
-                            color: pane.showUpcoming || upMa.containsMouse
-                                ? Theme.accent.blue : Theme.fgMuted
+                            text: "󰅀"
+                            color: pane.showUpcoming ? Theme.accentPrimary : Theme.muted
                             font.family: Theme.font
                             font.pixelSize: Theme.fontSize.lg
-                            font.bold: true
-                            rotation: pane.showUpcoming ? 0 : -90
+                            rotation: pane.showUpcoming ? 180 : 0
                             Behavior on rotation { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
                             Behavior on color    { ColorAnimation  { duration: Theme.duration.fast } }
                         }
@@ -150,14 +156,14 @@ Item {
                             text: pane.showUpcoming ? "Hide upcoming" : "Show upcoming"
                             color: Theme.fgMuted
                             font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.sm
+                            font.pixelSize: Theme.fontSize.base
                             font.bold: true
                         }
                         Text {
                             text: pane.upcoming.length + (pane.upcoming.length === 1 ? " day" : " days")
                             color: Theme.mutedDeep
                             font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xs
+                            font.pixelSize: Theme.fontSize.sm
                         }
                     }
                     MouseArea {
@@ -169,40 +175,57 @@ Item {
                     }
                 }
 
-                // One block per day, headed by its date, so the rows below it
-                // don't each have to repeat it.
-                Repeater {
-                    model: pane.showUpcoming ? pane.upcoming : []
-                    delegate: ColumnLayout {
-                        required property var modelData
-                        Layout.fillWidth: true
-                        Layout.topMargin: Theme.spacing.sm
-                        spacing: Theme.spacing.sm
+                Item {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: pane.showUpcoming ? upCol.implicitHeight + Theme.spacing.lg : 0
+                    clip: true
+                    opacity: pane.showUpcoming ? 1.0 : 0.0
+                    Behavior on Layout.preferredHeight { NumberAnimation { duration: Theme.duration.slow; easing.type: Theme.easing.standard } }
+                    Behavior on opacity { NumberAnimation { duration: Theme.duration.normal } }
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: Theme.spacing.md
-                            Text {
-                                text: Qt.formatDate(modelData.date, "ddd d MMMM").toUpperCase()
-                                color: Theme.muted
-                                font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.xs
-                                font.letterSpacing: 1
-                                font.bold: true
-                            }
-                            Rectangle {
-                                Layout.fillWidth: true
-                                implicitHeight: 1
-                                color: Theme.borderSubtle
-                            }
-                        }
+                    // One block per day, headed by its date, so the rows
+                    // below it don't each have to repeat it.
+                    ColumnLayout {
+                        id: upCol
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.topMargin: Theme.spacing.lg
+                        spacing: Theme.spacing.lg
+
                         Repeater {
-                            model: modelData.events
-                            delegate: EventRow {
+                            model: pane.upcoming
+                            delegate: ColumnLayout {
                                 required property var modelData
-                                event: modelData
-                                accentColor: pane.cal.colorFor(modelData.calIndex)
                                 Layout.fillWidth: true
+                                spacing: Theme.spacing.md
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: Theme.spacing.md
+                                    Text {
+                                        text: Qt.formatDate(modelData.date, "ddd d MMMM").toUpperCase()
+                                        color: Theme.muted
+                                        font.family: Theme.font
+                                        font.pixelSize: Theme.fontSize.sm
+                                        font.letterSpacing: 1
+                                        font.bold: true
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: 1
+                                        color: Theme.borderSubtle
+                                    }
+                                }
+                                Repeater {
+                                    model: modelData.events
+                                    delegate: EventRow {
+                                        required property var modelData
+                                        event: modelData
+                                        accentColor: pane.cal.colorFor(modelData.calIndex)
+                                        Layout.fillWidth: true
+                                    }
+                                }
                             }
                         }
                     }
@@ -211,83 +234,136 @@ Item {
         }
     }
 
+    // One event: title, time and place, with a chevron and a reveal for the
+    // description when the feed carries one.
     component EventRow: Rectangle {
         id: er
         property var event
-        property bool showDate: false
         property color accentColor: Theme.accent.blue   // color of the event's feed
-        implicitHeight: erCol.implicitHeight + 14
-        radius: 6 * Theme.radiusScale
-        color: Theme.bgHover
-        border.color: Theme.border
+        property bool expanded: false
+        readonly property bool hasDetail: !!(er.event && er.event.description)
+
+        implicitHeight: erCol.implicitHeight
+        radius: 10 * Theme.radiusScale
+        clip: true
+        color: er.hasDetail && erMa.containsMouse ? Theme.bgHover : Theme.bgInset
+        border.color: er.expanded ? Theme.borderStrong : Theme.borderSubtle
         border.width: 1
+        Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+        Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }
 
         ColumnLayout {
             id: erCol
-            anchors.fill: parent
-            anchors.margins: Theme.spacing.md
-            spacing: 3
-            RowLayout {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            spacing: 0
+
+            Item {
                 Layout.fillWidth: true
-                spacing: Theme.spacing.md
+                implicitHeight: Math.max(52, erText.implicitHeight + Theme.spacing.lg * 2)
+                scale: er.hasDetail && erMa.pressed ? 0.985 : 1.0
+                Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
+
                 Rectangle {
-                    Layout.preferredWidth: 3
-                    Layout.preferredHeight: 18
-                    Layout.alignment: Qt.AlignTop
-                    Layout.topMargin: 1
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 3
+                    height: parent.height - 18
                     radius: 1.5 * Theme.radiusScale
                     color: er.accentColor
                 }
-                Text {
-                    Layout.fillWidth: true
-                    text: er.event ? (er.event.summary || "(no title)") : ""
-                    color: Theme.fg
-                    wrapMode: Text.WordWrap
-                    maximumLineCount: 3
-                    elide: Text.ElideRight
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.md
-                    font.bold: true
-                }
-            }
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.leftMargin: 11
-                spacing: Theme.spacing.md
-                Text {
-                    text: {
-                        if (!er.event) return "";
-                        if (er.event.allDay) return "all day";
-                        const start = Qt.formatTime(er.event.start, "HH:mm");
-                        const end = er.event.end ? Qt.formatTime(er.event.end, "HH:mm") : "";
-                        return end ? start + "–" + end : start;
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: Theme.spacing.xl
+                    anchors.rightMargin: Theme.spacing.lg
+                    spacing: Theme.spacing.md
+                    ColumnLayout {
+                        id: erText
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter
+                        spacing: 2
+                        Text {
+                            Layout.fillWidth: true
+                            text: er.event ? (er.event.summary || "(no title)") : ""
+                            color: Theme.fg
+                            wrapMode: Text.WordWrap
+                            maximumLineCount: 3
+                            elide: Text.ElideRight
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.md
+                            font.bold: true
+                        }
+                        Text {
+                            text: {
+                                if (!er.event) return "";
+                                if (er.event.allDay) return "all day";
+                                const start = Qt.formatTime(er.event.start, "HH:mm");
+                                const end = er.event.end ? Qt.formatTime(er.event.end, "HH:mm") : "";
+                                return end ? start + "–" + end : start;
+                            }
+                            color: er.accentColor
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.base
+                            font.bold: true
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            visible: !!(er.event && er.event.location)
+                            text: er.event && er.event.location ? "󰍎  " + er.event.location : ""
+                            color: Theme.muted
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.base
+                            wrapMode: Text.WordWrap
+                            maximumLineCount: 2
+                            elide: Text.ElideRight
+                        }
                     }
-                    color: er.accentColor
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.sm
-                    font.bold: true
+                    Text {
+                        visible: er.hasDetail
+                        text: "󰅀"
+                        color: er.expanded || erMa.containsMouse ? Theme.accentPrimary : Theme.muted
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize.lg
+                        rotation: er.expanded ? 180 : 0
+                        Behavior on rotation { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+                        Behavior on color    { ColorAnimation  { duration: Theme.duration.fast } }
+                    }
                 }
-                Text {
-                    visible: er.showDate && er.event
-                    text: er.event ? Qt.formatDate(er.event.start, "ddd d MMM") : ""
-                    color: Theme.muted
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.sm
-                }
-                Item { Layout.fillWidth: true }
             }
-            Text {
+
+            Item {
+                id: reveal
                 Layout.fillWidth: true
-                Layout.leftMargin: 11
-                visible: !!(er.event && er.event.location)
-                text: er.event && er.event.location ? "󰍎  " + er.event.location : ""
-                color: Theme.muted
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.sm
-                wrapMode: Text.WordWrap
-                maximumLineCount: 2
-                elide: Text.ElideRight
+                Layout.preferredHeight: er.expanded && er.hasDetail ? detail.implicitHeight + Theme.spacing.lg : 0
+                clip: true
+                opacity: er.expanded ? 1.0 : 0.0
+                Behavior on Layout.preferredHeight { NumberAnimation { duration: Theme.duration.slow; easing.type: Theme.easing.standard } }
+                Behavior on opacity { NumberAnimation { duration: Theme.duration.normal } }
+                Text {
+                    id: detail
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: Theme.spacing.xl
+                    anchors.rightMargin: Theme.spacing.lg
+                    text: er.event && er.event.description ? er.event.description : ""
+                    color: Theme.fgMuted
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.base
+                    textFormat: Text.PlainText
+                    wrapMode: Text.WordWrap
+                    maximumLineCount: 12
+                    elide: Text.ElideRight
+                }
             }
+        }
+
+        MouseArea {
+            id: erMa
+            anchors.fill: parent
+            enabled: er.hasDetail
+            hoverEnabled: true
+            cursorShape: er.hasDetail ? Qt.PointingHandCursor : Qt.ArrowCursor
+            onClicked: er.expanded = !er.expanded
         }
     }
 }
