@@ -47,7 +47,7 @@ pid=$!
 
 # Publish the pidfile at once (the Quickshell HUD polls it), then confirm the
 # recorder survived startup; on failure withdraw the pidfile and say so.
-echo "$pid" > "$PIDFILE.tmp"
+echo "$pid" >"$PIDFILE.tmp"
 mv -f "$PIDFILE.tmp" "$PIDFILE"
 
 sleep "$START_CHECK_SECONDS"

@@ -22,8 +22,8 @@
 notify() {
     local urgency=$1 key=$2 icon=$3 title=$4 body=$5 timeout=${6:-}
     local args=(-a "hyprland-dots" -u "$urgency")
-    [[ -n "$key" ]]     && args+=(-h "string:x-canonical-private-synchronous:$key")
-    [[ -n "$icon" ]]    && args+=(-i "$icon")
+    [[ -n "$key" ]] && args+=(-h "string:x-canonical-private-synchronous:$key")
+    [[ -n "$icon" ]] && args+=(-i "$icon")
     [[ -n "$timeout" ]] && args+=(-t "$timeout")
     notify-send "${args[@]}" "$title" "$body"
 }

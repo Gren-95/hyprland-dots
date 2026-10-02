@@ -30,7 +30,7 @@ run_upload() {
     local output exit_code
     output=$("$bin" upload --recursive "$PICTURES_DIR" --ignore "**/{ocr,Screenshots}/**" 2>&1)
     exit_code=$?
-    echo "$output" >> "$IMMICH_LOG"
+    echo "$output" >>"$IMMICH_LOG"
 
     if [[ "$exit_code" -ne 0 ]]; then
         notify critical immich-sync dialog-error "Immich Sync Failed" "$(echo "$output" | tail -1)"

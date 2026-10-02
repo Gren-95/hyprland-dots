@@ -1,0 +1,12 @@
+root = true
+
+# Read by shfmt (CI and the pre-commit hook run `shfmt -d`).
+[*.sh]
+indent_style = space
+indent_size = 4
+switch_case_indent = true
+
+[{.githooks/pre-commit,scripts/battery-charge-schedule}]
+indent_style = space
+indent_size = 4
+switch_case_indent = true

@@ -21,5 +21,5 @@ load_util_env() {
             value=${BASH_REMATCH[1]}
         fi
         export "$key=$value"
-    done < "$env_file"
+    done <"$env_file"
 }

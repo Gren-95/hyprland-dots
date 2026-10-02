@@ -9,7 +9,7 @@
 # Safe to re-run: symlinks, units, directories and permissions are re-applied
 # idempotently.
 
-set -e  # Exit on error
+set -e # Exit on error
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_DIR="$HOME/.config"
@@ -94,7 +94,7 @@ install_dependencies() {
 
     print_info "Adding required COPR repositories..."
     sudo dnf copr enable -y lionheartp/Hyprland
-    sudo dnf copr enable -y errornointernet/quickshell || \
+    sudo dnf copr enable -y errornointernet/quickshell ||
         print_warning "Quickshell COPR not available — build from source: https://quickshell.outfoxxed.me"
 
     print_info "Installing dependencies..."
@@ -107,8 +107,8 @@ install_dependencies() {
     if [[ ! -d "$plug_dir" ]]; then
         print_info "Installing ranger devicons plugin..."
         mkdir -p "$(dirname "$plug_dir")"
-        git clone --depth 1 https://github.com/alexanderjeurissen/ranger_devicons "$plug_dir" >/dev/null 2>&1 && \
-            print_success "ranger_devicons installed" || \
+        git clone --depth 1 https://github.com/alexanderjeurissen/ranger_devicons "$plug_dir" >/dev/null 2>&1 &&
+            print_success "ranger_devicons installed" ||
             print_warning "Failed to install ranger_devicons (network?)"
     fi
 }
@@ -178,8 +178,8 @@ setup_immich_cli() {
         print_warning "API key cannot be empty"
     done
 
-    immich login "$immich_url/api" "$immich_key" && \
-        print_success "Logged in to Immich" || \
+    immich login "$immich_url/api" "$immich_key" &&
+        print_success "Logged in to Immich" ||
         print_error "Login failed — check your URL and API key"
 
     # Prompt for sync interval and write it to the crontab via sync-toggle.sh.
@@ -195,9 +195,9 @@ setup_immich_cli() {
     local cron_expr="0 * * * *"
     case "$interval_choice" in
         1) cron_expr="*/30 * * * *" ;;
-        2) cron_expr="0 * * * *"    ;;
-        3) cron_expr="0 */2 * * *"  ;;
-        4) cron_expr="0 */6 * * *"  ;;
+        2) cron_expr="0 * * * *" ;;
+        3) cron_expr="0 */2 * * *" ;;
+        4) cron_expr="0 */6 * * *" ;;
     esac
 
     bash "$SCRIPT_DIR/scripts/sync-toggle.sh" schedule immich "$cron_expr"
@@ -221,7 +221,7 @@ setup_jellyfin_sync() {
     # are the source of truth; re-run setup (or re-copy) after editing them.
     mkdir -p "$HOME/.config/systemd/user"
     cp "$SCRIPT_DIR/systemd/user/jellyfin-sync.service" "$HOME/.config/systemd/user/"
-    cp "$SCRIPT_DIR/systemd/user/jellyfin-sync.timer"   "$HOME/.config/systemd/user/"
+    cp "$SCRIPT_DIR/systemd/user/jellyfin-sync.timer" "$HOME/.config/systemd/user/"
     systemctl --user daemon-reload
     print_success "Jellyfin sync timer installed (once daily, Persistent — catches up missed runs)"
 
@@ -240,7 +240,7 @@ setup_jellyfin_sync() {
             print_warning "API key cannot be empty"
         done
         mkdir -p "$(dirname "$conf")"
-        cat > "$conf" <<EOF
+        cat >"$conf" <<EOF
 JELLYFIN_URL="$jf_url"
 JELLYFIN_API_KEY="$jf_key"
 EOF
@@ -379,17 +379,23 @@ setup_avatar() {
         return
     fi
 
-    bash "$CONFIG_DIR/scripts/generate-avatar.sh" && \
-        print_success "Avatar installed to /var/lib/AccountsService/icons/$(whoami)" || \
+    bash "$CONFIG_DIR/scripts/generate-avatar.sh" &&
+        print_success "Avatar installed to /var/lib/AccountsService/icons/$(whoami)" ||
         print_warning "Avatar generation failed"
 }
 
 main() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -y|--yes) ASSUME_YES=true ;;
-            -h|--help) sed -n '2,10p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
-            *) print_error "Unknown argument: $1"; exit 2 ;;
+            -y | --yes) ASSUME_YES=true ;;
+            -h | --help)
+                sed -n '2,10p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+                exit 0
+                ;;
+            *)
+                print_error "Unknown argument: $1"
+                exit 2
+                ;;
         esac
         shift
     done

@@ -15,7 +15,7 @@ set -euo pipefail
 
 CLASS="scratchpad"
 SPECIAL="scratchpad"
-SPAWN_TIMEOUT_DS=30   # deciseconds
+SPAWN_TIMEOUT_DS=30 # deciseconds
 
 window_address() {
     hyprctl clients -j | jq -r --arg c "$CLASS" 'first(.[] | select(.class == $c) | .address) // empty'
@@ -34,7 +34,7 @@ fi
 
 setsid -f kitty --class "$CLASS" >/dev/null 2>&1
 
-for (( i = 0; i < SPAWN_TIMEOUT_DS; i++ )); do
+for ((i = 0; i < SPAWN_TIMEOUT_DS; i++)); do
     addr=$(window_address)
     [[ -n "$addr" ]] && break
     sleep 0.1

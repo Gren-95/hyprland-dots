@@ -12,7 +12,10 @@ set -euo pipefail
 # ───── helpers ────────────────────────────────────────────────────
 find_hwmon() {
     for h in /sys/class/hwmon/hwmon*; do
-        [[ "$(cat "$h/name" 2>/dev/null)" == "$1" ]] && { echo "$h"; return 0; }
+        [[ "$(cat "$h/name" 2>/dev/null)" == "$1" ]] && {
+            echo "$h"
+            return 0
+        }
     done
     return 1
 }
@@ -22,7 +25,7 @@ read_first() {
 }
 
 # Sample /proc/stat: returns "total idle" for cpu line, and per-core lines.
-sample_cpu()       { awk '/^cpu / { print $2+$3+$4+$5+$6+$7+$8, $5; exit }' /proc/stat; }
+sample_cpu() { awk '/^cpu / { print $2+$3+$4+$5+$6+$7+$8, $5; exit }' /proc/stat; }
 sample_cpu_cores() { awk '/^cpu[0-9]+/ { print $1, $2+$3+$4+$5+$6+$7+$8, $5 }' /proc/stat; }
 
 # ───── CPU usage ──────────────────────────────────────────────────
@@ -48,8 +51,8 @@ cpu_pct=$(awk -v t1="$t1" -v t2="$t2" -v i1="$i1" -v i2="$i2" \
 cores_json="["
 first=1
 for cpu in $(printf '%s\n' "${!tot1[@]}" | sort -V); do
-    td=$(( tot2[$cpu] - tot1[$cpu] ))
-    id=$(( idl2[$cpu] - idl1[$cpu] ))
+    td=$((tot2[$cpu] - tot1[$cpu]))
+    id=$((idl2[$cpu] - idl1[$cpu]))
     pct=$(awk -v t="$td" -v i="$id" 'BEGIN { printf "%.1f", (t > 0) ? (1 - i/t) * 100 : 0 }')
     [[ $first -eq 0 ]] && cores_json+=","
     cores_json+="$pct"
@@ -60,7 +63,7 @@ cores_json+="]"
 # ───── RAM ────────────────────────────────────────────────────────
 ram_total_kb=$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)
 ram_avail_kb=$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo)
-ram_used_kb=$(( ram_total_kb - ram_avail_kb ))
+ram_used_kb=$((ram_total_kb - ram_avail_kb))
 ram_used_gb=$(awk -v k="$ram_used_kb" 'BEGIN { printf "%.1f", k/1048576 }')
 ram_total_gb=$(awk -v k="$ram_total_kb" 'BEGIN { printf "%.1f", k/1048576 }')
 ram_pct=$(awk -v u="$ram_used_kb" -v t="$ram_total_kb" \
@@ -84,8 +87,8 @@ fan2=$(read_first "${fans_h:-}/fan2_input")
 # a partition mounted at both / and /home doesn't appear twice.
 disks_json=$(
     df -l --output=source,target,size,used,pcent \
-       -x tmpfs -x devtmpfs -x efivarfs -x squashfs -x fuse 2>/dev/null \
-    | awk '
+        -x tmpfs -x devtmpfs -x efivarfs -x squashfs -x fuse 2>/dev/null |
+        awk '
         NR == 1 { next }
         $2 ~ /^\/boot/ { next }
         seen[$1]++   { next }

@@ -16,7 +16,7 @@ log() { echo "[$(date '+%H:%M:%S')] dotwatch: $*"; }
 can_reload() {
     local key="$1" now
     now=$(date +%s)
-    (( now - ${LAST_RELOAD[$key]:-0} >= COOLDOWN )) || return 1
+    ((now - ${LAST_RELOAD[$key]:-0} >= COOLDOWN)) || return 1
     LAST_RELOAD[$key]=$now
 }
 
@@ -55,9 +55,9 @@ inotifywait -m -r -e close_write,moved_to,create \
     rel="${path#"$DOTS_DIR"/}"
 
     case "$rel" in
-        hypr/hyprland*.lua|hypr/modules/*) reload_hyprland ;;
-        hypr/hypridle.conf)                reload_hypridle ;;
-        hypr/hyprlock.conf)                notify_hyprlock ;;
-        gtk-3.0/gtk.css)                   notify_gtk ;;
+        hypr/hyprland*.lua | hypr/modules/*) reload_hyprland ;;
+        hypr/hypridle.conf) reload_hypridle ;;
+        hypr/hyprlock.conf) notify_hyprlock ;;
+        gtk-3.0/gtk.css) notify_gtk ;;
     esac
 done

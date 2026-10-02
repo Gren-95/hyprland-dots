@@ -6,7 +6,7 @@ USER_NAME=$(whoami)
 INITIAL="${USER_NAME:0:1}"
 DEST="/var/lib/AccountsService/icons/$USER_NAME"
 
-python3 << PYEOF
+python3 <<PYEOF
 from PIL import Image, ImageDraw, ImageFont
 import os
 

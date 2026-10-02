@@ -14,13 +14,14 @@ cd "$path" || exit 1
 found=false
 
 _extract() {
-    local pattern=$1 exec=$2; shift 2
+    local pattern=$1 exec=$2
+    shift 2
     local files=()
     shopt -s nullglob
     # shellcheck disable=SC2206  # unquoted on purpose: $pattern is a glob to expand
     files=($pattern)
     shopt -u nullglob
-    (( ${#files[@]} == 0 )) && return 0
+    ((${#files[@]} == 0)) && return 0
     if ! command -v "$exec" >/dev/null; then
         echo "Warning: $exec is not installed. Cannot extract $pattern files."
         return 0
@@ -36,10 +37,10 @@ _extract() {
     done
 }
 
-_extract '*.zip'     unzip unzip -o
-_extract '*.tar.gz'  tar   tar -xzf
-_extract '*.tar.bz2' tar   tar -xjf
-_extract '*.rar'     unrar unrar x -o+
-_extract '*.7z'      7z    7z x -o./
+_extract '*.zip' unzip unzip -o
+_extract '*.tar.gz' tar tar -xzf
+_extract '*.tar.bz2' tar tar -xjf
+_extract '*.rar' unrar unrar x -o+
+_extract '*.7z' 7z 7z x -o./
 
 $found || echo "No archive files found in the specified directory."

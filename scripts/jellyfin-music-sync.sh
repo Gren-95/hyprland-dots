@@ -24,7 +24,7 @@ fi
 FORCE=false
 for arg in "$@"; do
     case "$arg" in
-        --overwrite|--force) FORCE=true ;;
+        --overwrite | --force) FORCE=true ;;
     esac
 done
 
@@ -34,10 +34,10 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-print_info()    { echo -e "${BLUE}[INFO]${NC} $1"; }
+print_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 print_success() { echo -e "${GREEN}[OK]${NC} $1"; }
 print_warning() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-print_error()   { echo -e "${RED}[ERROR]${NC} $1"; }
+print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # Load or create config
 load_config() {
@@ -70,7 +70,7 @@ load_config() {
         done
     fi
 
-    cat > "$CONFIG" <<EOF
+    cat >"$CONFIG" <<EOF
 JELLYFIN_URL="$JELLYFIN_URL"
 JELLYFIN_API_KEY="$JELLYFIN_API_KEY"
 EOF
@@ -130,8 +130,8 @@ sync_music() {
     while IFS= read -r item; do
         local id name artist ext dest_file server_path
 
-        id=$(echo "$item"     | jq -r '.Id')
-        name=$(echo "$item"   | jq -r '.Name')
+        id=$(echo "$item" | jq -r '.Id')
+        name=$(echo "$item" | jq -r '.Name')
         artist=$(echo "$item" | jq -r '.AlbumArtist // "Unknown Artist"')
         server_path=$(echo "$item" | jq -r '.Path // ""')
 
@@ -166,8 +166,8 @@ sync_music() {
             local stream_url
             stream_url=$(curl -sf \
                 -H "X-Emby-Token: $JELLYFIN_API_KEY" \
-                "$JELLYFIN_URL/Items/$id/PlaybackInfo?UserId=$user_id" \
-                | jq -r '.MediaSources[0].DirectStreamUrl // empty')
+                "$JELLYFIN_URL/Items/$id/PlaybackInfo?UserId=$user_id" |
+                jq -r '.MediaSources[0].DirectStreamUrl // empty')
 
             if [[ -n "$stream_url" ]]; then
                 http_code=$(curl -s -o "$tmp_file" -w "%{http_code}" \
@@ -203,7 +203,7 @@ sync_music() {
 
     echo ""
     print_success "Sync complete: $downloaded downloaded, $skipped up to date, $removed removed, $failed failed"
-    echo "$(date): downloaded=$downloaded skipped=$skipped removed=$removed failed=$failed" >> "$LOG"
+    echo "$(date): downloaded=$downloaded skipped=$skipped removed=$removed failed=$failed" >>"$LOG"
 
     local body="${downloaded} downloaded · ${skipped} up to date · ${removed} removed"
     [[ "$failed" -gt 0 ]] && body+=" · ${failed} failed"

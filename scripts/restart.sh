@@ -15,10 +15,10 @@ source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 # $3 = timeout in centiseconds (default 200 = 2 s).
 wait_for() {
     local pattern="$1" mode="${2:--f}" limit="${3:-200}" i=0
-    while (( i < limit )); do
+    while ((i < limit)); do
         pgrep "$mode" "$pattern" >/dev/null 2>&1 && return 0
         sleep 0.01
-        (( i++ ))
+        ((i++))
     done
     return 1
 }
@@ -28,11 +28,11 @@ wait_for() {
 # latter — waiting on the process alone still lost the registration.
 wait_for_dbus() {
     local name="$1" limit="${2:-300}" i=0
-    while (( i < limit )); do
-        busctl --user list --acquired --no-legend 2>/dev/null \
-            | awk '{print $1}' | grep -qx "$name" && return 0
+    while ((i < limit)); do
+        busctl --user list --acquired --no-legend 2>/dev/null |
+            awk '{print $1}' | grep -qx "$name" && return 0
         sleep 0.01
-        (( i++ ))
+        ((i++))
     done
     return 1
 }
@@ -49,20 +49,20 @@ echo "======================================"
 ################################################################################
 # 1. Kill everything up front, in one pass, with no waiting in between.
 ################################################################################
-pkill -f xdg-desktop-portal            2>/dev/null
-pkill -x gnome-keyring-daemon          2>/dev/null
-pkill -f "qs -p"                       2>/dev/null
-killall awww-daemon                    2>/dev/null
-killall hypridle                       2>/dev/null
-pkill -f dotwatch.sh                   2>/dev/null
-pkill -f "wl-paste.*cliphist"          2>/dev/null
-pkill -x nm-applet                     2>/dev/null
+pkill -f xdg-desktop-portal 2>/dev/null
+pkill -x gnome-keyring-daemon 2>/dev/null
+pkill -f "qs -p" 2>/dev/null
+killall awww-daemon 2>/dev/null
+killall hypridle 2>/dev/null
+pkill -f dotwatch.sh 2>/dev/null
+pkill -f "wl-paste.*cliphist" 2>/dev/null
+pkill -x nm-applet 2>/dev/null
 # Polkit is provided by Quickshell (quickshell/PolkitPrompt.qml); clear any
 # agent left over from a previous session.
-systemctl --user stop hyprpolkitagent  2>/dev/null
-pkill -x hyprpolkitagent               2>/dev/null
-pkill -x lxpolkit                      2>/dev/null
-pkill -x xfce-polkit                   2>/dev/null
+systemctl --user stop hyprpolkitagent 2>/dev/null
+pkill -x hyprpolkitagent 2>/dev/null
+pkill -x lxpolkit 2>/dev/null
+pkill -x xfce-polkit 2>/dev/null
 
 ################################################################################
 # 2. gnome-keyring first: its eval exports SSH_AUTH_SOCK into this shell, so it
@@ -101,16 +101,22 @@ QT_QPA_PLATFORMTHEME=hyprqt6engine qs -p "$HOME/.config/quickshell/shell.qml" -d
 # 5. Start the rest. All independent of each other, so start them back to back
 #    and verify afterwards rather than one-at-a-time.
 ################################################################################
-awww-daemon                               >/dev/null 2>&1 &
+awww-daemon >/dev/null 2>&1 &
 # awww-daemon starts blank; once its socket answers, put back the last wallpaper.
-( for _ in $(seq 40); do awww query >/dev/null 2>&1 && break; sleep 0.25; done; awww restore ) >/dev/null 2>&1 &
-hypridle                                  >/dev/null 2>&1 &
-bash "$SCRIPTS_DIR/dotwatch.sh"           >/dev/null 2>&1 &
-wl-paste --watch cliphist store           >/dev/null 2>&1 &
+(
+    for _ in $(seq 40); do
+        awww query >/dev/null 2>&1 && break
+        sleep 0.25
+    done
+    awww restore
+) >/dev/null 2>&1 &
+hypridle >/dev/null 2>&1 &
+bash "$SCRIPTS_DIR/dotwatch.sh" >/dev/null 2>&1 &
+wl-paste --watch cliphist store >/dev/null 2>&1 &
 # nm-applet owns Wi-Fi, wired, the Wi-Fi password prompt and Tailscale (via
 # the NetworkManager Tailscale VPN plugin). Started after Quickshell, which
 # hosts the tray.
-nm-applet --indicator                     >/dev/null 2>&1 &
+nm-applet --indicator >/dev/null 2>&1 &
 # The session daemons are systemd user units (systemd/user/*.service), so a
 # restart replaces the old instance cleanly, with the unit's own stop grace
 # period. The user manager must see the Wayland/Hyprland environment first.
@@ -133,17 +139,17 @@ hyprctl eval 'hl.monitor({output="FALLBACK", mode="1920x1080@60", position="auto
 ################################################################################
 # 7. Verify. By now most daemons are already up, so these return immediately.
 ################################################################################
-report "quickshell"          "qs -p"
-report "xdg-desktop-portal"  "xdg-desktop-portal"
-report "awww-daemon"        "awww-daemon"          -x
-report "hypridle"            "hypridle"             -x
-report "power-auto"          "power-auto.sh"
-report "battery-notify"      "battery-notify.sh"
-report "media-inhibit"       "media-inhibit.sh"
-report "fullscreen-inhibit"  "fullscreen-inhibit.sh"
-report "cliphist"            "wl-paste.*cliphist"
-report "dotwatch"            "dotwatch.sh"
-report "nm-applet"           "nm-applet"            -x
+report "quickshell" "qs -p"
+report "xdg-desktop-portal" "xdg-desktop-portal"
+report "awww-daemon" "awww-daemon" -x
+report "hypridle" "hypridle" -x
+report "power-auto" "power-auto.sh"
+report "battery-notify" "battery-notify.sh"
+report "media-inhibit" "media-inhibit.sh"
+report "fullscreen-inhibit" "fullscreen-inhibit.sh"
+report "cliphist" "wl-paste.*cliphist"
+report "dotwatch" "dotwatch.sh"
+report "nm-applet" "nm-applet" -x
 
 # WayVNC is not auto-started; stop a stale one (restart with Super+Ctrl+R).
 printf 'Running: %-22s ... ' "wayvnc"

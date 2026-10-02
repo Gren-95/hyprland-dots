@@ -20,18 +20,33 @@ SYSTEM_BIN="/usr/local/bin/battery-charge-schedule"
 SYSTEM_TIMER="battery-charge-schedule.timer"
 
 if [[ -t 1 ]]; then
-    C_PASS=$'\033[0;32m'; C_FAIL=$'\033[0;31m'; C_WARN=$'\033[1;33m'; C_OFF=$'\033[0m'
+    C_PASS=$'\033[0;32m'
+    C_FAIL=$'\033[0;31m'
+    C_WARN=$'\033[1;33m'
+    C_OFF=$'\033[0m'
 else
-    C_PASS=""; C_FAIL=""; C_WARN=""; C_OFF=""
+    C_PASS=""
+    C_FAIL=""
+    C_WARN=""
+    C_OFF=""
 fi
 
 pass_count=0
 fail_count=0
 warn_count=0
 
-pass() { pass_count=$((pass_count + 1)); echo "${C_PASS}PASS${C_OFF}  $1"; }
-fail() { fail_count=$((fail_count + 1)); echo "${C_FAIL}FAIL${C_OFF}  $1"; }
-warn() { warn_count=$((warn_count + 1)); echo "${C_WARN}WARN${C_OFF}  $1"; }
+pass() {
+    pass_count=$((pass_count + 1))
+    echo "${C_PASS}PASS${C_OFF}  $1"
+}
+fail() {
+    fail_count=$((fail_count + 1))
+    echo "${C_FAIL}FAIL${C_OFF}  $1"
+}
+warn() {
+    warn_count=$((warn_count + 1))
+    echo "${C_WARN}WARN${C_OFF}  $1"
+}
 
 check_commands() {
     local dep missing=0
@@ -41,7 +56,7 @@ check_commands() {
             missing=1
         fi
     done
-    if (( missing == 0 )); then pass "all ${#DEPS_REQUIRED[@]} required commands found"; fi
+    if ((missing == 0)); then pass "all ${#DEPS_REQUIRED[@]} required commands found"; fi
 
     if deps_have_pygobject; then
         pass "python3 can import gi (python3-gobject)"
@@ -88,7 +103,7 @@ check_scripts_executable() {
             bad=1
         fi
     done
-    if (( bad == 0 )); then pass "all scripts are executable"; fi
+    if ((bad == 0)); then pass "all scripts are executable"; fi
 }
 
 # Item names come from `dotfiles-manager.sh status` so the list has one owner.
@@ -100,7 +115,7 @@ check_symlinks() {
     }
     while read -r item state _; do
         case "$state" in
-            OK|MISSING|BROKEN|INCONSISTENT|DIRECTORY|FILE|UNKNOWN) ;;
+            OK | MISSING | BROKEN | INCONSISTENT | DIRECTORY | FILE | UNKNOWN) ;;
             *) continue ;;
         esac
         [[ "$state" == OK ]] && continue
@@ -110,7 +125,7 @@ check_symlinks() {
         fail "symlink $item: $state"
         bad=1
     done <<<"$status_out"
-    if (( bad == 0 )); then pass "dotfiles-manager symlinks intact"; fi
+    if ((bad == 0)); then pass "dotfiles-manager symlinks intact"; fi
 }
 
 check_system_timer() {
@@ -138,4 +153,4 @@ check_system_timer
 
 echo
 echo "Summary: $pass_count passed, $fail_count failed, $warn_count warnings"
-(( fail_count == 0 ))
+((fail_count == 0))

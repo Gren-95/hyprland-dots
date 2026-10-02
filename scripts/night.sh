@@ -35,11 +35,14 @@ night_off() {
     fi
 }
 
-usage() { echo "usage: $0 {toggle|on|off|status}" >&2; exit 2; }
+usage() {
+    echo "usage: $0 {toggle|on|off|status}" >&2
+    exit 2
+}
 
 [[ $# -eq 1 ]] || usage
 case "$1" in
-    toggle|on|off|status) ;;
+    toggle | on | off | status) ;;
     *) usage ;;
 esac
 
@@ -50,7 +53,7 @@ fi
 
 case "$1" in
     toggle) if is_on; then night_off; else night_on; fi ;;
-    on)     night_on ;;
-    off)    night_off ;;
+    on) night_on ;;
+    off) night_off ;;
     status) if is_on; then echo on; else echo off; fi ;;
 esac

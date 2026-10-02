@@ -108,7 +108,7 @@ acquire_lock() {
         log_error "Another instance is running (lock file exists: $LOCK_FILE)"
         exit 1
     fi
-    echo $$ > "$LOCK_FILE"
+    echo $$ >"$LOCK_FILE"
     verbose "Lock file created: $LOCK_FILE"
 }
 
@@ -191,7 +191,7 @@ confirm() {
 init_log() {
     local timestamp
     timestamp=$(get_timestamp)
-    cat > "$LOG_FILE" <<EOF
+    cat >"$LOG_FILE" <<EOF
 {
   "version": "1.0",
   "operations": [],
@@ -222,15 +222,15 @@ log_operation() {
     local temp_log
     temp_log=$(mktemp)
     jq --arg item "$item" \
-       --arg action "$action" \
-       --arg backup "$backup_path" \
-       --arg time "$timestamp" \
-       '.operations += [{
+        --arg action "$action" \
+        --arg backup "$backup_path" \
+        --arg time "$timestamp" \
+        '.operations += [{
            "item": $item,
            "action": $action,
            "backup_path": $backup,
            "timestamp": $time
-       }] | .last_backup = $time' "$LOG_FILE" > "$temp_log"
+       }] | .last_backup = $time' "$LOG_FILE" >"$temp_log"
 
     mv "$temp_log" "$LOG_FILE"
     verbose "Logged operation: $action $item"
@@ -429,9 +429,12 @@ cmd_backup() {
                 ((skipped++))
                 ;;
 
-            INCONSISTENT|BROKEN)
+            INCONSISTENT | BROKEN)
                 log_info "Fixing symlink: $item"
-                remove_symlink "$item" || { ((failed++)); continue; }
+                remove_symlink "$item" || {
+                    ((failed++))
+                    continue
+                }
                 if create_symlink "$item"; then
                     log_operation "$item" "fixed" ""
                     ((symlinked++))
@@ -912,7 +915,7 @@ main() {
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            backup|undo|status|fix|prune|system|units)
+            backup | undo | status | fix | prune | system | units)
                 command="$1"
                 shift
                 ;;
@@ -928,7 +931,7 @@ main() {
                 VERBOSE=true
                 shift
                 ;;
-            -h|--help)
+            -h | --help)
                 show_usage
                 exit 0
                 ;;

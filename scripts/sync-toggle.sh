@@ -31,7 +31,7 @@ uses_timer() { [[ "$1" == "jellyfin" ]]; }
 # Default cron schedule per kind (used when first installing the entry).
 default_schedule_for() {
     case "$1" in
-        immich)   echo "0 * * * *" ;;
+        immich) echo "0 * * * *" ;;
         jellyfin) echo "0 4 * * *" ;;
         *) return 1 ;;
     esac
@@ -40,7 +40,7 @@ default_schedule_for() {
 # Script invocation per kind (the trailing portion of the cron line).
 script_invocation_for() {
     case "$1" in
-        immich)   echo "bash $SCRIPTS_DIR/immich-sync.sh" ;;
+        immich) echo "bash $SCRIPTS_DIR/immich-sync.sh" ;;
         jellyfin) echo "bash $SCRIPTS_DIR/jellyfin-music-sync.sh" ;;
         *) return 1 ;;
     esac
@@ -166,41 +166,59 @@ arg=${2:-}
 case "$cmd" in
     status)
         case "$arg" in
-            all)              echo "immich=$(status_one immich) jellyfin=$(status_one jellyfin)" ;;
-            immich|jellyfin)  status_one "$arg" ;;
-            *)                echo "usage: $0 status {all|immich|jellyfin}" >&2; exit 2 ;;
+            all) echo "immich=$(status_one immich) jellyfin=$(status_one jellyfin)" ;;
+            immich | jellyfin) status_one "$arg" ;;
+            *)
+                echo "usage: $0 status {all|immich|jellyfin}" >&2
+                exit 2
+                ;;
         esac
         ;;
     toggle)
         case "$arg" in
-            immich|jellyfin)
+            immich | jellyfin)
                 flip_one "$arg"
                 # Print the new state so callers can react in one call.
                 status_one "$arg"
                 ;;
-            *) echo "usage: $0 toggle {immich|jellyfin}" >&2; exit 2 ;;
+            *)
+                echo "usage: $0 toggle {immich|jellyfin}" >&2
+                exit 2
+                ;;
         esac
         ;;
     enable)
         case "$arg" in
-            immich|jellyfin) set_one "$arg" 1 ;;
-            *) echo "usage: $0 enable {immich|jellyfin}" >&2; exit 2 ;;
+            immich | jellyfin) set_one "$arg" 1 ;;
+            *)
+                echo "usage: $0 enable {immich|jellyfin}" >&2
+                exit 2
+                ;;
         esac
         ;;
     disable)
         case "$arg" in
-            immich|jellyfin) set_one "$arg" 0 ;;
-            *) echo "usage: $0 disable {immich|jellyfin}" >&2; exit 2 ;;
+            immich | jellyfin) set_one "$arg" 0 ;;
+            *)
+                echo "usage: $0 disable {immich|jellyfin}" >&2
+                exit 2
+                ;;
         esac
         ;;
     schedule)
         sched=${3:-}
         case "$arg" in
-            immich|jellyfin)
-                [[ -z "$sched" ]] && { echo "usage: $0 schedule {immich|jellyfin} '<cron-expr>'" >&2; exit 2; }
+            immich | jellyfin)
+                [[ -z "$sched" ]] && {
+                    echo "usage: $0 schedule {immich|jellyfin} '<cron-expr>'" >&2
+                    exit 2
+                }
                 schedule_set "$arg" "$sched"
                 ;;
-            *) echo "usage: $0 schedule {immich|jellyfin} '<cron-expr>'" >&2; exit 2 ;;
+            *)
+                echo "usage: $0 schedule {immich|jellyfin} '<cron-expr>'" >&2
+                exit 2
+                ;;
         esac
         ;;
     *)

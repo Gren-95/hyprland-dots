@@ -18,7 +18,7 @@ fi
 # auto-invert if background is dark (mean brightness < 0.5)
 PROC="${SCREENSHOT%.png}-proc.png"
 MEAN=$(convert "$SCREENSHOT" -colorspace Gray -format "%[fx:mean]" info: 2>/dev/null)
-if (( $(echo "${MEAN:-0.5} < 0.5" | bc -l) )); then
+if (($(echo "${MEAN:-0.5} < 0.5" | bc -l))); then
     convert "$SCREENSHOT" -resize 300% -colorspace Gray -negate -contrast-stretch 1% "$PROC"
 else
     convert "$SCREENSHOT" -resize 300% -colorspace Gray -contrast-stretch 1% "$PROC"
@@ -32,7 +32,6 @@ if [[ -z "${TEXT//[[:space:]]/}" ]]; then
     rm -f "$SCREENSHOT"
     exit 0
 fi
-
 
 PREVIEW="${TEXT:0:100}"
 [[ ${#TEXT} -gt 100 ]] && PREVIEW+="..."

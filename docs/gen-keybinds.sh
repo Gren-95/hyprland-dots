@@ -12,14 +12,30 @@ set -euo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 out="$root/KEYBINDS.md"
 
-command -v hyprctl >/dev/null || { echo "gen-keybinds: hyprctl not found (needs a running Hyprland session)" >&2; exit 1; }
-hyprctl version >/dev/null 2>&1 || { echo "gen-keybinds: hyprctl cannot reach Hyprland (is it running?)" >&2; exit 1; }
-command -v python3 >/dev/null || { echo "gen-keybinds: python3 not found" >&2; exit 1; }
+command -v hyprctl >/dev/null || {
+    echo "gen-keybinds: hyprctl not found (needs a running Hyprland session)" >&2
+    exit 1
+}
+hyprctl version >/dev/null 2>&1 || {
+    echo "gen-keybinds: hyprctl cannot reach Hyprland (is it running?)" >&2
+    exit 1
+}
+command -v python3 >/dev/null || {
+    echo "gen-keybinds: python3 not found" >&2
+    exit 1
+}
 
-binds=$(bash "$root/scripts/hypr-binds.sh" 2>/dev/null) || { echo "gen-keybinds: scripts/hypr-binds.sh failed" >&2; exit 1; }
-[[ -n "$binds" ]] || { echo "gen-keybinds: no binds returned" >&2; exit 1; }
+binds=$(bash "$root/scripts/hypr-binds.sh" 2>/dev/null) || {
+    echo "gen-keybinds: scripts/hypr-binds.sh failed" >&2
+    exit 1
+}
+[[ -n "$binds" ]] || {
+    echo "gen-keybinds: no binds returned" >&2
+    exit 1
+}
 
-doc=$(BINDS="$binds" INTRO_FILE="$out" python3 - <<'PY'
+doc=$(
+    BINDS="$binds" INTRO_FILE="$out" python3 - <<'PY'
 import json, os, re
 
 binds = json.loads(os.environ["BINDS"])
@@ -177,6 +193,6 @@ PY
 if [[ "${1:-}" == "--stdout" ]]; then
     printf '%s\n' "$doc"
 else
-    printf '%s\n' "$doc" > "$out"
+    printf '%s\n' "$doc" >"$out"
     echo "gen-keybinds: wrote $out"
 fi

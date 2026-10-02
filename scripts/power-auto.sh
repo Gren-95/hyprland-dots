@@ -13,7 +13,7 @@ set -uo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 
-LOW_THRESHOLD=30   # below this %, drop to power-saver
+LOW_THRESHOLD=30 # below this %, drop to power-saver
 
 # Read current state ("yes"/"no") and percentage from UPower.
 read_state() {
@@ -24,8 +24,8 @@ current_on_bat() {
     local s
     s=$(read_state | awk -F': *' '/state:/ {print $2; exit}')
     case "$s" in
-        discharging|pending-discharge) echo yes ;;
-        *)                              echo no ;;
+        discharging | pending-discharge) echo yes ;;
+        *) echo no ;;
     esac
 }
 current_pct() {
@@ -56,7 +56,7 @@ apply() {
     local label="$target" icon="power-profile-$target-symbolic"
     case "$target" in
         performance) label="Performance (on AC)" ;;
-        balanced)    label="Balanced (on battery)" ;;
+        balanced) label="Balanced (on battery)" ;;
         power-saver) label="Power Saver (battery < ${LOW_THRESHOLD}%)" ;;
     esac
     notify low power-profile "$icon" "Power" "Switched to $label"
@@ -73,6 +73,6 @@ react
 # updates) — we just re-derive on any on-battery / percentage line.
 upower --monitor-detail 2>/dev/null | while read -r line; do
     case "$line" in
-        *"on-battery:"*|*"percentage:"*) react ;;
+        *"on-battery:"* | *"percentage:"*) react ;;
     esac
 done

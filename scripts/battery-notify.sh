@@ -10,7 +10,10 @@ BATTERY=$(find /sys/class/power_supply/ -maxdepth 1 -name "BAT*" 2>/dev/null | s
 BATTERY=${BATTERY##*/}
 
 while true; do
-    [[ -z "$BATTERY" ]] && { sleep 60; continue; }
+    [[ -z "$BATTERY" ]] && {
+        sleep 60
+        continue
+    }
     CAPACITY=$(cat "/sys/class/power_supply/$BATTERY/capacity" 2>/dev/null)
     STATUS=$(cat "/sys/class/power_supply/$BATTERY/status" 2>/dev/null)
 

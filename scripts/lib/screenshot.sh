@@ -21,7 +21,7 @@ capture_region() {
     fi
 
     body="Saved to $file"
-    wl-copy < "$file" || body="Saved to $file (clipboard copy failed)"
+    wl-copy <"$file" || body="Saved to $file (clipboard copy failed)"
     notify normal screenshot "$file" "Screenshot" "$body" 3000
 
     echo "$file"

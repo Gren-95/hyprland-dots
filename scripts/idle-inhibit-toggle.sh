@@ -32,7 +32,7 @@ rm -f "$PIDFILE"
 # Detach the holder from our stdout/stderr so a caller waiting on the pipe
 # (Quickshell, exec_cmd) is not kept waiting for it.
 inhibit_start idle-inhibit-toggle "Manual idle inhibit" >/dev/null 2>&1
-echo "$INHIBIT_HOLDER_PID" > "$PIDFILE.tmp"
+echo "$INHIBIT_HOLDER_PID" >"$PIDFILE.tmp"
 mv -f "$PIDFILE.tmp" "$PIDFILE"
 
 sleep "$START_CHECK_SECONDS"

@@ -52,8 +52,11 @@ do_start() {
 
 case "${1:-toggle}" in
     status) is_running && echo 1 || echo 0 ;;
-    start)  do_start ;;
-    stop)   do_stop "${2:-}" ;;
+    start) do_start ;;
+    stop) do_stop "${2:-}" ;;
     toggle) if is_running; then do_stop "${2:-}"; else do_start; fi ;;
-    *)      echo "usage: $(basename "$0") [toggle|start|stop|status] [--force]" >&2; exit 2 ;;
+    *)
+        echo "usage: $(basename "$0") [toggle|start|stop|status] [--force]" >&2
+        exit 2
+        ;;
 esac

@@ -9,9 +9,9 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 
 PORT=5900
-READY_TIMEOUT_DS=30   # deciseconds
+READY_TIMEOUT_DS=30 # deciseconds
 
-if pgrep -x wayvnc > /dev/null; then
+if pgrep -x wayvnc >/dev/null; then
     pkill -x wayvnc || true
     exit 0
 fi
@@ -25,7 +25,7 @@ fi
 wayvnc "${args[@]}" &>/dev/null &
 
 # Readiness: wait until something listens on the port, or give up and say so.
-for (( i = 0; i < READY_TIMEOUT_DS; i++ )); do
+for ((i = 0; i < READY_TIMEOUT_DS; i++)); do
     if ss -ltn "sport = :$PORT" | grep -q LISTEN; then
         exit 0
     fi

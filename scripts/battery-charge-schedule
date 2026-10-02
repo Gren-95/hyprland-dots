@@ -21,12 +21,12 @@ found=0
 for bat in /sys/class/power_supply/BAT*; do
     [ -e "$bat/charge_types" ] || continue
     found=1
-    echo "$mode" > "$bat/charge_types"
+    echo "$mode" >"$bat/charge_types"
     if [ "$mode" = "Custom" ]; then
         # Write start before end: the driver rejects a start above the
         # current end, and start<end holds in both orders this way.
-        [ -e "$bat/charge_control_start_threshold" ] && echo "$CAP_START" > "$bat/charge_control_start_threshold"
-        [ -e "$bat/charge_control_end_threshold" ] && echo "$CAP_END" > "$bat/charge_control_end_threshold"
+        [ -e "$bat/charge_control_start_threshold" ] && echo "$CAP_START" >"$bat/charge_control_start_threshold"
+        [ -e "$bat/charge_control_end_threshold" ] && echo "$CAP_END" >"$bat/charge_control_end_threshold"
         echo "$(basename "$bat"): capped ($CAP_START-$CAP_END%)"
     else
         echo "$(basename "$bat"): uncapped (Standard, charges to 100%)"

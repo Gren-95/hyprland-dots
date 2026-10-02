@@ -20,11 +20,11 @@ CONF="${XDG_CONFIG_HOME:-$HOME/.config}/default-apps.conf"
 # Last-resort commands, used when nothing is configured yet.
 fallback_for() {
     case "$1" in
-        browser)     echo "xdg-open about:blank" ;;
-        terminal)    echo "kitty" ;;
-        editor)      echo "kitty -e nvim" ;;
+        browser) echo "xdg-open about:blank" ;;
+        terminal) echo "kitty" ;;
+        editor) echo "kitty -e nvim" ;;
         filemanager) echo "nautilus" ;;
-        *)           echo "" ;;
+        *) echo "" ;;
     esac
 }
 
@@ -40,8 +40,8 @@ conf_set() {
     mkdir -p "$(dirname "$CONF")"
     touch "$CONF"
     tmp=$(mktemp)
-    grep -vE "^$role=" "$CONF" > "$tmp" 2>/dev/null || true
-    echo "$role=$id" >> "$tmp"
+    grep -vE "^$role=" "$CONF" >"$tmp" 2>/dev/null || true
+    echo "$role=$id" >>"$tmp"
     mv "$tmp" "$CONF"
 }
 
@@ -49,7 +49,7 @@ conf_set() {
 # something else (a browser's "make me default" prompt) changes it behind us.
 xdg_get() {
     case "$1" in
-        browser)     xdg-settings get default-web-browser 2>/dev/null || true ;;
+        browser) xdg-settings get default-web-browser 2>/dev/null || true ;;
         filemanager) xdg-mime query default inode/directory 2>/dev/null || true ;;
     esac
 }
@@ -57,7 +57,10 @@ xdg_get() {
 get_role() {
     local role=$1 id
     id=$(xdg_get "$role")
-    [[ -n "$id" ]] && { echo "$id"; return 0; }
+    [[ -n "$id" ]] && {
+        echo "$id"
+        return 0
+    }
     conf_get "$role"
 }
 
@@ -84,18 +87,25 @@ set_role() {
 # fails. Search the XDG application directories for the entry.
 resolve_desktop() {
     local id=$1 dir
-    [[ "$id" == /* ]] && { [[ ! -f "$id" ]] || echo "$id"; return 0; }
+    [[ "$id" == /* ]] && {
+        [[ ! -f "$id" ]] || echo "$id"
+        return 0
+    }
     local -a dirs=("$HOME/.local/share/applications")
-    IFS=: read -ra xdg <<< "${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+    IFS=: read -ra xdg <<<"${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
     for dir in "${xdg[@]}"; do dirs+=("$dir/applications"); done
     for dir in "${dirs[@]}"; do
-        [[ -f "$dir/$id" ]] && { echo "$dir/$id"; return; }
+        [[ -f "$dir/$id" ]] && {
+            echo "$dir/$id"
+            return
+        }
     done
     return 0
 }
 
 run_role() {
-    local role=$1; shift
+    local role=$1
+    shift
     local id path fb
     id=$(get_role "$role")
     [[ -n "$id" ]] && path=$(resolve_desktop "$id")
@@ -111,12 +121,30 @@ run_role() {
 
 role=${2:-}
 case "${1:-}" in
-    get) [[ -z "$role" ]] && { echo "usage: $0 get <role>" >&2; exit 2; }
-         get_role "$role" ;;
-    set) [[ -z "$role" || -z "${3:-}" ]] && { echo "usage: $0 set <role> <desktop-id>" >&2; exit 2; }
-         set_role "$role" "$3" ;;
-    run) [[ -z "$role" ]] && { echo "usage: $0 run <role> [args...]" >&2; exit 2; }
-         shift 2
-         run_role "$role" "$@" ;;
-    *)   echo "usage: $0 {get|set|run} <role> [args...]" >&2; exit 2 ;;
+    get)
+        [[ -z "$role" ]] && {
+            echo "usage: $0 get <role>" >&2
+            exit 2
+        }
+        get_role "$role"
+        ;;
+    set)
+        [[ -z "$role" || -z "${3:-}" ]] && {
+            echo "usage: $0 set <role> <desktop-id>" >&2
+            exit 2
+        }
+        set_role "$role" "$3"
+        ;;
+    run)
+        [[ -z "$role" ]] && {
+            echo "usage: $0 run <role> [args...]" >&2
+            exit 2
+        }
+        shift 2
+        run_role "$role" "$@"
+        ;;
+    *)
+        echo "usage: $0 {get|set|run} <role> [args...]" >&2
+        exit 2
+        ;;
 esac
