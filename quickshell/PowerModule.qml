@@ -82,6 +82,13 @@ Item {
     }
 
 
+
+    // Popup height follows the content (up to what the screen allows), so
+    // there is never empty space under the last control.
+    readonly property real fitHeight: Math.min(
+        parentBar && parentBar.screen ? parentBar.screen.height - 160 : 700,
+        contentCol.implicitHeight + Theme.spacing.xl * 2)
+
     // ===== Popup control =====
     function toggleOpen(from) {
         _openAnchor = from ?? null;
@@ -143,8 +150,8 @@ Item {
         parentBar: ap.parentBar
         anchorItem: ap._openAnchor ?? ap.flyoutAnchor ?? ap
         open: ap.popupOpen
-        cardWidth: settingsStore.flyoutSize("power", "w", 420)
-        cardHeight: settingsStore.flyoutSize("power", "h", 560)
+        cardWidth: settingsStore.flyoutSize("power", "w", 460)
+        cardHeight: settingsStore.flyoutSize("power", "h", ap.fitHeight)
         pinned: ap.pinned
         onDismissed: ap.popupOpen = false
         onKeyPressed: (e) => {
@@ -173,9 +180,10 @@ Item {
         }
 
         ColumnLayout {
+            id: contentCol
             anchors.fill: parent
-            anchors.margins: Theme.spacing.lg
-            spacing: Theme.spacing.md
+            anchors.margins: Theme.spacing.xl
+            spacing: Theme.spacing.lg
 
             RowLayout {
                 Layout.fillWidth: true
@@ -189,7 +197,7 @@ Item {
                     text: "Power"
                     color: Theme.fg
                     font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.md
+                    font.pixelSize: Theme.fontSize.lg
                     font.bold: true
                     horizontalAlignment: Text.AlignHCenter
                 }
@@ -201,22 +209,25 @@ Item {
                 id: flick
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                Layout.preferredHeight: col.implicitHeight
                 clip: true
                 contentWidth: width
                 contentHeight: col.implicitHeight
                 boundsBehavior: Flickable.StopAtBounds
-                ScrollBar.vertical: ThinScrollBar {}
+                ScrollBar.vertical: ThinScrollBar {
+                    policy: flick.contentHeight > flick.height + 2 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                }
 
                 ColumnLayout {
                     id: col
                     width: flick.width - Theme.spacing.md
-                    spacing: Theme.spacing.md
+                    spacing: Theme.spacing.lg
 
                     BatteryCard { Layout.fillWidth: true }
 
                     Rectangle {
                         Layout.fillWidth: true
-                        implicitHeight: profileCol.implicitHeight + Theme.spacing.lg * 2
+                        implicitHeight: profileCol.implicitHeight + Theme.spacing.xl * 2
                         radius: 10 * Theme.radiusScale
                         color: Theme.bg
                         border.color: Theme.border
@@ -224,13 +235,13 @@ Item {
                         ColumnLayout {
                             id: profileCol
                             anchors.fill: parent
-                            anchors.margins: Theme.spacing.lg
-                            spacing: Theme.spacing.md
+                            anchors.margins: Theme.spacing.xl
+                            spacing: Theme.spacing.lg
                             Text {
                                 text: "POWER PROFILE"
                                 color: Theme.mutedDeep
                                 font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.xs
+                                font.pixelSize: Theme.fontSize.sm
                                 font.letterSpacing: 1
                                 font.bold: true
                             }
@@ -247,7 +258,7 @@ Item {
 
                     Rectangle {
                         Layout.fillWidth: true
-                        implicitHeight: lightCol.implicitHeight + Theme.spacing.lg * 2
+                        implicitHeight: lightCol.implicitHeight + Theme.spacing.xl * 2
                         radius: 10 * Theme.radiusScale
                         color: Theme.bg
                         border.color: Theme.border
@@ -255,13 +266,13 @@ Item {
                         ColumnLayout {
                             id: lightCol
                             anchors.fill: parent
-                            anchors.margins: Theme.spacing.lg
-                            spacing: Theme.spacing.md
+                            anchors.margins: Theme.spacing.xl
+                            spacing: Theme.spacing.lg
                             Text {
                                 text: "BACKLIGHT"
                                 color: Theme.mutedDeep
                                 font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.xs
+                                font.pixelSize: Theme.fontSize.sm
                                 font.letterSpacing: 1
                                 font.bold: true
                             }
@@ -298,7 +309,7 @@ Item {
                                 readonly property bool hl: ap.pwrIndex === 5 + index
                                 readonly property bool danger: modelData.label === "Shutdown"
                                 Layout.fillWidth: true
-                                implicitHeight: 62
+                                implicitHeight: 78
                                 radius: 10 * Theme.radiusScale
                                 color: hl || stMa.containsMouse ? Theme.alpha(modelData.accent, 0.14) : Theme.bg
                                 border.color: hl ? modelData.accent
@@ -316,14 +327,14 @@ Item {
                                         text: modelData.glyph
                                         color: modelData.accent
                                         font.family: Theme.font
-                                        font.pixelSize: Theme.fontSize.xl
+                                        font.pixelSize: Theme.fontSize.xxl
                                     }
                                     Text {
                                         Layout.alignment: Qt.AlignHCenter
                                         text: modelData.label
                                         color: hl || danger ? modelData.accent : Theme.fgMuted
                                         font.family: Theme.font
-                                        font.pixelSize: Theme.fontSize.xs
+                                        font.pixelSize: Theme.fontSize.sm
                                         font.bold: hl
                                     }
                                 }

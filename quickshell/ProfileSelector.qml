@@ -26,7 +26,7 @@ ColumnLayout {
     Rectangle {
         id: track
         Layout.fillWidth: true
-        implicitHeight: 60
+        implicitHeight: 76
         radius: 10 * Theme.radiusScale
         color: Theme.bgInset
         border.color: Theme.borderSubtle
@@ -84,7 +84,7 @@ ColumnLayout {
                             text: ps._glyph(seg.modelData)
                             color: seg.isActive ? Theme.fgOnAccent : ps._accent(seg.modelData)
                             font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xl
+                            font.pixelSize: Theme.fontSize.xxl
                             Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
                         }
                         Text {
@@ -92,7 +92,7 @@ ColumnLayout {
                             text: ps._label(seg.modelData)
                             color: seg.isActive ? Theme.fgOnAccent : Theme.fgMuted
                             font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xs
+                            font.pixelSize: Theme.fontSize.sm
                             font.bold: seg.isActive
                             Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
                         }
@@ -115,7 +115,7 @@ ColumnLayout {
         text: ps.profiles.length > 0 ? ps._desc(ps.profiles[ps.shownIndex]) : ""
         color: Theme.muted
         font.family: Theme.font
-        font.pixelSize: Theme.fontSize.sm
+        font.pixelSize: Theme.fontSize.base
         wrapMode: Text.WordWrap
     }
 }

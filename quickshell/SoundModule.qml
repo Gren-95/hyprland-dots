@@ -98,6 +98,13 @@ Item {
     }
 
 
+
+    // Popup height follows the content (up to what the screen allows), so
+    // there is never empty space under the last control.
+    readonly property real fitHeight: Math.min(
+        parentBar && parentBar.screen ? parentBar.screen.height - 160 : 700,
+        contentCol.implicitHeight + Theme.spacing.xl * 2)
+
     // ===== Popup control =====
     // `from` (optional) re-anchors the flyout under the bar item that opened
     // it (overflow rows, Spotlight) so it appears where it was asked for.
@@ -185,8 +192,8 @@ Item {
         parentBar: ap.parentBar
         anchorItem: ap._openAnchor ?? ap.flyoutAnchor ?? ap
         open: ap.popupOpen
-        cardWidth: settingsStore.flyoutSize("audiopower", "w", 420)
-        cardHeight: settingsStore.flyoutSize("audiopower", "h", 440)
+        cardWidth: settingsStore.flyoutSize("audiopower", "w", 460)
+        cardHeight: settingsStore.flyoutSize("audiopower", "h", ap.fitHeight)
         pinned: ap.pinned
         onDismissed: ap.popupOpen = false
         onKeyPressed: (e) => {
@@ -215,9 +222,10 @@ Item {
         }
 
         ColumnLayout {
+            id: contentCol
             anchors.fill: parent
-            anchors.margins: Theme.spacing.lg
-            spacing: Theme.spacing.md
+            anchors.margins: Theme.spacing.xl
+            spacing: Theme.spacing.lg
 
             RowLayout {
                 Layout.fillWidth: true
@@ -231,7 +239,7 @@ Item {
                     text: "Sound"
                     color: Theme.fg
                     font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.md
+                    font.pixelSize: Theme.fontSize.lg
                     font.bold: true
                     horizontalAlignment: Text.AlignHCenter
                 }
@@ -243,16 +251,19 @@ Item {
                 id: flick
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                Layout.preferredHeight: col.implicitHeight
                 clip: true
                 contentWidth: width
                 contentHeight: col.implicitHeight
                 boundsBehavior: Flickable.StopAtBounds
-                ScrollBar.vertical: ThinScrollBar {}
+                ScrollBar.vertical: ThinScrollBar {
+                    policy: flick.contentHeight > flick.height + 2 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                }
 
                 ColumnLayout {
                     id: col
                     width: flick.width - Theme.spacing.md
-                    spacing: Theme.spacing.md
+                    spacing: Theme.spacing.lg
 
                     AudioSection {
                         Layout.fillWidth: true

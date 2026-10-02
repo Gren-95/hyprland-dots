@@ -36,7 +36,7 @@ Rectangle {
         return volume < 0.34 ? "󰕿" : volume < 0.67 ? "󰖀" : "󰕾";
     }
 
-    implicitHeight: col.implicitHeight + Theme.spacing.lg * 2
+    implicitHeight: col.implicitHeight + Theme.spacing.xl * 2
     radius: 10 * Theme.radiusScale
     color: Theme.bg
     border.color: sliderActive ? Theme.borderStrong : Theme.border
@@ -49,8 +49,8 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.margins: Theme.spacing.lg
-        spacing: Theme.spacing.md
+        anchors.margins: Theme.spacing.xl
+        spacing: Theme.spacing.lg
 
         // ----- Title + device dropdown header -----
         RowLayout {
@@ -60,16 +60,16 @@ Rectangle {
                 text: section.title
                 color: Theme.mutedDeep
                 font.family: Theme.font
-                font.pixelSize: Theme.fontSize.xs
+                font.pixelSize: Theme.fontSize.sm
                 font.letterSpacing: 1
                 font.bold: true
             }
             Item { Layout.fillWidth: true }
             Rectangle {
                 id: dd
-                Layout.maximumWidth: 230
-                implicitHeight: Theme.height.control
-                implicitWidth: ddRow.implicitWidth + 18
+                Layout.maximumWidth: 250
+                implicitHeight: 34
+                implicitWidth: ddRow.implicitWidth + 22
                 radius: height / 2
                 color: ddMa.containsMouse || section.expanded ? Theme.bgActive : Theme.bgInset
                 border.color: section.expanded ? Theme.accentPrimary : Theme.borderStrong
@@ -89,7 +89,7 @@ Rectangle {
                         color: Theme.fg
                         elide: Text.ElideRight
                         font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.sm
+                        font.pixelSize: Theme.fontSize.base
                     }
                     Text {
                         text: "󰅀"
@@ -118,8 +118,8 @@ Rectangle {
             visible: !!(section.node && section.node.audio)
 
             Rectangle {
-                implicitWidth: 40
-                implicitHeight: 40
+                implicitWidth: 52
+                implicitHeight: 52
                 radius: 10 * Theme.radiusScale
                 color: muteMa.containsMouse ? Theme.bgActive : Theme.bgInset
                 border.color: section.toggleHighlighted ? Theme.fg : (section.muted ? Theme.accent.red : Theme.borderStrong)
@@ -133,7 +133,7 @@ Rectangle {
                     text: section.glyph
                     color: section.muted ? Theme.accent.red : (section.isSink ? Theme.fg : Theme.accent.orange)
                     font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xl
+                    font.pixelSize: Theme.fontSize.xxl
                     Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
                 }
                 MouseArea {
@@ -152,6 +152,7 @@ Rectangle {
 
             VolumeSlider {
                 Layout.fillWidth: true
+                implicitHeight: 24
                 value: section.volume
                 showThumb: section.sliderActive
                 opacity: section.muted ? 0.45 : 1.0
@@ -166,9 +167,9 @@ Rectangle {
                 text: Math.round(section.volume * 100) + "%"
                 color: section.muted ? Theme.mutedDeep : Theme.fg
                 font.family: Theme.font
-                font.pixelSize: Theme.fontSize.base
+                font.pixelSize: Theme.fontSize.md
                 font.bold: true
-                Layout.preferredWidth: 42
+                Layout.preferredWidth: 50
                 horizontalAlignment: Text.AlignRight
             }
         }

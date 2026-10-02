@@ -14,20 +14,21 @@ RowLayout {
         text: br.glyph
         color: br.highlighted ? Theme.fg : Theme.fgMuted
         font.family: Theme.font
-        font.pixelSize: Theme.fontSize.lg
-        Layout.preferredWidth: 20
+        font.pixelSize: Theme.fontSize.xl
+        Layout.preferredWidth: 24
         horizontalAlignment: Text.AlignHCenter
     }
     Text {
         text: br.label
         color: br.highlighted ? Theme.fg : Theme.muted
         font.family: Theme.font
-        font.pixelSize: Theme.fontSize.sm
+        font.pixelSize: Theme.fontSize.base
         font.bold: br.highlighted
-        Layout.preferredWidth: 70
+        Layout.preferredWidth: 80
     }
     VolumeSlider {
         Layout.fillWidth: true
+        implicitHeight: 24
         value: br.value
         showThumb: br.highlighted
         border.color: br.highlighted ? Theme.fg : Theme.borderStrong
@@ -39,9 +40,9 @@ RowLayout {
         text: Math.round(br.value * 100) + "%"
         color: br.highlighted ? Theme.fg : Theme.fgMuted
         font.family: Theme.font
-        font.pixelSize: Theme.fontSize.sm
+        font.pixelSize: Theme.fontSize.base
         font.bold: br.highlighted
-        Layout.preferredWidth: 38
+        Layout.preferredWidth: 46
         horizontalAlignment: Text.AlignRight
     }
 }

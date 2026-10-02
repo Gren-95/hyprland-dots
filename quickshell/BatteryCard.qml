@@ -43,7 +43,7 @@ Rectangle {
     }
 
     visible: present
-    implicitHeight: present ? 116 : 0
+    implicitHeight: present ? 152 : 0
     radius: 10 * Theme.radiusScale
     color: Theme.bg
     border.color: Theme.border
@@ -51,14 +51,14 @@ Rectangle {
 
     RowLayout {
         anchors.fill: parent
-        anchors.margins: Theme.spacing.lg
-        spacing: Theme.spacing.lg
+        anchors.margins: Theme.spacing.xl
+        spacing: Theme.spacing.xl
 
         // ===== Ring =====
         Item {
             id: ringBox
-            Layout.preferredWidth: 88
-            Layout.preferredHeight: 88
+            Layout.preferredWidth: 112
+            Layout.preferredHeight: 112
             Layout.alignment: Qt.AlignVCenter
 
             // Breathing halo behind the ring while charging.
@@ -95,7 +95,7 @@ Rectangle {
                 layer.samples: 4
 
                 readonly property real cx: width / 2
-                readonly property real r: width / 2 - 7
+                readonly property real r: width / 2 - 8
                 readonly property real sweep: 360 * Math.max(0, Math.min(100, card.shownPct)) / 100
                 // 0..1 position of the chasing arc along the filled part.
                 property real chase: 0
@@ -110,14 +110,14 @@ Rectangle {
 
                 ShapePath {
                     strokeColor: Theme.bgInset
-                    strokeWidth: 8
+                    strokeWidth: 10
                     fillColor: "transparent"
                     capStyle: ShapePath.RoundCap
                     PathAngleArc { centerX: ring.cx; centerY: ring.cx; radiusX: ring.r; radiusY: ring.r; startAngle: -90; sweepAngle: 360 }
                 }
                 ShapePath {
                     strokeColor: card.stateColor
-                    strokeWidth: 8
+                    strokeWidth: 10
                     fillColor: "transparent"
                     capStyle: ShapePath.RoundCap
                     Behavior on strokeColor { ColorAnimation { duration: Theme.duration.slow } }
@@ -127,7 +127,7 @@ Rectangle {
                 // travels along the filled part and fades at the ends.
                 ShapePath {
                     strokeColor: Qt.rgba(1, 1, 1, card.charging ? 0.85 * Math.sin(ring.chase * Math.PI) : 0)
-                    strokeWidth: 8
+                    strokeWidth: 10
                     fillColor: "transparent"
                     capStyle: ShapePath.RoundCap
                     PathAngleArc {
@@ -147,7 +147,7 @@ Rectangle {
                     text: "󱐋"
                     color: card.stateColor
                     font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.md
+                    font.pixelSize: Theme.fontSize.lg
                     visible: card.charging
                     SequentialAnimation on opacity {
                         running: card.charging && card.visible
@@ -167,7 +167,7 @@ Rectangle {
                     text: Math.round(card.shownPct) + "%"
                     color: Theme.fg
                     font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xl
+                    font.pixelSize: Theme.fontSize.xxl
                     font.bold: true
                 }
             }
@@ -181,8 +181,8 @@ Rectangle {
 
             Rectangle {
                 id: chip
-                implicitHeight: 24
-                implicitWidth: chipRow.implicitWidth + 18
+                implicitHeight: 30
+                implicitWidth: chipRow.implicitWidth + 22
                 radius: height / 2
                 color: Theme.alpha(card.stateColor, 0.16)
                 border.color: Theme.alpha(card.stateColor, 0.45)
@@ -209,7 +209,7 @@ Rectangle {
                         text: card.statusText
                         color: card.stateColor
                         font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.sm
+                        font.pixelSize: Theme.fontSize.base
                     }
                 }
             }
@@ -218,42 +218,42 @@ Rectangle {
                 Layout.fillWidth: true
                 columns: 2
                 columnSpacing: Theme.spacing.lg
-                rowSpacing: 2
+                rowSpacing: 4
                 Text {
                     visible: !!card.dev && Math.abs(card.dev.changeRate) > 0.05
                     text: card.charging ? "Charge rate" : "Power draw"
-                    color: Theme.muted; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm
+                    color: Theme.muted; font.family: Theme.font; font.pixelSize: Theme.fontSize.base
                 }
                 Text {
                     visible: !!card.dev && Math.abs(card.dev.changeRate) > 0.05
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignRight
                     text: card.dev ? Math.abs(card.dev.changeRate).toFixed(1) + " W" : ""
-                    color: Theme.fg; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm
+                    color: Theme.fg; font.family: Theme.font; font.pixelSize: Theme.fontSize.base
                 }
                 Text {
                     visible: !!card.dev && card.dev.energyCapacity > 0
                     text: "Energy"
-                    color: Theme.muted; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm
+                    color: Theme.muted; font.family: Theme.font; font.pixelSize: Theme.fontSize.base
                 }
                 Text {
                     visible: !!card.dev && card.dev.energyCapacity > 0
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignRight
                     text: card.dev ? card.dev.energy.toFixed(1) + " / " + card.dev.energyCapacity.toFixed(1) + " Wh" : ""
-                    color: Theme.fg; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm
+                    color: Theme.fg; font.family: Theme.font; font.pixelSize: Theme.fontSize.base
                 }
                 Text {
                     visible: !!card.dev && card.dev.healthSupported
                     text: "Health"
-                    color: Theme.muted; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm
+                    color: Theme.muted; font.family: Theme.font; font.pixelSize: Theme.fontSize.base
                 }
                 Text {
                     visible: !!card.dev && card.dev.healthSupported
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignRight
                     text: card.dev ? Math.round(card.dev.healthPercentage) + "%" : ""
-                    color: Theme.fg; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm
+                    color: Theme.fg; font.family: Theme.font; font.pixelSize: Theme.fontSize.base
                 }
             }
         }

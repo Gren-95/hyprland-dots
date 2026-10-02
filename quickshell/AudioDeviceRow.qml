@@ -8,7 +8,7 @@ Rectangle {
     property bool highlighted: false
     signal picked()
     signal hovered()
-    implicitHeight: Theme.height.control
+    implicitHeight: 36
     radius: Theme.radius.sm
     color: arow.highlighted ? Theme.bgActive
          : arow.isActive ? Theme.bgHover
@@ -38,7 +38,7 @@ Rectangle {
             text: arow.isActive ? "●" : "○"
             color: arow.isActive ? Theme.accent.blueBright : Theme.mutedDeep
             font.family: Theme.font
-            font.pixelSize: Theme.fontSize.sm
+            font.pixelSize: Theme.fontSize.base
             Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
         }
         Text {
@@ -47,7 +47,7 @@ Rectangle {
             color: arow.isActive ? Theme.fg : Theme.fgMuted
             elide: Text.ElideRight
             font.family: Theme.font
-            font.pixelSize: Theme.fontSize.sm
+            font.pixelSize: Theme.fontSize.base
             font.bold: arow.isActive
         }
     }
