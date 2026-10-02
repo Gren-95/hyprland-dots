@@ -1,0 +1,41 @@
+diff --git a/linux-rust/src/devices/airpods.rs b/linux-rust/src/devices/airpods.rs
+index f0e876c..76ecce2 100644
+--- a/linux-rust/src/devices/airpods.rs
++++ b/linux-rust/src/devices/airpods.rs
+@@ -251,6 +251,7 @@ impl AirPodsDevice {
+                     }
+                     AACPEvent::BatteryInfo(battery_info) => {
+                         debug!("Received BatteryInfo event: {:?}", battery_info);
++                        write_battery_state(&mac_address.to_string(), &battery_info);
+                         if let Some(handle) = &tray_handle {
+                             handle
+                                 .update(|tray: &mut MyTray| {
+@@ -412,3 +413,28 @@ pub struct AirPodsInformation {
+     pub version3: String,
+     pub le_keys: AirPodsLEKeys,
+ }
++
++fn write_battery_state(mac: &str, battery_info: &[crate::bluetooth::aacp::BatteryInfo]) {
++    let Ok(runtime_dir) = std::env::var("XDG_RUNTIME_DIR") else {
++        return;
++    };
++    let component_name = |component: u8| match component {
++        0x01 => "headphone",
++        0x02 => "right",
++        0x04 => "left",
++        _ => "case",
++    };
++    let mut components = serde_json::Map::new();
++    for b in battery_info {
++        components.insert(
++            component_name(b.component as u8).to_string(),
++            serde_json::json!({ "level": b.level, "charging": b.status as u8 == 0x01, "connected": b.status as u8 != 0x04 }),
++        );
++    }
++    let state = serde_json::json!({ "mac": mac, "components": components });
++    let path = std::path::Path::new(&runtime_dir).join("librepods-battery.json");
++    let tmp_path = path.with_extension("json.tmp");
++    if std::fs::write(&tmp_path, state.to_string()).is_ok() {
++        let _ = std::fs::rename(&tmp_path, &path);
++    }
++}
