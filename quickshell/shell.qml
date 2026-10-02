@@ -250,9 +250,9 @@ Scope {
 
                 // ============ LEFT ============
                 RowLayout {
-                    anchors.left: parent.left
-                    anchors.leftMargin: 8
-                    anchors.verticalCenter: parent.verticalCenter
+                    // Flush with the screen corner and full bar height, so the
+                    // launcher can be hit by slamming the pointer top-left.
+                    anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
                     spacing: 0
 
                     BarIcon {
