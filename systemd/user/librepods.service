@@ -1,0 +1,12 @@
+[Unit]
+Description=LibrePods AirPods daemon (battery state for Quickshell)
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=%h/.local/bin/librepods --no-tray --start-minimized
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

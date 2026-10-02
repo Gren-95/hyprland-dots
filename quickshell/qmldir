@@ -4,10 +4,11 @@
 #
 # Keep in sync when adding or removing a .qml file here. `pragma Singleton`
 # types must be listed with the `singleton` prefix: Theme, Paths, Backlight, Cmd,
-# Hypr and TailscaleService. Settings.qml is deliberately NOT a singleton (see its
+# Hypr, TailscaleService and AirPodsBattery. Settings.qml is deliberately NOT a singleton (see its
 # header) and is listed as a plain type.
 
 AccentService AccentService.qml
+singleton AirPodsBattery AirPodsBattery.qml
 AudioDeviceRow AudioDeviceRow.qml
 AudioSection AudioSection.qml
 BarFlyout BarFlyout.qml

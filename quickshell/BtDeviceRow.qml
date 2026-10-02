@@ -16,6 +16,9 @@ Rectangle {
 
     readonly property bool isConnected: !!device && device.connected
     readonly property bool isPairing: !!device && device.pairing
+    // BlueZ reports no battery for AirPods; AirPodsBattery fills that gap.
+    readonly property real airPodsLevel: device ? AirPodsBattery.levelFor(device.address) : -1
+    readonly property real batteryLevel: device && device.batteryAvailable ? device.battery : airPodsLevel
     readonly property string iconName: device && device.icon ? device.icon : ""
     readonly property string kindGlyph: {
         const n = iconName;
@@ -149,8 +152,8 @@ Rectangle {
 
                 // Battery pill
                 Rectangle {
-                    visible: !!dr.device && dr.device.batteryAvailable && !dr.isPairing
-                    readonly property real level: dr.device && dr.device.batteryAvailable ? dr.device.battery : 0
+                    visible: dr.isConnected && dr.batteryLevel >= 0 && !dr.isPairing
+                    readonly property real level: Math.max(0, dr.batteryLevel)
                     readonly property color levelColor: level <= 0.2 ? Theme.accent.red
                         : level <= 0.4 ? Theme.accent.orange : Theme.accent.green
                     implicitWidth: batRow.implicitWidth + 16
