@@ -39,31 +39,31 @@ hl.window_rule({
 -- (the move rule was overridden anyway).
 hl.window_rule({
     match = {
-        title = "^(Picture-in-Picture|PiP)$",
+        title = "^(Picture-in-Picture|Picture in picture|PiP)$",
     },
     float = true,
 })
 hl.window_rule({
     match = {
-        title = "^(Picture-in-Picture|PiP)$",
+        title = "^(Picture-in-Picture|Picture in picture|PiP)$",
     },
     pin = true,
 })
 hl.window_rule({
     match = {
-        title = "^(Picture-in-Picture|PiP)$",
+        title = "^(Picture-in-Picture|Picture in picture|PiP)$",
     },
     no_initial_focus = true,
 })
 hl.window_rule({
     match = {
-        title = "^(Picture-in-Picture|PiP)$",
+        title = "^(Picture-in-Picture|Picture in picture|PiP)$",
     },
     size = "480 270",
 })
 hl.window_rule({
     match = {
-        title = "^(Picture-in-Picture|PiP)$",
+        title = "^(Picture-in-Picture|Picture in picture|PiP)$",
     },
     no_blur = true,
 })
