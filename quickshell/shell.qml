@@ -107,8 +107,8 @@ Scope {
                     { name: "Default editor",       glyph: "󰷈", accent: Theme.accent.orange, keywords: "default app editor text",    isToggle: false, run: () => spotlight.startPick("editor") },
                     { name: "Default file manager", glyph: "󰉋", accent: Theme.accent.yellow, keywords: "default app files folder",   isToggle: false, run: () => spotlight.startPick("filemanager") },
                     { name: "Bluetooth",      glyph: "󰂯", accent: Theme.accent.blue,   keywords: "bt devices",                      isToggle: false, run: () => btMod.toggleOpen() },
-                    { name: "Sound",          glyph: "󰕾", accent: Theme.accent.blue,   keywords: "audio volume output input",       isToggle: false, run: () => apMod.openTab("sound") },
-                    { name: "Power",          glyph: "󰐥", accent: Theme.accent.red,    keywords: "battery profile sleep reboot shutdown session", isToggle: false, run: () => apMod.openTab("power", batteryIcon.visible ? batteryIcon : null) },
+                    { name: "Sound",          glyph: "󰕾", accent: Theme.accent.blue,   keywords: "audio volume output input",       isToggle: false, run: () => soundMod.toggleOpen() },
+                    { name: "Power",          glyph: "󰐥", accent: Theme.accent.red,    keywords: "battery profile sleep reboot shutdown session", isToggle: false, run: () => powerMod.toggleOpen(batteryIcon.visible ? batteryIcon : null) },
                     { name: "Do Not Disturb", glyph: "󰂛", accent: Theme.accent.orange, keywords: "dnd mute quiet notifications",    isToggle: true,
                       state: () => notifService.dnd, run: () => notifService.dnd = !notifService.dnd },
                     { name: "Stay Awake",     glyph: "󰒲", accent: Theme.accent.purple, keywords: "idle sleep inhibit caffeine",     isToggle: true,
@@ -337,8 +337,8 @@ Scope {
                         // Bar modules that render as grid tiles when tucked.
                         moduleEntries: [
                             { id: "network",      label: "Bluetooth",     glyph: () => "󰂯",              color: () => Theme.fgMuted,        open: (a) => btMod.toggleOpen(a) },
-                            { id: "audiopower",   label: "Sound",         glyph: () => "󰕾",              color: () => Theme.fgMuted,        open: (a) => apMod.openTab("sound", a) },
-                            { id: "battery",      label: "Battery",       glyph: () => batteryIcon.glyph, color: () => batteryIcon.color,    open: (a) => apMod.openTab("power", a) },
+                            { id: "audiopower",   label: "Sound",         glyph: () => "󰕾",              color: () => Theme.fgMuted,        open: (a) => soundMod.toggleOpen(a) },
+                            { id: "battery",      label: "Battery",       glyph: () => batteryIcon.glyph, color: () => batteryIcon.color,    open: (a) => powerMod.toggleOpen(a) },
                         ]
                     }
 
@@ -355,35 +355,29 @@ Scope {
                         parentBar: bar
                         visible: settingsStore.placement("network") === "bar"
                         flyoutAnchor: visible ? null : (quickMod.visible ? quickMod : null)
-                        onNavigateNext: { popupOpen = false; apMod.openAt("sound"); }
+                        onNavigateNext: { popupOpen = false; soundMod.openAt(); }
                         onNavigatePrev: { popupOpen = false; quickMod.openAt(0); }
                     }
 
                     BarSep { visible: settingsStore.placement("audiopower") === "bar" || settingsStore.placement("battery") === "bar" || (micIcon.unmuted && settingsStore.placement("mic") === "bar") }
 
-                    AudioPowerModule {
-                        id: apMod
+                    SoundModule {
+                        id: soundMod
                         parentBar: bar
                         visible: settingsStore.placement("audiopower") === "bar"
                         flyoutAnchor: visible ? null : (quickMod.visible ? quickMod : null)
-                        // Ring: sound -> power are individual stops.
-                        onNavigateNext: {
-                            if (activeTab === "sound") setTab("power");
-                            else { popupOpen = false; spotlight.openAt(0); }
-                        }
-                        onNavigatePrev: {
-                            if (activeTab === "power") setTab("sound");
-                            else { popupOpen = false; btMod.openAt(0); }
-                        }
+                        // Ring: sound -> power -> spotlight.
+                        onNavigateNext: { popupOpen = false; powerMod.openAt(); }
+                        onNavigatePrev: { popupOpen = false; btMod.openAt(0); }
                     }
 
-                    // Battery: opens AudioPowerModule on the Power tab.
+                    // Battery: opens the Power popup (PowerModule below).
                     BarIcon {
                         id: batteryIcon
                         parentBar: bar
                         visible: settingsStore.placement("battery") === "bar"
-                        active: apMod.popupOpen && apMod._openAnchor === batteryIcon
-                        onClicked: apMod.openTab("power", batteryIcon)
+                        active: powerMod.popupOpen && powerMod._openAnchor === batteryIcon
+                        onClicked: powerMod.toggleOpen(batteryIcon)
                         readonly property var dev: UPower.displayDevice
                         readonly property int pct: dev ? Math.round(dev.percentage * 100) : 0
                         readonly property bool charging: dev && (dev.state === UPowerDeviceState.Charging
@@ -456,6 +450,14 @@ Scope {
                         Process { id: battWarnProc; command: [] }
                     }
 
+                    PowerModule {
+                        id: powerMod
+                        parentBar: bar
+                        flyoutAnchor: batteryIcon.visible ? null : (quickMod.visible ? quickMod : null)
+                        onNavigateNext: { popupOpen = false; spotlight.openAt(0); }
+                        onNavigatePrev: { popupOpen = false; soundMod.openAt(); }
+                    }
+
                     // Microphone (only when unmuted)
                     BarIcon {
                         id: micIcon
@@ -482,7 +484,7 @@ Scope {
                 Connections {
                     target: spotlight
                     function onNavigateNext() { spotlight.close(); dayPanel.openAt(0) }
-                    function onNavigatePrev() { spotlight.close(); apMod.openAt("power") }
+                    function onNavigatePrev() { spotlight.close(); powerMod.openAt() }
                 }
                 Connections {
                     target: dayPanel
@@ -498,7 +500,8 @@ Scope {
                     wallpaperDeckRef: wallpaperDeck
                     regionSelectorRef: regionSelector
                     workspaceOverviewRef: workspaceOverview
-                    apModRef: apMod
+                    soundModRef: soundMod
+                    powerModRef: powerMod
                     quickModRef: quickMod
                     servicesModRef: servicesMod
                     btModRef: btMod

@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Io
 
 // Which backlight devices this machine has, found once by listing sysfs.
-// Osd (change detection) and AudioPowerModule (sliders) both build on it, so
+// Osd (change detection) and PowerModule (sliders) both build on it, so
 // neither hardcodes a vendor's device name.
 Singleton {
     id: svc

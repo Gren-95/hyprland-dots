@@ -9,7 +9,6 @@
 
 AccentService AccentService.qml
 AudioDeviceRow AudioDeviceRow.qml
-AudioPowerModule AudioPowerModule.qml
 AudioSection AudioSection.qml
 BarFlyout BarFlyout.qml
 BarHover BarHover.qml
@@ -38,6 +37,7 @@ NotifPane NotifPane.qml
 Notifications Notifications.qml
 Osd Osd.qml
 PinButton PinButton.qml
+PowerModule PowerModule.qml
 singleton Paths Paths.qml
 PolkitPrompt PolkitPrompt.qml
 PopupCard PopupCard.qml
@@ -57,6 +57,7 @@ Spinner Spinner.qml
 Spotlight Spotlight.qml
 SuperWatch SuperWatch.qml
 SproutBg SproutBg.qml
+SoundModule SoundModule.qml
 SpotlightActionRow SpotlightActionRow.qml
 SpotlightAppRow SpotlightAppRow.qml
 SpotlightCalcRow SpotlightCalcRow.qml

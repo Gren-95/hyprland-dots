@@ -11,7 +11,7 @@ add a new modal" or "where do I change X" — not a tutorial.
 | **Root stores** | `Settings.qml` (`settingsStore`), `PopupManager.qml` (`popupManager`) | Persisted user settings + single-open flyout policy. Instantiated FIRST in shell.qml and resolved via the id scope chain — NOT singletons (see warning below) |
 | **Primitives** | `BarFlyout.qml`, `PopupCard.qml`, `TabStrip.qml`, `SproutBg.qml`, `SegmentedControl.qml` | The flyout envelope, the top-drawer envelope, the speech-bubble shape, settings controls |
 | **Bar items** | `BarIcon.qml`, `BarSep.qml`, `WorkspaceStrip.qml` | Leaf widgets that sit on the top bar |
-| **Bar modules** | `ConnectivityModule.qml`, `AudioPowerModule.qml`, `NotifBell.qml`, `QuickActions.qml` | Bar entry points that open their own flyout |
+| **Bar modules** | `ConnectivityModule.qml`, `SoundModule.qml`, `PowerModule.qml`, `NotifBell.qml`, `QuickActions.qml` | Bar entry points that open their own flyout |
 | **Flyout modals** | `Spotlight.qml`, `Clipboard.qml`, `Keybinds.qml`, `DayPanel.qml`, `SystemMonitor.qml` | Scope-level services whose UI opens as a flyout under a bar item |
 | **Services (headless)** | `IcsCalendar.qml`, `Notifications.qml`, `WeatherService.qml`, `IdleService.qml`, `AccentService.qml`, `SuperWatch.qml` | State and system plumbing with no surface of their own; panes read them |
 | **Panes** | `CalendarPane.qml`, `NotifPane.qml`, `MediaCard.qml` | Views over a service, composed into a flyout |
@@ -32,8 +32,8 @@ Theme survives as a singleton only because shell.qml reads it directly;
 **Unified-shell rule:** nothing opens as a free-floating centered window.
 Every surface either hangs under its bar icon (`BarFlyout`), drops from the
 bar edge (`PopupCard` top drawer, WorkspaceOverview strip), or is inherently
-fullscreen (RegionSelector). The power menu lives in AudioPowerModule's
-Power tab (SESSION row) — `quickshell:powermenu` opens that tab.
+fullscreen (RegionSelector). The power menu is PowerModule's popup (session buttons on the bottom row);
+`quickshell:powermenu` toggles it.
 
 Entry point is `shell.qml`. It instantiates every modal and the per-screen bar
 via `Variants { model: Quickshell.screens }`.
@@ -158,7 +158,7 @@ default, `edge: "right"` for toast-like sheets. Used by `PolkitPrompt`
 Pass content via `contentComponent: Component { … }`.
 
 ### `TabStrip`
-Rounded pill container for tab navigation. Used by `AudioPowerModule`.
+Rounded pill container for tab navigation. Used by `ConnectivityModule`.
 
 ```qml
 TabStrip {
@@ -262,7 +262,7 @@ opacity `0 → 1`, `transformOrigin: Item.Top` (grow out of the bar),
 Flyout anchor map: launcher icon → Spotlight, Clipboard, Keybinds ·
 clock and bell → DayPanel (both land on the same surface) · clock cluster →
 SystemMonitor · Quick Actions chevron → QuickActions ·
-their own bar icons → ConnectivityModule, AudioPowerModule.
+their own bar icons → ConnectivityModule, SoundModule (PowerModule has none; the battery icon in shell.qml opens it).
 
 Each modal exposes:
 - `property bool open: false`
@@ -423,7 +423,7 @@ BarIcon {
 ```
 
 Use a full module file if it needs its own popup. Pattern is in
-`AudioPowerModule.qml` / `ConnectivityModule.qml`.
+`SoundModule.qml` / `PowerModule.qml` / `ConnectivityModule.qml`.
 
 ## Logging
 

@@ -21,7 +21,8 @@ Scope {
     property var wallpaperDeckRef
     property var regionSelectorRef
     property var workspaceOverviewRef
-    property var apModRef
+    property var soundModRef
+    property var powerModRef
     property var quickModRef
     property var servicesModRef
     property var btModRef
@@ -40,14 +41,14 @@ Scope {
           run: () => sc.clipboardRef.toggle() },
         { name: "keybinds", description: "Toggle keybinds viewer",
           run: () => sc.keybindsRef.toggle() },
-        { name: "powermenu", description: "Open the Power tab (session actions live there)",
-          run: () => sc.apModRef.openTab("power") },
+        { name: "powermenu", description: "Toggle the power popup (battery, profile, session actions)",
+          run: () => sc.powerModRef.toggleOpen() },
         { name: "sysmon", description: "Toggle system monitor",
           run: () => sc.sysmonRef.toggle() },
         { name: "quickactions", description: "Toggle quick actions panel",
           run: () => { sc.quickModRef._openAnchor = null; sc.quickModRef.popupOpen = !sc.quickModRef.popupOpen; } },
-        { name: "audiopower", description: "Toggle audio & power panel (Sound tab)",
-          run: () => sc.apModRef.openTab("sound") },
+        { name: "audiopower", description: "Toggle the sound popup",
+          run: () => sc.soundModRef.toggleOpen() },
         { name: "calendar", description: "Toggle calendar popup",
           run: () => sc.dayPanelRef.toggleFrom(sc.clockAnchorRef) },
         { name: "wallpaper", description: "Deal the next wallpaper card (hold Super, release to apply)",
