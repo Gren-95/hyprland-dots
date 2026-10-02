@@ -105,7 +105,7 @@ Item {
                 // Accent-tinted when falling back to the glyph so there's always
                 // a clearly visible icon, even when the player exposes no art.
                 color: art.visible ? Theme.bg
-                    : Qt.rgba(Theme.accentPrimary.r, Theme.accentPrimary.g, Theme.accentPrimary.b, 0.15)
+                    : Theme.alpha(Theme.accentPrimary, 0.15)
                 clip: true
                 Image {
                     id: art

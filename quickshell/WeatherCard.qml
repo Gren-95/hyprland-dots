@@ -195,8 +195,7 @@ Rectangle {
                                     * Math.min(100, slot.modelData.prob) / 100)
                                 radius: 4
                                 visible: slot.modelData.prob > 0
-                                color: Qt.rgba(card.barHue.r, card.barHue.g, card.barHue.b,
-                                               slot.wet ? 1 : card.dimStep)
+                                color: Theme.alpha(card.barHue, slot.wet ? 1 : card.dimStep)
                                 // Square off the foot: the rounded end belongs
                                 // to the data, the base belongs to the axis.
                                 Rectangle {

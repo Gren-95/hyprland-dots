@@ -24,8 +24,8 @@ Scope {
     property bool _ready: false
 
     // sysfs device discovery + cached max values
-    property string blDev: ""
-    property string kbDev: ""
+    readonly property string blDev: Backlight.blDev
+    readonly property string kbDev: Backlight.kbDev
     property int blMax: 0
     property int kbMax: 0
     property int blLast: -1
@@ -98,21 +98,14 @@ Scope {
         function onMutedChanged() { if (root._ready) root.showMic(); }
     }
 
-    // One-shot device discovery on startup: pick the first backlight in
-    // /sys/class/backlight and the first kbd_backlight LED.
-    Process {
-        running: true
-        command: ["sh", "-c", "ls /sys/class/backlight/ 2>/dev/null | head -1; ls /sys/class/leds/ 2>/dev/null | grep -iE 'kbd_backlight|kbd-backlight|keyboard' | head -1"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const lines = text.split("\n");
-                root.blDev = (lines[0] || "").trim();
-                root.kbDev = (lines[1] || "").trim();
-                if (root.blDev) maxProc.command = ["sh", "-c",
-                    "cat /sys/class/backlight/" + root.blDev + "/max_brightness; cat /sys/class/leds/" + (root.kbDev || ".no.") + "/max_brightness 2>/dev/null || echo 0"];
-                if (root.blDev) maxProc.running = true;
-            }
-        }
+    // Max values for the devices Backlight discovered, read once.
+    onBlDevChanged: readMax()
+    Component.onCompleted: readMax()
+    function readMax() {
+        if (!blDev) return;
+        maxProc.command = ["sh", "-c",
+            "cat /sys/class/backlight/" + blDev + "/max_brightness; cat /sys/class/leds/" + (kbDev || ".no.") + "/max_brightness 2>/dev/null || echo 0"];
+        maxProc.running = true;
     }
     Process {
         id: maxProc

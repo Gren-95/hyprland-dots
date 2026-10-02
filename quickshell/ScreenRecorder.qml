@@ -24,7 +24,7 @@ Scope {
     }
 
     readonly property string pidfile: "/tmp/screenrecord.pid"
-    readonly property string scriptPath: Quickshell.env("HOME") + "/.config/scripts/screenrecord.sh"
+    readonly property string scriptPath: Paths.scripts + "/screenrecord.sh"
 
     function toggle() {
         toggleProc.command = ["bash", root.scriptPath];

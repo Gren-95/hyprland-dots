@@ -39,7 +39,7 @@ Rectangle {
         width: strip.tabCount > 0 ? (parent.width - 4) / strip.tabCount : 0
         x: 2 + strip.activeIndex * width
         radius: 13 * Theme.radiusScale
-        color: Qt.rgba(strip.activeAccent.r, strip.activeAccent.g, strip.activeAccent.b, 0.20)
+        color: Theme.alpha(strip.activeAccent, 0.20)
         border.color: strip.activeAccent
         border.width: 1
         Behavior on x           { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.emphasized } }

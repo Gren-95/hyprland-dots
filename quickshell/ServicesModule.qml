@@ -28,8 +28,6 @@ Item {
     // "working" instead of flipping back on the next stale probe.
     property string busyKey: ""
 
-    readonly property string scripts: Quickshell.env("HOME") + "/.config/scripts"
-
     // ============ What we watch ============
     // `script` is what starts a stopped daemon; `action` names a toggle.
     readonly property var daemons: [
@@ -106,7 +104,7 @@ Item {
     // ============ Probe ============
     Process {
         id: probe
-        command: ["bash", mod.scripts + "/services-status.sh"]
+        command: ["bash", Paths.scripts + "/services-status.sh"]
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
@@ -147,7 +145,7 @@ Item {
     function startDaemon(entry) {
         // Detached: a daemon parented to Quickshell would die with the next
         // shell reload, which is exactly the failure this panel reports.
-        runProc.command = ["bash", mod.scripts + "/" + entry.script];
+        runProc.command = ["bash", Paths.scripts + "/" + entry.script];
         runProc.startDetached();
         mod.busyKey = entry.key;
         busyTimeout.restart();
@@ -155,11 +153,11 @@ Item {
     }
     function toggle(key) {
         if (key === "immich" || key === "jellyfin")
-            runProc.command = ["bash", mod.scripts + "/sync-toggle.sh", "toggle", key];
+            runProc.command = ["bash", Paths.scripts + "/sync-toggle.sh", "toggle", key];
         else if (key === "wayvnc")
-            runProc.command = ["bash", mod.scripts + "/wayvnc-toggle.sh"];
+            runProc.command = ["bash", Paths.scripts + "/wayvnc-toggle.sh"];
         else if (key === "winvm")
-            runProc.command = ["bash", mod.scripts + "/winvm-toggle.sh", "toggle"];
+            runProc.command = ["bash", Paths.scripts + "/winvm-toggle.sh", "toggle"];
         else return;
         runProc.startDetached();
         mod.busyKey = key;
@@ -178,9 +176,6 @@ Item {
         cardWidth: settingsStore.flyoutSize("services", "w", 380)
         cardHeight: panel.implicitHeight + 28
         onDismissed: mod.popupOpen = false
-        onKeyPressed: (e) => {
-            if (e.key === Qt.Key_Escape) { mod.popupOpen = false; e.accepted = true; }
-        }
 
         ColumnLayout {
             id: panel
@@ -195,6 +190,10 @@ Item {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: Theme.spacing.sm
+                PinButton {
+                    pinned: mod.pinned
+                    onToggled: mod.pinned = !mod.pinned
+                }
                 Text {
                     text: "󰓦"
                     color: Theme.accent.blue

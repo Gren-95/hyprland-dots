@@ -24,6 +24,11 @@ Scope {
     // cold start: consumer binding reads just return undefined until a
     // change notification happens to heal them.
     Settings { id: settingsStore }
+
+    // Touch the singletons only component files use, so they are created
+    // with the shell instead of on first read (see the singleton warning in
+    // DESIGN.md; Theme is kept alive by the Bindings below).
+    readonly property var _singletons: [Paths, Backlight, Cmd]
     PopupManager { id: popupManager }
 
     // Push the appearance settings into the Theme singleton (it can't
@@ -126,7 +131,7 @@ Scope {
             Rectangle {
                 id: barRect
                 anchors.fill: parent
-                color: Qt.rgba(Theme.bgAlt.r, Theme.bgAlt.g, Theme.bgAlt.b, settingsStore.barOpacity)
+                color: Theme.alpha(Theme.bgAlt, settingsStore.barOpacity)
                 radius: 0
                 border.width: 0
 
@@ -475,128 +480,20 @@ Scope {
                     function onNavigateNext() { dayPanel.close(); quickMod.openAt(0) }
                     function onNavigatePrev() { dayPanel.close(); spotlight.openAt(0) }
                 }
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "spotlight"
-                    description: "Toggle app launcher"
-                    onPressed: spotlight.toggle()
-                }
-                // Pairs with Ctrl+D inside the launcher, which is what hides
-                // an app. Getting back to one previously needed the launcher
-                // open and an arrow press, which is a lot of steps for undoing
-                // a single keystroke.
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "unhide"
-                    description: "Open the hidden-apps list to show one again"
-                    onPressed: spotlight.manageHiddenApps()
-                }
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "clipboard"
-                    description: "Toggle clipboard history selector"
-                    onPressed: clipboard.toggle()
-                }
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "keybinds"
-                    description: "Toggle keybinds viewer"
-                    onPressed: keybinds.toggle()
-                }
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "powermenu"
-                    description: "Open the Power tab (session actions live there)"
-                    onPressed: apMod.openTab("power")
-                }
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "sysmon"
-                    description: "Toggle system monitor"
-                    onPressed: sysmon.toggle()
-                }
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "quickactions"
-                    description: "Toggle quick actions panel"
-                    onPressed: { quickMod._openAnchor = null; quickMod.popupOpen = !quickMod.popupOpen }
-                }
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "audiopower"
-                    description: "Toggle audio & power panel (Sound tab)"
-                    onPressed: apMod.openTab("sound")
-                }
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "calendar"
-                    description: "Toggle calendar popup"
-                    onPressed: dayPanel.toggleFrom(clockAnchor)
-                }
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "wallpaper"
-                    description: "Deal the next wallpaper card (hold Super, release to apply)"
-                    onPressed: wallpaperDeck.step()
-                }
-                // Apply / cancel for the wallpaper deck. Global shortcuts
-                // rather than keys on the deck's own surface: it is
-                // click-through and never focused, and grabbing the keyboard to
-                // read them broke the Super-release commit.
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "wallpaper-apply"
-                    description: "Apply the wallpaper card in hand"
-                    onPressed: wallpaperDeck.commitIfOpen()
-                }
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "wallpaper-back"
-                    description: "Deal the previous wallpaper card"
-                    onPressed: wallpaperDeck.stepBack()
-                }
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "wallpaper-cancel"
-                    description: "Dismiss the wallpaper deck without applying"
-                    onPressed: wallpaperDeck.close()
-                }
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "screenshot-region"
-                    description: "Pick a region with the Quickshell region selector"
-                    onPressed: regionSelector.start()
-                }
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "services"
-                    description: "Toggle background services panel"
-                    onPressed: servicesMod.popupOpen = !servicesMod.popupOpen
-                }
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "bluetooth"
-                    description: "Toggle bluetooth menu"
-                    onPressed: btMod.toggleOpen()
-                }
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "notifications"
-                    description: "Toggle notification center"
-                    onPressed: dayPanel.toggleFrom(null)
-                }
-                // Classic Super+Tab: open + cycle on Tab presses, release Super commits.
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "overview-cycle"
-                    description: "Open overview / cycle next workspace"
-                    onPressed: workspaceOverview.cycleOrOpen(1)
-                }
-                GlobalShortcut {
-                    appid: "quickshell"
-                    name: "overview-cycle-prev"
-                    description: "Open overview / cycle previous workspace"
-                    onPressed: workspaceOverview.cycleOrOpen(-1)
+                Shortcuts {
+                    spotlightRef: spotlight
+                    clipboardRef: clipboard
+                    keybindsRef: keybinds
+                    sysmonRef: sysmon
+                    dayPanelRef: dayPanel
+                    wallpaperDeckRef: wallpaperDeck
+                    regionSelectorRef: regionSelector
+                    workspaceOverviewRef: workspaceOverview
+                    apModRef: apMod
+                    quickModRef: quickMod
+                    servicesModRef: servicesMod
+                    btModRef: btMod
+                    clockAnchorRef: clockAnchor
                 }
             }
         }

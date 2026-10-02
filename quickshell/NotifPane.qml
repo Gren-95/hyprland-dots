@@ -288,7 +288,7 @@ Item {
         implicitWidth: tglRow.implicitWidth + 20
         implicitHeight: 30
         radius: 15 * Theme.radiusScale
-        color: tgl.on ? Qt.rgba(tgl.accent.r, tgl.accent.g, tgl.accent.b, 0.18)
+        color: tgl.on ? Theme.alpha(tgl.accent, 0.18)
              : (tglMa.containsMouse ? Theme.bgHover : Theme.bg)
         border.color: tgl.on ? tgl.accent : Theme.border
         border.width: 1
