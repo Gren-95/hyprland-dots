@@ -285,12 +285,14 @@ Scope {
                 // ============ RIGHT ============
                 RowLayout {
                     id: rightGroup
-                    anchors.right: parent.right
-                    anchors.rightMargin: 8
-                    anchors.verticalCenter: parent.verticalCenter
+                    // Flush with the screen corner and full bar height, like the
+                    // launcher on the left; icons carry their own padding.
+                    anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
                     spacing: 0
                     RowLayout {
-                        spacing: Theme.spacing.md
+                        // No gaps between tray items: each one is 36 px wide,
+                        // and a gap would be a dead zone between targets.
+                        spacing: 0
                         Repeater {
                             // Only tray apps placed on the bar; the rest live
                             // in the overflow chevron (or are hidden).

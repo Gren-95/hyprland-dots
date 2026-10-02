@@ -90,7 +90,7 @@ RowLayout {
         // Gated by the master switch so one toggle hides every dot.
         readonly property bool show: dot.on && si.enabled
         Layout.fillHeight: true
-        implicitWidth: dot.show ? (g.implicitWidth + 14) : 0
+        implicitWidth: dot.show ? (g.implicitWidth + 22) : 0
 
         Text {
             id: g
@@ -116,7 +116,7 @@ RowLayout {
     // group next to the bell — present only when something is showing.
     Item {
         Layout.fillHeight: true
-        implicitWidth: si.anyOn ? 18 : 0
+        implicitWidth: si.anyOn ? 26 : 0
         Text {
             anchors.centerIn: parent
             visible: si.anyOn

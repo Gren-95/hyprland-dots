@@ -104,7 +104,7 @@ Item {
     readonly property var gridItems: toggles.concat(oneShots).concat(tuckedModules)
 
     Layout.fillHeight: true
-    implicitWidth: 32
+    implicitWidth: 40
 
     Text {
         anchors.centerIn: parent
