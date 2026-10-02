@@ -119,6 +119,8 @@ jobs:
           mkdir -p "$HOME/.config"
           ln -s "$GITHUB_WORKSPACE/scripts" "$HOME/.config/scripts"
           sudo install -m755 scripts/battery-charge-schedule /usr/local/bin/battery-charge-schedule
+          mkdir -p "$HOME/.local/bin"
+          install -m755 /bin/true "$HOME/.local/bin/librepods"
 
       - name: systemd-analyze verify
         run: |
