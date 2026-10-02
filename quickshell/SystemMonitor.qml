@@ -65,7 +65,16 @@ Scope {
         rxRate = 0; txRate = 0; readRate = 0; writeRate = 0;
         _previous = null;
     }
-    onOpenChanged: if (open) _resetHistory()
+    onOpenChanged: if (open) {
+        _resetHistory();
+        paused = false;
+    }
+
+    // Refresh control: the chips in the header pick the interval (persisted
+    // in settingsStore.sysmonInterval); pausing stops sampling until resumed.
+    property bool paused: false
+    readonly property var intervalChoices: [500, 1000, 2000, 5000]
+    function choiceLabel(ms) { return (ms / 1000) + "s"; }
 
     function toggle() { open = !open }
     function close()  { open = false }
@@ -108,24 +117,29 @@ Scope {
     }
 
     Timer {
-        running: root.open
+        id: refreshTimer
+        running: root.open && !root.paused
         interval: settingsStore.sysmonInterval
         repeat: true
         triggeredOnStart: true
-        onTriggered: root.refresh()
+        onTriggered: { root.refresh(); countdown.restart(); }
+        onIntervalChanged: countdown.restart()
     }
 
-    // Popup height follows the content (up to what the screen allows).
+    // Popup height follows the content (up to what the screen allows); the
+    // width is the wide two-column layout, clamped to the screen.
     readonly property real fitHeight: Math.min(
         anchorBar && anchorBar.screen ? anchorBar.screen.height - 160 : 700,
         contentCol.implicitHeight + Theme.spacing.xl * 2)
+    readonly property real fitWidth: Math.min(
+        1320, anchorBar && anchorBar.screen ? anchorBar.screen.width - 80 : 1320)
 
     BarFlyout {
         parentBar: root.anchorBar
         anchorItem: root.anchorItem
         open: root.open && root.anchorBar !== null
         pinned: root.pinned
-        cardWidth: settingsStore.flyoutSize("sysmon", "w", 960)
+        cardWidth: settingsStore.flyoutSize("sysmon", "w", root.fitWidth)
         cardHeight: settingsStore.flyoutSize("sysmon", "h", root.fitHeight)
         onDismissed: root.close()
 
@@ -135,24 +149,81 @@ Scope {
             anchors.margins: Theme.spacing.xl
             spacing: Theme.spacing.lg
 
-            RowLayout {
+            // Header: pin on the left, title centred, refresh control on the right.
+            Item {
                 Layout.fillWidth: true
-                spacing: Theme.spacing.md
+                implicitHeight: 34
                 PinButton {
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
                     pinned: root.pinned
                     onToggled: root.pinned = !root.pinned
                 }
                 Text {
-                    Layout.fillWidth: true
+                    anchors.centerIn: parent
                     text: "System monitor"
                     color: Theme.fg
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.lg
                     font.bold: true
-                    horizontalAlignment: Text.AlignHCenter
                 }
-                // Balances the pin button so the title stays centered.
-                Item { implicitWidth: 22; implicitHeight: 22 }
+                Row {
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: Theme.spacing.sm
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        rightPadding: Theme.spacing.sm
+                        text: "󰑐 Refresh"
+                        color: Theme.mutedDeep
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize.sm
+                        font.letterSpacing: 1
+                    }
+                    Repeater {
+                        model: root.intervalChoices
+                        delegate: IntervalChip {
+                            required property int modelData
+                            label: root.choiceLabel(modelData)
+                            active: !root.paused && settingsStore.sysmonInterval === modelData
+                            onPicked: { root.paused = false; settingsStore.sysmonInterval = modelData; }
+                        }
+                    }
+                    IntervalChip {
+                        label: "󰏤"
+                        active: root.paused
+                        danger: true
+                        onPicked: root.paused = !root.paused
+                    }
+                }
+                // Time until the next sample.
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    height: 2
+                    radius: 1
+                    color: Theme.bgInset
+                    Rectangle {
+                        height: parent.height
+                        radius: 1
+                        width: parent.width * countdown.progress
+                        color: root.paused ? Theme.mutedDeep : Theme.accentPrimary
+                        Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
+                    }
+                }
+                QtObject {
+                    id: countdown
+                    property real progress: 0
+                    function restart() { anim.stop(); progress = 0; if (refreshTimer.running) anim.start(); }
+                    property NumberAnimation anim: NumberAnimation {
+                        target: countdown
+                        property: "progress"
+                        from: 0
+                        to: 1
+                        duration: settingsStore.sysmonInterval
+                    }
+                }
             }
 
             Flickable {
@@ -173,235 +244,236 @@ Scope {
                     width: flick.width - Theme.spacing.md
                     spacing: Theme.spacing.lg
 
-                    // ===== CPU | memory =====
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.spacing.lg
-                        visible: settingsStore.sysmonShowCpu || settingsStore.sysmonShowRam
 
-                        Card {
-                            visible: settingsStore.sysmonShowCpu
+                        // ----- Left: CPU, memory and network, thermals -----
+                        ColumnLayout {
+                            Layout.fillWidth: true
                             Layout.preferredWidth: 3
-                            Layout.fillHeight: true
-                            title: "CPU"
-                            subtitle: root.data.cpu_model
-                            headerData: [
-                                Text {
-                                    text: root.data.cpu_pct.toFixed(0) + "%"
-                                    color: root.pctColor(root.data.cpu_pct)
-                                    font.family: Theme.font
-                                    font.pixelSize: Theme.fontSize.xxl
-                                    font.bold: true
-                                    Behavior on color { ColorAnimation { duration: Theme.duration.slow } }
-                                }
-                            ]
+                            Layout.alignment: Qt.AlignTop
+                            spacing: Theme.spacing.lg
 
-                            SysGraph {
-                                Layout.fillWidth: true
-                                implicitHeight: 110
-                                values: root.cpuHistory
-                                maxValue: 100
-                                samples: root.historyLength
-                                color: root.pctColor(root.data.cpu_pct)
-                            }
-                            GridLayout {
-                                Layout.fillWidth: true
-                                columns: 4
-                                rowSpacing: Theme.spacing.sm
-                                columnSpacing: Theme.spacing.sm
-                                Repeater {
-                                    model: root.data.cpu_cores
-                                    delegate: CoreBar {
-                                        required property var modelData
-                                        required property int index
-                                        Layout.fillWidth: true
-                                        Layout.preferredWidth: 1
-                                        label: "C" + index
-                                        pct: modelData
+                            Card {
+                                visible: settingsStore.sysmonShowCpu
+                                title: "CPU"
+                                subtitle: root.data.cpu_model
+                                headerData: [
+                                    Stat { label: "Load"; value: root.data.load.map(l => l.toFixed(2)).join("  ") },
+                                    Stat { label: "Freq"; value: (root.data.cpu_freq_mhz / 1000).toFixed(1) + " GHz" },
+                                    Stat { label: "Temp"; value: root.data.cpu_temp + "°C"; tint: root.tempColor(root.data.cpu_temp) },
+                                    Text {
+                                        text: root.data.cpu_pct.toFixed(0) + "%"
+                                        color: root.pctColor(root.data.cpu_pct)
+                                        font.family: Theme.font
+                                        font.pixelSize: Theme.fontSize.xxl
+                                        font.bold: true
+                                        Behavior on color { ColorAnimation { duration: Theme.duration.slow } }
+                                    }
+                                ]
+
+                                SysGraph {
+                                    Layout.fillWidth: true
+                                    implicitHeight: 120
+                                    values: root.cpuHistory
+                                    maxValue: 100
+                                    samples: root.historyLength
+                                    color: root.pctColor(root.data.cpu_pct)
+                                }
+                                GridLayout {
+                                    Layout.fillWidth: true
+                                    columns: 6
+                                    rowSpacing: Theme.spacing.sm
+                                    columnSpacing: Theme.spacing.sm
+                                    Repeater {
+                                        model: root.data.cpu_cores
+                                        delegate: CoreBar {
+                                            required property var modelData
+                                            required property int index
+                                            Layout.fillWidth: true
+                                            Layout.preferredWidth: 1
+                                            label: "C" + index
+                                            pct: modelData
+                                        }
                                     }
                                 }
                             }
+
                             RowLayout {
                                 Layout.fillWidth: true
-                                spacing: Theme.spacing.xl
-                                Stat { label: "Load"; value: root.data.load.map(l => l.toFixed(2)).join("  ") }
-                                Stat { label: "Freq"; value: (root.data.cpu_freq_mhz / 1000).toFixed(1) + " GHz" }
-                                Stat { label: "Temp"; value: root.data.cpu_temp + "°C"; tint: root.tempColor(root.data.cpu_temp) }
-                                Item { Layout.fillWidth: true }
-                                Stat { label: "Up"; value: root.data.uptime }
-                            }
-                        }
+                                Layout.alignment: Qt.AlignTop
+                                spacing: Theme.spacing.lg
 
-                        Card {
-                            visible: settingsStore.sysmonShowRam
-                            Layout.preferredWidth: 2
-                            Layout.fillHeight: true
-                            title: "MEMORY"
-                            subtitle: root.data.mem.total.toFixed(1) + " GB total"
-                            headerData: [
-                                Text {
-                                    text: root.data.ram_pct.toFixed(0) + "%"
-                                    color: root.pctColor(root.data.ram_pct)
-                                    font.family: Theme.font
-                                    font.pixelSize: Theme.fontSize.xxl
-                                    font.bold: true
-                                    Behavior on color { ColorAnimation { duration: Theme.duration.slow } }
+                                Card {
+                                    visible: settingsStore.sysmonShowRam
+                                    Layout.fillHeight: true
+                                    Layout.preferredWidth: 1
+                                    title: "MEMORY"
+                                    subtitle: root.data.mem.total.toFixed(1) + " GB total"
+                                    headerData: [
+                                        Text {
+                                            text: root.data.ram_pct.toFixed(0) + "%"
+                                            color: root.pctColor(root.data.ram_pct)
+                                            font.family: Theme.font
+                                            font.pixelSize: Theme.fontSize.xxl
+                                            font.bold: true
+                                            Behavior on color { ColorAnimation { duration: Theme.duration.slow } }
+                                        }
+                                    ]
+
+                                    SysGraph {
+                                        Layout.fillWidth: true
+                                        implicitHeight: 100
+                                        values: root.memHistory
+                                        maxValue: 100
+                                        samples: root.historyLength
+                                        color: root.pctColor(root.data.ram_pct)
+                                    }
+                                    MemRow { label: "Used";      value: root.data.mem.used;      total: root.data.mem.total; tint: root.pctColor(root.data.ram_pct) }
+                                    MemRow { label: "Available"; value: root.data.mem.available; total: root.data.mem.total; tint: Theme.accent.green }
+                                    MemRow { label: "Cached";    value: root.data.mem.cached;    total: root.data.mem.total; tint: Theme.accent.blue }
+                                    MemRow { label: "Free";      value: root.data.mem.free;      total: root.data.mem.total; tint: Theme.accent.slate }
+                                    MemRow {
+                                        visible: root.data.mem.swap_total > 0
+                                        label: "Swap"
+                                        value: root.data.mem.swap_used
+                                        total: root.data.mem.swap_total
+                                        tint: Theme.accent.purple
+                                    }
                                 }
-                            ]
 
-                            SysGraph {
-                                Layout.fillWidth: true
-                                implicitHeight: 110
-                                values: root.memHistory
-                                maxValue: 100
-                                samples: root.historyLength
-                                color: root.pctColor(root.data.ram_pct)
-                            }
-                            MemRow { label: "Used";      value: root.data.mem.used;      total: root.data.mem.total; tint: root.pctColor(root.data.ram_pct) }
-                            MemRow { label: "Available"; value: root.data.mem.available; total: root.data.mem.total; tint: Theme.accent.green }
-                            MemRow { label: "Cached";    value: root.data.mem.cached;    total: root.data.mem.total; tint: Theme.accent.blue }
-                            MemRow { label: "Free";      value: root.data.mem.free;      total: root.data.mem.total; tint: Theme.accent.slate }
-                            MemRow {
-                                visible: root.data.mem.swap_total > 0
-                                label: "Swap"
-                                value: root.data.mem.swap_used
-                                total: root.data.mem.swap_total
-                                tint: Theme.accent.purple
-                            }
-                        }
-                    }
+                                Card {
+                                    Layout.fillHeight: true
+                                    Layout.preferredWidth: 1
+                                    title: "NETWORK"
+                                    subtitle: root.data.net.iface
+                                    headerData: [
+                                        Text {
+                                            text: "󰁅 " + root.fmtRate(root.rxRate) + "   󰁝 " + root.fmtRate(root.txRate)
+                                            color: Theme.fg
+                                            font.family: Theme.font
+                                            font.pixelSize: Theme.fontSize.md
+                                            font.bold: true
+                                        }
+                                    ]
 
-                    // ===== Network | disks =====
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.spacing.lg
-
-                        Card {
-                            Layout.preferredWidth: 3
-                            Layout.fillHeight: true
-                            title: "NETWORK"
-                            subtitle: root.data.net.iface
-                            headerData: [
-                                Text {
-                                    text: "󰁅 " + root.fmtRate(root.rxRate) + "   󰁝 " + root.fmtRate(root.txRate)
-                                    color: Theme.fg
-                                    font.family: Theme.font
-                                    font.pixelSize: Theme.fontSize.md
-                                    font.bold: true
+                                    SysGraph {
+                                        Layout.fillWidth: true
+                                        implicitHeight: 70
+                                        values: root.rxHistory
+                                        maxValue: 0
+                                        floorMax: 100000
+                                        samples: root.historyLength
+                                        color: Theme.accent.teal
+                                    }
+                                    SysGraph {
+                                        Layout.fillWidth: true
+                                        implicitHeight: 70
+                                        values: root.txHistory
+                                        maxValue: 0
+                                        floorMax: 100000
+                                        mirror: true
+                                        samples: root.historyLength
+                                        color: Theme.accent.orange
+                                    }
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: Theme.spacing.xl
+                                        Stat { label: "Down total"; value: root.fmtBytes(root.data.net.rx); tint: Theme.accent.teal }
+                                        Stat { label: "Up total"; value: root.fmtBytes(root.data.net.tx); tint: Theme.accent.orange }
+                                        Item { Layout.fillWidth: true }
+                                        Stat { label: "Up"; value: root.data.uptime }
+                                    }
                                 }
-                            ]
-
-                            SysGraph {
-                                Layout.fillWidth: true
-                                implicitHeight: 64
-                                values: root.rxHistory
-                                maxValue: 0
-                                floorMax: 100000
-                                samples: root.historyLength
-                                color: Theme.accent.teal
                             }
-                            SysGraph {
-                                Layout.fillWidth: true
-                                implicitHeight: 64
-                                values: root.txHistory
-                                maxValue: 0
-                                floorMax: 100000
-                                mirror: true
-                                samples: root.historyLength
-                                color: Theme.accent.orange
-                            }
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: Theme.spacing.xl
-                                Stat { label: "Down total"; value: root.fmtBytes(root.data.net.rx); tint: Theme.accent.teal }
-                                Stat { label: "Up total"; value: root.fmtBytes(root.data.net.tx); tint: Theme.accent.orange }
-                            }
-                        }
-
-                        Card {
-                            visible: settingsStore.sysmonShowStorage
-                            Layout.preferredWidth: 2
-                            Layout.fillHeight: true
-                            title: "DISKS"
-                            headerData: [
-                                Text {
-                                    text: "R " + root.fmtRate(root.readRate) + "   W " + root.fmtRate(root.writeRate)
-                                    color: Theme.muted
-                                    font.family: Theme.font
-                                    font.pixelSize: Theme.fontSize.base
-                                }
-                            ]
-
-                            Repeater {
-                                model: root.data.disks
-                                delegate: DiskRow {
-                                    required property var modelData
+                            Card {
+                                visible: settingsStore.sysmonShowThermal
+                                title: "THERMAL"
+                                RowLayout {
                                     Layout.fillWidth: true
-                                    mount: modelData.mount
-                                    usedGb: modelData.used_gb
-                                    totalGb: modelData.total_gb
-                                    pct: parseFloat(modelData.pct) || 0
+                                    spacing: Theme.spacing.md
+                                    ThermalTile { glyph: "󰻠"; label: "CPU";   number: root.data.cpu_temp;  unit: "°C"; maxValue: 100; tint: root.tempColor(root.data.cpu_temp) }
+                                    ThermalTile { glyph: "󰋊"; label: "NVMe";  number: root.data.nvme_temp; unit: "°C"; maxValue: 100; tint: root.tempColor(root.data.nvme_temp) }
+                                    ThermalTile { glyph: "󰈐"; label: "Fan 1"; number: root.data.fan1;      unit: "rpm"; maxValue: 5000; tint: Theme.accent.blue }
+                                    ThermalTile { glyph: "󰈐"; label: "Fan 2"; number: root.data.fan2;      unit: "rpm"; maxValue: 5000; tint: Theme.accent.blue }
                                 }
                             }
-                            SysGraph {
-                                Layout.fillWidth: true
-                                implicitHeight: 40
-                                values: root.readHistory
-                                maxValue: 0
-                                floorMax: 1000000
-                                samples: root.historyLength
-                                color: Theme.accent.green
-                            }
-                            SysGraph {
-                                Layout.fillWidth: true
-                                implicitHeight: 40
-                                values: root.writeHistory
-                                maxValue: 0
-                                floorMax: 1000000
-                                mirror: true
-                                samples: root.historyLength
-                                color: Theme.accent.pink
-                            }
                         }
-                    }
 
-                    // ===== Processes =====
-                    Card {
-                        Layout.fillWidth: true
-                        title: "PROCESSES"
-                        subtitle: "by CPU"
-
-                        RowLayout {
+                        // ----- Right: processes and disks -----
+                        ColumnLayout {
                             Layout.fillWidth: true
-                            spacing: Theme.spacing.md
-                            ProcHeader { Layout.preferredWidth: 70; text: "PID" }
-                            ProcHeader { Layout.fillWidth: true; Layout.preferredWidth: 3; text: "NAME" }
-                            ProcHeader { Layout.preferredWidth: 80; text: "USER" }
-                            ProcHeader { Layout.fillWidth: true; Layout.preferredWidth: 3; text: "CPU" }
-                            ProcHeader { Layout.fillWidth: true; Layout.preferredWidth: 2; text: "MEM" }
-                        }
-                        Repeater {
-                            model: root.data.procs
-                            delegate: ProcRow {
-                                required property var modelData
-                                Layout.fillWidth: true
-                                proc: modelData
-                            }
-                        }
-                    }
+                            Layout.preferredWidth: 2
+                            Layout.alignment: Qt.AlignTop
+                            spacing: Theme.spacing.lg
 
-                    // ===== Thermals and fans =====
-                    Card {
-                        visible: settingsStore.sysmonShowThermal
-                        Layout.fillWidth: true
-                        title: "THERMAL"
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: Theme.spacing.md
-                            ThermalTile { glyph: "󰻠"; label: "CPU";   number: root.data.cpu_temp;  unit: "°C"; maxValue: 100; tint: root.tempColor(root.data.cpu_temp) }
-                            ThermalTile { glyph: "󰋊"; label: "NVMe";  number: root.data.nvme_temp; unit: "°C"; maxValue: 100; tint: root.tempColor(root.data.nvme_temp) }
-                            ThermalTile { glyph: "󰈐"; label: "Fan 1"; number: root.data.fan1;      unit: "rpm"; maxValue: 5000; tint: Theme.accent.blue }
-                            ThermalTile { glyph: "󰈐"; label: "Fan 2"; number: root.data.fan2;      unit: "rpm"; maxValue: 5000; tint: Theme.accent.blue }
+                            Card {
+                                Layout.fillHeight: true
+                                title: "PROCESSES"
+                                subtitle: "by CPU"
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: Theme.spacing.md
+                                    ProcHeader { Layout.preferredWidth: 60; text: "PID" }
+                                    ProcHeader { Layout.fillWidth: true; Layout.preferredWidth: 3; text: "NAME" }
+                                    ProcHeader { Layout.fillWidth: true; Layout.preferredWidth: 3; text: "CPU" }
+                                    ProcHeader { Layout.preferredWidth: 56; text: "MEM" }
+                                }
+                                Repeater {
+                                    model: root.data.procs
+                                    delegate: ProcRow {
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        proc: modelData
+                                    }
+                                }
+                            }
+
+                            Card {
+                                visible: settingsStore.sysmonShowStorage
+                                title: "DISKS"
+                                headerData: [
+                                    Text {
+                                        text: "R " + root.fmtRate(root.readRate) + "   W " + root.fmtRate(root.writeRate)
+                                        color: Theme.muted
+                                        font.family: Theme.font
+                                        font.pixelSize: Theme.fontSize.base
+                                    }
+                                ]
+
+                                Repeater {
+                                    model: root.data.disks
+                                    delegate: DiskRow {
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        mount: modelData.mount
+                                        usedGb: modelData.used_gb
+                                        totalGb: modelData.total_gb
+                                        pct: parseFloat(modelData.pct) || 0
+                                    }
+                                }
+                                SysGraph {
+                                    Layout.fillWidth: true
+                                    implicitHeight: 36
+                                    values: root.readHistory
+                                    maxValue: 0
+                                    floorMax: 1000000
+                                    samples: root.historyLength
+                                    color: Theme.accent.green
+                                }
+                                SysGraph {
+                                    Layout.fillWidth: true
+                                    implicitHeight: 36
+                                    values: root.writeHistory
+                                    maxValue: 0
+                                    floorMax: 1000000
+                                    mirror: true
+                                    samples: root.historyLength
+                                    color: Theme.accent.pink
+                                }
+                            }
                         }
                     }
                 }
@@ -461,6 +533,42 @@ Scope {
                     spacing: Theme.spacing.md
                 }
             }
+        }
+    }
+
+    // A small pill in the header for picking the refresh interval.
+    component IntervalChip: Rectangle {
+        id: chip
+        property string label: ""
+        property bool active: false
+        property bool danger: false
+        signal picked()
+        implicitWidth: Math.max(34, chipText.implicitWidth + 18)
+        implicitHeight: 28
+        radius: height / 2
+        color: chip.active ? Theme.alpha(chip.danger ? Theme.accent.red : Theme.accentPrimary, 0.2)
+             : (chipMa.containsMouse ? Theme.bgActive : Theme.bgInset)
+        border.color: chip.active ? (chip.danger ? Theme.accent.red : Theme.accentPrimary) : Theme.borderStrong
+        border.width: 1
+        scale: chipMa.pressed ? 0.92 : 1.0
+        Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+        Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }
+        Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
+        Text {
+            id: chipText
+            anchors.centerIn: parent
+            text: chip.label
+            color: chip.active ? Theme.fg : Theme.fgMuted
+            font.family: Theme.font
+            font.pixelSize: Theme.fontSize.base
+            font.bold: chip.active
+        }
+        MouseArea {
+            id: chipMa
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: chip.picked()
         }
     }
 
@@ -645,7 +753,7 @@ Scope {
             anchors.rightMargin: Theme.spacing.sm
             spacing: Theme.spacing.md
             Text {
-                Layout.preferredWidth: 70
+                Layout.preferredWidth: 60
                 text: pr.proc.pid
                 color: Theme.muted
                 font.family: Theme.font
@@ -656,14 +764,6 @@ Scope {
                 Layout.preferredWidth: 3
                 text: pr.proc.name
                 color: Theme.fg
-                elide: Text.ElideRight
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.base
-            }
-            Text {
-                Layout.preferredWidth: 80
-                text: pr.proc.user
-                color: Theme.muted
                 elide: Text.ElideRight
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSize.base
@@ -697,32 +797,13 @@ Scope {
                     font.bold: true
                 }
             }
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.preferredWidth: 2
-                spacing: Theme.spacing.md
-                Rectangle {
-                    id: memTrack
-                    Layout.fillWidth: true
-                    implicitHeight: 6
-                    radius: 3
-                    color: Theme.bgInset
-                    Rectangle {
-                        anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
-                        width: memTrack.width * Math.min(1, pr.proc.mem / 25)
-                        radius: 3
-                        color: Theme.accent.blue
-                        Behavior on width { NumberAnimation { duration: Theme.duration.slow; easing.type: Theme.easing.standard } }
-                    }
-                }
-                Text {
-                    Layout.preferredWidth: 46
-                    horizontalAlignment: Text.AlignRight
-                    text: pr.proc.mem.toFixed(1) + "%"
-                    color: Theme.fgMuted
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.base
-                }
+            Text {
+                Layout.preferredWidth: 56
+                horizontalAlignment: Text.AlignRight
+                text: pr.proc.mem.toFixed(1) + "%"
+                color: Theme.fgMuted
+                font.family: Theme.font
+                font.pixelSize: Theme.fontSize.base
             }
         }
     }

@@ -5,7 +5,7 @@
 # ram_used_gb, ram_total_gb, ram_pct, nvme_temp, fan1, fan2, disks[],
 # uptime, plus load[], cpu_model, cpu_freq_mhz, mem{} breakdown, net{} and
 # io{} cumulative byte counters with ts_ms (the UI turns them into rates),
-# and procs[] (top 10 by instantaneous CPU).
+# and procs[] (top 12 by instantaneous CPU).
 #
 # CPU usage samples /proc/stat twice with a 200ms gap. hwmon paths
 # are discovered by name (index isn't stable across reboots).
@@ -165,7 +165,7 @@ wait "$top_pid" || true
 procs_json=$(awk '
     /^top -/ { block++ }
     block == 2 && $1 == "PID" { reading = 1; count = 0; first = 1; printf "["; next }
-    block == 2 && reading && count < 10 && NF >= 12 {
+    block == 2 && reading && count < 12 && NF >= 12 {
         name = $12
         for (i = 13; i <= NF; i++) name = name " " $i
         if (name == "top") next
