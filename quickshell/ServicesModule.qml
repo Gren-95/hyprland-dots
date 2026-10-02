@@ -70,7 +70,9 @@ Item {
 
     // ============ Bar icon ============
     Layout.fillHeight: true
-    implicitWidth: 28
+    implicitWidth: 36
+
+    BarHover { hovered: hov.hovered }
 
     Text {
         anchors.centerIn: parent

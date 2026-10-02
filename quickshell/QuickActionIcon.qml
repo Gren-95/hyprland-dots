@@ -17,19 +17,11 @@ Item {
     readonly property bool on: isToggle && actions.toggleState(entry.action)
 
     Layout.fillHeight: true
-    implicitWidth: 26
+    implicitWidth: 36
     scale: ma.pressed ? 0.88 : 1.0
     Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
 
-    // Subtle hover surface, matching BarIcon.
-    Rectangle {
-        anchors.fill: parent
-        anchors.topMargin: 4
-        anchors.bottomMargin: 4
-        radius: Theme.radius.sm
-        color: ma.containsMouse ? Theme.bgHover : "transparent"
-        Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
-    }
+    BarHover { hovered: ma.containsMouse }
 
     Text {
         anchors.centerIn: parent

@@ -174,7 +174,9 @@ Item {
     }
 
     Layout.fillHeight: true
-    implicitWidth: row.implicitWidth + 16
+    implicitWidth: row.implicitWidth + 20
+
+    BarHover { hovered: apHover.hovered }
 
     // ===== Bar speaker rendering (sound) =====
     PwObjectTracker { objects: [ap.sink, ap.source] }

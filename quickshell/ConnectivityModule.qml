@@ -73,7 +73,9 @@ Item {
     }
 
     Layout.fillHeight: true
-    implicitWidth: row.implicitWidth + 16
+    implicitWidth: row.implicitWidth + 20
+
+    BarHover { hovered: btHover.hovered }
 
     RowLayout {
         id: row
