@@ -1,14 +1,11 @@
 #!/bin/bash
-# sysinfo.sh — emit system metrics as JSON for SystemMonitor.qml.
+# sysinfo.sh — the slow half of the system monitor's data, as one JSON line.
 #
-# Output: single JSON line with cpu_pct, cpu_cores[], cpu_temp,
-# ram_used_gb, ram_total_gb, ram_pct, nvme_temp, fan1, fan2, disks[],
-# uptime, plus load[], cpu_model, cpu_freq_mhz, mem{} breakdown, net{} and
-# io{} cumulative byte counters with ts_ms (the UI turns them into rates),
-# and procs[] (top 12 by instantaneous CPU).
-#
-# CPU usage samples /proc/stat twice with a 200ms gap. hwmon paths
-# are discovered by name (index isn't stable across reboots).
+# cpu_model, temperatures and fans (hwmon paths are discovered by name, the
+# index isn't stable across reboots), disk usage, uptime, and procs[] (top 12
+# by instantaneous CPU, from the second iteration of top). Takes about half a
+# second, so the UI runs it on its own slower timer; the per-second counters
+# come from sysfast.sh.
 set -euo pipefail
 # top and uptime print localised decimals and words; the JSON needs C.
 export LC_ALL=C
@@ -38,47 +35,6 @@ top_out=$(mktemp)
 trap 'rm -f "$top_out"' EXIT
 top -b -n2 -d0.3 -w 200 -o %CPU >"$top_out" 2>/dev/null &
 top_pid=$!
-
-# ───── CPU usage ──────────────────────────────────────────────────
-read -r t1 i1 < <(sample_cpu)
-declare -A tot1 idl1
-while read -r cpu tot idl; do
-    tot1[$cpu]=$tot
-    idl1[$cpu]=$idl
-done < <(sample_cpu_cores)
-
-sleep 0.2
-
-read -r t2 i2 < <(sample_cpu)
-declare -A tot2 idl2
-while read -r cpu tot idl; do
-    tot2[$cpu]=$tot
-    idl2[$cpu]=$idl
-done < <(sample_cpu_cores)
-
-cpu_pct=$(awk -v t1="$t1" -v t2="$t2" -v i1="$i1" -v i2="$i2" \
-    'BEGIN { td=t2-t1; id=i2-i1; printf "%.1f", (td > 0) ? (1 - id/td) * 100 : 0 }')
-
-cores_json="["
-first=1
-for cpu in $(printf '%s\n' "${!tot1[@]}" | sort -V); do
-    td=$((tot2[$cpu] - tot1[$cpu]))
-    id=$((idl2[$cpu] - idl1[$cpu]))
-    pct=$(awk -v t="$td" -v i="$id" 'BEGIN { printf "%.1f", (t > 0) ? (1 - i/t) * 100 : 0 }')
-    [[ $first -eq 0 ]] && cores_json+=","
-    cores_json+="$pct"
-    first=0
-done
-cores_json+="]"
-
-# ───── RAM ────────────────────────────────────────────────────────
-ram_total_kb=$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)
-ram_avail_kb=$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo)
-ram_used_kb=$((ram_total_kb - ram_avail_kb))
-ram_used_gb=$(awk -v k="$ram_used_kb" 'BEGIN { printf "%.1f", k/1048576 }')
-ram_total_gb=$(awk -v k="$ram_total_kb" 'BEGIN { printf "%.1f", k/1048576 }')
-ram_pct=$(awk -v u="$ram_used_kb" -v t="$ram_total_kb" \
-    'BEGIN { printf "%.1f", (t > 0) ? u/t*100 : 0 }')
 
 # ───── Temps & fans (hwmon, discovered by name) ──────────────────
 coretemp_h=$(find_hwmon coretemp || true)
@@ -121,44 +77,9 @@ disks_json=$(
 # ───── Uptime ─────────────────────────────────────────────────────
 uptime_str=$(uptime -p | sed 's/^up //')
 
-# ───── Load, frequency, model ────────────────────────────────────
-read -r load1 load5 load15 _ </proc/loadavg
+# ───── CPU model ──────────────────────────────────────────────────
 cpu_model=$(awk -F': ' '/^model name/ { print $2; exit }' /proc/cpuinfo |
     sed 's/([RT][M]*)//g; s/  */ /g; s/^ //; s/ $//' || true)
-cpu_freq=$(cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq 2>/dev/null |
-    awk '{ s += $1; n++ } END { printf "%d", n ? s / n / 1000 : 0 }' || true)
-cpu_freq=${cpu_freq:-0}
-
-# ───── Memory breakdown (GB) ──────────────────────────────────────
-mem_json=$(awk '
-    /^MemTotal:/     { total = $2 }
-    /^MemFree:/      { free = $2 }
-    /^MemAvailable:/ { avail = $2 }
-    /^Buffers:/      { buffers = $2 }
-    /^Cached:/       { cached = $2 }
-    /^SReclaimable:/ { cached += $2 }
-    /^SwapTotal:/    { swap_total = $2 }
-    /^SwapFree:/     { swap_free = $2 }
-    END {
-        g = 1048576
-        printf "{\"total\":%.2f,\"used\":%.2f,\"available\":%.2f,\"cached\":%.2f,\"buffers\":%.2f,\"free\":%.2f,\"swap_total\":%.2f,\"swap_used\":%.2f}",
-            total / g, (total - avail) / g, avail / g, cached / g, buffers / g, free / g,
-            swap_total / g, (swap_total - swap_free) / g
-    }' /proc/meminfo)
-
-# ───── Network and disk I/O counters (cumulative; the UI takes rates) ─
-net_iface=$(ip route show default 2>/dev/null |
-    awk '{ for (i = 1; i < NF; i++) if ($i == "dev") { print $(i + 1); exit } }' || true)
-net_rx=0
-net_tx=0
-if [[ -n "$net_iface" && -d "/sys/class/net/$net_iface/statistics" ]]; then
-    net_rx=$(read_first "/sys/class/net/$net_iface/statistics/rx_bytes")
-    net_tx=$(read_first "/sys/class/net/$net_iface/statistics/tx_bytes")
-fi
-read -r io_read io_write < <(awk '
-    $3 ~ /^(nvme[0-9]+n[0-9]+|sd[a-z]+|vd[a-z]+)$/ { r += $6; w += $10 }
-    END { printf "%.0f %.0f\n", r * 512, w * 512 }' /proc/diskstats)
-ts_ms=$(date +%s%3N)
 
 # ───── Top processes (instantaneous CPU: second top iteration) ────
 wait "$top_pid" || true
@@ -180,5 +101,5 @@ procs_json=$(awk '
 
 # ───── Emit ───────────────────────────────────────────────────────
 cat <<EOF
-{"cpu_pct":$cpu_pct,"cpu_cores":$cores_json,"cpu_temp":$cpu_temp,"ram_used_gb":$ram_used_gb,"ram_total_gb":$ram_total_gb,"ram_pct":$ram_pct,"nvme_temp":$nvme_temp,"fan1":$fan1,"fan2":$fan2,"disks":$disks_json,"uptime":"$uptime_str","load":[$load1,$load5,$load15],"cpu_model":"$cpu_model","cpu_freq_mhz":$cpu_freq,"mem":$mem_json,"net":{"iface":"$net_iface","rx":$net_rx,"tx":$net_tx},"io":{"read":$io_read,"write":$io_write},"ts_ms":$ts_ms,"procs":$procs_json}
+{"cpu_model":"$cpu_model","cpu_temp":$cpu_temp,"nvme_temp":$nvme_temp,"fan1":$fan1,"fan2":$fan2,"disks":$disks_json,"uptime":"$uptime_str","procs":$procs_json}
 EOF

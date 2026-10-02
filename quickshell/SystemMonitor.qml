@@ -36,13 +36,23 @@ Scope {
     property real readRate: 0
     property real writeRate: 0
     property var _previous: null
+    property var _previousCpu: null   // { all: [total, idle], cores: [[total, idle], ...] }
 
     function _push(list, value) {
         const next = list.concat([value]);
         return next.length > historyLength ? next.slice(next.length - historyLength) : next;
     }
-    function _ingest(d) {
+    // CPU percentages from the difference between two cumulative samples.
+    function _cpuPercent(now, before) {
+        const dt = now[0] - before[0];
+        return dt > 0 ? Math.max(0, Math.min(100, (1 - (now[1] - before[1]) / dt) * 100)) : 0;
+    }
+    // Fast probe (sysfast.sh): counters and meminfo, sampled on every tick.
+    function _ingestFast(d) {
         const p = _previous;
+        const pc = _previousCpu;
+        const cpuPct = pc ? _cpuPercent(d.cpu.all, pc.all) : 0;
+        const cores = pc ? d.cpu.cores.map((c, i) => _cpuPercent(c, pc.cores[i] || c)) : d.cpu.cores.map(() => 0);
         if (p && d.ts_ms > p.ts_ms) {
             const dt = (d.ts_ms - p.ts_ms) / 1000;
             rxRate = Math.max(0, (d.net.rx - p.net.rx) / dt);
@@ -54,16 +64,27 @@ Scope {
             readHistory = _push(readHistory, readRate);
             writeHistory = _push(writeHistory, writeRate);
         }
-        cpuHistory = _push(cpuHistory, d.cpu_pct);
-        memHistory = _push(memHistory, d.ram_pct);
+        if (pc) cpuHistory = _push(cpuHistory, cpuPct);
+        const ramPct = d.mem.total > 0 ? d.mem.used / d.mem.total * 100 : 0;
+        memHistory = _push(memHistory, ramPct);
         _previous = d;
-        data = d;
+        _previousCpu = d.cpu;
+        data = Object.assign({}, data, {
+            cpu_pct: cpuPct, cpu_cores: cores, load: d.load, cpu_freq_mhz: d.cpu_freq_mhz,
+            mem: d.mem, ram_pct: ramPct, ram_used_gb: d.mem.used, ram_total_gb: d.mem.total,
+            net: d.net, io: d.io, ts_ms: d.ts_ms
+        });
+    }
+    // Slow probe (sysinfo.sh): processes, disk usage, temperatures.
+    function _ingestSlow(d) {
+        data = Object.assign({}, data, d);
     }
     function _resetHistory() {
         cpuHistory = []; memHistory = []; rxHistory = []; txHistory = [];
         readHistory = []; writeHistory = [];
         rxRate = 0; txRate = 0; readRate = 0; writeRate = 0;
         _previous = null;
+        _previousCpu = null;
     }
     onOpenChanged: if (open) {
         _resetHistory();
@@ -78,14 +99,27 @@ Scope {
 
     function toggle() { open = !open }
     function close()  { open = false }
-    property bool _probing: false
-    function refresh() {
-        if (_probing) return;
-        _probing = true;
-        Cmd.run(["bash", Paths.scripts + "/sysinfo.sh"], (ok, out) => {
-            root._probing = false;
+    // Two probes on separate timers so the cheap one can run as fast as the
+    // chips allow: sysfast.sh takes tens of milliseconds, sysinfo.sh (top,
+    // df, hwmon) about half a second.
+    property bool _fastBusy: false
+    property bool _slowBusy: false
+    function refreshFast() {
+        if (_fastBusy) return;
+        _fastBusy = true;
+        Cmd.run(["bash", Paths.scripts + "/sysfast.sh"], (ok, out) => {
+            root._fastBusy = false;
             if (!ok) return;
-            try { root._ingest(JSON.parse(out)); } catch (e) { console.warn("[SystemMonitor] parse fail", e); }
+            try { root._ingestFast(JSON.parse(out)); } catch (e) { console.warn("[SystemMonitor] fast parse fail", e); }
+        });
+    }
+    function refreshSlow() {
+        if (_slowBusy) return;
+        _slowBusy = true;
+        Cmd.run(["bash", Paths.scripts + "/sysinfo.sh"], (ok, out) => {
+            root._slowBusy = false;
+            if (!ok) return;
+            try { root._ingestSlow(JSON.parse(out)); } catch (e) { console.warn("[SystemMonitor] slow parse fail", e); }
         });
     }
 
@@ -116,14 +150,24 @@ Scope {
         return (v >= 10 || i === 0 ? v.toFixed(0) : v.toFixed(1)) + " " + units[i];
     }
 
+    // Sampling interval from the header chips, never faster than 250 ms.
+    readonly property int sampleInterval: Math.max(250, settingsStore.sysmonInterval)
+
     Timer {
         id: refreshTimer
         running: root.open && !root.paused
-        interval: settingsStore.sysmonInterval
+        interval: root.sampleInterval
         repeat: true
         triggeredOnStart: true
-        onTriggered: { root.refresh(); countdown.restart(); }
+        onTriggered: { root.refreshFast(); countdown.restart(); }
         onIntervalChanged: countdown.restart()
+    }
+    Timer {
+        running: root.open && !root.paused
+        interval: Math.max(2000, root.sampleInterval)
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: root.refreshSlow()
     }
 
     // Popup height follows the content (up to what the screen allows); the
@@ -221,7 +265,7 @@ Scope {
                         property: "progress"
                         from: 0
                         to: 1
-                        duration: settingsStore.sysmonInterval
+                        duration: root.sampleInterval
                     }
                 }
             }
@@ -279,6 +323,7 @@ Scope {
                                     values: root.cpuHistory
                                     maxValue: 100
                                     samples: root.historyLength
+                                    scrollMs: root.paused ? 0 : root.sampleInterval
                                     color: root.pctColor(root.data.cpu_pct)
                                 }
                                 GridLayout {
@@ -328,6 +373,7 @@ Scope {
                                         values: root.memHistory
                                         maxValue: 100
                                         samples: root.historyLength
+                                    scrollMs: root.paused ? 0 : root.sampleInterval
                                         color: root.pctColor(root.data.ram_pct)
                                     }
                                     MemRow { label: "Used";      value: root.data.mem.used;      total: root.data.mem.total; tint: root.pctColor(root.data.ram_pct) }
@@ -365,6 +411,7 @@ Scope {
                                         maxValue: 0
                                         floorMax: 100000
                                         samples: root.historyLength
+                                    scrollMs: root.paused ? 0 : root.sampleInterval
                                         color: Theme.accent.teal
                                     }
                                     SysGraph {
@@ -375,6 +422,7 @@ Scope {
                                         floorMax: 100000
                                         mirror: true
                                         samples: root.historyLength
+                                    scrollMs: root.paused ? 0 : root.sampleInterval
                                         color: Theme.accent.orange
                                     }
                                     RowLayout {
@@ -461,6 +509,7 @@ Scope {
                                     maxValue: 0
                                     floorMax: 1000000
                                     samples: root.historyLength
+                                    scrollMs: root.paused ? 0 : root.sampleInterval
                                     color: Theme.accent.green
                                 }
                                 SysGraph {
@@ -471,6 +520,7 @@ Scope {
                                     floorMax: 1000000
                                     mirror: true
                                     samples: root.historyLength
+                                    scrollMs: root.paused ? 0 : root.sampleInterval
                                     color: Theme.accent.pink
                                 }
                             }

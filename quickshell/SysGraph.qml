@@ -14,6 +14,22 @@ Item {
     property color color: Theme.accent.green
     property bool mirror: false
     property int samples: 60
+    // When > 0, each new sample slides the line left over this many
+    // milliseconds instead of jumping, so the graph scrolls continuously.
+    property int scrollMs: 0
+    property real shift: 0
+    readonly property real step: width / (samples - 1)
+    onValuesChanged: {
+        shiftAnim.stop();
+        if (scrollMs > 0 && values.length > 1) {
+            shift = step;
+            shiftAnim.duration = scrollMs;
+            shiftAnim.start();
+        } else {
+            shift = 0;
+        }
+    }
+    NumberAnimation { id: shiftAnim; target: graph; property: "shift"; to: 0 }
 
     implicitHeight: 96
     clip: true
@@ -28,17 +44,17 @@ Item {
         const w = width, h = height, n = values.length;
         if (w <= 0 || h <= 0) return [];
         const pts = [];
-        const step = w / (samples - 1);
         for (let i = 0; i < samples; i++) {
             const idx = i - (samples - n);
             const f = idx >= 0 ? Math.max(0, Math.min(1, values[idx] / scaleMax)) : 0;
-            pts.push(Qt.point(i * step, mirror ? f * h : h - f * h));
+            pts.push(Qt.point(i * step + shift, mirror ? f * h : h - f * h));
         }
         return pts;
     }
     readonly property var area: {
         const base = mirror ? 0 : height;
-        return [Qt.point(0, base)].concat(line, [Qt.point(width, base)]);
+        if (line.length === 0) return [];
+        return [Qt.point(line[0].x, base)].concat(line, [Qt.point(line[line.length - 1].x, base)]);
     }
 
     Repeater {
