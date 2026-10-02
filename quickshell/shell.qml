@@ -210,7 +210,7 @@ Scope {
                         Item {
                             Layout.fillHeight: true
                             Layout.preferredWidth: dateTimeRow.implicitWidth + 16
-                            BarHover { hovered: clockMa.containsMouse }
+                            BarHover { hovered: clockMa.containsMouse; active: dayPanel.open && dayPanel.anchorItem === clockAnchor }
                             RowLayout {
                                 id: dateTimeRow
                                 anchors.centerIn: parent
@@ -265,6 +265,7 @@ Scope {
                         parentBar: bar
                         glyph: "󰀻"
                         pixelSize: Theme.fontSize.xl
+                        active: spotlight.open
                         tooltip: "App launcher · Super+R"
                         onClicked: spotlight.toggle()
                     }
@@ -381,6 +382,7 @@ Scope {
                         id: batteryIcon
                         parentBar: bar
                         visible: settingsStore.placement("battery") === "bar"
+                        active: apMod.popupOpen && apMod._openAnchor === batteryIcon
                         onClicked: apMod.openTab("power", batteryIcon)
                         readonly property var dev: UPower.displayDevice
                         readonly property int pct: dev ? Math.round(dev.percentage * 100) : 0

@@ -75,7 +75,7 @@ Item {
     Layout.fillHeight: true
     implicitWidth: row.implicitWidth + 20
 
-    BarHover { hovered: btHover.hovered }
+    BarHover { hovered: btHover.hovered; active: bt.popupOpen && (bt._openAnchor ?? bt.flyoutAnchor ?? bt) === bt }
 
     RowLayout {
         id: row

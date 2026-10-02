@@ -9,6 +9,8 @@ Item {
     // Pass the bar window to enable the hover tooltip (it needs a surface to
     // draw below the thin bar). Icons without it simply show no tooltip.
     property var parentBar: null
+    // True while the widget this icon opens is showing (keeps the hover lit).
+    property bool active: false
     property color color: Theme.fg
     property int pixelSize: Theme.fontSize.md
     signal clicked()
@@ -19,7 +21,7 @@ Item {
     Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
 
     // Subtle hover surface so every bar button gets tactile feedback.
-    BarHover { hovered: ma.containsMouse }
+    BarHover { hovered: ma.containsMouse; active: bi.active }
 
     RowLayout {
         id: row

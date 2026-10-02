@@ -72,7 +72,7 @@ Item {
     Layout.fillHeight: true
     implicitWidth: 36
 
-    BarHover { hovered: hov.hovered }
+    BarHover { hovered: hov.hovered; active: mod.popupOpen }
 
     Text {
         anchors.centerIn: parent

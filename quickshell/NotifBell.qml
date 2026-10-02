@@ -15,7 +15,7 @@ Item {
     scale: bellMa.pressed ? 0.88 : 1.0
     Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
 
-    BarHover { hovered: bellMa.containsMouse }
+    BarHover { hovered: bellMa.containsMouse; active: !!bell.panel && bell.panel.open && bell.panel.anchorItem === bell }
 
     // Ring the bell whenever the unread count climbs.
     property int _lastCount: 0

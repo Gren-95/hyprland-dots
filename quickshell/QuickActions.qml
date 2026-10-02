@@ -106,7 +106,7 @@ Item {
     Layout.fillHeight: true
     implicitWidth: 40
 
-    BarHover { hovered: chevronMa.containsMouse }
+    BarHover { hovered: chevronMa.containsMouse; active: actions.popupOpen }
 
     Text {
         anchors.centerIn: parent
