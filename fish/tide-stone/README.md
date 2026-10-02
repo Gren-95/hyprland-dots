@@ -29,15 +29,15 @@ path.
 
 | Item | Colour | |
 |---|---|---|
-| pwd dirs / anchors | `3b82f6` / `60a5fa` | accent, accent bright |
-| git branch, upstream | `34d399` | teal |
-| git dirty | `eab308` | warn |
-| git staged | `f97316` | orange |
-| git conflicted, operation | `ef4444` | danger |
+| pwd dirs / anchors | `4c9aff` / `6fb0ff` | accent, accent bright |
+| git branch, upstream | `2ee6d6` | teal |
+| git dirty | `ffc531` | warn |
+| git staged | `ff7a1a` | orange |
+| git conflicted, operation | `ff4d5e` | danger |
 | git untracked | `94a3b8` | slate |
-| character ok / failed | `22c55e` / `ef4444` | |
+| character ok / failed | `2ee59d` / `ff4d5e` | |
 | cmd duration, time | `78716c` | mutedDeep |
-| context default / root / ssh | `a8a29e` / `ef4444` / `f97316` | |
+| context default / root / ssh | `a8a29e` / `ff4d5e` / `ff7a1a` | |
 
 Tool badges (node, rustc, python, docker, aws…) keep a hue near their usual
 brand colour so they stay tellable apart, but every value comes from the

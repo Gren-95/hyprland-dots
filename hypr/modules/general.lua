@@ -17,11 +17,11 @@ hl.config({
         -- gaps / border_size / layout are set in hyprland-gui.lua (HyprMod),
         -- which loads last and wins.
         -- Palette from quickshell/Theme.qml: the focused window carries
-        -- accentPrimary (blue -> blueBright), unfocused ones fade back to
+        -- accentPrimary (orange -> yellow), unfocused ones fade back to
         -- Theme.borderStrong so focus is the only thing that draws the eye.
         col = {
             active_border = {
-                colors = {"rgba(3b82f6ee)", "rgba(60a5faee)"},
+                colors = {"rgba(ff7a1aee)", "rgba(ffc531ee)"},
                 angle = 45,
             },
             inactive_border = "rgba(44403caa)",

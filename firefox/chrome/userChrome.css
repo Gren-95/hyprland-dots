@@ -48,10 +48,10 @@
   --qs-disabled:      #57534e;
 
   /* accentPrimary = "blue" in quickshell/settings/accent-primary */
-  --qs-accent:        #3b82f6;
-  --qs-accent-bright: #60a5fa;
-  --qs-red:           #ef4444;
-  --qs-green:         #22c55e;
+  --qs-accent:        #ff7a1a;
+  --qs-accent-bright: #ff9a4d;
+  --qs-red:           #ff4d5e;
+  --qs-green:         #2ee59d;
 
   --qs-radius-sm:     6px;
   --qs-radius-md:     8px;

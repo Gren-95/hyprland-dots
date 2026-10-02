@@ -24,10 +24,10 @@
     --qs-muted:         #a8a29e;
     --qs-muted-deep:    #78716c;
     --qs-disabled:      #57534e;
-    --qs-accent:        #3b82f6;
-    --qs-accent-bright: #60a5fa;
-    --qs-green:         #22c55e;
-    --qs-red:           #ef4444;
+    --qs-accent:        #ff7a1a;
+    --qs-accent-bright: #ff9a4d;
+    --qs-green:         #2ee59d;
+    --qs-red:           #ff4d5e;
 
     /* Shared design-system surfaces */
     --background-color-canvas:         var(--qs-bg) !important;

@@ -17,14 +17,14 @@ FG = 252          # d6d3d1  fgMuted   - regular files
 FG_BRIGHT = 255   # fafaf9  fg        - titles, selection
 MUTED = 247       # a8a29e  muted     - info columns
 MUTED_DEEP = 243  # 78716c  mutedDeep - borders, dimmed text
-ACCENT = 75       # 60a5fa  blueBright - directories
-ACCENT_DEEP = 33  # 3b82f6  blue      - titlebar, active tab
-GREEN = 41        # 22c55e  green     - executables, ok
-TEAL = 79         # 34d399  teal      - links
-YELLOW = 178      # eab308  yellow    - marked, warnings
-ORANGE = 208      # f97316  orange    - staged
-RED = 203         # ef4444  red       - errors, danger
-PURPLE = 141      # a78bfa  purple    - sockets, devices
+ACCENT = 75       # 6fb0ff  blueBright - directories
+ACCENT_DEEP = 33  # 4c9aff  blue      - titlebar, active tab
+GREEN = 49        # 2ee59d  green     - executables, ok
+TEAL = 50         # 2ee6d6  teal      - links
+YELLOW = 221      # ffc531  yellow    - marked, warnings
+ORANGE = 208      # ff7a1a  orange    - staged
+RED = 203         # ff4d5e  red       - errors, danger
+PURPLE = 141      # b57bff  purple    - sockets, devices
 SLATE = 109       # 94a3b8  slate     - untracked
 
 

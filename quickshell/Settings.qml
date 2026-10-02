@@ -39,7 +39,7 @@ Scope {
     property real fontScale: 1.0               // multiplies every Theme.fontSize token
     property string fontFamily: "Iosevka Nerd Font"
     property int barHeight: 36
-    property string accentPrimaryName: "blue"  // Theme.accentPrimary (highlights); "auto" = from wallpaper
+    property string accentPrimaryName: "orange"  // Theme.accentPrimary (highlights); "auto" = from wallpaper
     property string accentAutoHex: ""          // cached wallpaper-extracted accent
     property int spotlightCap: 60              // launcher results shown
     property int osdDuration: 1500             // ms the volume/brightness OSD stays

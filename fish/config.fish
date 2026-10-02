@@ -48,9 +48,9 @@ if status is-interactive
     set -gx FZF_DEFAULT_OPTS "\
 --cycle --layout=reverse --border --height=90% --preview-window=wrap --marker='*' \
 --color=fg:#d6d3d1,fg+:#fafaf9,bg:-1,bg+:#332e2b \
---color=hl:#3b82f6,hl+:#60a5fa \
---color=info:#78716c,prompt:#3b82f6,pointer:#3b82f6 \
---color=marker:#22c55e,spinner:#a78bfa,header:#78716c \
+--color=hl:#ff7a1a,hl+:#ffc531 \
+--color=info:#78716c,prompt:#ff7a1a,pointer:#ff7a1a \
+--color=marker:#2ee59d,spinner:#b57bff,header:#78716c \
 --color=border:#3a3633,query:#fafaf9"
 
     # ===== Directory jumping =====

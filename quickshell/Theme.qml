@@ -8,7 +8,7 @@ Singleton {
     // resolve the settingsStore id itself). Defaults match the classic look.
     property real fontScale: 1.0
     property string fontFamily: "Iosevka Nerd Font"
-    property string accentPrimaryName: "blue"
+    property string accentPrimaryName: "orange"
     property string accentAutoHex: ""   // wallpaper-extracted (AccentService)
     property real animScale: 1.0    // 0 = animations off (instant)
     property real radiusScale: 1.0
@@ -60,15 +60,15 @@ Singleton {
 
     // Accents
     readonly property QtObject accent: QtObject {
-        readonly property color blue:   "#3b82f6"
-        readonly property color blueBright: "#60a5fa"   // icon tint on dark surfaces
-        readonly property color green:  "#22c55e"
-        readonly property color red:    "#ef4444"
-        readonly property color orange: "#f97316"
-        readonly property color yellow: "#eab308"
-        readonly property color purple: "#a78bfa"
-        readonly property color pink:   "#f472b6"
-        readonly property color teal:   "#34d399"
+        readonly property color blue:   "#4c9aff"
+        readonly property color blueBright: "#6fb0ff"   // icon tint on dark surfaces
+        readonly property color green:  "#2ee59d"
+        readonly property color red:    "#ff4d5e"
+        readonly property color orange: "#ff7a1a"
+        readonly property color yellow: "#ffc531"
+        readonly property color purple: "#b57bff"
+        readonly property color pink:   "#ff6fb5"
+        readonly property color teal:   "#2ee6d6"
         readonly property color slate:  "#94a3b8"
         // "Deep" variants back a filled control — an active toggle, the hover
         // state of a destructive button. "Soft" variants are for text and

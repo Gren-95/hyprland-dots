@@ -15,7 +15,7 @@ theme[main_fg]="#fafaf9"
 theme[title]="#fafaf9"
 
 # Highlight color for keyboard shortcuts — Theme.accentPrimary
-theme[hi_fg]="#3b82f6"
+theme[hi_fg]="#ff7a1a"
 
 # Selected process row — Theme.bgActive, the shell's "active pill" surface
 theme[selected_bg]="#332e2b"
@@ -41,46 +41,46 @@ theme[proc_box]="#3a3633"
 theme[div_line]="#3a3633"
 
 # Temperature — severity ramp, ok to danger
-theme[temp_start]="#22c55e"
-theme[temp_mid]="#eab308"
-theme[temp_end]="#ef4444"
+theme[temp_start]="#2ee59d"
+theme[temp_mid]="#ffc531"
+theme[temp_end]="#ff4d5e"
 
 # CPU load — starts on the accent, escalates through warn to danger
-theme[cpu_start]="#3b82f6"
-theme[cpu_mid]="#eab308"
-theme[cpu_end]="#ef4444"
+theme[cpu_start]="#4c9aff"
+theme[cpu_mid]="#ffc531"
+theme[cpu_end]="#ff4d5e"
 
 # Mem/disk free — calm green, nothing to act on
-theme[free_start]="#22c55e"
-theme[free_mid]="#34d399"
-theme[free_end]="#34d399"
+theme[free_start]="#2ee59d"
+theme[free_mid]="#2ee6d6"
+theme[free_end]="#2ee6d6"
 
 # Mem/disk available
-theme[available_start]="#34d399"
-theme[available_mid]="#22c55e"
-theme[available_end]="#22c55e"
+theme[available_start]="#2ee6d6"
+theme[available_mid]="#2ee59d"
+theme[available_end]="#2ee59d"
 
 # Mem/disk cached — neutral slate, not a signal
-theme[cached_start]="#a78bfa"
+theme[cached_start]="#b57bff"
 theme[cached_mid]="#94a3b8"
 theme[cached_end]="#94a3b8"
 
 # Mem/disk used — same severity ramp as CPU
-theme[used_start]="#3b82f6"
-theme[used_mid]="#eab308"
-theme[used_end]="#ef4444"
+theme[used_start]="#4c9aff"
+theme[used_mid]="#ffc531"
+theme[used_end]="#ff4d5e"
 
 # Network down — incoming reads as green
-theme[download_start]="#34d399"
-theme[download_mid]="#22c55e"
-theme[download_end]="#22c55e"
+theme[download_start]="#2ee6d6"
+theme[download_mid]="#2ee59d"
+theme[download_end]="#2ee59d"
 
 # Network up — outgoing reads as orange
-theme[upload_start]="#f97316"
-theme[upload_mid]="#f97316"
-theme[upload_end]="#eab308"
+theme[upload_start]="#ff7a1a"
+theme[upload_mid]="#ff7a1a"
+theme[upload_end]="#ffc531"
 
 # Process CPU column gradient
-theme[process_start]="#3b82f6"
-theme[process_mid]="#eab308"
-theme[process_end]="#ef4444"
+theme[process_start]="#4c9aff"
+theme[process_mid]="#ffc531"
+theme[process_end]="#ff4d5e"
