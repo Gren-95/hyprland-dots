@@ -1,7 +1,8 @@
-// Searchable keybind viewer — parses `hyprctl binds -j` live, groups by category.
-// Spotlight-style centered overlay; Esc closes, type to filter, ↑/↓ to navigate.
+// Searchable keybind viewer: binds come from hypr-binds.sh, grouped by category
+// with filter chips. Esc closes, type to filter, ↑/↓ to navigate, Enter runs.
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 
@@ -10,6 +11,8 @@ Scope {
 
     property bool open: false
     property string query: ""
+    // Category filter chip; empty shows every category.
+    property string category: ""
     property int selectedIndex: 0
     property var entries: []
     property bool pinned: false
@@ -27,6 +30,7 @@ Scope {
     function openMenu(from) {
         _openAnchor = from ?? null;
         query = "";
+        category = "";
         selectedIndex = 0;
         if (entries.length === 0) refresh();
         open = true;
@@ -168,13 +172,27 @@ Scope {
 
     readonly property var filtered: {
         const q = root.query.toLowerCase();
-        if (!q) return root.entries;
-        return root.entries.filter(e =>
+        const pool = root.category ? root.entries.filter(e => e.category === root.category) : root.entries;
+        if (!q) return pool;
+        return pool.filter(e =>
             e.combo.toLowerCase().includes(q) ||
             e.action.toLowerCase().includes(q) ||
             e.raw.toLowerCase().includes(q) ||
             e.category.toLowerCase().includes(q)
         );
+    }
+
+    // Distinct categories present, in list order, for the filter chips.
+    readonly property var categories: {
+        const seen = {};
+        const out = [];
+        for (const e of root.entries) {
+            if (!seen[e.category]) {
+                seen[e.category] = true;
+                out.push({ name: e.category, icon: e.catIcon, color: e.catColor });
+            }
+        }
+        return out;
     }
 
     // Not `hyprctl binds -j` directly: with a Lua Hyprland config every
@@ -226,13 +244,17 @@ Scope {
         root.entries = out;
     }
 
+    // Tall list popup, capped to what the screen allows.
+    readonly property real popupHeight: Math.min(
+        anchorBar && anchorBar.screen ? anchorBar.screen.height - 160 : 700, 700)
+
     BarFlyout {
         parentBar: root.anchorBar
         anchorItem: root._openAnchor ?? root.anchorItem
         open: root.open && root.anchorBar !== null
         pinned: root.pinned
-        cardWidth: settingsStore.flyoutSize("keybinds", "w", 640)
-        cardHeight: settingsStore.flyoutSize("keybinds", "h", 620)
+        cardWidth: settingsStore.flyoutSize("keybinds", "w", 700)
+        cardHeight: settingsStore.flyoutSize("keybinds", "h", root.popupHeight)
         onDismissed: root.close()
         onKeyPressed: (e) => {
             const n = root.filtered.length;
@@ -263,102 +285,196 @@ Scope {
                 e.accepted = true;
             }
         }
-        Item {
-                anchors.fill: parent
-                ColumnLayout {
-                    id: headerCol
-                    anchors { top: parent.top; left: parent.left; right: parent.right }
-                    anchors.margins: Theme.spacing.lg
-                    spacing: Theme.spacing.md
+        ColumnLayout {
+            id: contentCol
+            anchors.fill: parent
+            anchors.margins: Theme.spacing.xl
+            spacing: Theme.spacing.lg
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.spacing.md
-                        PinButton {
-                            pinned: root.pinned
-                            onToggled: root.pinned = !root.pinned
-                        }
-                        Text {
-                            Layout.fillWidth: true
-                            text: "Keybinds"
-                            color: Theme.fg
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.md
-                            font.bold: true
-                            horizontalAlignment: Text.AlignHCenter
-                        }
-                        Item { implicitWidth: 22; implicitHeight: 22 }
-                    }
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.spacing.lg
-                        Text {
-                            text: "󰌌"
-                            color: Theme.muted
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.hero
-                        }
-                        Text {
-                            Layout.fillWidth: true
-                            text: root.query || "Search keybinds"
-                            color: root.query ? Theme.fg : Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xxl
-                            elide: Text.ElideRight
-                        }
-                        Text {
-                            text: root.filtered.length + " / " + root.entries.length
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.base
-                        }
-                    }
-                    Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderStrong }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Theme.spacing.md
+                PinButton {
+                    pinned: root.pinned
+                    onToggled: root.pinned = !root.pinned
                 }
+                Text {
+                    Layout.fillWidth: true
+                    text: "Keybinds"
+                    color: Theme.fg
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.lg
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
+                }
+                // Balances the pin button so the title stays centered.
+                Item { implicitWidth: 22; implicitHeight: 22 }
+            }
+
+            // ===== Search =====
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: 52
+                radius: 10 * Theme.radiusScale
+                color: Theme.bg
+                border.color: root.query ? Theme.accentPrimary : Theme.border
+                border.width: 1
+                Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: Theme.spacing.xl
+                    anchors.rightMargin: Theme.spacing.md
+                    spacing: Theme.spacing.lg
+                    Text {
+                        text: "󰌌"
+                        color: root.query ? Theme.accentPrimary : Theme.muted
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize.xxl
+                        Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+                    }
+                    Text {
+                        Layout.fillWidth: true
+                        text: root.query || "Type to search keybinds"
+                        color: root.query ? Theme.fg : Theme.mutedDeep
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize.lg
+                        elide: Text.ElideRight
+                    }
+                    Text {
+                        text: root.filtered.length + " / " + root.entries.length
+                        color: Theme.mutedDeep
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize.base
+                    }
+                    Rectangle {
+                        id: clearBtn
+                        implicitWidth: 36
+                        implicitHeight: 36
+                        radius: 8 * Theme.radiusScale
+                        opacity: root.query ? 1 : 0
+                        visible: opacity > 0
+                        color: clearMa.pressed ? Theme.bgActive : (clearMa.containsMouse ? Theme.bgHover : "transparent")
+                        scale: clearMa.pressed ? 0.9 : 1
+                        Behavior on opacity { NumberAnimation { duration: Theme.duration.fast } }
+                        Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+                        Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰅖"
+                            color: clearMa.containsMouse ? Theme.fg : Theme.muted
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.lg
+                            Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+                        }
+                        MouseArea {
+                            id: clearMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: { root.query = ""; root.selectedIndex = 0; }
+                        }
+                    }
+                }
+            }
+
+            // ===== Category filter chips =====
+            Flow {
+                Layout.fillWidth: true
+                spacing: Theme.spacing.md
+                visible: root.categories.length > 0
+
+                CategoryChip {
+                    label: "All"
+                    icon: "󰒓"
+                    tint: Theme.accentPrimary
+                    selected: root.category === ""
+                    onClicked: { root.category = ""; root.selectedIndex = 0; }
+                }
+                Repeater {
+                    model: root.categories
+                    delegate: CategoryChip {
+                        required property var modelData
+                        label: modelData.name.charAt(0).toUpperCase() + modelData.name.slice(1)
+                        icon: modelData.icon
+                        tint: modelData.color
+                        selected: root.category === modelData.name
+                        onClicked: {
+                            root.category = root.category === modelData.name ? "" : modelData.name;
+                            root.selectedIndex = 0;
+                        }
+                    }
+                }
+            }
+
+            // ===== Results =====
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                radius: 10 * Theme.radiusScale
+                color: Theme.bg
+                border.color: Theme.border
+                border.width: 1
 
                 Flickable {
                     id: results
-                    anchors {
-                        top: headerCol.bottom
-                        left: parent.left
-                        right: parent.right
-                        bottom: footer.top
-                        topMargin: 4
-                        leftMargin: 8
-                        rightMargin: 8
-                    }
+                    anchors.fill: parent
+                    anchors.margins: Theme.spacing.md
+                    contentWidth: width
                     contentHeight: resultsCol.implicitHeight
                     clip: true
+                    boundsBehavior: Flickable.StopAtBounds
+                    ScrollBar.vertical: ThinScrollBar {
+                        policy: results.contentHeight > results.height + 2 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                    }
+
                     ColumnLayout {
                         id: resultsCol
-                        width: parent.width
-                        spacing: 0
-
-                        Text {
-                            Layout.leftMargin: 6
-                            Layout.topMargin: 2
-                            Layout.bottomMargin: 4
-                            visible: root.filtered.length > 0
-                            text: "KEYBINDS"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xs
-                            font.letterSpacing: 1
-                            font.bold: true
-                        }
+                        width: results.width - Theme.spacing.md
+                        spacing: 2
 
                         Repeater {
+                            id: rowRepeater
                             model: root.filtered
-                            delegate: BindRow {
+                            delegate: ColumnLayout {
+                                id: group
                                 required property var modelData
                                 required property int index
-                                entry: modelData
-                                highlighted: root.selectedIndex === index
+                                readonly property bool startsGroup: index === 0
+                                    || root.filtered[index - 1].category !== modelData.category
                                 Layout.fillWidth: true
-                                onHovered: root.selectedIndex = index
-                                confirming: root.confirming === modelData.combo
-                                onActivated: root.run(modelData)
+                                spacing: 2
+
+                                RowLayout {
+                                    visible: group.startsGroup
+                                    Layout.fillWidth: true
+                                    Layout.topMargin: group.index === 0 ? 0 : Theme.spacing.lg
+                                    Layout.leftMargin: Theme.spacing.md
+                                    Layout.bottomMargin: Theme.spacing.xs
+                                    spacing: Theme.spacing.md
+                                    Text {
+                                        text: group.modelData.catIcon
+                                        color: group.modelData.catColor
+                                        font.family: Theme.font
+                                        font.pixelSize: Theme.fontSize.md
+                                    }
+                                    Text {
+                                        text: group.modelData.category.toUpperCase()
+                                        color: Theme.mutedDeep
+                                        font.family: Theme.font
+                                        font.pixelSize: Theme.fontSize.sm
+                                        font.letterSpacing: 1
+                                        font.bold: true
+                                    }
+                                }
+                                BindRow {
+                                    Layout.fillWidth: true
+                                    entry: group.modelData
+                                    highlighted: root.selectedIndex === group.index
+                                    confirming: root.confirming === group.modelData.combo
+                                    onHovered: root.selectedIndex = group.index
+                                    onActivated: root.run(group.modelData)
+                                }
                             }
                         }
 
@@ -382,13 +498,14 @@ Scope {
                         }
                     }
 
-                    // Auto-scroll selected row into view
+                    // Auto-scroll the selected row into view.
                     Connections {
                         target: root
                         function onSelectedIndexChanged() {
-                            const rowH = 40;
-                            const top = root.selectedIndex * rowH;
-                            const bottom = top + rowH;
+                            const item = rowRepeater.itemAt(root.selectedIndex);
+                            if (!item) return;
+                            const top = item.y;
+                            const bottom = item.y + item.height;
                             if (top < results.contentY) results.contentY = top;
                             else if (bottom > results.contentY + results.height) {
                                 const max = Math.max(0, results.contentHeight - results.height);
@@ -397,24 +514,68 @@ Scope {
                         }
                     }
                 }
+            }
 
-                Rectangle {
-                    id: footer
-                    anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
-                    height: 28
-                    color: "transparent"
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 14
-                        anchors.rightMargin: 14
-                        spacing: Theme.spacing.lg
-                        Text { text: "Click / Enter Run"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
-                        Text { text: "↑↓ Navigate"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
-                        Text { text: "F5 Refresh"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
-                        Text { text: "Esc Close"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
-                        Item { Layout.fillWidth: true }
-                    }
-                }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Theme.spacing.xl
+                Item { Layout.fillWidth: true }
+                Text { text: "Click / ↵ Run"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
+                Text { text: "↑↓ Navigate"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
+                Text { text: "F5 Refresh"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
+                Text { text: "Esc Close"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
+                Item { Layout.fillWidth: true }
+            }
+        }
+    }
+
+    component CategoryChip: Rectangle {
+        id: chip
+        property string label: ""
+        property string icon: ""
+        property color tint: Theme.accentPrimary
+        property bool selected: false
+        signal clicked()
+        implicitWidth: chipRow.implicitWidth + Theme.spacing.xl * 2
+        implicitHeight: 36
+        radius: height / 2
+        color: selected ? Theme.alpha(tint, 0.18)
+             : chipMa.pressed ? Theme.bgActive
+             : chipMa.containsMouse ? Theme.bgHover : Theme.bgInset
+        border.color: selected ? tint : (chipMa.containsMouse ? Theme.borderStrong : Theme.border)
+        border.width: 1
+        scale: chipMa.pressed ? 0.96 : (chipMa.containsMouse ? 1.03 : 1.0)
+        Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+        Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }
+        Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
+
+        Row {
+            id: chipRow
+            anchors.centerIn: parent
+            spacing: Theme.spacing.md
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: chip.icon
+                color: chip.tint
+                font.family: Theme.font
+                font.pixelSize: Theme.fontSize.md
+            }
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: chip.label
+                color: chip.selected ? Theme.fg : Theme.fgMuted
+                font.family: Theme.font
+                font.pixelSize: Theme.fontSize.base
+                font.bold: chip.selected
+                Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+            }
+        }
+        MouseArea {
+            id: chipMa
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: chip.clicked()
         }
     }
 
@@ -425,9 +586,14 @@ Scope {
         signal hovered()
         signal activated()
         property bool confirming: false
-        implicitHeight: 40
-        radius: 6 * Theme.radiusScale
-        color: row.highlighted ? Theme.bgActive : (hover.containsMouse ? Theme.bgHover : "transparent")
+        implicitHeight: 48
+        radius: 8 * Theme.radiusScale
+        color: row.confirming ? Theme.alpha(Theme.accent.red, 0.14)
+             : row.highlighted ? Theme.bgActive
+             : (hover.containsMouse ? Theme.bgHover : "transparent")
+        scale: hover.pressed ? 0.985 : 1.0
+        Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+        Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
 
         // Left accent strip — only visible when highlighted
         Rectangle {
@@ -447,27 +613,30 @@ Scope {
 
             // Category icon (symbolic, monochrome-tinted)
             Text {
-                Layout.preferredWidth: 18
+                Layout.preferredWidth: 24
                 Layout.alignment: Qt.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
                 text: row.entry ? row.entry.catIcon : ""
                 color: row.entry ? row.entry.catColor : Theme.mutedDeep
                 opacity: row.highlighted ? 1.0 : 0.75
                 font.family: Theme.font
-                font.pixelSize: Theme.fontSize.lg
+                font.pixelSize: Theme.fontSize.xl
+                Behavior on opacity { NumberAnimation { duration: Theme.duration.fast } }
             }
 
             // Unified kbd pill: one rounded outline, segments inside separated by hairlines
             Rectangle {
                 id: kbdPill
-                Layout.preferredWidth: Math.min(240, kbdRow.implicitWidth)
-                Layout.preferredHeight: 26
+                Layout.preferredWidth: Math.min(260, kbdRow.implicitWidth)
+                Layout.preferredHeight: 30
                 Layout.alignment: Qt.AlignVCenter
                 radius: 5 * Theme.radiusScale
                 color: row.highlighted ? Theme.bg : Theme.bgInset
                 border.color: row.highlighted ? Theme.disabled : Theme.border
                 border.width: 1
                 clip: true
+                Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+                Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }
 
                 Row {
                     id: kbdRow
@@ -477,7 +646,7 @@ Scope {
                         delegate: Item {
                             required property var modelData
                             required property int index
-                            width: Math.max(28, keyText.implicitWidth + 14)
+                            width: Math.max(32, keyText.implicitWidth + 16)
                             height: kbdPill.height
                             Rectangle {
                                 visible: index > 0
@@ -492,7 +661,7 @@ Scope {
                                 text: modelData
                                 color: row.highlighted ? Theme.fg : Theme.fgMuted
                                 font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.sm
+                                font.pixelSize: Theme.fontSize.base
                                 font.bold: row.highlighted
                             }
                         }
@@ -509,8 +678,20 @@ Scope {
                 color: row.confirming ? Theme.accent.red
                      : (row.highlighted ? Theme.fgMuted : Theme.muted)
                 font.family: Theme.font
-                font.pixelSize: Theme.fontSize.base
+                font.pixelSize: Theme.fontSize.md
                 elide: Text.ElideRight
+                Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+            }
+
+            // Run affordance for the highlighted, runnable bind.
+            Text {
+                Layout.alignment: Qt.AlignVCenter
+                text: row.confirming ? "󰀦" : "󰐊"
+                color: row.confirming ? Theme.accent.red : Theme.accentPrimary
+                opacity: row.highlighted && row.entry && row.entry.runnable ? 1 : 0
+                font.family: Theme.font
+                font.pixelSize: Theme.fontSize.lg
+                Behavior on opacity { NumberAnimation { duration: Theme.duration.fast } }
             }
         }
         MouseArea {
