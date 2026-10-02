@@ -14,15 +14,15 @@ Item {
     signal clicked()
     signal wheel(bool up)
     Layout.fillHeight: true
-    implicitWidth: row.implicitWidth + 12
+    implicitWidth: row.implicitWidth + 20
     scale: ma.pressed ? 0.9 : 1.0
     Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
 
     // Subtle hover surface so every bar button gets tactile feedback.
     Rectangle {
         anchors.fill: parent
-        anchors.topMargin: 4
-        anchors.bottomMargin: 4
+        anchors.topMargin: 2
+        anchors.bottomMargin: 2
         radius: Theme.radius.sm
         color: ma.containsMouse ? Theme.bgHover : "transparent"
         Behavior on color { ColorAnimation { duration: Theme.duration.fast } }

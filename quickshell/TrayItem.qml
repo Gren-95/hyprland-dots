@@ -18,7 +18,7 @@ Item {
     // black on the dark bar. Tint those apps to the theme text colour.
     readonly property bool tinted: !!tray.item && tray.item.id === "nm-applet"
     Layout.fillHeight: true
-    implicitWidth: 28
+    implicitWidth: 36
 
     scale: hoverArea.pressed ? 0.88 : 1.0
     Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }

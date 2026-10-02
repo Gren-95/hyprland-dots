@@ -25,8 +25,9 @@ RowLayout {
         delegate: Item {
             id: pill
             required property var modelData
-            implicitWidth: pillRow.implicitWidth
-            implicitHeight: pillRow.implicitHeight
+            // Padded out to the full bar height so the pill is an easy touch target.
+            implicitWidth: pillRow.implicitWidth + 12
+            implicitHeight: Math.max(pillRow.implicitHeight, settingsStore.barHeight)
 
             RowLayout {
             id: pillRow

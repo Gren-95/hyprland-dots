@@ -186,8 +186,8 @@ Scope {
                     id: clockAnchor
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.verticalCenter: parent.verticalCenter
-                    implicitWidth: clockRow.implicitWidth + 12
-                    implicitHeight: clockRow.implicitHeight + 4
+                    implicitWidth: clockRow.implicitWidth + 24
+                    implicitHeight: Math.max(clockRow.implicitHeight + 4, settingsStore.barHeight)
                     Component.onCompleted: { dayPanel.anchorBar = Qt.binding(() => shellRoot.activeBar); dayPanel.anchorItem = clockAnchor; }
 
                     HoverHandler { id: clockHover }
