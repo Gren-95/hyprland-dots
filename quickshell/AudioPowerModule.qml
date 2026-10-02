@@ -72,9 +72,41 @@ Item {
             activateInput(sndIndex - outCount - 2);
         }
     }
-    function cycleSnd(delta) {
-        const n = sndStopCount;
-        if (n > 0) sndIndex = (sndIndex + delta + n) % n;
+    // Device lists only exist on screen while their dropdown is open, so
+    // the keyboard cursor skips them while closed.
+    property bool outExpanded: false
+    property bool inExpanded: false
+    readonly property var sndStops: {
+        const s = [0];
+        if (outExpanded) for (let i = 1; i <= outCount; i++) s.push(i);
+        s.push(outCount + 1);
+        if (inExpanded) for (let i = 0; i < inCount; i++) s.push(outCount + 2 + i);
+        return s;
+    }
+    // Up/Down across the whole popup: the sound zone flows into the power
+    // zone and back, since both now share one scrolling view.
+    function moveSound(delta) {
+        const stops = sndStops;
+        const next = Math.max(0, stops.indexOf(sndIndex)) + delta;
+        if (next >= stops.length) { setTab("power"); return; }
+        if (next < 0) { setTab("power"); pwrIndex = 7; return; }
+        sndIndex = stops[next];
+    }
+    function movePower(delta) {
+        const next = pwrIndex + delta;
+        if (next > 7) { setTab("sound"); sndIndex = 0; return; }
+        if (next < 0) { setTab("sound"); sndIndex = sndStops[sndStops.length - 1]; return; }
+        pwrIndex = next;
+    }
+    // Open or close the device dropdown of the section holding the cursor.
+    function toggleExpand() {
+        if (sndIndex <= outCount) {
+            outExpanded = !outExpanded;
+            if (!outExpanded && sndIndex > 0) sndIndex = 0;
+        } else {
+            inExpanded = !inExpanded;
+            if (!inExpanded && sndIndex > outCount + 1) sndIndex = outCount + 1;
+        }
     }
 
     // ===== Power state =====
@@ -132,14 +164,15 @@ Item {
     }
 
     // ===== Tab + popup control =====
-    // Toggle between the two tabs (Sound ↔ Power).
+    // Both sections share one scrolling view; the "tab" is just which one
+    // the keyboard cursor and the scroll position are on.
+    // Toggle between the two zones (Sound ↔ Power).
     function cycleActiveTab() { setTab(activeTab === "sound" ? "power" : "sound"); }
     function setTab(name) {
         if (activeTab === name) return;
         activeTab = name;
         if (name === "sound") {
-            const idx = outputDevices.indexOf(sink);
-            sndIndex = idx >= 0 ? idx + 1 : 0;
+            sndIndex = 0;
         } else if (name === "power") {
             const i = profiles.indexOf(PowerProfiles.profile);
             pwrIndex = i >= 0 ? i : 0;
@@ -163,14 +196,12 @@ Item {
     }
 
     onPopupOpenChanged: if (popupOpen) {
-        if (activeTab === "sound") {
-            const idx = outputDevices.indexOf(sink);
-            sndIndex = idx >= 0 ? idx + 1 : 0;
-        } else {
-            const i = profiles.indexOf(PowerProfiles.profile);
-            pwrIndex = i >= 0 ? i : 0;
-            refreshBrightness();
-        }
+        outExpanded = false;
+        inExpanded = false;
+        sndIndex = 0;
+        const i = profiles.indexOf(PowerProfiles.profile);
+        pwrIndex = i >= 0 ? i : 0;
+        refreshBrightness();
     }
 
     Layout.fillHeight: true
@@ -262,7 +293,7 @@ Item {
     }
     Timer {
         interval: 4000
-        running: ap.popupOpen && ap.activeTab === "power"
+        running: ap.popupOpen
         repeat: true
         onTriggered: ap.refreshBrightness()
     }
@@ -281,10 +312,9 @@ Item {
         parentBar: ap.parentBar
         anchorItem: ap._openAnchor ?? ap.flyoutAnchor ?? ap
         open: ap.popupOpen
-        cardWidth: settingsStore.flyoutSize("audiopower", "w", 380)
-        // Fixed height sized for the larger tab content so the popup surface
-        // doesn't resize when switching tabs (which causes visible jitter).
-        cardHeight: settingsStore.flyoutSize("audiopower", "h", 480)
+        cardWidth: settingsStore.flyoutSize("audiopower", "w", 420)
+        // Tall enough for most of the content; the rest scrolls.
+        cardHeight: settingsStore.flyoutSize("audiopower", "h", 740)
         pinned: ap.pinned
         onDismissed: ap.popupOpen = false
         onKeyPressed: (e) => {
@@ -306,9 +336,11 @@ Item {
                 // Up/Down move between rows (mute toggles + devices);
                 // Left/Right (and +/-) adjust the selected section's volume.
                 if (e.key === Qt.Key_Down || e.key === Qt.Key_J) {
-                    ap.cycleSnd(1); e.accepted = true;
+                    ap.moveSound(1); e.accepted = true;
                 } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
-                    ap.cycleSnd(-1); e.accepted = true;
+                    ap.moveSound(-1); e.accepted = true;
+                } else if (e.key === Qt.Key_D || e.key === Qt.Key_Space) {
+                    ap.toggleExpand(); e.accepted = true;
                 } else if (e.key === Qt.Key_Right || e.key === Qt.Key_L
                         || e.key === Qt.Key_Plus || e.key === Qt.Key_Equal) {
                     ap.adjustVolume(settingsStore.volumeStep / 100); e.accepted = true;
@@ -322,9 +354,9 @@ Item {
                 }
             } else if (ap.activeTab === "power") {
                 if (e.key === Qt.Key_Down || e.key === Qt.Key_J) {
-                    ap.cyclePwr(1); e.accepted = true;
+                    ap.movePower(1); e.accepted = true;
                 } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
-                    ap.cyclePwr(-1); e.accepted = true;
+                    ap.movePower(-1); e.accepted = true;
                 } else if (e.key === Qt.Key_Right || e.key === Qt.Key_L) {
                     if (ap.pwrIndex === 3) ap.setScreen(ap.screenLevel + 0.05);
                     else if (ap.pwrIndex === 4) ap.setKb(ap.kbLevel + 1 / Math.max(1, ap.kbMax));
@@ -342,11 +374,19 @@ Item {
         }
 
         ColumnLayout {
-                id: contentCol
-                anchors.fill: parent
-                anchors.margins: Theme.spacing.lg
-                spacing: Theme.spacing.md
+            id: contentCol
+            anchors.fill: parent
+            anchors.margins: Theme.spacing.lg
+            spacing: Theme.spacing.md
 
+            // ===== Header: pin + title =====
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Theme.spacing.md
+                PinButton {
+                    pinned: ap.pinned
+                    onToggled: ap.pinned = !ap.pinned
+                }
                 Text {
                     Layout.fillWidth: true
                     text: "Audio & Power"
@@ -356,178 +396,173 @@ Item {
                     font.bold: true
                     horizontalAlignment: Text.AlignHCenter
                 }
+                // Balances the pin button so the title stays centered.
+                Item { implicitWidth: 22; implicitHeight: 22 }
+            }
 
-                // ===== Header: pin + tab strip =====
-                RowLayout {
-                    Layout.fillWidth: true
+            // ===== One scrolling view: sound on top, power below =====
+            Flickable {
+                id: mainFlick
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                contentWidth: width
+                contentHeight: mainCol.implicitHeight
+                boundsBehavior: Flickable.StopAtBounds
+                ScrollBar.vertical: ThinScrollBar {}
+
+                // Keep the zone the keyboard cursor is in on screen.
+                function focusZone() {
+                    const target = ap.activeTab === "power" ? powerZone.y : 0;
+                    scrollAnim.to = Math.max(0, Math.min(target, contentHeight - height));
+                    scrollAnim.restart();
+                }
+                NumberAnimation {
+                    id: scrollAnim
+                    target: mainFlick
+                    property: "contentY"
+                    duration: Theme.duration.slow
+                    easing.type: Theme.easing.standard
+                }
+                Connections {
+                    target: ap
+                    function onActiveTabChanged() { mainFlick.focusZone(); }
+                    // Reopening on the zone that was last active changes
+                    // nothing, so scroll on open too.
+                    function onPopupOpenChanged() { if (ap.popupOpen) Qt.callLater(mainFlick.focusZone); }
+                }
+
+                ColumnLayout {
+                    id: mainCol
+                    width: mainFlick.width - Theme.spacing.md
                     spacing: Theme.spacing.md
-                    PinButton {
-                        pinned: ap.pinned
-                        onToggled: ap.pinned = !ap.pinned
-                    }
-                    TabStrip {
+
+                    AudioSection {
                         Layout.fillWidth: true
-                        activeId: ap.activeTab
-                        onPicked: (id) => ap.setTab(id)
-                        tabs: [
-                            { glyph: "󰕾", label: "Sound", accent: Theme.accent.blue, id: "sound" },
-                            { glyph: "⏻", label: "Power", accent: Theme.accent.red,  id: "power" }
-                        ]
+                        title: "OUTPUT"
+                        node: ap.sink
+                        isSink: true
+                        expanded: ap.outExpanded
+                        selectedIndex: ap.outSelectedIndex
+                        toggleHighlighted: ap.sndIndex === 0
+                        sliderActive: ap.sndIndex <= ap.outCount
+                        onExpandToggled: ap.outExpanded = !ap.outExpanded
+                        onDeviceHovered: (idx) => ap.sndIndex = idx + 1
+                        onToggleHovered: ap.sndIndex = 0
                     }
-                }
-
-                // ===== Tab content =====
-                // Fill the rest of the popup so panes always render against
-                // the same envelope — switching tabs no longer resizes anything.
-                Loader {
-                    id: paneLoader
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    active: ap.popupOpen
-                    opacity: 0
-                    transformOrigin: Item.Top
-                    sourceComponent: !ap.popupOpen ? null
-                                   : ap.activeTab === "power" ? powerPane
-                                   : soundPane
-                    onLoaded: paneInAnim.restart()
-                    ParallelAnimation {
-                        id: paneInAnim
-                        NumberAnimation { target: paneLoader; property: "opacity"; from: 0.0; to: 1.0; duration: Theme.duration.normal; easing.type: Theme.easing.standard }
-                        NumberAnimation { target: paneLoader; property: "scale"; from: 0.97; to: 1.0; duration: Theme.duration.normal; easing.type: Theme.easing.standard }
+                    AudioSection {
+                        Layout.fillWidth: true
+                        title: "INPUT"
+                        node: ap.source
+                        isSink: false
+                        expanded: ap.inExpanded
+                        selectedIndex: ap.inSelectedIndex
+                        toggleHighlighted: ap.sndIndex === ap.outCount + 1
+                        sliderActive: ap.sndIndex >= ap.outCount + 1
+                        onExpandToggled: ap.inExpanded = !ap.inExpanded
+                        onDeviceHovered: (idx) => ap.sndIndex = ap.outCount + 2 + idx
+                        onToggleHovered: ap.sndIndex = ap.outCount + 1
                     }
-                }
 
-                // Keyboard hint footer
-                Text {
-                    Layout.fillWidth: true
-                    text: "Tab tabs · ↑↓ move · ←→ adjust · ↵ select"
-                    color: Theme.mutedDeep
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xs
-                    horizontalAlignment: Text.AlignHCenter
-                    opacity: 0.65
-                }
-
-                Component {
-                    id: soundPane
-                    Flickable {
-                        id: sndFlick
-                        clip: true
-                        contentWidth: width
-                        contentHeight: sndCol.implicitHeight
-                        boundsBehavior: Flickable.StopAtBounds
-                        ScrollBar.vertical: ThinScrollBar {}
-                        ColumnLayout {
-                            id: sndCol
-                            width: sndFlick.width
-                            spacing: Theme.spacing.md
-                            AudioSection {
-                                Layout.fillWidth: true
-                                title: "OUTPUT"
-                                node: ap.sink
-                                isSink: true
-                                selectedIndex: ap.outSelectedIndex !== undefined ? ap.outSelectedIndex : -1
-                                toggleHighlighted: ap.sndIndex === 0
-                                sliderActive: ap.sndIndex <= ap.outCount
-                                onDeviceHovered: (idx) => ap.sndIndex = idx + 1
-                                onToggleHovered: ap.sndIndex = 0
-                            }
-                            Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderStrong }
-                            AudioSection {
-                                Layout.fillWidth: true
-                                title: "INPUT"
-                                node: ap.source
-                                isSink: false
-                                selectedIndex: ap.inSelectedIndex !== undefined ? ap.inSelectedIndex : -1
-                                toggleHighlighted: ap.sndIndex === ap.outCount + 1
-                                sliderActive: ap.sndIndex >= ap.outCount + 1
-                                onDeviceHovered: (idx) => ap.sndIndex = ap.outCount + 2 + idx
-                                onToggleHovered: ap.sndIndex = ap.outCount + 1
-                            }
-                        }
-                    }
-                }
-
-                Component {
-                    id: powerPane
+                    // ----- Power zone -----
                     ColumnLayout {
-                        spacing: Theme.spacing.lg
-                        Text {
-                            text: "POWER PROFILE"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xs
-                            font.letterSpacing: 1
-                            font.bold: true
-                        }
-                        ProfileSelector {
-                            Layout.fillWidth: true
-                            Layout.topMargin: -8
-                            profiles: ap.profiles
-                            activeIndex: Math.max(0, ap.profiles.indexOf(PowerProfiles.profile))
-                            highlightedIndex: ap.pwrIndex
-                            onPicked: (i) => ap.activateProfile(i)
-                            onHovered: (i) => ap.pwrIndex = i
-                        }
+                        id: powerZone
+                        Layout.fillWidth: true
+                        spacing: Theme.spacing.md
 
-                        Text {
-                            text: "BACKLIGHT"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xs
-                            font.letterSpacing: 1
-                            font.bold: true
-                        }
-                        ColumnLayout {
+                        BatteryCard { Layout.fillWidth: true }
+
+                        Rectangle {
                             Layout.fillWidth: true
-                            Layout.topMargin: -8
-                            spacing: Theme.spacing.md
-                            BrightnessRow {
-                                Layout.fillWidth: true
-                                glyph: "󰃞"
-                                label: "Screen"
-                                value: ap.screenLevel
-                                highlighted: ap.pwrIndex === 3
-                                onMoved: (v) => ap.setScreen(v)
-                                onHovered: ap.pwrIndex = 3
-                            }
-                            BrightnessRow {
-                                Layout.fillWidth: true
-                                glyph: "󰌌"
-                                label: "Keyboard"
-                                value: ap.kbLevel
-                                highlighted: ap.pwrIndex === 4
-                                onMoved: (v) => ap.setKb(v)
-                                onHovered: ap.pwrIndex = 4
+                            implicitHeight: profileCol.implicitHeight + Theme.spacing.lg * 2
+                            radius: 10 * Theme.radiusScale
+                            color: Theme.bg
+                            border.color: Theme.border
+                            border.width: 1
+                            ColumnLayout {
+                                id: profileCol
+                                anchors.fill: parent
+                                anchors.margins: Theme.spacing.lg
+                                spacing: Theme.spacing.md
+                                Text {
+                                    text: "POWER PROFILE"
+                                    color: Theme.mutedDeep
+                                    font.family: Theme.font
+                                    font.pixelSize: Theme.fontSize.xs
+                                    font.letterSpacing: 1
+                                    font.bold: true
+                                }
+                                ProfileSelector {
+                                    Layout.fillWidth: true
+                                    profiles: ap.profiles
+                                    activeIndex: Math.max(0, ap.profiles.indexOf(PowerProfiles.profile))
+                                    highlightedIndex: ap.activeTab === "power" && ap.pwrIndex <= 2 ? ap.pwrIndex : -1
+                                    onPicked: (i) => ap.activateProfile(i)
+                                    onHovered: (i) => ap.pwrIndex = i
+                                }
                             }
                         }
 
-                        Text {
-                            text: "SESSION"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xs
-                            font.letterSpacing: 1
-                            font.bold: true
+                        Rectangle {
+                            Layout.fillWidth: true
+                            implicitHeight: lightCol.implicitHeight + Theme.spacing.lg * 2
+                            radius: 10 * Theme.radiusScale
+                            color: Theme.bg
+                            border.color: Theme.border
+                            border.width: 1
+                            ColumnLayout {
+                                id: lightCol
+                                anchors.fill: parent
+                                anchors.margins: Theme.spacing.lg
+                                spacing: Theme.spacing.md
+                                Text {
+                                    text: "BACKLIGHT"
+                                    color: Theme.mutedDeep
+                                    font.family: Theme.font
+                                    font.pixelSize: Theme.fontSize.xs
+                                    font.letterSpacing: 1
+                                    font.bold: true
+                                }
+                                BrightnessRow {
+                                    Layout.fillWidth: true
+                                    glyph: "󰃞"
+                                    label: "Screen"
+                                    value: ap.screenLevel
+                                    highlighted: ap.activeTab === "power" && ap.pwrIndex === 3
+                                    onMoved: (v) => ap.setScreen(v)
+                                    onHovered: ap.pwrIndex = 3
+                                }
+                                BrightnessRow {
+                                    Layout.fillWidth: true
+                                    visible: Backlight.kbDev !== ""
+                                    glyph: "󰌌"
+                                    label: "Keyboard"
+                                    value: ap.kbLevel
+                                    highlighted: ap.activeTab === "power" && ap.pwrIndex === 4
+                                    onMoved: (v) => ap.setKb(v)
+                                    onHovered: ap.pwrIndex = 4
+                                }
+                            }
                         }
+
                         RowLayout {
                             Layout.fillWidth: true
-                            Layout.topMargin: -8
-                            spacing: Theme.spacing.sm
+                            spacing: Theme.spacing.md
                             Repeater {
                                 model: ap.sessionActions
                                 delegate: Rectangle {
                                     required property var modelData
                                     required property int index
-                                    readonly property bool hl: ap.pwrIndex === 5 + index
+                                    readonly property bool hl: ap.activeTab === "power" && ap.pwrIndex === 5 + index
+                                    readonly property bool danger: modelData.label === "Shutdown"
                                     Layout.fillWidth: true
-                                    implicitHeight: 60
+                                    implicitHeight: 62
                                     radius: 10 * Theme.radiusScale
-                                    color: hl ? Theme.alpha(modelData.accent, 0.12)
-                                              : Theme.bgHover
-                                    border.color: hl ? modelData.accent : Theme.borderSubtle
-                                    border.width: 1
-                                    scale: stMa.pressed ? 0.94 : (hl ? 1.04 : 1.0)
+                                    color: hl || stMa.containsMouse ? Theme.alpha(modelData.accent, 0.14) : Theme.bg
+                                    border.color: hl ? modelData.accent
+                                        : danger ? Theme.alpha(modelData.accent, 0.5) : Theme.border
+                                    border.width: hl ? 2 : 1
+                                    scale: stMa.pressed ? 0.94 : (hl ? 1.03 : 1.0)
                                     Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
                                     Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }
                                     Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
@@ -539,12 +574,12 @@ Item {
                                             text: modelData.glyph
                                             color: modelData.accent
                                             font.family: Theme.font
-                                            font.pixelSize: Theme.fontSize.lg
+                                            font.pixelSize: Theme.fontSize.xl
                                         }
                                         Text {
                                             Layout.alignment: Qt.AlignHCenter
                                             text: modelData.label
-                                            color: hl ? Theme.fg : Theme.fgMuted
+                                            color: hl || danger ? modelData.accent : Theme.fgMuted
                                             font.family: Theme.font
                                             font.pixelSize: Theme.fontSize.xs
                                             font.bold: hl
@@ -561,10 +596,21 @@ Item {
                                 }
                             }
                         }
-                        // Push content to the top; let the rest stay empty.
-                        Item { Layout.fillHeight: true }
                     }
                 }
             }
+
+            // Keyboard hint footer
+            Text {
+                Layout.fillWidth: true
+                text: "↑↓ move · ←→ adjust · D devices · M mute · ↵ select · Tab jump"
+                color: Theme.mutedDeep
+                font.family: Theme.font
+                font.pixelSize: Theme.fontSize.xs
+                horizontalAlignment: Text.AlignHCenter
+                opacity: 0.65
+            }
+        }
+
         }
     }

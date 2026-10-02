@@ -16,6 +16,7 @@ BarHover BarHover.qml
 BarIcon BarIcon.qml
 BarSep BarSep.qml
 BarTooltip BarTooltip.qml
+BatteryCard BatteryCard.qml
 BrightnessRow BrightnessRow.qml
 BtDeviceRow BtDeviceRow.qml
 BtToggle BtToggle.qml

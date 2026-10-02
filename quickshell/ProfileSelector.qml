@@ -1,7 +1,6 @@
-// Power-profile selector: a vertical stack of 3 clickable cards. Each card
-// shows the profile's icon, name, and a short description. The active
-// profile gets a colored accent border + filled radio dot on the right.
-// Keyboard-highlighted (tabIndex) card gets a subtle outer ring.
+// Power-profile selector: a segmented control with a sliding highlight under
+// the active profile and a one-line description of the highlighted/active one.
+// The keyboard-highlighted segment gets an outline.
 import QtQuick
 import QtQuick.Layouts
 import Quickshell.Services.UPower
@@ -13,111 +12,110 @@ ColumnLayout {
     property int highlightedIndex: -1
     signal picked(int index)
     signal hovered(int index)
-    spacing: Theme.spacing.sm
+    spacing: Theme.spacing.md
 
     function _glyph(p)  { return p === PowerProfile.Performance ? "󱐋"          : p === PowerProfile.Balanced ? "󰾅" : "󰌪" }
-    function _label(p)  { return p === PowerProfile.Performance ? "Performance" : p === PowerProfile.Balanced ? "Balanced" : "Power Saver" }
+    function _label(p)  { return p === PowerProfile.Performance ? "Performance" : p === PowerProfile.Balanced ? "Balanced" : "Saver" }
     function _accent(p) { return p === PowerProfile.Performance ? Theme.accent.red     : p === PowerProfile.Balanced ? Theme.accent.yellow : Theme.accent.green }
-    function _desc(p)   { return p === PowerProfile.Performance ? "Maximum speed — runs hotter, drains battery"
-                               : p === PowerProfile.Balanced    ? "Default — even power and performance"
-                                                                : "Extends battery life by throttling" }
+    function _desc(p)   { return p === PowerProfile.Performance ? "Maximum speed. Runs hotter and drains the battery."
+                               : p === PowerProfile.Balanced    ? "Default. Even power and performance."
+                                                                : "Extends battery life by throttling." }
 
-    Repeater {
-        model: ps.profiles
-        delegate: Rectangle {
-            id: card
-            required property var modelData
-            required property int index
-            readonly property bool isActive: ps.activeIndex === index
-            readonly property bool isHighlighted: ps.highlightedIndex === index
-            readonly property color accent: ps._accent(modelData)
+    readonly property int shownIndex: highlightedIndex >= 0 && highlightedIndex < profiles.length ? highlightedIndex : activeIndex
 
-            Layout.fillWidth: true
-            implicitHeight: Theme.height.card
-            radius: 10 * Theme.radiusScale
-            color: isActive
-                ? Theme.alpha(accent, 0.10)
-                : (cardMa.containsMouse ? Theme.bgHover : Theme.bgInset)
-            border.color: isActive ? accent : (isHighlighted ? Theme.mutedDeep : Theme.borderSubtle)
-            border.width: isActive ? 2 : 1
-            scale: cardMa.pressed ? 0.97 : (isHighlighted ? 1.02 : 1.0)
-            Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
-            Behavior on border.color { ColorAnimation { duration: Theme.duration.normal } }
-            Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+    Rectangle {
+        id: track
+        Layout.fillWidth: true
+        implicitHeight: 60
+        radius: 10 * Theme.radiusScale
+        color: Theme.bgInset
+        border.color: Theme.borderSubtle
+        border.width: 1
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: 14
-                anchors.rightMargin: 14
-                spacing: Theme.spacing.lg
+        readonly property real pad: 4
+        readonly property real segW: ps.profiles.length > 0 ? (width - pad * 2) / ps.profiles.length : 0
 
-                // Icon column with tinted background
-                Rectangle {
-                    Layout.preferredWidth: 36
-                    Layout.preferredHeight: 36
-                    Layout.alignment: Qt.AlignVCenter
-                    radius: 8 * Theme.radiusScale
-                    color: Theme.alpha(card.accent, 0.18)
-                    Text {
-                        anchors.centerIn: parent
-                        text: ps._glyph(card.modelData)
-                        color: card.accent
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.xl
-                    }
-                }
+        // Sliding highlight under the active profile.
+        Rectangle {
+            id: slider
+            y: track.pad
+            height: track.height - track.pad * 2
+            width: track.segW
+            x: track.pad + ps.activeIndex * track.segW
+            radius: 8 * Theme.radiusScale
+            color: ps.profiles.length > 0 ? ps._accent(ps.profiles[ps.activeIndex]) : Theme.accentPrimary
+            Behavior on x { NumberAnimation { duration: Theme.duration.slow; easing.type: Easing.OutBack; easing.overshoot: 0.8 } }
+            Behavior on color { ColorAnimation { duration: Theme.duration.slow } }
+        }
 
-                // Title + description
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignVCenter
-                    spacing: 2
-                    Text {
-                        text: ps._label(card.modelData)
-                        color: card.isActive ? Theme.fg : Theme.fgDim
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.base
-                        font.bold: card.isActive
-                    }
-                    Text {
-                        Layout.fillWidth: true
-                        text: ps._desc(card.modelData)
-                        color: Theme.mutedDeep
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.xs
-                        elide: Text.ElideRight
-                    }
-                }
+        Row {
+            anchors.fill: parent
+            anchors.margins: track.pad
+            Repeater {
+                model: ps.profiles
+                delegate: Item {
+                    id: seg
+                    required property var modelData
+                    required property int index
+                    readonly property bool isActive: ps.activeIndex === index
+                    width: track.segW
+                    height: parent.height
 
-                // Radio indicator on right
-                Rectangle {
-                    Layout.preferredWidth: 18
-                    Layout.preferredHeight: 18
-                    Layout.alignment: Qt.AlignVCenter
-                    radius: 9 * Theme.radiusScale
-                    color: "transparent"
-                    border.color: card.isActive ? card.accent : Theme.border
-                    border.width: 2
                     Rectangle {
+                        anchors.fill: parent
+                        radius: 8 * Theme.radiusScale
+                        color: "transparent"
+                        border.color: Theme.fg
+                        border.width: ps.highlightedIndex === seg.index ? 2 : 0
+                    }
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 8 * Theme.radiusScale
+                        color: segMa.containsMouse && !seg.isActive ? Theme.bgActive : "transparent"
+                        Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+                    }
+                    ColumnLayout {
                         anchors.centerIn: parent
-                        width: 8
-                        height: 8
-                        radius: 4 * Theme.radiusScale
-                        color: card.accent
-                        scale: card.isActive ? 1.0 : 0.0
-                        Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.emphasized } }
+                        spacing: 1
+                        scale: segMa.pressed ? 0.92 : 1.0
+                        Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
+                        Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: ps._glyph(seg.modelData)
+                            color: seg.isActive ? Theme.fgOnAccent : ps._accent(seg.modelData)
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.xl
+                            Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
+                        }
+                        Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: ps._label(seg.modelData)
+                            color: seg.isActive ? Theme.fgOnAccent : Theme.fgMuted
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.xs
+                            font.bold: seg.isActive
+                            Behavior on color { ColorAnimation { duration: Theme.duration.normal } }
+                        }
+                    }
+                    MouseArea {
+                        id: segMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: ps.picked(seg.index)
+                        onContainsMouseChanged: if (containsMouse) ps.hovered(seg.index)
                     }
                 }
-            }
-
-            MouseArea {
-                id: cardMa
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: ps.picked(index)
-                onContainsMouseChanged: if (containsMouse) ps.hovered(index)
             }
         }
+    }
+
+    Text {
+        Layout.fillWidth: true
+        text: ps.profiles.length > 0 ? ps._desc(ps.profiles[ps.shownIndex]) : ""
+        color: Theme.muted
+        font.family: Theme.font
+        font.pixelSize: Theme.fontSize.sm
+        wrapMode: Text.WordWrap
     }
 }
