@@ -3,8 +3,8 @@
 # changes nothing at runtime — it exists purely for tooling.
 #
 # Keep in sync when adding or removing a .qml file here. `pragma Singleton`
-# types must be listed with the `singleton` prefix: Theme, Hypr and
-# TailscaleService. Settings.qml is deliberately NOT a singleton (see its
+# types must be listed with the `singleton` prefix: Theme, Paths, Backlight, Cmd,
+# Hypr and TailscaleService. Settings.qml is deliberately NOT a singleton (see its
 # header) and is listed as a plain type.
 
 AccentService AccentService.qml
@@ -24,6 +24,8 @@ ConnectivityModule ConnectivityModule.qml
 DayPanel DayPanel.qml
 EventToasts EventToasts.qml
 EventsPane EventsPane.qml
+singleton Backlight Backlight.qml
+singleton Cmd Cmd.qml
 singleton Hypr Hypr.qml
 IcsCalendar IcsCalendar.qml
 IdleService IdleService.qml
@@ -34,6 +36,7 @@ NotifPane NotifPane.qml
 Notifications Notifications.qml
 Osd Osd.qml
 PinButton PinButton.qml
+singleton Paths Paths.qml
 PolkitPrompt PolkitPrompt.qml
 PopupCard PopupCard.qml
 PopupManager PopupManager.qml
@@ -47,10 +50,14 @@ SectionLabel SectionLabel.qml
 ServiceRow ServiceRow.qml
 ServicesModule ServicesModule.qml
 Settings Settings.qml
+Shortcuts Shortcuts.qml
 Spinner Spinner.qml
 Spotlight Spotlight.qml
 SuperWatch SuperWatch.qml
 SproutBg SproutBg.qml
+SpotlightActionRow SpotlightActionRow.qml
+SpotlightAppRow SpotlightAppRow.qml
+SpotlightCalcRow SpotlightCalcRow.qml
 StatusIndicators StatusIndicators.qml
 SystemMonitor SystemMonitor.qml
 TabPill TabPill.qml

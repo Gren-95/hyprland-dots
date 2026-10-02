@@ -128,10 +128,7 @@ Item {
         onKeyPressed: (e) => {
             const n = bt.visibleDevices.length;
             const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
-            if (e.key === Qt.Key_Escape) {
-                bt.popupOpen = false;
-                e.accepted = true;
-            } else if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
+            if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
                 bt.navigateNext();
                 e.accepted = true;
             } else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {

@@ -39,8 +39,8 @@ Item {
     // as the visibility key for the Settings Bar tab.
     readonly property var allOneShots: [
         { glyph: "󰅍", label: "Clipboard",    accent: Theme.accent.slate, action: "clipboard" },
-        { glyph: "󰹑", label: "Screenshot",   accent: Theme.accent.blueBright, action: "screenshot", cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenshot.sh"] },
-        { glyph: "󰕧", label: "Record",       accent: Theme.accent.red, action: "record", cmd: ["bash", Quickshell.env("HOME") + "/.config/scripts/screenrecord.sh"] },
+        { glyph: "󰹑", label: "Screenshot",   accent: Theme.accent.blueBright, action: "screenshot", cmd: ["bash", Paths.scripts + "/screenshot.sh"] },
+        { glyph: "󰕧", label: "Record",       accent: Theme.accent.red, action: "record", cmd: ["bash", Paths.scripts + "/screenrecord.sh"] },
         { glyph: "󰈊", label: "Color picker", accent: Theme.accent.pink, action: "colorpicker", cmd: ["hyprpicker", "-a"] },
         { glyph: "󰋖", label: "Keybinds",     accent: Theme.accent.blue, action: "keybinds" },
     ]
@@ -195,8 +195,7 @@ Item {
 
         onKeyPressed: (e) => {
             const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
-            if (e.key === Qt.Key_Escape) { actions.popupOpen = false; e.accepted = true; }
-            else if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
+            if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
                 actions.navigateNext(); e.accepted = true;
             } else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
                 actions.navigatePrev(); e.accepted = true;
@@ -228,7 +227,7 @@ Item {
                     Layout.fillWidth: true
                     spacing: Theme.spacing.md
                     PinButton {
-                        pinned: actions.pinned || actions.menusOpen > 0
+                        pinned: actions.pinned
                         onToggled: actions.pinned = !actions.pinned
                     }
                     Text {
@@ -310,9 +309,9 @@ Item {
         implicitHeight: 64
         radius: 10 * Theme.radiusScale
         color: tile.on
-            ? Qt.rgba(accent.r, accent.g, accent.b, 0.16)
+            ? Theme.alpha(accent, 0.16)
             : tile.highlighted
-                ? Qt.rgba(accent.r, accent.g, accent.b, 0.10)
+                ? Theme.alpha(accent, 0.10)
                 : (tileMa.containsMouse ? Theme.bgHover : Theme.bgInset)
         border.color: tile.on ? accent
                     : tile.highlighted ? Theme.mutedDeep

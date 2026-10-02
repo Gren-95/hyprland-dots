@@ -32,7 +32,6 @@ Scope {
         open = true;
     }
     function close() { open = false; }
-    function refresh() { bindsProc.running = true; }
 
     // Run a bind's action by dispatching its original Lua expression. Mouse
     // and lid-switch binds have no meaningful "run now" and are skipped.
@@ -178,51 +177,53 @@ Scope {
         );
     }
 
-    Process {
-        id: bindsProc
-        // Not `hyprctl binds -j` directly: with a Lua Hyprland config every
-        // bind reports dispatcher="__lua" and arg="<callback index>". The
-        // helper re-derives the real dispatcher/arg from the Lua source so
-        // _action() and _classify() below keep working.
-        command: ["bash", Quickshell.env("HOME") + "/.config/scripts/hypr-binds.sh"]
-        running: false
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let raw;
-                try { raw = JSON.parse(text); } catch (e) { console.warn("[Keybinds] parse fail", e); return; }
-                const out = [];
-                for (const b of raw) {
-                    if (!b.key) continue;
-                    if (b.keycode > 0 && !b.key) continue;
-                    const mods = root._formatMods(b.modmask);
-                    const key = root._prettyKey(b.key);
-                    const parts = mods.concat([key]);
-                    const action = root._action(b);
-                    const cat = root._classify(b.dispatcher, b.arg);
-                    out.push({
-                        parts: parts,
-                        combo: parts.join("+"),
-                        action: action,
-                        raw: (b.dispatcher === "exec" ? b.arg : action),
-                        dangerous: b.dispatcher === "killactive" || cat === "power",
-                        dispatcher: b.dispatcher,
-                        category: cat,
-                        catIcon: root._catIcon(cat),
-                        catColor: root._catColor(cat),
-                        description: b.description || "",
-                        lua: b.lua || "",
-                        runnable: !!b.lua && !b.mouse && !String(b.key).startsWith("switch:")
-                            && !String(b.key).startsWith("mouse"),
-                    });
-                }
-                // Sort: category asc, then combo asc
-                out.sort((a, b) => {
-                    if (a.category !== b.category) return a.category.localeCompare(b.category);
-                    return a.combo.localeCompare(b.combo);
-                });
-                root.entries = out;
-            }
+    // Not `hyprctl binds -j` directly: with a Lua Hyprland config every
+    // bind reports dispatcher="__lua" and arg="<callback index>". The
+    // helper re-derives the real dispatcher/arg from the Lua source so
+    // _action() and _classify() below keep working.
+    property bool _loading: false
+    function refresh() {
+        if (_loading) return;
+        _loading = true;
+        Cmd.run(["bash", Paths.scripts + "/hypr-binds.sh"], (ok, text) => {
+            root._loading = false;
+            if (ok) root._parseBinds(text);
+        });
+    }
+    function _parseBinds(text) {
+        let raw;
+        try { raw = JSON.parse(text); } catch (e) { console.warn("[Keybinds] parse fail", e); return; }
+        const out = [];
+        for (const b of raw) {
+            if (!b.key) continue;
+            if (b.keycode > 0 && !b.key) continue;
+            const mods = root._formatMods(b.modmask);
+            const key = root._prettyKey(b.key);
+            const parts = mods.concat([key]);
+            const action = root._action(b);
+            const cat = root._classify(b.dispatcher, b.arg);
+            out.push({
+                parts: parts,
+                combo: parts.join("+"),
+                action: action,
+                raw: (b.dispatcher === "exec" ? b.arg : action),
+                dangerous: b.dispatcher === "killactive" || cat === "power",
+                dispatcher: b.dispatcher,
+                category: cat,
+                catIcon: root._catIcon(cat),
+                catColor: root._catColor(cat),
+                description: b.description || "",
+                lua: b.lua || "",
+                runnable: !!b.lua && !b.mouse && !String(b.key).startsWith("switch:")
+                    && !String(b.key).startsWith("mouse"),
+            });
         }
+        // Sort: category asc, then combo asc
+        out.sort((a, b) => {
+            if (a.category !== b.category) return a.category.localeCompare(b.category);
+            return a.combo.localeCompare(b.combo);
+        });
+        root.entries = out;
     }
 
     BarFlyout {

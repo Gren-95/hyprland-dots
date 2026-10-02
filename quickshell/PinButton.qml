@@ -16,7 +16,7 @@ Rectangle {
         // Tack tilts upright when pinned; eased so the flip reads as motion.
         rotation: root.pinned ? 0 : -35
         text: "󰐃"
-        color: root.pinned ? Theme.accent.blue : "#78716c"
+        color: root.pinned ? Theme.accent.blue : Theme.mutedDeep
         font.family: Theme.font
         font.pixelSize: 13
         Behavior on rotation { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.emphasized } }

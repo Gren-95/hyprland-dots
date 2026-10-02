@@ -111,7 +111,7 @@ Scope {
                             glyph: "󰗋"; label: "OCR"
                             accent: Theme.accent.purple
                             onActivated: root.runAction(["bash",
-                                Quickshell.env("HOME") + "/.config/scripts/screenshot-ocr.sh",
+                                Paths.scripts + "/screenshot-ocr.sh",
                                 root.path])
                         }
                         ActionBtn {
@@ -153,7 +153,7 @@ Scope {
         implicitHeight: 60
         radius: 8 * Theme.radiusScale
         color: hover.containsMouse
-            ? Qt.rgba(accent.r, accent.g, accent.b, 0.18)
+            ? Theme.alpha(accent, 0.18)
             : Theme.bgDeep
         border.color: hover.containsMouse ? accent : Theme.borderSubtle
         border.width: 1

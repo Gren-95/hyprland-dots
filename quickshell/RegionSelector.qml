@@ -35,7 +35,7 @@ Scope {
         if (selW < 5 || selH < 5) { cancel(); return; }
         const region = Math.round(selX) + "," + Math.round(selY) + " "
                      + Math.round(selW) + "x" + Math.round(selH);
-        captureProc.command = ["bash", Quickshell.env("HOME") + "/.config/scripts/screenshot.sh", region];
+        captureProc.command = ["bash", Paths.scripts + "/screenshot.sh", region];
         captureProc.running = true;
         cancel();
     }
@@ -82,34 +82,34 @@ Scope {
                 // Top dim
                 anchors { left: parent.left; right: parent.right; top: parent.top }
                 height: Math.max(0, root.selY - overlay.oy)
-                color: "#80000000"
+                color: Theme.alpha(Theme.scrim, 0.5)
                 visible: root.dragging
             }
             Rectangle {
                 // Bottom dim
                 anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
                 height: Math.max(0, (overlay.height + overlay.oy) - (root.selY + root.selH))
-                color: "#80000000"
+                color: Theme.alpha(Theme.scrim, 0.5)
                 visible: root.dragging
             }
             Rectangle {
                 // Left dim
                 anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
                 width: Math.max(0, root.selX - overlay.ox)
-                color: "#80000000"
+                color: Theme.alpha(Theme.scrim, 0.5)
                 visible: root.dragging
             }
             Rectangle {
                 // Right dim
                 anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
                 width: Math.max(0, (overlay.width + overlay.ox) - (root.selX + root.selW))
-                color: "#80000000"
+                color: Theme.alpha(Theme.scrim, 0.5)
                 visible: root.dragging
             }
             // Idle dim (whole screen) before drag starts.
             Rectangle {
                 anchors.fill: parent
-                color: "#66000000"
+                color: Theme.alpha(Theme.scrim, 0.4)
                 visible: !root.dragging
             }
 
@@ -140,7 +140,7 @@ Scope {
                 implicitWidth: dimText.implicitWidth + 14
                 implicitHeight: dimText.implicitHeight + 8
                 radius: 6 * Theme.radiusScale
-                color: "#dd000000"
+                color: Theme.alpha(Theme.scrim, 0.87)
                 border.color: Theme.accent.blue
                 border.width: 1
                 Text {

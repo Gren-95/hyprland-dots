@@ -412,7 +412,7 @@ Scope {
                             implicitWidth: lbl.implicitWidth + 6
                             implicitHeight: lbl.implicitHeight + 2
                             radius: 2 * Theme.radiusScale
-                            color: "#000000aa"
+                            color: Theme.alpha(Theme.scrim, 0.67)
                             Text {
                                 id: lbl
                                 anchors.centerIn: parent

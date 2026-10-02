@@ -42,7 +42,7 @@ Scope {
     // Detached: wallpaper.sh outlives the call, and nothing here waits on it.
     Process { id: setProc; command: [] }
     function _apply(path) {
-        setProc.command = ["bash", Quickshell.env("HOME") + "/.config/scripts/wallpaper.sh", path];
+        setProc.command = ["bash", Paths.scripts + "/wallpaper.sh", path];
         setProc.startDetached();
         accentService.refreshSoon();   // re-extract the auto accent
     }
@@ -170,9 +170,9 @@ Scope {
             Rectangle {
                 anchors.fill: parent
                 gradient: Gradient {
-                    GradientStop { position: 0.0; color: "#00000000" }
-                    GradientStop { position: 0.55; color: "#66000000" }
-                    GradientStop { position: 1.0;  color: "#cc000000" }
+                    GradientStop { position: 0.0; color: Theme.alpha(Theme.scrim, 0) }
+                    GradientStop { position: 0.55; color: Theme.alpha(Theme.scrim, 0.4) }
+                    GradientStop { position: 1.0;  color: Theme.alpha(Theme.scrim, 0.8) }
                 }
             }
 

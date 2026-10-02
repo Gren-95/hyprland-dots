@@ -97,21 +97,26 @@ Item {
         if (i < 0 || i >= profiles.length) return;
         PowerProfiles.profile = profiles[i];
     }
+    // brightnessctl invocation for the screen (dev "") or a named device.
+    function brightnessCmd(dev, args) {
+        return ["brightnessctl"].concat(dev ? ["--device=" + dev] : [], args);
+    }
     function setScreen(v) {
         const pct = Math.round(Math.max(0, Math.min(1, v)) * 100);
         screenLevel = pct / 100;
-        setScreenProc.command = ["brightnessctl", "set", pct + "%"];
-        setScreenProc.startDetached();
+        setBrightnessProc.command = brightnessCmd("", ["set", pct + "%"]);
+        setBrightnessProc.startDetached();
     }
     function setKb(v) {
+        if (!Backlight.kbDev) return;
         const raw = Math.round(Math.max(0, Math.min(1, v)) * kbMax);
         kbLevel = kbMax > 0 ? raw / kbMax : 0;
-        setKbProc.command = ["brightnessctl", "--device=dell::kbd_backlight", "set", String(raw)];
-        setKbProc.startDetached();
+        setBrightnessProc.command = brightnessCmd(Backlight.kbDev, ["set", String(raw)]);
+        setBrightnessProc.startDetached();
     }
     function refreshBrightness() {
         getScreenProc.running = false; getScreenProc.running = true;
-        getKbProc.running = false; getKbProc.running = true;
+        if (Backlight.kbDev) { getKbProc.running = false; getKbProc.running = true; }
     }
     function runSession(i) {
         const a = sessionActions[i];
@@ -222,8 +227,9 @@ Item {
     }
 
     // ===== Power-related processes =====
-    Process { id: setScreenProc; command: [] }
-    Process { id: setKbProc; command: [] }
+    // startDetached() snapshots the command, so screen and keyboard writes
+    // can share one Process object.
+    Process { id: setBrightnessProc; command: [] }
     Process { id: sessionProc; command: [] }
     Process {
         id: getScreenProc
@@ -239,7 +245,7 @@ Item {
     }
     Process {
         id: getKbProc
-        command: ["sh", "-c", "echo $(brightnessctl --device=dell::kbd_backlight get) $(brightnessctl --device=dell::kbd_backlight max)"]
+        command: ["sh", "-c", "d=--device=" + Backlight.kbDev + "; echo $(brightnessctl $d get) $(brightnessctl $d max)"]
         running: false
         stdout: SplitParser {
             onRead: (line) => {
@@ -281,8 +287,7 @@ Item {
         onDismissed: ap.popupOpen = false
         onKeyPressed: (e) => {
             const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
-            if (e.key === Qt.Key_Escape) { ap.popupOpen = false; e.accepted = true; }
-            else if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
+            if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
                 ap.navigateNext(); e.accepted = true;
             } else if (ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_H)) {
                 ap.navigatePrev(); e.accepted = true;
@@ -516,7 +521,7 @@ Item {
                                     Layout.fillWidth: true
                                     implicitHeight: 60
                                     radius: 10 * Theme.radiusScale
-                                    color: hl ? Qt.rgba(modelData.accent.r, modelData.accent.g, modelData.accent.b, 0.12)
+                                    color: hl ? Theme.alpha(modelData.accent, 0.12)
                                               : Theme.bgHover
                                     border.color: hl ? modelData.accent : Theme.borderSubtle
                                     border.width: 1

@@ -55,6 +55,8 @@ Singleton {
     // Text and glyphs drawn on top of an accent or otherwise light fill,
     // where fg would disappear.
     readonly property color fgOnAccent: "#0c0a09"
+    // Base of every dimming layer and drop shadow; pair with alpha().
+    readonly property color scrim: "#000000"
 
     // Accents
     readonly property QtObject accent: QtObject {
@@ -78,6 +80,9 @@ Singleton {
         readonly property color blueDeep:   "#1d4ed8"
         readonly property color purpleDeep: "#7c3aed"
     }
+
+    // `c` with its alpha replaced by `a` (0..1).
+    function alpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a); }
 
     // Typography (scaled by the user's fontScale)
     readonly property string font: fontFamily

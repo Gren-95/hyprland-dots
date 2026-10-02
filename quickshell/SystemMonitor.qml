@@ -4,7 +4,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Io
 
 Scope {
     id: root
@@ -21,7 +20,16 @@ Scope {
 
     function toggle() { open = !open }
     function close()  { open = false }
-    function refresh() { if (!sysProc.running) sysProc.running = true }
+    property bool _probing: false
+    function refresh() {
+        if (_probing) return;
+        _probing = true;
+        Cmd.run(["bash", Paths.scripts + "/sysinfo.sh"], (ok, out) => {
+            root._probing = false;
+            if (!ok) return;
+            try { root.data = JSON.parse(out); } catch (e) { console.warn("[SystemMonitor] parse fail", e); }
+        });
+    }
 
     // Color for percent bars: green → yellow → red.
     function pctColor(p) {
@@ -33,17 +41,6 @@ Scope {
         if (t < 60) return Theme.accent.green;
         if (t < 80) return Theme.accent.yellow;
         return Theme.accent.red;
-    }
-
-    Process {
-        id: sysProc
-        command: ["bash", Quickshell.env("HOME") + "/.config/scripts/sysinfo.sh"]
-        running: false
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try { root.data = JSON.parse(text); } catch (e) {}
-            }
-        }
     }
 
     Timer {
@@ -408,8 +405,8 @@ Scope {
         Layout.fillWidth: true
         implicitHeight: 64
         radius: 10 * Theme.radiusScale
-        color: Qt.rgba(accent.r, accent.g, accent.b, 0.08)
-        border.color: Qt.rgba(accent.r, accent.g, accent.b, 0.4)
+        color: Theme.alpha(accent, 0.08)
+        border.color: Theme.alpha(accent, 0.4)
         border.width: 1
 
         ColumnLayout {

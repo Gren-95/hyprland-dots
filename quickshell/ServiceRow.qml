@@ -65,11 +65,9 @@ Rectangle {
             implicitWidth: pill.implicitWidth + Theme.spacing.md
             implicitHeight: Theme.height.chip
             radius: height / 2
-            color: row.on ? Qt.rgba(Theme.accent.green.r, Theme.accent.green.g,
-                                    Theme.accent.green.b, 0.14) : Theme.bgDeep
+            color: row.on ? Theme.alpha(Theme.accent.green, 0.14) : Theme.bgDeep
             border.width: 1
-            border.color: row.on ? Qt.rgba(Theme.accent.green.r, Theme.accent.green.g,
-                                           Theme.accent.green.b, 0.35) : Theme.borderSubtle
+            border.color: row.on ? Theme.alpha(Theme.accent.green, 0.35) : Theme.borderSubtle
 
             RowLayout {
                 id: pill

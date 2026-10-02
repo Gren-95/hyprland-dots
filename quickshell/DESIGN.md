@@ -7,7 +7,7 @@ add a new modal" or "where do I change X" — not a tutorial.
 
 | Layer | Lives in | Examples |
 |---|---|---|
-| **Singletons** | `Theme.qml`, `Hypr.qml`, `TailscaleService.qml` | Design tokens (with user-tunable knobs), hyprctl dispatch helper, Tailscale CLI wrapper |
+| **Singletons** | `Theme.qml`, `Paths.qml`, `Backlight.qml`, `Cmd.qml`, `Hypr.qml`, `TailscaleService.qml` | Design tokens (with user-tunable knobs), script directory, backlight device discovery, run-a-command-and-report-failure helper, hyprctl dispatch helper, Tailscale CLI wrapper |
 | **Root stores** | `Settings.qml` (`settingsStore`), `PopupManager.qml` (`popupManager`) | Persisted user settings + single-open flyout policy. Instantiated FIRST in shell.qml and resolved via the id scope chain — NOT singletons (see warning below) |
 | **Primitives** | `BarFlyout.qml`, `PopupCard.qml`, `TabStrip.qml`, `SproutBg.qml`, `SegmentedControl.qml` | The flyout envelope, the top-drawer envelope, the speech-bubble shape, settings controls |
 | **Bar items** | `BarIcon.qml`, `BarSep.qml`, `WorkspaceStrip.qml` | Leaf widgets that sit on the top bar |
@@ -26,7 +26,8 @@ undefined until a change notification happens to heal them, and
 Shared state therefore lives in **root-scope instances** (`settingsStore`,
 `popupManager`) declared first in shell.qml — guaranteed creation order,
 resolved everywhere via the id scope chain (same pattern as `notifService`).
-Theme survives as a singleton only because shell.qml reads it directly.
+Theme survives as a singleton only because shell.qml reads it directly;
+`Paths`, `Backlight` and `Cmd` are kept alive by `_singletons` in shell.qml.
 
 **Unified-shell rule:** nothing opens as a free-floating centered window.
 Every surface either hangs under its bar icon (`BarFlyout`), drops from the
@@ -51,6 +52,7 @@ All design tokens. Read these instead of hard-coding values.
 - `Theme.bg / bgAlt / bgDeep / bgHover` — surface colors
 - `Theme.accent.{blue,green,red,orange,yellow,purple,slate}` — semantic accents
 - `Theme.border / borderStrong / borderSubtle` — separator/border lines
+- `Theme.alpha(color, a)` / `Theme.scrim` — a colour at opacity `a`; `scrim` is the base for dimming layers and shadows (`Theme.alpha(Theme.scrim, 0.5)`)
 - `Theme.fontSize.{xs,sm,base,md,lg,xl,xxl,hero,huge}` — type scale
 - `Theme.spacing.{xs,sm,md,lg,xl,xxl}` — gaps and margins
 - `Theme.height.{chip,control,row,rowSm,tile,card}` — vertical sizes
@@ -403,8 +405,8 @@ close the popup.
 5. Add a plain-English modal title at the top of the content.
 6. Add uppercase section headers above each visual grouping.
 7. Instantiate it once at the top of `shell.qml`: `MyModal { id: myModal }`.
-8. Wire keybind: add `GlobalShortcut { name: "mymodal"; onPressed: myModal.toggle() }`
-   in the bar, and `bind = $mainMod, X, global, quickshell:mymodal` in
+8. Wire keybind: add an entry `{ name: "mymodal", description: "...", run: () => ... }`
+   to the table in `Shortcuts.qml` (pass the modal in as a `...Ref` property), and `bind = $mainMod, X, global, quickshell:mymodal` in
    `hypr/modules/keys.lua`.
 
 ## Adding a new bar icon

@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
-import Quickshell.Widgets
 
 Scope {
     id: root
@@ -182,8 +181,7 @@ Scope {
             return;                            // stay in the list
         }
         if (item && root.pickRole !== "") {
-            setDefaultProc.command = ["bash", Quickshell.env("HOME")
-                + "/.config/scripts/default-app.sh", "set", root.pickRole, item.id];
+            setDefaultProc.command = ["bash", Paths.scripts + "/default-app.sh", "set", root.pickRole, item.id];
             setDefaultProc.startDetached();
             close();
             return;
@@ -316,7 +314,7 @@ Scope {
                         width: parent.width
                         spacing: 2
 
-                        CalcRow {
+                        SpotlightCalcRow {
                             visible: root.hasCalc
                             expr: root.calcExpr
                             result: root.calcResult
@@ -340,7 +338,7 @@ Scope {
                         Repeater {
                             id: actionsRepeater
                             model: root.matchedActions
-                            delegate: ActionRow {
+                            delegate: SpotlightActionRow {
                                 required property var modelData
                                 required property int index
                                 action: modelData
@@ -366,7 +364,7 @@ Scope {
                         Repeater {
                             id: appsRepeater
                             model: root.filtered.slice(0, settingsStore.spotlightCap)
-                            delegate: SpotlightRow {
+                            delegate: SpotlightAppRow {
                                 required property var modelData
                                 required property int index
                                 entry: modelData
@@ -410,210 +408,6 @@ Scope {
                         );
                     }
                 }
-        }
-    }
-
-    // Shell action result row: tinted glyph square, name, live state pill.
-    component ActionRow: Rectangle {
-        id: arow
-        property var action
-        property bool highlighted: false
-        signal picked()
-        signal hovered()
-        readonly property bool on: arow.action && arow.action.isToggle ? arow.action.state() : false
-        readonly property color accent: arow.action ? arow.action.accent : Theme.accentPrimary
-        implicitHeight: 52
-        radius: 8 * Theme.radiusScale
-        color: arow.highlighted ? Theme.bgActive : (aHover.containsMouse ? Theme.bgHover : "transparent")
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 12
-            anchors.rightMargin: 12
-            spacing: Theme.spacing.lg
-            Rectangle {
-                Layout.preferredWidth: 36
-                Layout.preferredHeight: 36
-                radius: 8 * Theme.radiusScale
-                color: Qt.rgba(arow.accent.r, arow.accent.g, arow.accent.b, arow.on ? 0.25 : 0.12)
-                Text {
-                    anchors.centerIn: parent
-                    text: arow.action ? arow.action.glyph : ""
-                    color: arow.on || arow.highlighted ? arow.accent : Theme.fgMuted
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xl
-                }
-            }
-            Text {
-                Layout.fillWidth: true
-                text: arow.action ? arow.action.name : ""
-                color: Theme.fg
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.lg
-                font.bold: arow.highlighted
-                elide: Text.ElideRight
-            }
-            Rectangle {
-                visible: arow.action && arow.action.isToggle
-                implicitWidth: stateLbl.implicitWidth + 14
-                implicitHeight: 20
-                radius: 10 * Theme.radiusScale
-                color: arow.on ? Qt.rgba(arow.accent.r, arow.accent.g, arow.accent.b, 0.2) : "transparent"
-                border.color: arow.on ? arow.accent : Theme.borderStrong
-                border.width: 1
-                Text {
-                    id: stateLbl
-                    anchors.centerIn: parent
-                    text: arow.on ? "on" : "off"
-                    color: arow.on ? arow.accent : Theme.muted
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xs
-                    font.bold: true
-                }
-            }
-            Text {
-                visible: arow.action && !arow.action.isToggle
-                text: "↵ open"
-                color: Theme.mutedDeep
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.sm
-            }
-        }
-        MouseArea {
-            id: aHover
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: arow.picked()
-            onContainsMouseChanged: if (containsMouse) arow.hovered()
-        }
-    }
-
-    component CalcRow: Rectangle {
-        id: crow
-        property string expr: ""
-        property string result: ""
-        property bool highlighted: false
-        signal picked()
-        signal hovered()
-        implicitHeight: 60
-        radius: 8 * Theme.radiusScale
-        color: crow.highlighted ? Theme.bgActive : (cHover.containsMouse ? Theme.bgHover : "transparent")
-        border.color: Theme.accentPrimary
-        border.width: 1
-
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 14
-            anchors.rightMargin: 14
-            spacing: Theme.spacing.lg
-            Rectangle {
-                Layout.preferredWidth: 32
-                Layout.preferredHeight: 32
-                radius: 6 * Theme.radiusScale
-                color: Theme.accent.blueDeep
-                Text {
-                    anchors.centerIn: parent
-                    text: "="
-                    color: Theme.fg
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xl
-                    font.bold: true
-                }
-            }
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 0
-                Text {
-                    text: crow.result
-                    color: Theme.fg
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xl
-                    font.bold: true
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
-                }
-                Text {
-                    text: crow.expr + " ="
-                    color: Theme.muted
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.base
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
-                }
-            }
-            Text {
-                text: "↵ Copy"
-                color: Theme.mutedDeep
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.base
-            }
-        }
-        MouseArea {
-            id: cHover
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: crow.picked()
-            onContainsMouseChanged: if (containsMouse) crow.hovered()
-        }
-    }
-
-    component SpotlightRow: Rectangle {
-        id: row
-        property var entry
-        property bool highlighted: false
-        signal picked()
-        signal hovered()
-        implicitHeight: 52
-        radius: 8 * Theme.radiusScale
-        color: row.highlighted ? Theme.bgActive : (hover.containsMouse ? Theme.bgHover : "transparent")
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 12
-            anchors.rightMargin: 12
-            spacing: Theme.spacing.lg
-            IconImage {
-                implicitSize: 36
-                source: row.entry ? Quickshell.iconPath(row.entry.icon, "application-x-executable") : ""
-                asynchronous: true
-            }
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 0
-                Text {
-                    text: row.entry ? row.entry.name : ""
-                    color: Theme.fg
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.lg
-                    font.bold: row.highlighted
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
-                }
-                Text {
-                    visible: row.entry && row.entry.comment
-                    text: row.entry ? row.entry.comment : ""
-                    color: Theme.muted
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.base
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
-                }
-            }
-            Text {
-                visible: row.highlighted
-                text: "↵"
-                color: Theme.mutedDeep
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.md
-            }
-        }
-        MouseArea {
-            id: hover
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: row.picked()
-            onContainsMouseChanged: if (containsMouse) row.hovered()
         }
     }
 }

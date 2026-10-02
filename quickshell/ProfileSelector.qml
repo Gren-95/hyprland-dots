@@ -36,7 +36,7 @@ ColumnLayout {
             implicitHeight: Theme.height.card
             radius: 10 * Theme.radiusScale
             color: isActive
-                ? Qt.rgba(accent.r, accent.g, accent.b, 0.10)
+                ? Theme.alpha(accent, 0.10)
                 : (cardMa.containsMouse ? Theme.bgHover : Theme.bgInset)
             border.color: isActive ? accent : (isHighlighted ? Theme.mutedDeep : Theme.borderSubtle)
             border.width: isActive ? 2 : 1
@@ -57,7 +57,7 @@ ColumnLayout {
                     Layout.preferredHeight: 36
                     Layout.alignment: Qt.AlignVCenter
                     radius: 8 * Theme.radiusScale
-                    color: Qt.rgba(card.accent.r, card.accent.g, card.accent.b, 0.18)
+                    color: Theme.alpha(card.accent, 0.18)
                     Text {
                         anchors.centerIn: parent
                         text: ps._glyph(card.modelData)
