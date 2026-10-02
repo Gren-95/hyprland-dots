@@ -20,6 +20,7 @@ BrightnessRow BrightnessRow.qml
 BtDeviceRow BtDeviceRow.qml
 CalendarPane CalendarPane.qml
 Clipboard Clipboard.qml
+ClipItemRow ClipItemRow.qml
 ConnectivityModule ConnectivityModule.qml
 DayPanel DayPanel.qml
 EventToasts EventToasts.qml
@@ -54,6 +55,12 @@ Settings Settings.qml
 Shortcuts Shortcuts.qml
 Spinner Spinner.qml
 Spotlight Spotlight.qml
+LauncherChipButton LauncherChipButton.qml
+LauncherEmptyState LauncherEmptyState.qml
+LauncherFooter LauncherFooter.qml
+LauncherSearchBar LauncherSearchBar.qml
+LauncherSectionHeader LauncherSectionHeader.qml
+LauncherSelection LauncherSelection.qml
 SuperWatch SuperWatch.qml
 SproutBg SproutBg.qml
 SoundModule SoundModule.qml

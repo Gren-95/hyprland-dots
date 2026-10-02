@@ -1,8 +1,8 @@
-// Clipboard history selector styled like Spotlight: full-screen dim backdrop,
-// centered search card listing cliphist entries (with thumbnails for images
-// and swatches for hex colors).
+// Clipboard history selector flyout: a search bar over a card listing cliphist
+// entries (with thumbnails for images and swatches for hex colors).
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 
@@ -28,22 +28,11 @@ Scope {
         return root.items.filter(i => i.preview.toLowerCase().includes(q));
     }
 
-    readonly property int rowSpacing: 2
-    function _rowHeight(item) { return item && item.isImage && settingsStore.clipboardThumbs ? 76 : 44; }
-    function _rowYAt(idx) {
-        let y = 0;
-        for (let i = 0; i < idx && i < filtered.length; i++) {
-            y += _rowHeight(filtered[i]) + rowSpacing;
-        }
-        return y;
-    }
-    signal scrollRequested(int top, int bottom)
-    onSelectedIndexChanged: {
-        if (selectedIndex < 0 || selectedIndex >= filtered.length) return;
-        const top = _rowYAt(selectedIndex);
-        const bottom = top + _rowHeight(filtered[selectedIndex]);
-        scrollRequested(top, bottom);
-    }
+    // Popup height follows the list (up to what the screen allows), so there
+    // is no dead space under the last row; the footer stays pinned below it.
+    readonly property real fitHeight: Math.max(340, Math.min(
+        anchorBar && anchorBar.screen ? Math.min(anchorBar.screen.height - 160, 700) : 620,
+        contentCol.implicitHeight))
 
     function _parseEntry(line) {
         const tab = line.indexOf("\t");
@@ -128,7 +117,7 @@ Scope {
         anchorItem: root._openAnchor ?? root.anchorItem
         open: root.open && root.anchorBar !== null
         cardWidth: settingsStore.flyoutSize("clipboard", "w", 560)
-        cardHeight: settingsStore.flyoutSize("clipboard", "h", 620)
+        cardHeight: settingsStore.flyoutSize("clipboard", "h", root.fitHeight)
         onDismissed: root.close()
         onKeyPressed: (e) => {
             const n = root.filtered.length;
@@ -161,302 +150,167 @@ Scope {
                 e.accepted = true;
             }
         }
-        Item {
-                anchors.fill: parent
-                ColumnLayout {
-                    id: headerCol
-                    anchors { top: parent.top; left: parent.left; right: parent.right }
-                    anchors.margins: Theme.spacing.lg
-                    spacing: Theme.spacing.md
+        ColumnLayout {
+            id: contentCol
+            anchors.fill: parent
+            anchors.margins: Theme.spacing.xl
+            spacing: Theme.spacing.lg
 
-                    Text {
-                        Layout.fillWidth: true
-                        text: "Clipboard"
-                        color: Theme.fg
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.md
-                        font.bold: true
-                        horizontalAlignment: Text.AlignHCenter
-                    }
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.spacing.lg
-                        Text {
-                            text: "󰅍"
-                            color: Theme.muted
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.hero
-                        }
-                        Text {
-                            Layout.fillWidth: true
-                            text: root.query || "Clipboard history"
-                            color: root.query ? Theme.fg : Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xxl
-                            elide: Text.ElideRight
-                        }
-                        Text {
-                            text: root.filtered.length + " items"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.base
-                        }
-                    }
-                    Rectangle { Layout.fillWidth: true; height: 1; color: Theme.borderStrong }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Theme.spacing.md
+                Text {
+                    Layout.fillWidth: true
+                    text: "Clipboard"
+                    color: Theme.fg
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.lg
+                    font.bold: true
                 }
+                LauncherChipButton {
+                    visible: root.items.length > 0
+                    danger: true
+                    glyph: "󰩺"
+                    text: "Delete all"
+                    onClicked: root.deleteAll()
+                }
+            }
+
+            LauncherSearchBar {
+                Layout.fillWidth: true
+                text: root.query
+                glyph: "󰅍"
+                placeholder: "Search clipboard history"
+                countText: root.filtered.length > 0
+                    ? root.filtered.length + (root.filtered.length === 1 ? " item" : " items") : ""
+                onCleared: { root.query = ""; root.selectedIndex = 0; }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.preferredHeight: listBox.height + 2
+                radius: 10 * Theme.radiusScale
+                color: Theme.bg
+                border.color: Theme.border
+                border.width: 1
+                clip: true
 
                 Flickable {
                     id: results
-                    anchors {
-                        top: headerCol.bottom
-                        left: parent.left
-                        right: parent.right
-                        bottom: footer.top
-                        topMargin: 6
-                        leftMargin: 8
-                        rightMargin: 8
-                    }
-                    contentHeight: resultsCol.implicitHeight
-                    clip: true
-                    Connections {
-                        target: root
-                        function onScrollRequested(top, bottom) {
-                            const visTop = results.contentY;
-                            const visBottom = results.contentY + results.height;
-                            let newY = results.contentY;
-                            if (top < visTop) newY = top;
-                            else if (bottom > visBottom) newY = bottom - results.height;
-                            const max = Math.max(0, results.contentHeight - results.height);
-                            results.contentY = Math.max(0, Math.min(max, newY));
-                        }
-                    }
-                    ColumnLayout {
-                        id: resultsCol
-                        width: parent.width
-                        spacing: 2
-
-                        Text {
-                            Layout.leftMargin: 6
-                            Layout.topMargin: 2
-                            Layout.bottomMargin: 2
-                            visible: root.filtered.length > 0
-                            text: "HISTORY"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.xs
-                            font.letterSpacing: 1
-                            font.bold: true
-                        }
-
-                        Repeater {
-                            model: root.filtered.slice(0, 100)
-                            delegate: ClipRow {
-                                required property var modelData
-                                required property int index
-                                entry: modelData
-                                highlighted: root.selectedIndex === index
-                                thumbDir: root.thumbDir
-                                Layout.fillWidth: true
-                                onPicked: root.activate(index)
-                                onHovered: root.selectedIndex = index
-                                onRemoved: root.deleteEntry(index)
-                            }
-                        }
-
-                        Text {
-                            visible: root.filtered.length === 0
-                            text: root.items.length === 0 ? "Clipboard is empty" : "No matches"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.md
-                            Layout.alignment: Qt.AlignHCenter
-                            Layout.topMargin: 24
-                        }
-                    }
-                }
-
-                Rectangle {
-                    id: footer
-                    anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
-                    height: 28
-                    color: "transparent"
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 14
-                        anchors.rightMargin: 14
-                        spacing: Theme.spacing.lg
-                        Text {
-                            text: "↵ Copy"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.sm
-                        }
-                        Text {
-                            text: "Ctrl+D Delete"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.sm
-                        }
-                        Text {
-                            text: "Esc Close"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.sm
-                        }
-                        Item { Layout.fillWidth: true }
-                        Rectangle {
-                            id: wipeBtn
-                            implicitWidth: wipeText.implicitWidth + 16
-                            implicitHeight: 20
-                            radius: 4 * Theme.radiusScale
-                            color: wipeMouse.containsMouse ? Theme.accent.redDeep : "transparent"
-                            border.color: Theme.accent.redDeep
-                            border.width: 1
-                            Text {
-                                id: wipeText
-                                anchors.centerIn: parent
-                                text: "󰩺  Delete all"
-                                color: wipeMouse.containsMouse ? Theme.fg : Theme.accent.redSoft
-                                font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.sm
-                            }
-                            MouseArea {
-                                id: wipeMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.deleteAll()
-                            }
-                        }
-                    }
-                }
-        }
-    }
-
-    component ClipRow: Rectangle {
-        id: row
-        property var entry
-        property bool highlighted: false
-        property string thumbDir: "/tmp/cliphist-thumbs"
-        signal picked()
-        signal hovered()
-        signal removed()
-        implicitHeight: row.entry && row.entry.isImage && settingsStore.clipboardThumbs ? 76 : 48
-        radius: 8 * Theme.radiusScale
-        color: row.highlighted ? Theme.bgActive : (hover.containsMouse ? Theme.bgHover : "transparent")
-
-        readonly property string thumbPath: row.entry && row.entry.isImage
-            ? row.thumbDir + "/" + row.entry.id + "." + row.entry.ext
-            : ""
-        property bool thumbReady: false
-
-        Process {
-            id: thumbProc
-            running: false
-            command: row.entry && row.entry.isImage
-                ? ["sh", "-c",
-                   "mkdir -p \"$1\" && if [ ! -s \"$1/$2.$3\" ]; then printf '%s\\n' \"$4\" | cliphist decode > \"$1/$2.$3\"; fi",
-                   "_", row.thumbDir, row.entry.id, row.entry.ext, row.entry.raw]
-                : []
-            onExited: row.thumbReady = true
-        }
-        Component.onCompleted: {
-            if (row.entry && row.entry.isImage && settingsStore.clipboardThumbs) thumbProc.running = true;
-        }
-
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 12
-            anchors.rightMargin: 12
-            spacing: Theme.spacing.lg
-            Text {
-                text: row.entry ? row.entry.id : ""
-                color: Theme.mutedDeep
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.sm
-                Layout.preferredWidth: 36
-                horizontalAlignment: Text.AlignRight
-                verticalAlignment: Text.AlignVCenter
-            }
-
-            // Image thumbnail
-            Rectangle {
-                visible: row.entry && row.entry.isImage && settingsStore.clipboardThumbs
-                Layout.preferredWidth: 84
-                Layout.preferredHeight: 60
-                radius: 4 * Theme.radiusScale
-                color: Theme.bg
-                border.color: Theme.borderStrong
-                border.width: 1
-                clip: true
-                Image {
                     anchors.fill: parent
-                    anchors.margins: 2
-                    source: row.thumbReady && row.thumbPath ? "file://" + row.thumbPath : ""
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    cache: true
-                    smooth: true
+                    anchors.margins: 1
+                    contentWidth: width
+                    contentHeight: listBox.height
+                    boundsBehavior: Flickable.StopAtBounds
+                    clip: true
+                    ScrollBar.vertical: ThinScrollBar {}
+
+                    NumberAnimation {
+                        id: scrollAnim
+                        target: results
+                        property: "contentY"
+                        duration: Theme.duration.normal
+                        easing.type: Theme.easing.standard
+                    }
+
+                    Item {
+                        id: listBox
+                        readonly property int pad: Theme.spacing.md
+                        width: results.width
+                        height: root.filtered.length === 0 ? 230 : resultsCol.implicitHeight + pad * 2
+
+                        LauncherSelection {
+                            id: selection
+                            inset: listBox.pad
+                            offsetY: listBox.pad
+                        }
+
+                        ColumnLayout {
+                            id: resultsCol
+                            x: listBox.pad
+                            y: listBox.pad
+                            width: parent.width - listBox.pad * 2
+                            spacing: 2
+                            onImplicitHeightChanged: Qt.callLater(contentCol.syncSelection)
+
+                            LauncherSectionHeader {
+                                Layout.fillWidth: true
+                                Layout.leftMargin: Theme.spacing.md
+                                Layout.rightMargin: Theme.spacing.md
+                                Layout.topMargin: Theme.spacing.xs
+                                visible: root.filtered.length > 0
+                                title: "HISTORY"
+                                count: root.filtered.length
+                            }
+
+                            Repeater {
+                                id: rowsRepeater
+                                model: root.filtered.slice(0, 100)
+                                onItemAdded: Qt.callLater(contentCol.syncSelection)
+                                delegate: ClipItemRow {
+                                    required property var modelData
+                                    required property int index
+                                    entry: modelData
+                                    highlighted: root.selectedIndex === index
+                                    thumbDir: root.thumbDir
+                                    Layout.fillWidth: true
+                                    onPicked: root.activate(index)
+                                    onHovered: root.selectedIndex = index
+                                    onRemoved: root.deleteEntry(index)
+                                }
+                            }
+                        }
+
+                        LauncherEmptyState {
+                            anchors.centerIn: parent
+                            visible: root.filtered.length === 0
+                            glyph: root.items.length === 0 ? "󰅍" : "󰍉"
+                            title: root.items.length === 0 ? "Clipboard is empty" : "No matches"
+                            subtitle: root.items.length === 0 ? "Copied text, colours and images show up here"
+                                : "Nothing matches \u201c" + root.query + "\u201d"
+                        }
+                    }
                 }
             }
 
-            // Color swatch
-            Rectangle {
-                visible: !!(row.entry && row.entry.isColor)
-                Layout.preferredWidth: 28
-                Layout.preferredHeight: 28
-                radius: 4 * Theme.radiusScale
-                color: row.entry && row.entry.isColor ? row.entry.color : "transparent"
-                border.color: Theme.mutedDeep
-                border.width: 1
-            }
-
-            ColumnLayout {
+            LauncherFooter {
                 Layout.fillWidth: true
-                spacing: 0
-                Text {
-                    Layout.fillWidth: true
-                    text: row.entry ? row.entry.preview : ""
-                    color: Theme.fg
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.md
-                    font.bold: row.highlighted
-                    elide: Text.ElideRight
-                    wrapMode: Text.NoWrap
-                    maximumLineCount: 1
-                }
-                Text {
-                    Layout.fillWidth: true
-                    visible: row.entry && row.entry.isImage && settingsStore.clipboardThumbs
-                    text: row.entry && row.entry.isImage
-                        ? (row.entry.dims ? row.entry.dims + "  •  " + row.entry.size : row.entry.size)
-                        : ""
-                    color: Theme.muted
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.sm
-                    elide: Text.ElideRight
-                }
+                hints: [
+                    { key: "\u2191\u2193", label: "navigate" },
+                    { key: "\u21b5", label: "copy" },
+                    { key: "Ctrl+D", label: "delete" },
+                    { key: "Ctrl+Shift+D", label: "delete all" },
+                    { key: "Esc", label: "close" }
+                ]
             }
-            Text {
-                visible: row.highlighted
-                text: "↵"
-                color: Theme.mutedDeep
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.md
+
+            Connections {
+                target: root
+                function onSelectedIndexChanged() { Qt.callLater(contentCol.syncSelection) }
             }
-        }
-        MouseArea {
-            id: hover
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            acceptedButtons: Qt.LeftButton | Qt.MiddleButton
-            onClicked: (mouse) => {
-                if (mouse.button === Qt.MiddleButton) row.removed();
-                else row.picked();
+
+            // Point the selection plate at the highlighted row and keep that
+            // row inside the viewport.
+            function syncSelection() {
+                const item = rowsRepeater.itemAt(root.selectedIndex);
+                selection.target = item;
+                if (!item) return;
+                const top = item.y + listBox.pad;
+                const bot = top + item.height;
+                const pad = 8;
+                const viewTop = results.contentY;
+                const viewBot = viewTop + results.height;
+                const maxY = Math.max(0, results.contentHeight - results.height);
+                let to = viewTop;
+                if (root.selectedIndex === 0) to = 0;
+                else if (top < viewTop + pad) to = Math.max(0, top - pad);
+                else if (bot > viewBot - pad) to = Math.min(maxY, bot - results.height + pad);
+                if (to === viewTop) return;
+                scrollAnim.stop();
+                scrollAnim.to = to;
+                scrollAnim.start();
             }
-            onContainsMouseChanged: if (containsMouse) row.hovered()
         }
     }
 }
