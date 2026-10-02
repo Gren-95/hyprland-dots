@@ -32,13 +32,13 @@ jobs:
       - name: ShellCheck
         shell: bash
         run: |
-          mapfile -t files < <(git ls-files '*.sh' .githooks | grep -v '^ranger/scope\.sh$')
+          mapfile -t files < <(git ls-files '*.sh' .githooks scripts/battery-charge-schedule | grep -v '^ranger/scope\.sh$')
           shellcheck -S warning "${files[@]}"
 
       - name: Parse every script
         shell: bash
         run: |
-          while read -r f; do bash -n "$f"; done < <(git ls-files '*.sh' .githooks)
+          while read -r f; do bash -n "$f"; done < <(git ls-files '*.sh' .githooks scripts/battery-charge-schedule)
 
   lua:
     name: lua syntax
@@ -75,6 +75,55 @@ jobs:
           chmod -R a+rX "$GITHUB_WORKSPACE"
           su ci -c "XDG_RUNTIME_DIR=/tmp Hyprland --verify-config -c '$GITHUB_WORKSPACE/hypr/hyprland.lua'"
 
+  fish:
+    name: fish syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: sudo apt-get update && sudo apt-get install -y fish
+      # Only our own fish files are tracked; fisher-managed plugins are
+      # gitignored and restored from fish/fish_plugins.
+      - name: fish --no-execute
+        shell: bash
+        run: |
+          mapfile -t files < <(git ls-files 'fish/*.fish')
+          for f in "${files[@]}"; do
+            fish --no-execute "$f" || exit 1
+          done
+
+  systemd:
+    name: systemd units
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Units reference %h/.config/scripts/* and /usr/local/bin/battery-charge-schedule;
+      # verify checks that ExecStart targets exist, so lay them out as on a
+      # real install.
+      - name: Lay out install paths
+        run: |
+          mkdir -p "$HOME/.config"
+          ln -s "$GITHUB_WORKSPACE/scripts" "$HOME/.config/scripts"
+          sudo install -m755 scripts/battery-charge-schedule /usr/local/bin/battery-charge-schedule
+
+      - name: systemd-analyze verify
+        run: |
+          systemd-analyze --user --man=no verify systemd/user/*.service systemd/user/*.timer
+          systemd-analyze --man=no verify systemd/system/*.service systemd/system/*.timer
+
+  workflows:
+    name: workflow lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Pinned for the same reason as ShellCheck above.
+      - name: actionlint
+        run: |
+          curl -fsSL "https://github.com/rhysd/actionlint/releases/download/v1.7.7/actionlint_1.7.7_linux_amd64.tar.gz" | tar -xz actionlint
+          ./actionlint -version
+          ./actionlint
+
   hygiene:
     name: repo hygiene
     runs-on: ubuntu-latest
@@ -108,3 +157,7 @@ jobs:
             echo "::error::credential file is tracked - remove it from the index"
             exit 1
           fi
+
+      # KEYBINDS.md must only list Super+... combos that keys.lua binds.
+      - name: KEYBINDS.md matches keys.lua
+        run: bash docs/check-keybinds.sh
