@@ -104,3 +104,12 @@ flags rows that no longer match.
 |---|---|
 | `Super+Shift+M` | mpv shuffle `~/Music` |
 | `Super+Shift+K` | Stop mpv |
+
+## Other
+
+| Key | Action |
+|---|---|
+| `Super+X` | exec `bash ~/.config/scripts/scratchpad.sh` |
+| `Super+Alt+S` | exec `bash ~/.config/scripts/screenshot-window.sh` |
+| `Super+Ctrl+N` | exec `bash ~/.config/scripts/night.sh toggle` |
+| `Super+Shift+I` | exec `bash ~/.config/scripts/idle-inhibit-toggle.sh` |

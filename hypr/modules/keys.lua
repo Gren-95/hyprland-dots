@@ -46,6 +46,10 @@ hl.bind(var_mainMod .. " + SHIFT + R", hl.dsp.exec_cmd("bash ~/.config/scripts/s
 hl.bind(var_mainMod .. " + SHIFT + M", hl.dsp.exec_cmd("bash -c 'mpv --no-video --shuffle ~/Music/*'"))
 hl.bind(var_mainMod .. " + SHIFT + K", hl.dsp.exec_cmd("pkill mpv"))
 hl.bind(var_mainMod .. " + SHIFT + B", hl.dsp.global("quickshell:bluetooth"))
+hl.bind(var_mainMod .. " + X", hl.dsp.exec_cmd("bash ~/.config/scripts/scratchpad.sh"))
+hl.bind(var_mainMod .. " + ALT + S", hl.dsp.exec_cmd("bash ~/.config/scripts/screenshot-window.sh"))
+hl.bind(var_mainMod .. " + CTRL + N", hl.dsp.exec_cmd("bash ~/.config/scripts/night.sh toggle"))
+hl.bind(var_mainMod .. " + SHIFT + I", hl.dsp.exec_cmd("bash ~/.config/scripts/idle-inhibit-toggle.sh"))
 
 -- Focus movement
 hl.bind(var_mainMod .. " + CTRL + left", hl.dsp.focus({ direction = "left" }))

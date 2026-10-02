@@ -56,9 +56,9 @@ wayvnc is an optional VNC server for remote desktop access.
 
 **Start/stop:** `Super+Ctrl+R` — toggles wayvnc on/off.
 
-**Connect:** Use any VNC viewer and connect to `<local-ip>:5900`.
+**Connect:** Use any VNC viewer and connect to `127.0.0.1:5900`, or `<tailscale-ip>:5900` from another device (`wayvnc-toggle.sh` binds the Tailscale address when Tailscale is up).
 
-**Security:** Default config binds to `0.0.0.0` with no auth — suitable for trusted LAN only. For remote access, use [Tailscale](https://tailscale.com).
+**Security:** The default config binds to `127.0.0.1` with no auth. Remote access goes through [Tailscale](https://tailscale.com); there is no LAN listener unless you change `wayvnc/config`.
 
 To add password auth, edit `wayvnc/config`:
 

@@ -128,6 +128,16 @@ hl.window_rule({
     center = 1,
 })
 
+-- Drop-down terminal (scripts/scratchpad.sh, Super+X) on special:scratchpad.
+hl.window_rule({
+    match = {
+        class = "^(scratchpad)$",
+    },
+    float = true,
+    size = "1100 600",
+    center = 1,
+})
+
 -- Proton/Wine desktop tools (MO2, BodySlide, xEdit/SSEEdit, Creation Kit, etc.)
 
 -- run as native-Wayland toplevels (class = the .exe name). Under dwindle they

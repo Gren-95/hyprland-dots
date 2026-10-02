@@ -6,7 +6,7 @@
 #
 # Hyprland's Lua config takes Lua expressions in `hyprctl dispatch`.
 #   hl.dsp.workspace.toggle_special("name")   - taken from Hyprland's example config
-#   hl.dsp.window.move({ workspace = "special:name", window = "address:0x..." })
+#   hl.dsp.window.move({ workspace = "special:name", window = "address:0x..." })  (verified)
 #                                              - `workspace` is documented; the
 #                                                `window` selector key is unverified
 # For a floating, sized drop-down add a window_rule in hypr/modules/rules.lua
@@ -47,4 +47,8 @@ fi
 
 # Park the new window on the special workspace, then show that workspace.
 hyprctl dispatch "hl.dsp.window.move({ workspace = \"special:$SPECIAL\", window = \"address:$addr\" })" >/dev/null
-toggle_special
+
+# Moving a window onto a special workspace can already reveal it; only toggle
+# when it is still hidden, otherwise the first press would flash and hide it.
+shown=$(hyprctl monitors -j | jq -r --arg s "special:$SPECIAL" 'any(.[]; .specialWorkspace.name == $s)')
+[[ "$shown" == "true" ]] || toggle_special

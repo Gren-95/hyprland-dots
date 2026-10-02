@@ -23,7 +23,8 @@ Scope {
         return h > 0 ? h + ":" + pad(m) + ":" + pad(sec) : pad(m) + ":" + pad(sec);
     }
 
-    readonly property string pidfile: "/tmp/screenrecord.pid"
+    // Must match SCREENRECORD_PID in scripts/paths.sh.
+    readonly property string pidfile: Quickshell.env("XDG_RUNTIME_DIR") + "/screenrecord.pid"
     readonly property string scriptPath: Paths.scripts + "/screenrecord.sh"
 
     function toggle() {
