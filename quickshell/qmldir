@@ -72,6 +72,7 @@ SpotlightAppRow SpotlightAppRow.qml
 SpotlightCalcRow SpotlightCalcRow.qml
 StatusIndicators StatusIndicators.qml
 SysGauge SysGauge.qml
+SysGraph SysGraph.qml
 SystemMonitor SystemMonitor.qml
 TabPill TabPill.qml
 TabStrip TabStrip.qml
