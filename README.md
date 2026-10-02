@@ -24,7 +24,7 @@ Modals reachable from keybindings or the bar:
     <td align="center" width="33%" valign="top"><img src="screenshots/gallery/power.png" width="100%"/><br><strong>Power</strong><br>battery, profile, backlight, session<br><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd></td>
   </tr>
   <tr>
-    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/systemmonitor.png" width="100%"/><br><strong>System Monitor</strong><br>gauges, cores, storage, thermals<br><kbd>Super</kbd>+<kbd>M</kbd></td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/systemmonitor.png" width="100%"/><br><strong>System Monitor</strong><br>btop-style graphs: CPU, GPU, memory, network, disks, processes<br><kbd>Super</kbd>+<kbd>M</kbd></td>
     <td align="center" width="33%" valign="top"><img src="screenshots/gallery/services.png" width="100%"/><br><strong>Services</strong><br>background daemons and sync<br>bar button</td>
     <td align="center" width="33%" valign="top"><img src="screenshots/gallery/daypanel.png" width="100%"/><br><strong>Day Panel</strong><br>calendar, weather, media, notifications<br><kbd>Super</kbd>+<kbd>N</kbd> / <kbd>Super</kbd>+<kbd>D</kbd></td>
   </tr>
