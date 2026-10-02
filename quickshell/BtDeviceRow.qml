@@ -194,7 +194,9 @@ Rectangle {
                     implicitHeight: 16
                 }
 
-                // Details chevron (paired devices only)
+                // Details button (paired devices only). An info glyph rather
+                // than a chevron: the row itself toggles the connection, so a
+                // chevron would suggest the row expands.
                 Rectangle {
                     visible: !dr.available
                     implicitWidth: 30
@@ -204,12 +206,10 @@ Rectangle {
                     Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
                     Text {
                         anchors.centerIn: parent
-                        text: "󰅀"
+                        text: "󰋽"
                         color: dr.expanded ? Theme.accentPrimary : Theme.muted
                         font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.lg
-                        rotation: dr.expanded ? 180 : 0
-                        Behavior on rotation { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+                        font.pixelSize: Theme.fontSize.xl
                         Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
                     }
                     MouseArea {

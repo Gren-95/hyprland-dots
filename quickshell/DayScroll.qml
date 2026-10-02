@@ -11,6 +11,10 @@ Flickable {
     property alias spacing: col.spacing
     default property alias contentData: col.data
     readonly property real naturalHeight: col.implicitHeight
+    // Stretch the column to the full view so a child with Layout.fillHeight
+    // (an empty state) can centre itself. Off by default: stretching a column
+    // of plain cards would spread them apart.
+    property bool stretch: false
 
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -26,6 +30,7 @@ Flickable {
     ColumnLayout {
         id: col
         width: flick.width - Theme.spacing.md
+        height: flick.stretch ? Math.max(implicitHeight, flick.height) : implicitHeight
         spacing: Theme.spacing.lg
     }
 }

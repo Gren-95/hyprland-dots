@@ -19,6 +19,7 @@ Item {
     DayScroll {
         id: scroll
         anchors.fill: parent
+        stretch: pane.history.length === 0
 
         // Quiet toggles. Both belong to this panel rather than the Quick
         // Actions grid: DND governs what lands in the list below it, and
@@ -229,13 +230,14 @@ Item {
             }
         }
 
-        DayCard {
+        // Empty state: centred in whatever space the cards above leave.
+        Item {
             Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.minimumHeight: 140
             visible: pane.history.length === 0
             ColumnLayout {
-                Layout.fillWidth: true
-                Layout.topMargin: Theme.spacing.lg
-                Layout.bottomMargin: Theme.spacing.lg
+                anchors.centerIn: parent
                 spacing: Theme.spacing.md
                 Text {
                     Layout.alignment: Qt.AlignHCenter
