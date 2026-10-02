@@ -5,8 +5,7 @@
 # Kept out of the QML on purpose — a shell pipeline embedded in a string
 # literal is unreadable, untestable and invisible to ShellCheck.
 set -uo pipefail
-
-SCRIPTS="$HOME/.config/scripts"
+source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 
 # Session daemons, started by restart.sh at login.
 for d in battery-notify power-auto media-inhibit fullscreen-inhibit dotwatch; do
@@ -18,10 +17,10 @@ for d in battery-notify power-auto media-inhibit fullscreen-inhibit dotwatch; do
 done
 
 if pgrep -x wayvnc >/dev/null 2>&1; then printf 'wayvnc=1 '; else printf 'wayvnc=0 '; fi
-printf 'winvm=%s ' "$(bash "$SCRIPTS/winvm-toggle.sh" status 2>/dev/null || echo 0)"
+printf 'winvm=%s ' "$(bash "$SCRIPTS_DIR/winvm-toggle.sh" status 2>/dev/null || echo 0)"
 
 # immich=0|1 jellyfin=0|1
-printf '%s ' "$(bash "$SCRIPTS/sync-toggle.sh" status all 2>/dev/null)"
+printf '%s ' "$(bash "$SCRIPTS_DIR/sync-toggle.sh" status all 2>/dev/null)"
 
 # Next jellyfin run as a unix timestamp, 0 when the timer is inactive. The
 # panel formats it; systemd's own string carries a timezone name and spaces.

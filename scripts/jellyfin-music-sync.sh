@@ -9,6 +9,15 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 CONFIG="$JELLYFIN_CONF"
 LOG="$JELLYFIN_LOG"
 
+# One sync at a time: the cron entry and the systemd timer must not overlap.
+# The lock is released when this process exits.
+mkdir -p "$CACHE_DIR"
+exec 9>"$CACHE_DIR/jellyfin-sync.lock"
+if ! flock -n 9; then
+    echo "jellyfin-music-sync: another sync is already running" >&2
+    exit 0
+fi
+
 # --overwrite / --force re-downloads every track even if it already exists
 # locally, replacing it with the server's copy. Use after fixing files
 # server-side. Normal runs skip tracks that already exist for efficiency.
@@ -47,7 +56,7 @@ load_config() {
 
     if [[ -z "$JELLYFIN_URL" ]]; then
         while true; do
-            read -p "Jellyfin server URL (e.g. https://jellyfin.example.com): " JELLYFIN_URL
+            read -r -p "Jellyfin server URL (e.g. https://jellyfin.example.com): " JELLYFIN_URL
             [[ -n "$JELLYFIN_URL" ]] && break
             print_warning "URL cannot be empty"
         done
@@ -55,7 +64,7 @@ load_config() {
 
     if [[ -z "$JELLYFIN_API_KEY" ]]; then
         while true; do
-            read -p "API key (Jellyfin → Dashboard → API Keys): " JELLYFIN_API_KEY
+            read -r -p "API key (Jellyfin → Dashboard → API Keys): " JELLYFIN_API_KEY
             [[ -n "$JELLYFIN_API_KEY" ]] && break
             print_warning "API key cannot be empty"
         done
@@ -182,7 +191,7 @@ sync_music() {
     local removed=0
     while IFS= read -r local_file; do
         if [[ -z "${expected_files[$local_file]:-}" ]]; then
-            print_warning "Removing (not on server): ${local_file#$MUSIC_DIR/}"
+            print_warning "Removing (not on server): ${local_file#"$MUSIC_DIR"/}"
             rm -f "$local_file"
             ((removed++)) || true
         fi

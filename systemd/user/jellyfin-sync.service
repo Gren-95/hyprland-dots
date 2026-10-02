@@ -1,8 +1,11 @@
 [Unit]
 Description=Sync music from Jellyfin to ~/Music
-After=network-online.target
-Wants=network-online.target
+# Nothing to do until setup.sh has written the server URL and API key.
+ConditionPathExists=%h/.config/jellyfin/sync.conf
 
 [Service]
 Type=oneshot
+# A full first sync can be long; bound it so a hung download cannot block the
+# next timer run forever.
+TimeoutStartSec=2h
 ExecStart=/bin/bash %h/.config/scripts/jellyfin-music-sync.sh

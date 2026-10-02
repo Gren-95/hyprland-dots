@@ -11,9 +11,9 @@
 # picking a browser here should also change what a link in a chat app opens.
 # Terminal and editor have no such standard, which is why this file exists at
 # all: the Hyprland binds call `run` instead of hardcoding a command.
-set -uo pipefail
+set -euo pipefail
 
-source "$HOME/.config/scripts/lib/notify.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 
 CONF="${XDG_CONFIG_HOME:-$HOME/.config}/default-apps.conf"
 
@@ -40,7 +40,7 @@ conf_set() {
     mkdir -p "$(dirname "$CONF")"
     touch "$CONF"
     tmp=$(mktemp)
-    grep -vE "^$role=" "$CONF" > "$tmp" 2>/dev/null
+    grep -vE "^$role=" "$CONF" > "$tmp" 2>/dev/null || true
     echo "$role=$id" >> "$tmp"
     mv "$tmp" "$CONF"
 }
@@ -49,8 +49,8 @@ conf_set() {
 # something else (a browser's "make me default" prompt) changes it behind us.
 xdg_get() {
     case "$1" in
-        browser)     xdg-settings get default-web-browser 2>/dev/null ;;
-        filemanager) xdg-mime query default inode/directory 2>/dev/null ;;
+        browser)     xdg-settings get default-web-browser 2>/dev/null || true ;;
+        filemanager) xdg-mime query default inode/directory 2>/dev/null || true ;;
     esac
 }
 
@@ -68,7 +68,7 @@ set_role() {
 
     case "$role" in
         browser)
-            xdg-settings set default-web-browser "$id" 2>/dev/null
+            xdg-settings set default-web-browser "$id" 2>/dev/null || true
             xdg-mime default "$id" x-scheme-handler/http x-scheme-handler/https text/html
             ;;
         filemanager)
@@ -84,13 +84,14 @@ set_role() {
 # fails. Search the XDG application directories for the entry.
 resolve_desktop() {
     local id=$1 dir
-    [[ "$id" == /* ]] && { [[ -f "$id" ]] && echo "$id"; return; }
+    [[ "$id" == /* ]] && { [[ ! -f "$id" ]] || echo "$id"; return 0; }
     local -a dirs=("$HOME/.local/share/applications")
     IFS=: read -ra xdg <<< "${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
     for dir in "${xdg[@]}"; do dirs+=("$dir/applications"); done
     for dir in "${dirs[@]}"; do
         [[ -f "$dir/$id" ]] && { echo "$dir/$id"; return; }
     done
+    return 0
 }
 
 run_role() {

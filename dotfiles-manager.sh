@@ -43,6 +43,17 @@ SYSTEM_UNITS=(
 SYSTEM_TIMERS=(
     "battery-charge-schedule.timer"
 )
+# Session daemons run as systemd user units. Also COPIED, not symlinked:
+# `systemctl disable` deletes a symlinked unit file, which would delete the repo
+# copy. Enabled (not started): they start with the next graphical session, and
+# restart.sh (Super+B) restarts them.
+USER_UNITS=(
+    "systemd/user/battery-notify.service"
+    "systemd/user/power-auto.service"
+    "systemd/user/media-inhibit.service"
+    "systemd/user/fullscreen-inhibit.service"
+)
+USER_UNIT_DIR="$HOME/.config/systemd/user"
 SYSTEM_BIN_DIR="/usr/local/bin"
 SYSTEM_UNIT_DIR="/etc/systemd/system"
 
@@ -816,6 +827,48 @@ cmd_system() {
     return 0
 }
 
+# Install the session daemon units into ~/.config/systemd/user and enable them.
+# Nothing is started here.
+cmd_units() {
+    verify_dots_dir
+
+    local item source unit
+    for item in "${USER_UNITS[@]}"; do
+        source="$DOTS_DIR/$item"
+        unit="$(basename "$item")"
+        if [[ ! -f "$source" ]]; then
+            log_error "Missing: $source"
+            return 1
+        fi
+        if [[ "$DRY_RUN" == true ]]; then
+            log_info "[DRY RUN] Would install $item -> $USER_UNIT_DIR/$unit and enable it"
+            continue
+        fi
+        mkdir -p "$USER_UNIT_DIR"
+        install -m 644 "$source" "$USER_UNIT_DIR/$unit" || {
+            log_error "Failed to install $item"
+            return 1
+        }
+        log_success "Installed: $USER_UNIT_DIR/$unit"
+    done
+
+    [[ "$DRY_RUN" == true ]] && return 0
+
+    systemctl --user daemon-reload || {
+        log_error "systemctl --user daemon-reload failed"
+        return 1
+    }
+    for item in "${USER_UNITS[@]}"; do
+        unit="$(basename "$item")"
+        systemctl --user enable "$unit" >/dev/null 2>&1 || {
+            log_error "Failed to enable $unit"
+            return 1
+        }
+        log_success "Enabled: $unit"
+    done
+    return 0
+}
+
 ################################################################################
 # Main
 ################################################################################
@@ -833,6 +886,7 @@ Commands:
   fix       Fix inconsistent symlink paths
   prune     Remove dangling ~/.config symlinks pointing into this repo
   system    Install root-owned scripts and systemd units (needs sudo)
+  units     Install and enable the session daemon user units (no sudo)
 
 Options:
   --dry-run    Preview changes without executing
@@ -847,6 +901,7 @@ Examples:
   $(basename "$0") fix                  # Fix inconsistent symlinks
   $(basename "$0") undo                 # Undo last operation
   $(basename "$0") system               # Install system scripts and units
+  $(basename "$0") units                # Install session daemon user units
 
 EOF
 }
@@ -857,7 +912,7 @@ main() {
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            backup|undo|status|fix|prune|system)
+            backup|undo|status|fix|prune|system|units)
                 command="$1"
                 shift
                 ;;
@@ -918,6 +973,9 @@ main() {
             ;;
         system)
             cmd_system
+            ;;
+        units)
+            cmd_units
             ;;
         *)
             log_error "Unknown command: $command"

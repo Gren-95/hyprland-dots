@@ -1,0 +1,15 @@
+[Unit]
+Description=Inhibit idle while a window is fullscreen
+# Started from the graphical session. restart.sh (Super+B) restarts it with
+# `systemctl --user restart fullscreen-inhibit`. The Wayland/Hyprland environment is imported
+# into the user manager by restart.sh (dbus-update-activation-environment).
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=/bin/bash %h/.config/scripts/fullscreen-inhibit.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

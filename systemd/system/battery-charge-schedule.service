@@ -8,3 +8,15 @@ Documentation=man:systemd.timer(5)
 [Service]
 Type=oneshot
 ExecStart=/usr/local/bin/battery-charge-schedule
+
+# Hardening: the script only writes battery thresholds under /sys.
+NoNewPrivileges=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/sys/class/power_supply /sys/devices
+PrivateTmp=yes
+PrivateNetwork=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes

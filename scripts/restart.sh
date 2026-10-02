@@ -1,6 +1,6 @@
 #!/bin/bash
 # Hyprland services restart script
-# Restarts all services started via exec-once in hyprland.conf
+# Restarts the session services (autostart.lua runs this on hyprland.start)
 # Uses -uo pipefail (no -e): we want every restart step to run even if some fail.
 #
 # Runs on hyprland.start (autostart.lua) as well as from Super+B, so its
@@ -10,8 +10,6 @@
 # costs 20 ms instead of a flat 200 ms.
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
-
-SCRIPTS="$HOME/.config/scripts"
 
 # Poll until a process matching the pattern exists. $2 = pgrep mode (-f or -x),
 # $3 = timeout in centiseconds (default 200 = 2 s).
@@ -56,16 +54,9 @@ pkill -x gnome-keyring-daemon          2>/dev/null
 pkill -f "qs -p"                       2>/dev/null
 killall awww-daemon                    2>/dev/null
 killall hypridle                       2>/dev/null
-pkill -f power-auto.sh                 2>/dev/null
-pkill -f battery-notify.sh             2>/dev/null
 pkill -f dotwatch.sh                   2>/dev/null
 pkill -f "wl-paste.*cliphist"          2>/dev/null
 pkill -x nm-applet                     2>/dev/null
-# These two trap SIGTERM to release their D-Bus inhibitor. Signal them now and
-# SIGKILL further down: the work in between is the grace period, so we no
-# longer pay a dedicated sleep for it.
-pkill -TERM -f media-inhibit.sh        2>/dev/null
-pkill -TERM -f fullscreen-inhibit.sh   2>/dev/null
 # Polkit is provided by Quickshell (quickshell/PolkitPrompt.qml); clear any
 # agent left over from a previous session.
 systemctl --user stop hyprpolkitagent  2>/dev/null
@@ -110,37 +101,34 @@ QT_QPA_PLATFORMTHEME=hyprqt6engine qs -p "$HOME/.config/quickshell/shell.qml" -d
 # 5. Start the rest. All independent of each other, so start them back to back
 #    and verify afterwards rather than one-at-a-time.
 ################################################################################
-pkill -KILL -f media-inhibit.sh      2>/dev/null
-pkill -KILL -f fullscreen-inhibit.sh 2>/dev/null
-
 awww-daemon                               >/dev/null 2>&1 &
 # awww-daemon starts blank; once its socket answers, put back the last wallpaper.
 ( for _ in $(seq 40); do awww query >/dev/null 2>&1 && break; sleep 0.25; done; awww restore ) >/dev/null 2>&1 &
 hypridle                                  >/dev/null 2>&1 &
-bash "$SCRIPTS/battery-notify.sh"         >/dev/null 2>&1 &
-bash "$SCRIPTS/media-inhibit.sh"          >/dev/null 2>&1 &
-bash "$SCRIPTS/fullscreen-inhibit.sh"     >/dev/null 2>&1 &
-bash "$SCRIPTS/dotwatch.sh"               >/dev/null 2>&1 &
+bash "$SCRIPTS_DIR/dotwatch.sh"           >/dev/null 2>&1 &
 wl-paste --watch cliphist store           >/dev/null 2>&1 &
 # nm-applet owns Wi-Fi, wired, the Wi-Fi password prompt and Tailscale (via
 # the NetworkManager Tailscale VPN plugin). Started after Quickshell, which
 # hosts the tray.
 nm-applet --indicator                     >/dev/null 2>&1 &
-# power-auto.sh is ALSO started by autostart.lua on hyprland.start. Starting it
-# here too raced the two copies at login; the pkill above clears any existing
-# one and this is the single owner.
-bash "$SCRIPTS/power-auto.sh"             >/dev/null 2>&1 &
+# The session daemons are systemd user units (systemd/user/*.service), so a
+# restart replaces the old instance cleanly, with the unit's own stop grace
+# period. The user manager must see the Wayland/Hyprland environment first.
+dbus-update-activation-environment --systemd --all >/dev/null 2>&1
+systemctl --user restart battery-notify.service power-auto.service \
+    media-inhibit.service fullscreen-inhibit.service >/dev/null 2>&1
 
 ################################################################################
 # 6. One-shot settings. Measured at ~0.04 s combined, so they stay inline.
 ################################################################################
 nmcli radio wifi on >/dev/null 2>&1
-dbus-update-activation-environment --systemd --all >/dev/null 2>&1
 gsettings set org.gnome.desktop.interface gtk-theme "Adwaita" >/dev/null 2>&1
 gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark" >/dev/null 2>&1
 gsettings set org.gnome.desktop.interface color-scheme "prefer-dark" >/dev/null 2>&1
-hyprctl keyword monitor "FALLBACK,1920x1080@60,auto,1" >/dev/null 2>&1
-bash "$SCRIPTS/wallpaper.sh" >/dev/null 2>&1
+hyprctl eval 'hl.monitor({output="FALLBACK", mode="1920x1080@60", position="auto", scale=1})' >/dev/null 2>&1
+# The wallpaper is NOT changed here: `awww restore` (above, once the daemon's
+# socket answers) puts back the saved one. Running wallpaper.sh as well would
+# race it and replace the restored wallpaper with a random one.
 
 ################################################################################
 # 7. Verify. By now most daemons are already up, so these return immediately.
@@ -157,11 +145,11 @@ report "cliphist"            "wl-paste.*cliphist"
 report "dotwatch"            "dotwatch.sh"
 report "nm-applet"           "nm-applet"            -x
 
-# WayVNC is not auto-started; stop a stale one (restart with Super+Shift+V).
+# WayVNC is not auto-started; stop a stale one (restart with Super+Ctrl+R).
 printf 'Running: %-22s ... ' "wayvnc"
 if pgrep -x wayvnc >/dev/null; then
     pkill wayvnc
-    echo "SKIPPED (stopped — restart with Super+Shift+V)"
+    echo "SKIPPED (stopped — restart with Super+Ctrl+R)"
 else
     echo "SKIPPED (not running)"
 fi

@@ -5,21 +5,10 @@
 #   LEDVANCE_USER=...
 #   LEDVANCE_PASSWORD=...
 #   LEDVANCE_PATH=/path/to/print-local-keys.py
-set -uo pipefail
+set -euo pipefail
 
-env_file="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/util.env"
-if [[ -f "$env_file" ]]; then
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
-        [[ "$line" != *=* ]] && continue
-        key=${line%%=*}
-        value=${line#*=}
-        if [[ "$value" =~ ^\"(.*)\"$ || "$value" =~ ^\'(.*)\'$ ]]; then
-            value=${BASH_REMATCH[1]}
-        fi
-        export "$key=$value"
-    done < "$env_file"
-fi
+source "$(dirname "${BASH_SOURCE[0]}")/lib/env.sh"
+load_util_env
 
 : "${LEDVANCE_USER:?missing in util.env}"
 : "${LEDVANCE_PASSWORD:?missing in util.env}"
