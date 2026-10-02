@@ -1,6 +1,9 @@
 # wayvnc config
-# Security: no auth — rely on Tailscale or LAN-only access
+# Security: no auth. Binds loopback only by default; scripts/wayvnc-toggle.sh
+# passes the Tailscale IPv4 address on the command line (overriding `address`)
+# so the server is reachable over the tailnet only.
 # To add a password: set enable_auth=true, username=user, password=yourpassword
+# (and a private key/cert for encryption, see wayvnc(1)).
 
-address=0.0.0.0
+address=127.0.0.1
 port=5900

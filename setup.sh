@@ -1,11 +1,22 @@
 #!/bin/bash
 # Hyprland Dotfiles Setup Script
-# Automates installation of dependencies and configuration
+# Automates installation of dependencies and configuration.
+#
+# Usage: setup.sh [--yes]
+#   --yes, -y   Non-interactive: answer yes to every prompt. Steps that need
+#               credentials typed in (Immich, Jellyfin) are skipped.
+#
+# Safe to re-run: symlinks, units, directories and permissions are re-applied
+# idempotently.
 
 set -e  # Exit on error
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_DIR="$HOME/.config"
+ASSUME_YES=false
+
+# Shared dependency list (also used by scripts/doctor.sh).
+source "$SCRIPT_DIR/scripts/lib/deps.sh"
 
 # Color codes for output
 RED='\033[0;31m'
@@ -38,25 +49,32 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# ask <prompt> <Y|N>: yes/no question; <Y|N> is the default answer (Enter).
+# Returns 0 for yes. With --yes every question is answered yes.
+ask() {
+    local prompt=$1 default=$2 reply=""
+    if [[ "$ASSUME_YES" == true ]]; then
+        echo "$prompt yes (--yes)"
+        return 0
+    fi
+    read -p "$prompt " -n 1 -r reply || true
+    echo
+    if [[ "$default" == "Y" ]]; then
+        [[ ! $reply =~ ^[Nn]$ ]]
+    else
+        [[ $reply =~ ^[Yy]$ ]]
+    fi
+}
+
 # Check dependencies
 check_dependencies() {
     print_info "Checking dependencies..."
 
     local missing_deps=()
-    local required_deps=(
-        "hyprland" "qs" "kitty" "nautilus" "awww" "hyprpicker"
-        "hypridle" "hyprlock" "grim" "slurp" "swappy"
-        "tesseract" "convert" "cliphist" "wl-copy" "wl-paste"
-        "firefox" "brightnessctl" "playerctl" "powerprofilesctl"
-        "gpu-screen-recorder" "inotifywait"
-        "gnome-keyring-daemon" "jq" "pactl" "wpctl" "python3" "fish" "ranger"
-    )
-
-    for dep in "${required_deps[@]}"; do
-        if ! command_exists "$dep"; then
-            missing_deps+=("$dep")
-        fi
-    done
+    mapfile -t missing_deps < <(deps_missing_required)
+    if ! deps_have_pygobject; then
+        missing_deps+=("python3-gobject")
+    fi
 
     if [[ ${#missing_deps[@]} -eq 0 ]]; then
         print_success "All dependencies are installed"
@@ -80,14 +98,7 @@ install_dependencies() {
         print_warning "Quickshell COPR not available — build from source: https://quickshell.outfoxxed.me"
 
     print_info "Installing dependencies..."
-    sudo dnf install -y \
-        hyprland hyprland-devel quickshell kitty nautilus cliphist \
-        awww hyprpicker hypridle hyprlock grim slurp \
-        swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard firefox \
-        brightnessctl playerctl powerprofilesctl gpu-screen-recorder \
-        network-manager-applet \
-        gnome-keyring jq inotify-tools \
-        fish ranger python3 python3-pillow
+    sudo dnf install -y "${DEPS_DNF[@]}"
 
     print_success "Dependencies installed"
 
@@ -252,7 +263,10 @@ setup_scripts() {
     print_info "Setting up script permissions..."
 
     if [[ -d "$SCRIPT_DIR/scripts" ]]; then
-        chmod +x "$SCRIPT_DIR"/scripts/*.sh
+        # battery-charge-schedule has no .sh extension (it is deployed to
+        # /usr/local/bin under that name), so the glob alone would skip it.
+        chmod +x "$SCRIPT_DIR"/scripts/*.sh "$SCRIPT_DIR"/scripts/lib/*.sh \
+            "$SCRIPT_DIR/scripts/battery-charge-schedule"
         print_success "Script permissions set"
     else
         print_warning "Scripts directory not found"
@@ -270,6 +284,30 @@ setup_git_hooks() {
     chmod +x "$SCRIPT_DIR"/.githooks/*
     git -C "$SCRIPT_DIR" config core.hooksPath .githooks
     print_success "core.hooksPath set to .githooks"
+}
+
+# Session daemon user units (battery-notify, power-auto, media/fullscreen
+# inhibit). Installed and enabled; they start with the next graphical session.
+setup_user_units() {
+    print_info "Installing session daemon units..."
+    if bash "$SCRIPT_DIR/dotfiles-manager.sh" units; then
+        print_success "Session daemon units installed and enabled"
+    else
+        print_warning "Could not install the units (no systemd user session?). Re-run: dotfiles-manager.sh units"
+    fi
+}
+
+# Root-owned battery charge-cap timer (Dell charge_types). Needs sudo.
+setup_battery_timer() {
+    print_info "Installing the battery charge timer via dotfiles-manager.sh..."
+    if ! bash "$SCRIPT_DIR/dotfiles-manager.sh" system --force; then
+        print_warning "Battery timer install failed. Re-run: dotfiles-manager.sh system"
+    fi
+}
+
+# True when a battery exposes the charge_types file the script writes.
+has_charge_types() {
+    compgen -G "/sys/class/power_supply/BAT*/charge_types" >/dev/null
 }
 
 # Initial system setup
@@ -315,7 +353,7 @@ show_summary() {
     echo ""
     echo "Next steps:"
     echo "1. Log out and log back into Hyprland"
-    echo "2. Configure wallpapers in scripts/wallpaper.sh"
+    echo "2. Drop wallpapers into ~/Pictures/wallpapers"
     echo "3. Review keybindings in hypr/modules/keys.lua"
     echo "4. Customize colors and themes to your liking"
     echo ""
@@ -347,6 +385,15 @@ setup_avatar() {
 }
 
 main() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -y|--yes) ASSUME_YES=true ;;
+            -h|--help) sed -n '2,10p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+            *) print_error "Unknown argument: $1"; exit 2 ;;
+        esac
+        shift
+    done
+
     echo "========================================"
     echo "  Hyprland Dotfiles Setup"
     echo "========================================"
@@ -354,9 +401,7 @@ main() {
 
     # Check dependencies
     if ! check_dependencies; then
-        read -p "Install missing dependencies? (y/N) " -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
+        if ask "Install missing dependencies? (y/N)" N; then
             install_dependencies || {
                 print_error "Failed to install dependencies"
                 exit 1
@@ -368,9 +413,7 @@ main() {
 
     # Confirm before creating symlinks
     echo ""
-    read -p "Create symlinks for config directories? (Y/n) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+    if ask "Create symlinks for config directories? (Y/n)" Y; then
         create_symlinks
     fi
 
@@ -386,35 +429,44 @@ main() {
     # Enable the tracked git hooks
     setup_git_hooks
 
+    # Session daemons as systemd user units
+    echo ""
+    if ask "Install and enable the session daemon units (battery, power, idle inhibitors)? (Y/n)" Y; then
+        setup_user_units
+    fi
+
+    # Root-owned battery charge timer
+    echo ""
+    if [[ "$ASSUME_YES" == true ]] && ! has_charge_types; then
+        print_info "No battery with charge_types found, skipping the battery charge timer"
+    elif ask "Install the root battery charge timer (needs sudo)? (y/N)" N; then
+        setup_battery_timer
+    fi
+
     # System setup
     echo ""
-    read -p "Run initial system setup (GTK theme)? (Y/n) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+    if ask "Run initial system setup (GTK theme)? (Y/n)" Y; then
         system_setup
     fi
 
-    # Optional: Immich CLI
+    # Credential-driven steps need typed input, so --yes skips them.
     echo ""
-    read -p "Install and configure Immich CLI? (y/N) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        setup_immich_cli
-    fi
+    if [[ "$ASSUME_YES" == true ]]; then
+        print_info "--yes: skipping Immich/Jellyfin setup (needs credentials); run setup.sh interactively for those"
+    else
+        if ask "Install and configure Immich CLI? (y/N)" N; then
+            setup_immich_cli
+        fi
 
-    # Optional: Jellyfin music sync
-    echo ""
-    read -p "Set up Jellyfin music sync? (y/N) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        setup_jellyfin_sync
+        echo ""
+        if ask "Set up Jellyfin music sync? (y/N)" N; then
+            setup_jellyfin_sync
+        fi
     fi
 
     # Generate avatar
     echo ""
-    read -p "Generate initials avatar for lockscreen? (Y/n) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+    if ask "Generate initials avatar for lockscreen? (Y/n)" Y; then
         setup_avatar
     fi
 

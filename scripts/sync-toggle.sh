@@ -17,9 +17,9 @@
 #                                                      schedule, preserving the
 #                                                      enabled/disabled state.
 #                                                      e.g. "*/30 * * * *"
-set -uo pipefail
+set -euo pipefail
 
-SCRIPTS="$HOME/.config/scripts"
+source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 
 # jellyfin runs off a Persistent systemd user timer (catches up missed runs on a
 # laptop); immich stays on cron. uses_timer routes the two backends. Everything
@@ -40,8 +40,8 @@ default_schedule_for() {
 # Script invocation per kind (the trailing portion of the cron line).
 script_invocation_for() {
     case "$1" in
-        immich)   echo "bash $SCRIPTS/immich-sync.sh" ;;
-        jellyfin) echo "bash $SCRIPTS/jellyfin-music-sync.sh" ;;
+        immich)   echo "bash $SCRIPTS_DIR/immich-sync.sh" ;;
+        jellyfin) echo "bash $SCRIPTS_DIR/jellyfin-music-sync.sh" ;;
         *) return 1 ;;
     esac
 }
@@ -85,7 +85,7 @@ status_one() {
     ensure_installed "$kind"
     local marker line
     marker=$(marker_for "$kind")
-    line=$(read_cron | awk -v m="$marker" '$0==m {found=1; next} found {print; exit}')
+    line=$(read_cron | awk -v m="$marker" '$0==m {found=1; next} found {print; exit}') || true
     [[ "$line" == \#* ]] && echo 0 || echo 1
 }
 
@@ -94,9 +94,9 @@ flip_one() {
     local kind=$1
     if uses_timer "$kind"; then
         if systemctl --user is-enabled "$JELLYFIN_TIMER" >/dev/null 2>&1; then
-            systemctl --user disable --now "$JELLYFIN_TIMER" >/dev/null 2>&1
+            systemctl --user disable --now "$JELLYFIN_TIMER" >/dev/null 2>&1 || true
         else
-            systemctl --user enable --now "$JELLYFIN_TIMER" >/dev/null 2>&1
+            systemctl --user enable --now "$JELLYFIN_TIMER" >/dev/null 2>&1 || true
         fi
         return
     fi
@@ -118,9 +118,9 @@ set_one() {
     local kind=$1 desired=$2
     if uses_timer "$kind"; then
         if [[ "$desired" == 1 ]]; then
-            systemctl --user enable --now "$JELLYFIN_TIMER" >/dev/null 2>&1
+            systemctl --user enable --now "$JELLYFIN_TIMER" >/dev/null 2>&1 || true
         else
-            systemctl --user disable --now "$JELLYFIN_TIMER" >/dev/null 2>&1
+            systemctl --user disable --now "$JELLYFIN_TIMER" >/dev/null 2>&1 || true
         fi
         return
     fi
@@ -141,7 +141,7 @@ schedule_set() {
         # reload. --follow-symlinks edits the repo file the symlink points to.
         if [[ -e "$JELLYFIN_UNIT_FILE" ]]; then
             sed --follow-symlinks -i "s|^OnCalendar=.*|OnCalendar=${new_sched}|" "$JELLYFIN_UNIT_FILE"
-            systemctl --user daemon-reload >/dev/null 2>&1
+            systemctl --user daemon-reload >/dev/null 2>&1 || true
         fi
         return
     fi

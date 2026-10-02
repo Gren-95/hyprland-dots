@@ -7,7 +7,7 @@
 #
 # CPU usage samples /proc/stat twice with a 200ms gap. hwmon paths
 # are discovered by name (index isn't stable across reboots).
-set -uo pipefail
+set -euo pipefail
 
 # ───── helpers ────────────────────────────────────────────────────
 find_hwmon() {
@@ -26,7 +26,7 @@ sample_cpu()       { awk '/^cpu / { print $2+$3+$4+$5+$6+$7+$8, $5; exit }' /pro
 sample_cpu_cores() { awk '/^cpu[0-9]+/ { print $1, $2+$3+$4+$5+$6+$7+$8, $5 }' /proc/stat; }
 
 # ───── CPU usage ──────────────────────────────────────────────────
-read t1 i1 < <(sample_cpu)
+read -r t1 i1 < <(sample_cpu)
 declare -A tot1 idl1
 while read -r cpu tot idl; do
     tot1[$cpu]=$tot
@@ -35,7 +35,7 @@ done < <(sample_cpu_cores)
 
 sleep 0.2
 
-read t2 i2 < <(sample_cpu)
+read -r t2 i2 < <(sample_cpu)
 declare -A tot2 idl2
 while read -r cpu tot idl; do
     tot2[$cpu]=$tot
@@ -102,7 +102,7 @@ disks_json=$(
         }
         END { printf "]" }
     '
-)
+) || true
 
 # ───── Uptime ─────────────────────────────────────────────────────
 uptime_str=$(uptime -p | sed 's/^up //')

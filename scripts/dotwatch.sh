@@ -1,8 +1,7 @@
 #!/bin/bash
 # dotwatch.sh — Watch dotfiles for changes and hot-reload affected services
 #
-# Add to hyprland.conf:  exec-once = bash ~/.config/scripts/dotwatch.sh
-# Also called from restart.sh
+# Started by restart.sh (which hypr/modules/autostart.lua runs on hyprland.start).
 set -uo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
@@ -49,11 +48,11 @@ notify_gtk() {
 log "Watching $DOTS_DIR"
 
 inotifywait -m -r -e close_write,moved_to,create \
-    --exclude '\.git' \
+    --exclude '(^|/)\.git(/|$)' \
     --format '%w%f' \
     "$DOTS_DIR" 2>/dev/null | while read -r path; do
 
-    rel="${path#$DOTS_DIR/}"
+    rel="${path#"$DOTS_DIR"/}"
 
     case "$rel" in
         hypr/hyprland*.lua|hypr/modules/*) reload_hyprland ;;

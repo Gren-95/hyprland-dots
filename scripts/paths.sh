@@ -22,9 +22,12 @@ HYPR_DIR="$HOME/.config/hypr"
 
 # Cache / runtime
 CACHE_DIR="$HOME/.cache"
+# LOCK_ART stays in /tmp: hypr/hyprlock.conf hardcodes /tmp/hyprlock-art.jpg.
 LOCK_ART="/tmp/hyprlock-art.jpg"
 LOCK_BG="$HOME/.config/hypr/lockbg"
-SCREENRECORD_PID="/tmp/screenrecord.pid"
+# Per-user runtime dir: private (0700) and cleaned at logout, unlike /tmp.
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$UID}"
+SCREENRECORD_PID="$RUNTIME_DIR/screenrecord.pid"
 
 # Logs
 IMMICH_LOG="$HOME/.cache/immich-sync.log"

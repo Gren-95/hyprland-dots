@@ -5,8 +5,19 @@ source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 
 IMMICH_BIN="$HOME/.npm-global/bin/immich"
+LOG_MAX_BYTES=$((1024 * 1024))
+
+# Keep one rotated generation so the log cannot grow without bound.
+rotate_log() {
+    mkdir -p "$(dirname "$IMMICH_LOG")"
+    if [[ -f "$IMMICH_LOG" && "$(stat -c %s "$IMMICH_LOG")" -gt "$LOG_MAX_BYTES" ]]; then
+        mv -f "$IMMICH_LOG" "$IMMICH_LOG.1"
+    fi
+}
 
 run_upload() {
+    rotate_log
+
     local bin=""
     if command -v immich >/dev/null 2>&1; then
         bin="immich"

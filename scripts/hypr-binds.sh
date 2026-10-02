@@ -8,6 +8,8 @@
 # source and merges it back in, keyed on (modmask, key).
 #
 # Binds it can't resolve are passed through untouched.
+set -euo pipefail
+
 exec python3 - "$@" <<'PY'
 import json, os, re, subprocess, sys, pathlib
 

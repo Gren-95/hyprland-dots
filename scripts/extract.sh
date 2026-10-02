@@ -6,7 +6,7 @@
 # Usage:
 #   extract.sh           # extract in current directory
 #   extract.sh <path>    # extract in <path>
-set -uo pipefail
+set -euo pipefail
 
 path="${1:-.}"
 cd "$path" || exit 1
@@ -20,10 +20,10 @@ _extract() {
     # shellcheck disable=SC2206  # unquoted on purpose: $pattern is a glob to expand
     files=($pattern)
     shopt -u nullglob
-    (( ${#files[@]} == 0 )) && return
+    (( ${#files[@]} == 0 )) && return 0
     if ! command -v "$exec" >/dev/null; then
         echo "Warning: $exec is not installed. Cannot extract $pattern files."
-        return
+        return 0
     fi
     for f in "${files[@]}"; do
         found=true

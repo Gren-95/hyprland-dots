@@ -12,6 +12,10 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | File | Purpose |
 |---|---|
 | `lib/notify.sh` | `notify <urgency> <key> <icon> <title> <body> [timeout]` wrapper around `notify-send`. Always sets `-a hyprland-dots` and `-h x-canonical-private-synchronous:<key>` so repeat notifications replace instead of stacking. |
+| `lib/inhibit.sh` | `inhibit_start <app> <reason>` / `inhibit_stop`: holds an `org.freedesktop.ScreenSaver` inhibitor on a long-lived D-Bus connection. Used by `media-inhibit.sh`, `fullscreen-inhibit.sh`, `idle-inhibit-toggle.sh`. |
+| `lib/env.sh` | `load_util_env` loads `util.env` (`KEY=VALUE`) into the environment. |
+| `lib/screenshot.sh` | `capture_region "X,Y WxH"`: grim, wl-copy, notify, print path. Shared by both screenshot scripts. |
+| `lib/deps.sh` | Required/optional command lists and the dnf package list, shared by `setup.sh` and `doctor.sh`. |
 | `paths.sh` | Canonical user-path env vars (`PICTURES_DIR`, `WALLPAPER_DIR`, `RECORDINGS_DIR`, `CACHE_DIR`, etc.). Sourced by every consumer. |
 
 ## Helpers and config
@@ -24,6 +28,10 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | `util.env.example` | Template for the gitignored `util.env` (Ledvance credentials, `RPGMDECRYPT_PATH`). Copy to `util.env` and fill in; `fish/conf.d/util-env.fish` loads the non-secret keys into fish. |
 
 ## Daemons (autostart / restart.sh)
+
+`battery-notify`, `power-auto`, `media-inhibit` and `fullscreen-inhibit` run as systemd user units
+(`systemd/user/*.service`, installed by `dotfiles-manager.sh units`); `restart.sh` restarts them with
+`systemctl --user restart`.
 
 | File | Spawned by | What it does |
 |---|---|---|
@@ -41,8 +49,18 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 |---|---|---|
 | `default-app.sh` | Hyprland binds (`run`), Spotlight's default-app pickers (`set`) | Which app fills a role — browser, terminal, editor, filemanager. `get` prefers XDG's own answer where one exists; `set` writes `~/.config/default-apps.conf` and registers the XDG default for browser/file manager; `run` resolves the entry across the XDG application directories and launches it, falling back to kitty/nautilus when nothing is chosen. |
 | `services-status.sh` | Quickshell Services panel | One probe for the whole panel: prints `key=value` pairs on a single line — each session daemon's pgrep state, wayvnc, the WinApps container, both sync schedules, and the Jellyfin timer's next run as a unix timestamp. |
-| `wayvnc-toggle.sh` | Services panel "Remote access" toggle, or `Super+Ctrl+R` | Starts wayvnc if not running, kills it if it is. Notifies with the local IP on start. |
+| `wayvnc-toggle.sh` | Services panel "Remote access" toggle, or `Super+Ctrl+R` | Starts wayvnc if not running (bound to the Tailscale IPv4 when available, else loopback), waits until the port listens, kills it if running. Notifies only on failure. |
 | `sync-toggle.sh` | Services panel "Immich/Jellyfin sync" toggles | Manages cron entries between `# QSSYNC:<kind>` markers. Commands: `status [all\|<kind>]`, `toggle <kind>`, `enable <kind>`, `disable <kind>`, `schedule <kind> '<cron-expr>'`. Self-installs commented-out lines on first call. |
+
+## New helpers
+
+| File | What it does |
+|---|---|
+| `doctor.sh` | Read-only health check: required commands, user units, executable bits, dotfiles-manager symlinks, battery timer. Exit 1 on failure. |
+| `screenshot-window.sh` | Screenshot of the active window (`hyprctl activewindow -j`), same save/copy/notify as `screenshot.sh`. |
+| `night.sh` | `toggle\|on\|off\|status` night light via `hyprsunset`; `NIGHT_TEMPERATURE` in `util.env`. |
+| `scratchpad.sh` | Toggle a drop-down kitty on the `special:scratchpad` workspace. |
+| `idle-inhibit-toggle.sh` | Manual idle inhibit toggle; PID in `$XDG_RUNTIME_DIR/idle-inhibit.pid`. |
 
 ## One-shots (keybind-triggered)
 
@@ -50,10 +68,10 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 |---|---|---|
 | `screenshot.sh` | Quickshell `RegionSelector` (`Super+Shift+S`) | Accepts a pre-computed `"X,Y WxH"` region as `$1` (falls back to `slurp -d` if no arg). `grim` → save to `$SCREENSHOTS_DIR` → `wl-copy` → notify → echo the saved path on stdout (RegionSelector reads it to open ScreenshotActions). |
 | `screenshot-ocr.sh` | `Super+Ctrl+Shift+S` or ScreenshotActions "OCR" | Accepts a pre-captured image file as `$1` (falls back to `slurp+grim` otherwise). ImageMagick preprocess (3× upscale, optional invert, contrast stretch) → `tesseract` (eng+est) → `wl-copy` text + notify with preview. |
-| `screenrecord.sh` | `Super+Shift+R` (or Quick Actions Record) | Toggles `gpu-screen-recorder` with `-w screen` (DRM capture). PID stored in `/tmp/screenrecord.pid`. |
+| `screenrecord.sh` | `Super+Shift+R` (or Quick Actions Record) | Toggles `gpu-screen-recorder` with `-w screen` (DRM capture). PID stored in `$XDG_RUNTIME_DIR/screenrecord.pid`; start failures and stops notify. |
 | `wallpaper.sh` | `Super+Shift+N`, WallpaperDeck | Accepts an absolute path as `$1` to set a specific wallpaper; no arg picks a random one from `$WALLPAPER_DIR`. Applies via `awww img` to every output; GIFs animate. |
 | `sysinfo.sh` | Quickshell `SystemMonitor` (`Super+M`) | Emits a single JSON line: `cpu_pct`, per-core `cpu_cores[]`, `cpu_temp`, `ram_*`, `nvme_temp`, `fan1/2`, `disks[]` (one per real local FS), `uptime`. CPU uses a 200 ms `/proc/stat` sampling window; hwmon paths discovered by name so they survive reboot reordering. |
 | `hyprlock-art.sh` | hypridle pre-lock hook (and direct call) | Copies the current MPRIS album art to `$LOCK_ART` so hyprlock can display it. Also picks a random wallpaper for the lock background. |
-| `restart.sh` | `Super+B` | Sequentially restarts every userspace service: xdg-desktop-portal, gnome-keyring, Quickshell, awww-daemon, hypridle, battery-notify, media-inhibit, cliphist, dotwatch. Sets GTK theme, fallback monitor. Logs OK/FAILED per step to stdout. |
+| `restart.sh` | `Super+B` | Restarts every userspace service: xdg-desktop-portal, gnome-keyring, Quickshell, awww-daemon (restoring the saved wallpaper), hypridle, the four session units, cliphist, dotwatch. Sets GTK theme, fallback monitor. Logs OK/FAILED per step to stdout. |
 | `update-all.sh` | `upi` fish function | Timeshift snapshot (aborts on failure), then dnf clean metadata/makecache --refresh, dnf update/autoremove, flatpak update/cleanup, `npm update -g`, `uv tool upgrade --all`, `bun upgrade`, `fisher update`. Continues past failed steps and prints a summary; warns if `dnf needs-restarting -r` says a reboot is needed. |
 | `generate-avatar.sh` | `setup.sh` | Python+Pillow renders a circular initials avatar from `$USER`, installs to `/var/lib/AccountsService/icons/$USER` (used as lockscreen avatar). |

@@ -1,0 +1,15 @@
+[Unit]
+Description=Low-battery notifications
+# Started from the graphical session. restart.sh (Super+B) restarts it with
+# `systemctl --user restart battery-notify`. The Wayland/Hyprland environment is imported
+# into the user manager by restart.sh (dbus-update-activation-environment).
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=/bin/bash %h/.config/scripts/battery-notify.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target
