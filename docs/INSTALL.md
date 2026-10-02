@@ -25,8 +25,9 @@ Dependencies and manual setup. The one-command install is in the [README](../REA
 - `ranger` — optional TUI file manager
 - `btop` — optional TUI system monitor
 
-Fish plugins are declared in [`fish/fish_plugins`](../fish/fish_plugins) and restored by
-[fisher](https://github.com/jorgebucaran/fisher); the prompt is
+Fish plugin files are not tracked. They are declared in [`fish/fish_plugins`](../fish/fish_plugins);
+on a fresh machine run `fisher update` ([fisher](https://github.com/jorgebucaran/fisher), see
+[`fish/README.md`](../fish/README.md)) to restore them; the prompt is
 [tide](https://github.com/IlanCosman/tide). Its colours come from
 [`fish/tide-stone`](../fish/tide-stone) — `fish_variables` is gitignored, so on a new
 machine apply them with `fish ~/.config/fish/tide-stone/apply.fish`.

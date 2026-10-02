@@ -30,10 +30,11 @@ if status is-interactive
     # System shortcuts
     abbr -a backup sudo timeshift --create
     abbr -a st     speedtest-cli --simple
-    abbr -a mstart mpv --no-video --shuffle ~/Music/*
-    abbr -a mstop  pkill mpv
     abbr -a rpgmd  xdg-open \$RPGMDECRYPT_PATH
-    # ipa, mvup live in functions/ (multi-token pipes don't read well inline)
+    abbr -a vi  nvim
+    abbr -a vim nvim
+    abbr -a keys kb
+    # ipa, mvup, kb, dots, music live in functions/ (multi-token pipes don't read well inline)
 
     # Random
     abbr -a nf  fastfetch
@@ -55,8 +56,19 @@ if status is-interactive
     # ===== Directory jumping =====
     # zoxide replaces the old `z` plugin. Guarded because this config syncs to
     # machines that may not have the binary installed yet.
+    # The init script is cached and regenerated when the binary changes.
     if type -q zoxide
-        zoxide init fish | source
+        set -l zbin (command -v zoxide)
+        set -l zstamp "# zoxide $zbin "(path mtime $zbin)
+        set -l zcache $HOME/.cache/fish/zoxide-init.fish
+        if not test -f $zcache; or test (head -n1 $zcache) != "$zstamp"
+            mkdir -p (path dirname $zcache)
+            begin
+                echo $zstamp
+                zoxide init fish
+            end >$zcache
+        end
+        source $zcache
     end
 
     # Reload (full restart, not just source — clears stale state).
@@ -69,5 +81,5 @@ end
 
 # Outside is-interactive: scripts + non-interactive shells (Claude Code,
 # editor terminals) inherit these.
-set -gx PATH $HOME/.bun/bin $HOME/.local/bin $HOME/bin $HOME/.nix-profile/bin ~/.npm-global/bin $PATH
-set -gx RUSTC_WRAPPER sccache
+fish_add_path -g $HOME/.bun/bin $HOME/.local/bin $HOME/bin $HOME/.nix-profile/bin $HOME/.npm-global/bin
+command -q sccache; and set -gx RUSTC_WRAPPER sccache

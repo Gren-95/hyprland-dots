@@ -14,6 +14,15 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | `lib/notify.sh` | `notify <urgency> <key> <icon> <title> <body> [timeout]` wrapper around `notify-send`. Always sets `-a hyprland-dots` and `-h x-canonical-private-synchronous:<key>` so repeat notifications replace instead of stacking. |
 | `paths.sh` | Canonical user-path env vars (`PICTURES_DIR`, `WALLPAPER_DIR`, `RECORDINGS_DIR`, `CACHE_DIR`, etc.). Sourced by every consumer. |
 
+## Helpers and config
+
+| File | Purpose |
+|---|---|
+| `hypr-binds.sh` | Emits `hyprctl binds -j` with the real dispatcher/arg filled in. Lua-registered binds all report `__lua`, so this re-derives each action from `hypr/**/*.lua` and merges it back, keyed on (modmask, key). Used by the Quickshell keybinds viewer, the `kb` fish function and `docs/gen-keybinds.sh`. |
+| `extract.sh` | Unpacks every archive in the cwd (or a given path): `.zip`, `.tar.gz`, `.tar.bz2`, `.rar`, `.7z`. |
+| `ledvance.sh` | Pairs a Tuya/Ledvance LED through the upstream pairing script. Reads `LEDVANCE_USER`, `LEDVANCE_PASSWORD` and `LEDVANCE_PATH` from `util.env` itself; fish deliberately does not export the password. |
+| `util.env.example` | Template for the gitignored `util.env` (Ledvance credentials, `RPGMDECRYPT_PATH`). Copy to `util.env` and fill in; `fish/conf.d/util-env.fish` loads the non-secret keys into fish. |
+
 ## Daemons (autostart / restart.sh)
 
 | File | Spawned by | What it does |
