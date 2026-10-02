@@ -12,6 +12,7 @@ AudioDeviceRow AudioDeviceRow.qml
 AudioPowerModule AudioPowerModule.qml
 AudioSection AudioSection.qml
 BarFlyout BarFlyout.qml
+BarHover BarHover.qml
 BarIcon BarIcon.qml
 BarSep BarSep.qml
 BarTooltip BarTooltip.qml

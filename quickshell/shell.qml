@@ -201,13 +201,16 @@ Scope {
 
                     RowLayout {
                         id: clockRow
-                        anchors.centerIn: parent
+                        // Full bar height, so the calendar click region (the
+                        // wrapper below) is a full-height target too.
+                        anchors { horizontalCenter: parent.horizontalCenter; top: parent.top; bottom: parent.bottom }
                         spacing: Theme.spacing.md
 
                         // Date + time wrapper — owns the calendar click region.
                         Item {
-                            Layout.preferredWidth: dateTimeRow.implicitWidth
-                            Layout.preferredHeight: dateTimeRow.implicitHeight
+                            Layout.fillHeight: true
+                            Layout.preferredWidth: dateTimeRow.implicitWidth + 16
+                            BarHover { hovered: clockMa.containsMouse }
                             RowLayout {
                                 id: dateTimeRow
                                 anchors.centerIn: parent
@@ -227,7 +230,9 @@ Scope {
                                 }
                             }
                             MouseArea {
+                                id: clockMa
                                 anchors.fill: parent
+                                hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: dayPanel.toggleFrom(clockAnchor)
                             }

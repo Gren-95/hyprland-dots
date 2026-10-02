@@ -106,6 +106,8 @@ Item {
     Layout.fillHeight: true
     implicitWidth: 40
 
+    BarHover { hovered: chevronMa.containsMouse }
+
     Text {
         anchors.centerIn: parent
         text: "󰍝"
@@ -117,7 +119,9 @@ Item {
     }
 
     MouseArea {
+        id: chevronMa
         anchors.fill: parent
+        hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         acceptedButtons: Qt.LeftButton
         onClicked: actions.popupOpen = !actions.popupOpen

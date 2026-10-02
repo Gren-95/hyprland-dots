@@ -19,14 +19,7 @@ Item {
     Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
 
     // Subtle hover surface so every bar button gets tactile feedback.
-    Rectangle {
-        anchors.fill: parent
-        anchors.topMargin: 2
-        anchors.bottomMargin: 2
-        radius: Theme.radius.sm
-        color: ma.containsMouse ? Theme.bgHover : "transparent"
-        Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
-    }
+    BarHover { hovered: ma.containsMouse }
 
     RowLayout {
         id: row

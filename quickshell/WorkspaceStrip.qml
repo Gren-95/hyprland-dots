@@ -29,6 +29,8 @@ RowLayout {
             implicitWidth: pillRow.implicitWidth + 12
             implicitHeight: Math.max(pillRow.implicitHeight, settingsStore.barHeight)
 
+            BarHover { hovered: wsMa.containsMouse }
+
             RowLayout {
             id: pillRow
             anchors.centerIn: parent
