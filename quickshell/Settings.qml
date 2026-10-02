@@ -37,7 +37,7 @@ Scope {
     property int toastTimeout: 10000           // hard ceiling: every toast, critical included, dies here
     property int notifHistoryCap: 50
     property real fontScale: 1.0               // multiplies every Theme.fontSize token
-    property string fontFamily: "FiraCode Nerd Font"
+    property string fontFamily: "Iosevka Nerd Font"
     property int barHeight: 36
     property string accentPrimaryName: "blue"  // Theme.accentPrimary (highlights); "auto" = from wallpaper
     property string accentAutoHex: ""          // cached wallpaper-extracted accent

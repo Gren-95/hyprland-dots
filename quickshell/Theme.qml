@@ -7,7 +7,7 @@ Singleton {
     // Pushed in from shell.qml via Binding elements (a singleton can't
     // resolve the settingsStore id itself). Defaults match the classic look.
     property real fontScale: 1.0
-    property string fontFamily: "FiraCode Nerd Font"
+    property string fontFamily: "Iosevka Nerd Font"
     property string accentPrimaryName: "blue"
     property string accentAutoHex: ""   // wallpaper-extracted (AccentService)
     property real animScale: 1.0    // 0 = animations off (instant)
