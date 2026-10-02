@@ -83,6 +83,28 @@ else
     ok "credential files untracked"
 fi
 
+# Keybind docs: warnings only, never block a commit. The generator reads the
+# live Hyprland session, so a diff may just mean the session is out of date.
+warn() { printf '  \033[0;33mwarn\033[0m %s\n' "$1" >&2; }
+
+if [[ -f "$staged/docs/check-keybinds.sh" ]]; then
+    if out=$(bash "$staged/docs/check-keybinds.sh" 2>&1); then
+        ok "KEYBINDS.md matches keys.lua"
+    else
+        warn "KEYBINDS.md drift"
+        sed 's/^/       /' <<<"$out" >&2
+    fi
+fi
+
+if [[ -f "$staged/docs/gen-keybinds.sh" ]] && command -v hyprctl >/dev/null && hyprctl version >/dev/null 2>&1; then
+    if gen=$(bash "$staged/docs/gen-keybinds.sh" --stdout 2>/dev/null) \
+       && diff -q <(printf '%s\n' "$gen") "$staged/KEYBINDS.md" >/dev/null; then
+        ok "KEYBINDS.md up to date with live binds"
+    else
+        warn "KEYBINDS.md differs from the live binds - run docs/gen-keybinds.sh"
+    fi
+fi
+
 if ((fail)); then
     printf '\ncommit aborted; fix the above or re-run with --no-verify\n' >&2
     exit 1

@@ -34,8 +34,8 @@ Bird's-eye view of how the pieces fit together. For widget-level detail see
 3. `autostart.lua` fires `scripts/restart.sh`, which orchestrates every
    userspace service.
 4. `restart.sh` starts in sequence: xdg-desktop-portal, gnome-keyring,
-   Quickshell, awww-daemon, hypridle, battery-notify, media-inhibit, cliphist,
-   dotwatch, and the tray app `nm-applet --indicator` (Wi-Fi/wired, Wi-Fi
+   Quickshell, awww-daemon, hypridle, battery-notify, media-inhibit, fullscreen-inhibit, power-auto,
+   cliphist, dotwatch, and the tray app `nm-applet --indicator` (Wi-Fi/wired, Wi-Fi
    password prompts, and Tailscale via the NetworkManager Tailscale VPN
    plugin). Logs OK/FAILED per step.
 5. Quickshell loads `~/.config/quickshell/shell.qml` (a symlink into the dots
@@ -46,15 +46,15 @@ Bird's-eye view of how the pieces fit together. For widget-level detail see
 | Layer | What it owns |
 |---|---|
 | **Hyprland compositor** | Window layout, workspaces, keyboard input, layer-shell protocol. |
-| **`scripts/`** | Long-running background daemons (battery/network/media-inhibit/dotwatch) + one-shot actions (screenshot/record/wallpaper). All notifications go through `scripts/lib/notify.sh`. |
+| **`scripts/`** | Long-running background daemons (battery/media-inhibit/fullscreen-inhibit/power-auto/dotwatch) + one-shot actions (screenshot/record/wallpaper). All notifications go through `scripts/lib/notify.sh`. |
 | **Quickshell** | Bar, popups, OSDs, notification daemon (replaces swaync), launcher (replaces rofi), polkit agent (replaces hyprpolkitagent). State for the bar's interactive bits (audio, brightness, BT) comes from `Quickshell.Services.*` modules talking directly to PipeWire / BlueZ / UPower / etc. Wi-Fi, wired and Tailscale are left to the nm-applet tray app (Tailscale through the NetworkManager Tailscale VPN plugin). |
 | **`cron`** | Periodic Immich and Jellyfin syncs. Managed by `scripts/sync-toggle.sh` (Quick Actions toggle UI). No persistent daemon; cron just fires the script on schedule. |
 
 ## Dotfiles plumbing
 
 `~/.config/<dir>` is a symlink into this repo for every managed directory
-(hypr, kitty, quickshell, swappy, scripts, wayvnc, fish, ranger,
-gtk-3.0, immich, jellyfin). Two entry points:
+(hypr, kitty, quickshell, swappy, scripts, wayvnc, fish, ranger, btop,
+gtk-3.0, gtk-4.0, immich, jellyfin), plus the `~/.config/kdeglobals` file. Two entry points:
 
 - `setup.sh` — first-time install on a fresh machine. Installs Fedora
   packages, creates symlinks (delegates to `dotfiles-manager.sh`), prompts
