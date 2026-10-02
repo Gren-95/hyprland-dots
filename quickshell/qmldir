@@ -22,7 +22,10 @@ CalendarPane CalendarPane.qml
 Clipboard Clipboard.qml
 ClipItemRow ClipItemRow.qml
 ConnectivityModule ConnectivityModule.qml
+DayCard DayCard.qml
+DayCell DayCell.qml
 DayPanel DayPanel.qml
+DayScroll DayScroll.qml
 EventToasts EventToasts.qml
 EventsPane EventsPane.qml
 singleton Backlight Backlight.qml

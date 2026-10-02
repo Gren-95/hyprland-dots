@@ -1,8 +1,8 @@
 // Day panel — the calendar and the notification center as one flyout.
 //
 // Left column is the month grid, the middle one the selected day's events,
-// the right one the now-playing card and notification history. Clicking a day
-// fills the middle column. Opened from the clock
+// the right one the quiet switches, now-playing card and notification
+// history. Clicking a day fills the middle column. Opened from the clock
 // (Super+D) or from the bell (Super+N) — both land on the same surface, so
 // "what's on today" and "what just happened" are one glance instead of two.
 //
@@ -25,10 +25,21 @@ Scope {
     signal navigateNext()
     signal navigatePrev()
 
-    // Fixed widths for the two leading columns; the notification column takes
-    // whatever is left of the card.
-    readonly property int calendarWidth: 400
-    readonly property int eventsWidth: 320
+    // Column widths, sized from what they hold: seven 48px day cells with
+    // their gaps, event rows that read at two lines, notification bodies that
+    // wrap at about 40 characters. Each includes its card padding.
+    readonly property int calendarWidth: 420
+    readonly property int eventsWidth: 340
+    readonly property int notifWidth: 420
+    readonly property int columnGap: Theme.spacing.xl
+    readonly property int margin: Theme.spacing.xl
+    readonly property int fitWidth: calendarWidth + eventsWidth + notifWidth
+        + columnGap * 2 + margin * 2
+    // Popup height follows the content (up to what the screen allows), so
+    // there is never empty space under the tallest column.
+    readonly property real fitHeight: Math.min(
+        root.anchorBar && root.anchorBar.screen ? root.anchorBar.screen.height - 160 : 720,
+        contentCol.implicitHeight + margin * 2)
 
     // Opening re-centres the calendar on today, so the panel always comes up
     // showing now rather than wherever the month grid was left.
@@ -59,11 +70,8 @@ Scope {
         parentBar: root.anchorBar
         anchorItem: root.anchorItem
         open: root.open && root.anchorBar !== null
-        cardWidth: settingsStore.flyoutSize("daypanel", "w", 1180)
-        // Three columns now: the month grid, the selected day's events, and
-        // the notification history — 1180 wide fits them without squeezing
-        // notification bodies down to one line.
-        cardHeight: settingsStore.flyoutSize("daypanel", "h", 720)
+        cardWidth: settingsStore.flyoutSize("daypanel", "w", root.fitWidth)
+        cardHeight: settingsStore.flyoutSize("daypanel", "h", root.fitHeight)
         pinned: root.pinned
         onDismissed: root.close()
         onKeyPressed: (e) => {
@@ -81,41 +89,54 @@ Scope {
             else if (e.key === Qt.Key_T || e.key === Qt.Key_Home) { root.cal.today(); e.accepted = true; }
         }
 
-        RowLayout {
+        ColumnLayout {
+            id: contentCol
             anchors.fill: parent
-            anchors.margins: Theme.spacing.lg
+            anchors.margins: root.margin
             spacing: Theme.spacing.lg
 
-            CalendarPane {
-                cal: root.cal
-                pinned: root.pinned
-                onPinToggled: root.pinned = !root.pinned
-                Layout.preferredWidth: root.calendarWidth
-                Layout.fillHeight: true
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Theme.spacing.md
+                PinButton {
+                    pinned: root.pinned
+                    onToggled: root.pinned = !root.pinned
+                }
+                Text {
+                    Layout.fillWidth: true
+                    // Re-read on open so the title is never yesterday's date.
+                    text: root.open ? Qt.formatDate(new Date(), "dddd, d MMMM") : ""
+                    color: Theme.fg
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.lg
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
+                }
+                // Balances the pin button so the title stays centered.
+                Item { implicitWidth: 22; implicitHeight: 22 }
             }
 
-            Rectangle {
-                Layout.fillHeight: true
-                implicitWidth: 1
-                color: Theme.border
-            }
-
-            EventsPane {
-                cal: root.cal
-                Layout.preferredWidth: root.eventsWidth
-                Layout.fillHeight: true
-            }
-
-            Rectangle {
-                Layout.fillHeight: true
-                implicitWidth: 1
-                color: Theme.border
-            }
-
-            NotifPane {
-                notifs: root.notifs
+            RowLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                spacing: root.columnGap
+
+                CalendarPane {
+                    cal: root.cal
+                    Layout.preferredWidth: root.calendarWidth
+                    Layout.fillHeight: true
+                }
+                EventsPane {
+                    cal: root.cal
+                    Layout.preferredWidth: root.eventsWidth
+                    Layout.fillHeight: true
+                }
+                NotifPane {
+                    notifs: root.notifs
+                    Layout.preferredWidth: root.notifWidth
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                }
             }
         }
     }
