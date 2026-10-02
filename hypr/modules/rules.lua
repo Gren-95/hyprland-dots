@@ -26,45 +26,21 @@ hl.window_rule({
     no_focus = true,
 })
 
--- (slurp window rules removed — slurp runs as a wlr_layer_shell surface,
+-- (slurp window rules removed: slurp runs as a wlr_layer_shell surface, not a
+-- toplevel, so window rule matchers never matched. slurp manages its own
+-- overlay.)
 
--- not a toplevel, so windowrule matchers never matched. The overlay is
-
--- managed by slurp itself.)
-
--- Picture-in-Picture: float, pin to all workspaces, don't steal focus,
-
--- default 16:9 480x270, no blur. Position left to Firefox / the user
-
--- (the move rule was overridden anyway).
+-- Picture-in-Picture (Firefox "Picture-in-Picture", Brave "Picture in picture"):
+-- float, pin to all workspaces, don't steal focus, default 16:9 480x270, no
+-- blur. Position is left to the browser / the user.
 hl.window_rule({
     match = {
         title = "^(Picture-in-Picture|Picture in picture|PiP)$",
     },
     float = true,
-})
-hl.window_rule({
-    match = {
-        title = "^(Picture-in-Picture|Picture in picture|PiP)$",
-    },
     pin = true,
-})
-hl.window_rule({
-    match = {
-        title = "^(Picture-in-Picture|Picture in picture|PiP)$",
-    },
     no_initial_focus = true,
-})
-hl.window_rule({
-    match = {
-        title = "^(Picture-in-Picture|Picture in picture|PiP)$",
-    },
     size = "480 270",
-})
-hl.window_rule({
-    match = {
-        title = "^(Picture-in-Picture|Picture in picture|PiP)$",
-    },
     no_blur = true,
 })
 

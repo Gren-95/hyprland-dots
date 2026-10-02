@@ -37,8 +37,17 @@ Scope {
     // Run a bind's action by dispatching its original Lua expression. Mouse
     // and lid-switch binds have no meaningful "run now" and are skipped.
     property string _pendingLua: ""
+    // Combo of a dangerous bind awaiting a second click/Enter to confirm.
+    property string confirming: ""
+    onQueryChanged: confirming = ""
+    onSelectedIndexChanged: confirming = ""
     function run(entry) {
         if (!entry || !entry.runnable) return;
+        if (entry.dangerous && confirming !== entry.combo) {
+            confirming = entry.combo;
+            return;
+        }
+        confirming = "";
         _pendingLua = entry.lua;
         if (!pinned) close();
         runDelay.restart();
@@ -75,7 +84,37 @@ Scope {
             .replace(/^Kbd/, "Kbd ")
             .replace(/Raise/, "+")
             .replace(/Lower/, "-")
-            .replace(/^Print$/, "PrtSc");
+            .replace(/^Print$/, "PrtSc")
+            .replace(/^bracketleft$/, "[")
+            .replace(/^bracketright$/, "]")
+            .replace(/^grave$/, "`")
+            .replace(/^mouse:272$/, "LMB")
+            .replace(/^mouse:273$/, "RMB")
+            .replace(/^mouse_down$/, "Scroll ↓")
+            .replace(/^mouse_up$/, "Scroll ↑")
+            .replace(/^KP_Add$/, "Num +")
+            .replace(/^KP_Subtract$/, "Num -");
+    }
+
+    // Friendly labels for binds whose raw action is an opaque shell command.
+    readonly property var actionLabels: [
+        [/default-app\.sh run terminal/, "Terminal"],
+        [/default-app\.sh run filemanager/, "File manager"],
+        [/hyprlock/, "Lock screen"],
+        [/hyprpicker/, "Color picker"],
+        [/wallpaper\.sh/, "Next wallpaper"],
+        [/screenshot-ocr\.sh/, "Screenshot text (OCR)"],
+        [/screenrecord\.sh/, "Toggle screen recording"],
+        [/wayvnc-toggle\.sh/, "Toggle VNC"],
+        [/restart\.sh/, "Restart shell"],
+        [/mpv --no-video/, "Play music (shuffle)"],
+        [/pkill mpv/, "Stop music"],
+        [/kbd_backlight/, "Keyboard backlight"],
+        [/systemctl suspend/, "Suspend"]
+    ]
+    function _label(raw) {
+        for (const [re, label] of actionLabels) if (re.test(raw)) return label;
+        return raw;
     }
     function _classify(disp, arg) {
         const a = (arg || "").toLowerCase();
@@ -86,7 +125,7 @@ Scope {
             if (/grim|slurp|swappy|screenshot|hyprshot|wf-recorder|screenrecord/.test(a)) return "capture";
             if (/wl-copy|cliphist|wofi|rofi/.test(a)) return "clipboard";
             if (/systemctl|loginctl|powermenu|hyprctl dispatch exit/.test(a)) return "power";
-            if (/firefox|kitty|nautilus|hyprpicker/.test(a)) return "apps";
+            if (/firefox|kitty|nautilus|hyprpicker|default-app/.test(a)) return "apps";
             if (/quickshell/.test(a)) return "shell";
         }
         if (d === "global") return "shell";
@@ -123,7 +162,7 @@ Scope {
         }
     }
     function _action(bind) {
-        if (bind.dispatcher === "exec") return bind.arg;
+        if (bind.dispatcher === "exec") return root._label(bind.arg);
         if (bind.dispatcher === "global") return "→ " + bind.arg;
         return bind.dispatcher + (bind.arg ? " " + bind.arg : "");
     }
@@ -134,6 +173,7 @@ Scope {
         return root.entries.filter(e =>
             e.combo.toLowerCase().includes(q) ||
             e.action.toLowerCase().includes(q) ||
+            e.raw.toLowerCase().includes(q) ||
             e.category.toLowerCase().includes(q)
         );
     }
@@ -163,6 +203,8 @@ Scope {
                         parts: parts,
                         combo: parts.join("+"),
                         action: action,
+                        raw: (b.dispatcher === "exec" ? b.arg : action),
+                        dangerous: b.dispatcher === "killactive" || cat === "power",
                         dispatcher: b.dispatcher,
                         category: cat,
                         catIcon: root._catIcon(cat),
@@ -314,6 +356,7 @@ Scope {
                                 highlighted: root.selectedIndex === index
                                 Layout.fillWidth: true
                                 onHovered: root.selectedIndex = index
+                                confirming: root.confirming === modelData.combo
                                 onActivated: root.run(modelData)
                             }
                         }
@@ -380,6 +423,7 @@ Scope {
         property bool highlighted: false
         signal hovered()
         signal activated()
+        property bool confirming: false
         implicitHeight: 40
         radius: 6 * Theme.radiusScale
         color: row.highlighted ? Theme.bgActive : (hover.containsMouse ? Theme.bgHover : "transparent")
@@ -459,8 +503,10 @@ Scope {
             Text {
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
-                text: row.entry ? row.entry.action : ""
-                color: row.highlighted ? Theme.fgMuted : Theme.muted
+                text: row.confirming ? "Click again to confirm: " + row.entry.action
+                                     : (row.entry ? row.entry.action : "")
+                color: row.confirming ? Theme.accent.red
+                     : (row.highlighted ? Theme.fgMuted : Theme.muted)
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSize.base
                 elide: Text.ElideRight

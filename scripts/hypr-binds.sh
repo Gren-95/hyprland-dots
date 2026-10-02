@@ -127,6 +127,8 @@ def to_dispatcher(path, args, vars_):
     if path == "dpms":
         return "dpms", bare
     if path == "focus":
+        if "monitor" in kv:
+            return "focusmonitor", kv["monitor"]
         if "workspace" in kv:
             return "workspace", kv["workspace"]
         if "direction" in kv:
