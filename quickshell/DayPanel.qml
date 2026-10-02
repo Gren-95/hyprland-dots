@@ -35,11 +35,12 @@ Scope {
     readonly property int margin: Theme.spacing.xl
     readonly property int fitWidth: calendarWidth + eventsWidth + notifWidth
         + columnGap * 2 + margin * 2
-    // Popup height follows the content (up to what the screen allows), so
-    // there is never empty space under the tallest column.
+    // The popup is sized to the calendar column (the one whose height never
+    // changes) and stays that size: expanding notifications or events scrolls
+    // inside their column instead of growing the popup.
     readonly property real fitHeight: Math.min(
         root.anchorBar && root.anchorBar.screen ? root.anchorBar.screen.height - 160 : 720,
-        contentCol.implicitHeight + margin * 2)
+        dayHeader.implicitHeight + contentCol.spacing + calPane.implicitHeight + margin * 2)
 
     // Opening re-centres the calendar on today, so the panel always comes up
     // showing now rather than wherever the month grid was left.
@@ -96,6 +97,7 @@ Scope {
             spacing: Theme.spacing.lg
 
             RowLayout {
+                id: dayHeader
                 Layout.fillWidth: true
                 spacing: Theme.spacing.md
                 PinButton {
@@ -122,6 +124,7 @@ Scope {
                 spacing: root.columnGap
 
                 CalendarPane {
+                    id: calPane
                     cal: root.cal
                     Layout.preferredWidth: root.calendarWidth
                     Layout.fillHeight: true

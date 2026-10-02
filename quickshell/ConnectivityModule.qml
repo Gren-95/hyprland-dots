@@ -63,6 +63,15 @@ Item {
         parentBar && parentBar.screen ? parentBar.screen.height - 160 : 700,
         contentCol.implicitHeight + Theme.spacing.xl * 2)
 
+    // The popup keeps the height it had when it opened: revealing a device
+    // list or details scrolls inside instead of growing the popup.
+    property real lockedHeight: 0
+    Timer {
+        id: lockTimer
+        interval: 60
+        onTriggered: bt.lockedHeight = bt.fitHeight
+    }
+
     // Toggle the popup. `from` (optional) re-anchors the flyout under the
     // bar item that opened it (overflow rows, spotlight). Omitted → default.
     function toggleOpen(from) {
@@ -70,7 +79,14 @@ Item {
         popupOpen = !popupOpen;
     }
 
-    onPopupOpenChanged: if (popupOpen) { tabIndex = 0; expandedAddress = ""; }
+    onPopupOpenChanged: {
+        lockedHeight = 0;
+        if (popupOpen) {
+            tabIndex = 0;
+            expandedAddress = "";
+            lockTimer.restart();
+        }
+    }
 
     function cycleTab(delta) {
         const n = tabStopCount;
@@ -153,7 +169,7 @@ Item {
         anchorItem: bt._openAnchor ?? bt.flyoutAnchor ?? bt
         open: bt.popupOpen
         cardWidth: settingsStore.flyoutSize("network", "w", 460)
-        cardHeight: settingsStore.flyoutSize("network", "h", bt.fitHeight)
+        cardHeight: settingsStore.flyoutSize("network", "h", bt.lockedHeight > 0 ? bt.lockedHeight : bt.fitHeight)
         pinned: bt.pinned
         onDismissed: bt.popupOpen = false
         onKeyPressed: (e) => {

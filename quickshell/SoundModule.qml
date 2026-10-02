@@ -105,6 +105,15 @@ Item {
         parentBar && parentBar.screen ? parentBar.screen.height - 160 : 700,
         contentCol.implicitHeight + Theme.spacing.xl * 2)
 
+    // The popup keeps the height it had when it opened: revealing a device
+    // list or details scrolls inside instead of growing the popup.
+    property real lockedHeight: 0
+    Timer {
+        id: lockTimer
+        interval: 60
+        onTriggered: ap.lockedHeight = ap.fitHeight
+    }
+
     // ===== Popup control =====
     // `from` (optional) re-anchors the flyout under the bar item that opened
     // it (overflow rows, Spotlight) so it appears where it was asked for.
@@ -116,10 +125,14 @@ Item {
         _openAnchor = null;   // ring hops open at the module's own anchor
         popupOpen = true;
     }
-    onPopupOpenChanged: if (popupOpen) {
-        outExpanded = false;
-        inExpanded = false;
-        sndIndex = 0;
+    onPopupOpenChanged: {
+        lockedHeight = 0;
+        if (popupOpen) {
+            outExpanded = false;
+            inExpanded = false;
+            sndIndex = 0;
+            lockTimer.restart();
+        }
     }
 
     Layout.fillHeight: true
@@ -193,7 +206,7 @@ Item {
         anchorItem: ap._openAnchor ?? ap.flyoutAnchor ?? ap
         open: ap.popupOpen
         cardWidth: settingsStore.flyoutSize("audiopower", "w", 460)
-        cardHeight: settingsStore.flyoutSize("audiopower", "h", ap.fitHeight)
+        cardHeight: settingsStore.flyoutSize("audiopower", "h", ap.lockedHeight > 0 ? ap.lockedHeight : ap.fitHeight)
         pinned: ap.pinned
         onDismissed: ap.popupOpen = false
         onKeyPressed: (e) => {
