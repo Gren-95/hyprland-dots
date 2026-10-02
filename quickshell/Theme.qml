@@ -114,7 +114,7 @@ Singleton {
         readonly property int xl: Math.round(16 * radiusScale)
     }
     readonly property QtObject height: QtObject {
-        readonly property int chip:    22    // tiny pill (BtToggle, badges)
+        readonly property int chip:    22    // tiny pill (badges)
         readonly property int control: 28    // toggle pills, tab pills
         readonly property int row:     40    // list rows (notifications, devices, networks)
         readonly property int rowSm:   36    // dense rows (peers)

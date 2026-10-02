@@ -18,7 +18,6 @@ BarTooltip BarTooltip.qml
 BatteryCard BatteryCard.qml
 BrightnessRow BrightnessRow.qml
 BtDeviceRow BtDeviceRow.qml
-BtToggle BtToggle.qml
 CalendarPane CalendarPane.qml
 Clipboard Clipboard.qml
 ConnectivityModule ConnectivityModule.qml
