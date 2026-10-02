@@ -29,7 +29,19 @@ RowLayout {
             implicitWidth: pillRow.implicitWidth + 12
             implicitHeight: Math.max(pillRow.implicitHeight, settingsStore.barHeight)
 
-            BarHover { hovered: wsMa.containsMouse }
+            BarHover { hovered: wsMa.containsMouse; active: pill.modelData.active }
+
+            // Accent underline marks the active workspace.
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 2
+                width: pill.modelData.active ? parent.width - 12 : 0
+                height: 2
+                radius: 1
+                color: Theme.accentPrimary
+                Behavior on width { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+            }
 
             RowLayout {
             id: pillRow

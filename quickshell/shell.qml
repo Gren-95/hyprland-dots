@@ -511,9 +511,12 @@ Scope {
         }
     }
 
+    // Material Design icons by workspace: web, terminal, code, files, chat,
+    // music, video, games, notes. Built from code points so the private-use
+    // glyphs survive any tool that rewrites this file; beyond 9, the number.
     function workspaceGlyph(id) {
-        const m = {1:"",2:"",3:"",4:"",5:"",6:"",7:"",8:"",9:""};
-        return m[id] || "";
+        const icons = [0xF0239, 0xF018D, 0xF0169, 0xF024B, 0xF0B79, 0xF075A, 0xF0567, 0xF02B6, 0xF039E];
+        return id >= 1 && id <= icons.length ? String.fromCodePoint(icons[id - 1]) : "" + id;
     }
 
 }
