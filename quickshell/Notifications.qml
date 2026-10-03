@@ -322,7 +322,7 @@ Scope {
             anchors.leftMargin: 8
             anchors.rightMargin: 8
             implicitHeight: cardCol.implicitHeight + 24
-            radius: 0
+            radius: Theme.radius.lg
             color: card.entry && card.entry.urgency === NotificationUrgency.Critical
                 ? Theme.accent.red : Theme.popupBorder
             layer.enabled: true
@@ -339,7 +339,7 @@ Scope {
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: 2
-                radius: 0
+                radius: Math.max(0, Theme.radius.lg - 2)
                 color: Theme.bg
             }
         }

@@ -43,7 +43,7 @@ Scope {
 
         Rectangle {
             anchors.fill: parent
-            radius: 0
+            radius: Theme.radius.lg
             color: Theme.bgAlt
             border.color: Theme.popupBorder
             border.width: 1

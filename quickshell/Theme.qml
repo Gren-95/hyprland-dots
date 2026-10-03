@@ -42,7 +42,7 @@ Singleton {
     readonly property color borderSubtle:  "#2a2624"
     readonly property color borderStrong:  "#44403c"
     // Outer frame of popup surfaces (flyouts, popups, overlays) — the box
-    // itself, not UI inside it. Paired with sharp (radius 0) outer corners.
+    // itself, not UI inside it. Paired with Theme.radius.lg outer corners.
     readonly property color popupBorder:   "#78716c"
 
     // Text

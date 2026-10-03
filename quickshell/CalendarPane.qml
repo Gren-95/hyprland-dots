@@ -38,6 +38,11 @@ Item {
         id: scroll
         anchors.fill: parent
 
+        WeatherCard {
+            Layout.fillWidth: true
+            visible: weatherService.ready
+        }
+
         DayCard {
             Layout.fillWidth: true
             title: "Calendar"
@@ -149,11 +154,6 @@ Item {
                 opacity: 0.65
                 elide: Text.ElideRight
             }
-        }
-
-        WeatherCard {
-            Layout.fillWidth: true
-            visible: weatherService.ready
         }
     }
 

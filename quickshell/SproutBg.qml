@@ -7,7 +7,7 @@ Item {
     id: root
     property color fillColor: Theme.bgAlt
     property color borderColor: Theme.popupBorder
-    property real cornerRadius: 0
+    property real cornerRadius: Theme.radius.lg
     property real borderWidth: 1
     property real tailHeight: 10
     property real tailWidth: 18

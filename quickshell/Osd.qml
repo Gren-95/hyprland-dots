@@ -181,9 +181,9 @@ Scope {
                 id: card
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: parent.bottom
-                implicitWidth: cardCol.implicitWidth + 28
-                implicitHeight: cardCol.implicitHeight + 20
-                radius: 0
+                implicitWidth: cardRow.implicitWidth + Theme.spacing.xl * 2
+                implicitHeight: cardRow.implicitHeight + Theme.spacing.xl * 2
+                radius: Theme.radius.lg
                 color: Theme.bg
                 border.color: Theme.popupBorder
                 border.width: 1
@@ -195,51 +195,87 @@ Scope {
                 }
                 Behavior on opacity { NumberAnimation { duration: Theme.duration.slow; easing.type: Theme.easing.standard } }
 
-                ColumnLayout {
-                    id: cardCol
+                RowLayout {
+                    id: cardRow
                     anchors.centerIn: parent
-                    spacing: Theme.spacing.md
+                    spacing: Theme.spacing.xl
 
-                    RowLayout {
-                        Layout.alignment: Qt.AlignHCenter
-                        spacing: Theme.spacing.lg
+                    // Icon tile: accent-tinted well, dimmed while muted.
+                    Rectangle {
+                        readonly property color tint: root.osdMuted ? Theme.mutedDeep : root.osdAccent
+                        Layout.preferredWidth: 56
+                        Layout.preferredHeight: 56
+                        Layout.alignment: Qt.AlignVCenter
+                        radius: 10 * Theme.radiusScale
+                        color: Theme.alpha(tint, 0.16)
+                        border.color: Theme.alpha(tint, 0.6)
+                        border.width: 1
+                        Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+                        Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }
                         Text {
+                            anchors.centerIn: parent
                             text: root.osdIcon
-                            color: root.osdMuted ? Theme.mutedDeep : root.osdAccent
+                            color: parent.tint
                             font.family: Theme.font
                             font.pixelSize: Theme.fontSize.hero
                         }
-                        ColumnLayout {
-                            spacing: 0
+                    }
+
+                    ColumnLayout {
+                        Layout.preferredWidth: root.osdTextMode ? -1 : 220
+                        Layout.maximumWidth: 320
+                        Layout.alignment: Qt.AlignVCenter
+                        spacing: Theme.spacing.sm
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Theme.spacing.md
                             Text {
                                 text: root.osdLabel
                                 color: Theme.muted
                                 font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.sm
+                                font.pixelSize: Theme.fontSize.base
                             }
+                            Item { Layout.fillWidth: true }
                             Text {
-                                text: root.osdTextMode ? root.osdText
-                                    : root.osdMuted ? "Muted" : Math.round(root.osdLevel * 100) + "%"
-                                color: Theme.fg
+                                visible: !root.osdTextMode
+                                text: root.osdMuted ? "Muted" : Math.round(root.osdLevel * 100) + "%"
+                                color: root.osdMuted ? Theme.mutedDeep : Theme.fg
                                 font.family: Theme.font
                                 font.pixelSize: Theme.fontSize.xl
                                 font.bold: true
                             }
                         }
-                    }
 
-                    Rectangle {
-                        visible: !root.osdTextMode
-                        Layout.preferredWidth: 240
-                        Layout.preferredHeight: 6
-                        radius: 3 * Theme.radiusScale
-                        color: Theme.bgAlt
+                        Text {
+                            visible: root.osdTextMode
+                            Layout.fillWidth: true
+                            text: root.osdText
+                            color: Theme.fg
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.xl
+                            font.bold: true
+                            elide: Text.ElideRight
+                        }
+
                         Rectangle {
-                            width: parent.width * (root.osdMuted ? 0 : root.osdLevel)
-                            height: parent.height
-                            radius: 3 * Theme.radiusScale
-                            color: root.osdAccent
-                            Behavior on width { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
+                            visible: !root.osdTextMode
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 10
+                            radius: height / 2
+                            color: Theme.bgInset
+                            border.color: Theme.borderStrong
+                            border.width: 1
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                anchors.margins: 2
+                                width: Math.max(0, (parent.width - 4) * (root.osdMuted ? 0 : root.osdLevel))
+                                radius: height / 2
+                                color: root.osdAccent
+                                Behavior on width { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
+                            }
                         }
                     }
                 }
