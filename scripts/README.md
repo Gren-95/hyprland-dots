@@ -59,6 +59,7 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 |---|---|
 | `doctor.sh` | Read-only health check: required commands, user units, executable bits, dotfiles-manager symlinks, battery timer. Exit 1 on failure. |
 | `screenshot-window.sh` | Screenshot of the active window (`hyprctl activewindow -j`), same save/copy/notify as `screenshot.sh`. |
+| `gallery-shots.sh` | Retakes the README gallery pictures: switches to an empty workspace, opens each popup via its Quickshell global shortcut (and fires a test notification for the toast), then crops to the area that differs from a baseline capture. `gallery-shots.sh [name...]` retakes only named shots, `--list` prints them. Restores your workspace. Review the PNGs before committing: popups show real clipboard history and device names. |
 | `night.sh` | `toggle\|on\|off\|status` night light via `hyprsunset`; `NIGHT_TEMPERATURE` in `util.env`. |
 | `scratchpad.sh` | Toggle a drop-down kitty on the `special:scratchpad` workspace. |
 | `idle-inhibit-toggle.sh` | Manual idle inhibit toggle; PID in `$XDG_RUNTIME_DIR/idle-inhibit.pid`. |
