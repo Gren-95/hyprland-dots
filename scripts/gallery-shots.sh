@@ -12,7 +12,13 @@
 # The bar is ignored in the comparison because its clock and badges change.
 # Restores the workspace you started on when done.
 #
-# Not covered: bar.png, desktop.png and wallpaper.png (no popup to trigger).
+# Personal content is swapped out while a shot is taken and put back after:
+# the clipboard history is replaced with demo entries, and Bluetooth device
+# names lose their "<Owner>'s " prefix.
+#
+# Not covered: desktop.png (a composed scene with real windows), bar.png (the
+# bell badge counts every test toast) and wallpaper.png (the deck only deals
+# while Super is held).
 set -euo pipefail
 
 OUT_DIR="$(dirname "${BASH_SOURCE[0]}")/../screenshots/gallery"
@@ -35,6 +41,16 @@ SHOTS=(
     keybinds:keybinds
     toast:
 )
+DEMO_CLIPBOARD=(
+    "git switch -c feature/rounded-corners"
+    "https://example.com/docs/getting-started"
+    "Meeting notes: ship the new theme on Friday"
+    "sudo dnf upgrade --refresh"
+    "#ff7a1a"
+    "SELECT id, email FROM users WHERE active = true;"
+    "ssh deploy@staging.example.com"
+    "Remember to rebase before opening the PR"
+)
 
 WORK_DIR=$(mktemp -d)
 START_WORKSPACE=""
@@ -44,15 +60,70 @@ shot_names() {
     for entry in "${SHOTS[@]}"; do echo "${entry%%:*}"; done
 }
 
+# Prints the shortcut for a shot name (empty for toast); fails on unknown names.
 shortcut_for() {
     local entry
     for entry in "${SHOTS[@]}"; do
-        [[ "${entry%%:*}" == "$1" ]] && {
-            echo "${entry#*:}"
-            return 0
-        }
+        [[ "${entry%%:*}" == "$1" ]] || continue
+        echo "${entry#*:}"
+        return 0
     done
     return 1
+}
+
+CLIPHIST_DB="$HOME/.cache/cliphist/db"
+
+prep_clipboard() {
+    cp "$CLIPHIST_DB" "$WORK_DIR/cliphist.db"
+    cliphist wipe
+    local entry
+    for entry in "${DEMO_CLIPBOARD[@]}"; do
+        printf '%s' "$entry" | cliphist store
+    done
+}
+
+restore_clipboard() {
+    if [[ -f "$WORK_DIR/cliphist.db" ]]; then
+        cp "$WORK_DIR/cliphist.db" "$CLIPHIST_DB"
+    fi
+}
+
+bluez_path() {
+    echo "/org/bluez/hci0/dev_${1//:/_}"
+}
+
+# Writes "<mac>\t<alias>" lines for every paired device to $1.
+save_bluetooth_aliases() {
+    local mac
+    : >"$1"
+    while read -r mac; do
+        printf '%s\t%s\n' "$mac" \
+            "$(busctl -j get-property org.bluez "$(bluez_path "$mac")" org.bluez.Device1 Alias | jq -r .data)" >>"$1"
+    done < <(bluetoothctl devices | awk '{print $2}')
+}
+
+prep_network() {
+    save_bluetooth_aliases "$WORK_DIR/bt-aliases.tsv"
+    local mac alias possessive="^.*['’]s "
+    while IFS=$'\t' read -r mac alias; do
+        [[ "$alias" =~ $possessive ]] || continue
+        busctl set-property org.bluez "$(bluez_path "$mac")" org.bluez.Device1 Alias s \
+            "$(sed -E "s/^.*['’]s //" <<<"$alias")"
+    done <"$WORK_DIR/bt-aliases.tsv"
+}
+
+restore_network() {
+    [[ -f "$WORK_DIR/bt-aliases.tsv" ]] || return 0
+    local mac alias
+    while IFS=$'\t' read -r mac alias; do
+        busctl set-property org.bluez "$(bluez_path "$mac")" org.bluez.Device1 Alias s "$alias"
+    done <"$WORK_DIR/bt-aliases.tsv"
+}
+
+run_hook() {
+    local hook="$1_$2"
+    declare -F "$hook" >/dev/null && "$hook"
+    return 0
 }
 
 dispatch() {
@@ -63,8 +134,12 @@ toggle_shortcut() {
     dispatch "hl.dsp.global(\"quickshell:$1\")"
 }
 
-restore_workspace() {
-    [[ -n "$START_WORKSPACE" ]] && dispatch "hl.dsp.focus({ workspace = $START_WORKSPACE })"
+restore_all() {
+    restore_clipboard
+    restore_network
+    if [[ -n "$START_WORKSPACE" ]]; then
+        dispatch "hl.dsp.focus({ workspace = $START_WORKSPACE })"
+    fi
     rm -rf "$WORK_DIR"
 }
 
@@ -95,37 +170,51 @@ crop_to_box() {
 
 open_popup() {
     local name=$1 shortcut=$2
-    if [[ -n "$shortcut" ]]; then
-        toggle_shortcut "$shortcut"
-        sleep "$SETTLE_SECONDS"
-    else
-        notify-send -a "Hyprland dots" "Warm ember applied" \
-            "Orange primary, punchier accents across shell, kitty and btop"
-        sleep "$TOAST_SECONDS"
-    fi
+    case "$name" in
+        toast)
+            notify-send -a "Hyprland dots" "Warm ember applied" \
+                "Orange primary, punchier accents across shell, kitty and btop"
+            sleep "$TOAST_SECONDS"
+            ;;
+        *)
+            toggle_shortcut "$shortcut"
+            sleep "$SETTLE_SECONDS"
+            ;;
+    esac
     echo "  opened $name" >&2
 }
 
 close_popup() {
-    local shortcut=$1
-    [[ -n "$shortcut" ]] && toggle_shortcut "$shortcut"
+    local name=$1 shortcut=$2
+    if [[ "$name" != toast ]]; then
+        toggle_shortcut "$shortcut"
+    fi
     sleep 0.8
 }
 
-take_shot() {
-    local name=$1 baseline=$2 shortcut capture box
-    shortcut=$(shortcut_for "$name")
-    capture="$WORK_DIR/$name.png"
-    open_popup "$name" "$shortcut"
-    grim "$capture"
-    close_popup "$shortcut"
+# Writes the finished picture for $1 from its raw capture $2.
+finish_shot() {
+    local name=$1 capture=$2 baseline=$3 out=$4 box
     box=$(changed_box "$capture" "$baseline")
     if [[ -z "$box" || "$box" == 0x0* ]]; then
         echo "  $name: nothing changed against the baseline, skipped" >&2
         return 1
     fi
-    crop_to_box "$capture" "$box" "$OUT_DIR/$name.png"
-    echo "  wrote screenshots/gallery/$name.png ($(magick identify -format '%wx%h' "$OUT_DIR/$name.png"))" >&2
+    crop_to_box "$capture" "$box" "$out"
+}
+
+take_shot() {
+    local name=$1 baseline=$2 shortcut capture out
+    shortcut=$(shortcut_for "$name")
+    capture="$WORK_DIR/$name.png"
+    out="$OUT_DIR/$name.png"
+    run_hook prep "$name"
+    open_popup "$name" "$shortcut"
+    grim "$capture"
+    close_popup "$name" "$shortcut"
+    run_hook restore "$name"
+    finish_shot "$name" "$capture" "$baseline" "$out" || return 1
+    echo "  wrote screenshots/gallery/$name.png ($(magick identify -format '%wx%h' "$out"))" >&2
 }
 
 main() {
@@ -144,7 +233,7 @@ main() {
     done
 
     START_WORKSPACE=$(hyprctl activeworkspace -j | jq -r '.id')
-    trap restore_workspace EXIT
+    trap restore_all EXIT
     dispatch 'hl.dsp.focus({ workspace = "empty" })'
     sleep 1
 
