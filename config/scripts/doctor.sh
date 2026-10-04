@@ -2,9 +2,9 @@
 # doctor.sh - Read-only health check of the dotfiles install.
 #
 # Checks: required commands, PyGObject, systemd user units (daemons active, none
-# failed), scripts executable, symlinks managed by dots.sh, and the
-# root-owned battery timer. Prints PASS/FAIL/WARN lines and a summary; exits 1
-# when anything FAILed. Changes nothing.
+# failed), scripts executable, and symlinks managed by dots.sh. Prints
+# PASS/FAIL/WARN lines and a summary; exits 1 when anything FAILed. Changes
+# nothing.
 #
 # Usage: doctor.sh
 set -euo pipefail
@@ -16,8 +16,6 @@ source "$SCRIPTS_SRC/lib/deps.sh"
 
 # User services that must be running in a graphical session.
 DAEMON_UNITS=(battery-notify power-auto media-inhibit fullscreen-inhibit)
-SYSTEM_BIN="/usr/local/bin/battery-charge-schedule"
-SYSTEM_TIMER="battery-charge-schedule.timer"
 
 if [[ -t 1 ]]; then
     C_PASS=$'\033[0;32m'
@@ -96,7 +94,7 @@ check_user_units() {
 
 check_scripts_executable() {
     local f bad=0
-    for f in "$SCRIPTS_SRC"/*.sh "$SCRIPTS_SRC"/lib/*.sh "$SCRIPTS_SRC/battery-charge-schedule"; do
+    for f in "$SCRIPTS_SRC"/*.sh "$SCRIPTS_SRC"/lib/*.sh; do
         [[ -e "$f" ]] || continue
         if [[ ! -x "$f" ]]; then
             fail "not executable: ${f#"$DOTS_DIR"/}"
@@ -128,28 +126,10 @@ check_symlinks() {
     if ((bad == 0)); then pass "dotfiles-manager symlinks intact"; fi
 }
 
-check_system_timer() {
-    if [[ ! -x "$SYSTEM_BIN" ]]; then
-        warn "$SYSTEM_BIN not installed (run: dots.sh system)"
-        return 0
-    fi
-    if cmp -s "$SYSTEM_BIN" "$SCRIPTS_SRC/battery-charge-schedule"; then
-        pass "$SYSTEM_BIN matches the repo copy"
-    else
-        warn "$SYSTEM_BIN differs from the repo copy (re-run: dots.sh system)"
-    fi
-    if systemctl is-enabled --quiet "$SYSTEM_TIMER"; then
-        pass "system timer enabled: $SYSTEM_TIMER"
-    else
-        warn "system timer not enabled: $SYSTEM_TIMER"
-    fi
-}
-
 check_commands
 check_user_units
 check_scripts_executable
 check_symlinks
-check_system_timer
 
 echo
 echo "Summary: $pass_count passed, $fail_count failed, $warn_count warnings"

@@ -8,7 +8,6 @@ Sync jobs, timers and opt-in services.
 |---|---|---|
 | Immich photo sync | Hourly, when enabled | crontab entry between `# QSSYNC:immich` markers |
 | Jellyfin music sync | Daily | `jellyfin-sync.timer` (user timer, `Persistent=true`) |
-| Battery charge cap | Daily at 00:05 | `battery-charge-schedule.timer` (system timer, `Persistent=true`) |
 
 Both sync jobs are toggled from Quick Actions (`Super+A`), which calls
 `sync-toggle.sh`. It comments or uncomments the cron line for Immich and

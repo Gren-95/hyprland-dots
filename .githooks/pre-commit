@@ -23,8 +23,8 @@ trap 'rm -rf "$staged"' EXIT
 git checkout-index -a -f --prefix="$staged/"
 
 # config/ranger/scope.sh is ranger's upstream file; its warnings are not ours to fix.
-mapfile -t sh_files < <(git ls-files '*.sh' .githooks config/scripts/battery-charge-schedule | grep -v '^config/ranger/scope\.sh$')
-mapfile -t all_sh < <(git ls-files '*.sh' .githooks config/scripts/battery-charge-schedule)
+mapfile -t sh_files < <(git ls-files '*.sh' .githooks | grep -v '^config/ranger/scope\.sh$')
+mapfile -t all_sh < <(git ls-files '*.sh' .githooks)
 mapfile -t lua_files < <(git ls-files '*.lua')
 
 if ((${#sh_files[@]})); then
@@ -41,7 +41,7 @@ if ((${#sh_files[@]})); then
     elif (cd "$staged" && shfmt -d "${sh_files[@]}" >/dev/null); then
         ok "shfmt (${#sh_files[@]} scripts)"
     else
-        bad "shfmt - run: shfmt -w \$(git ls-files '*.sh' .githooks config/scripts/battery-charge-schedule)"
+        bad "shfmt - run: shfmt -w \$(git ls-files '*.sh' .githooks)"
     fi
 
     for f in "${all_sh[@]}"; do

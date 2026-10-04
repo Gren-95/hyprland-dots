@@ -29,7 +29,7 @@ Real failures (fix these):
 - Missing symlinks in the final `ls` output: broken `create_symlinks` or `setup_thumbnailers`.
 
 Expected in a container (ignore):
-- `systemctl --user daemon-reload failed` and `Battery timer install failed`: no systemd.
+- `systemctl --user daemon-reload failed`: no systemd.
 - `dconf-WARNING ... Cannot autolaunch D-Bus`: no session bus.
 - `Avatar generation failed`: no AccountsService.
 - The pre-install `Missing dependencies:` warning: the image starts empty.

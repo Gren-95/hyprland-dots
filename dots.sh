@@ -35,20 +35,7 @@ CONFIG_ITEMS=(
 )
 
 # Options
-# System-level files. Unlike everything in CONFIG_ITEMS these are COPIED, not
-# symlinked: systemd runs them as root, and root must not execute files that
-# live in a user-writable repo. Re-run "system" after editing them here.
-SYSTEM_SCRIPTS=(
-    "config/scripts/battery-charge-schedule"
-)
-SYSTEM_UNITS=(
-    "systemd/system/battery-charge-schedule.service"
-    "systemd/system/battery-charge-schedule.timer"
-)
-SYSTEM_TIMERS=(
-    "battery-charge-schedule.timer"
-)
-# Session daemons run as systemd user units. Also COPIED, not symlinked:
+# Session daemons run as systemd user units. COPIED, not symlinked:
 # `systemctl disable` deletes a symlinked unit file, which would delete the repo
 # copy. Enabled (not started): they start with the next graphical session, and
 # restart.sh (Super+B) restarts them.
@@ -59,8 +46,6 @@ USER_UNITS=(
     "systemd/user/fullscreen-inhibit.service"
 )
 USER_UNIT_DIR="$HOME/.config/systemd/user"
-SYSTEM_BIN_DIR="/usr/local/bin"
-SYSTEM_UNIT_DIR="/etc/systemd/system"
 
 DRY_RUN=false
 FORCE=false
@@ -757,85 +742,6 @@ cmd_prune() {
     fi
 }
 
-# Install root-owned scripts and systemd system units, then enable their timers.
-cmd_system() {
-    verify_dots_dir
-
-    if ! command -v sudo &>/dev/null; then
-        log_error "sudo is required to install system files"
-        return 1
-    fi
-
-    log_info "Installing system files (requires sudo)"
-
-    if [[ "$DRY_RUN" != true ]] && [[ "$FORCE" != true ]]; then
-        confirm "Install ${#SYSTEM_SCRIPTS[@]} script(s) to $SYSTEM_BIN_DIR and ${#SYSTEM_UNITS[@]} unit(s) to $SYSTEM_UNIT_DIR?" || {
-            log_info "Aborted"
-            return 0
-        }
-    fi
-
-    local item source
-    for item in "${SYSTEM_SCRIPTS[@]}"; do
-        source="$DOTS_DIR/$item"
-        if [[ ! -f "$source" ]]; then
-            log_error "Missing: $source"
-            return 1
-        fi
-        if [[ "$DRY_RUN" == true ]]; then
-            log_info "[DRY RUN] Would install $item -> $SYSTEM_BIN_DIR/$(basename "$item") (755 root:root)"
-            continue
-        fi
-        sudo install -m 755 -o root -g root "$source" "$SYSTEM_BIN_DIR/" || {
-            log_error "Failed to install $item"
-            return 1
-        }
-        log_success "Installed: $SYSTEM_BIN_DIR/$(basename "$item")"
-    done
-
-    for item in "${SYSTEM_UNITS[@]}"; do
-        source="$DOTS_DIR/$item"
-        if [[ ! -f "$source" ]]; then
-            log_error "Missing: $source"
-            return 1
-        fi
-        if [[ "$DRY_RUN" == true ]]; then
-            log_info "[DRY RUN] Would install $item -> $SYSTEM_UNIT_DIR/$(basename "$item") (644 root:root)"
-            continue
-        fi
-        sudo install -m 644 -o root -g root "$source" "$SYSTEM_UNIT_DIR/" || {
-            log_error "Failed to install $item"
-            return 1
-        }
-        log_success "Installed: $SYSTEM_UNIT_DIR/$(basename "$item")"
-    done
-
-    if [[ "$DRY_RUN" == true ]]; then
-        log_info "[DRY RUN] Would run: systemctl daemon-reload"
-        local timer
-        for timer in "${SYSTEM_TIMERS[@]}"; do
-            log_info "[DRY RUN] Would enable --now $timer"
-        done
-        return 0
-    fi
-
-    sudo systemctl daemon-reload || {
-        log_error "systemctl daemon-reload failed"
-        return 1
-    }
-
-    local timer
-    for timer in "${SYSTEM_TIMERS[@]}"; do
-        sudo systemctl enable --now "$timer" || {
-            log_error "Failed to enable $timer"
-            return 1
-        }
-        log_success "Enabled: $timer"
-    done
-
-    return 0
-}
-
 # Install the session daemon units into ~/.config/systemd/user and enable them.
 # Nothing is started here.
 cmd_units() {
@@ -1111,10 +1017,7 @@ setup_scripts() {
     log_info "Setting up script permissions..."
 
     if [[ -d "$DOTS_DIR/config/scripts" ]]; then
-        # battery-charge-schedule has no .sh extension (it is deployed to
-        # /usr/local/bin under that name), so the glob alone would skip it.
-        chmod +x "$DOTS_DIR"/config/scripts/*.sh "$DOTS_DIR"/config/scripts/lib/*.sh \
-            "$DOTS_DIR/config/scripts/battery-charge-schedule"
+        chmod +x "$DOTS_DIR"/config/scripts/*.sh "$DOTS_DIR"/config/scripts/lib/*.sh
         log_success "Script permissions set"
     else
         log_warning "Scripts directory not found"
@@ -1157,19 +1060,6 @@ setup_user_units() {
     else
         log_warning "Could not install the units (no systemd user session?). Re-run: dots.sh units"
     fi
-}
-
-# Root-owned battery charge-cap timer (Dell charge_types). Needs sudo.
-setup_battery_timer() {
-    log_info "Installing the battery charge timer via dots.sh..."
-    if ! bash "$DOTS_DIR/dots.sh" system --force; then
-        log_warning "Battery timer install failed. Re-run: dots.sh system"
-    fi
-}
-
-# True when a battery exposes the charge_types file the script writes.
-has_charge_types() {
-    compgen -G "/sys/class/power_supply/BAT*/charge_types" >/dev/null
 }
 
 # Initial system setup
@@ -1299,14 +1189,6 @@ cmd_setup() {
         setup_user_units
     fi
 
-    # Root-owned battery charge timer
-    echo ""
-    if [[ "$ASSUME_YES" == true ]] && ! has_charge_types; then
-        log_info "No battery with charge_types found, skipping the battery charge timer"
-    elif ask "Install the root battery charge timer (needs sudo)? (y/N)" N; then
-        setup_battery_timer
-    fi
-
     # System setup
     echo ""
     if ask "Run initial system setup (GTK theme)? (Y/n)" Y; then
@@ -1394,7 +1276,6 @@ Commands:
   status    Show current symlink status
   fix       Fix inconsistent symlink paths
   prune     Remove dangling ~/.config symlinks pointing into this repo
-  system    Install root-owned scripts and systemd units (needs sudo)
   units     Install and enable the session daemon user units (no sudo)
 
 Options:
@@ -1411,7 +1292,6 @@ Examples:
   $(basename "$0") status              # Check symlink status
   $(basename "$0") fix                 # Fix inconsistent symlinks
   $(basename "$0") undo                # Undo last operation
-  $(basename "$0") system              # Install system scripts and units
   $(basename "$0") units               # Install session daemon user units
 
 EOF
@@ -1422,7 +1302,7 @@ main() {
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            install | setup | backup | undo | status | fix | prune | system | units)
+            install | setup | backup | undo | status | fix | prune | units)
                 command="$1"
                 shift
                 ;;
@@ -1486,7 +1366,6 @@ main() {
         status) cmd_status ;;
         fix) cmd_fix ;;
         prune) cmd_prune ;;
-        system) cmd_system ;;
         units) cmd_units ;;
     esac
 }
