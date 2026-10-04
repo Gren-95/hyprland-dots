@@ -122,7 +122,7 @@ nm-applet --indicator >/dev/null 2>&1 &
 # period. The user manager must see the Wayland/Hyprland environment first.
 dbus-update-activation-environment --systemd --all >/dev/null 2>&1
 systemctl --user restart battery-notify.service power-auto.service \
-    media-inhibit.service fullscreen-inhibit.service >/dev/null 2>&1
+    media-inhibit.service fullscreen-inhibit.service librepods.service >/dev/null 2>&1
 
 ################################################################################
 # 6. One-shot settings. Measured at ~0.04 s combined, so they stay inline.
