@@ -17,7 +17,7 @@ from PIL import Image, ImageDraw
 SUPERSAMPLE = 2
 MAX_TRIANGLES = 200_000
 SUPERSAMPLE_LIMIT = 60_000  # above this many triangles, skip supersampling for speed
-BACKGROUND = (224, 224, 224)
+BACKGROUND = (176, 176, 176)
 BASE_COLOR = np.array([74, 144, 226], dtype=float)
 AZIMUTH_DEG = -35.0
 TILT_DEG = 58.0
