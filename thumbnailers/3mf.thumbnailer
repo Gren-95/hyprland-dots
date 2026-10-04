@@ -1,4 +1,4 @@
 [Thumbnailer Entry]
 TryExec=magick
-Exec=sh -c 'unzip -p "$1" Metadata/plate_1.png | magick png:- -background white -alpha remove -alpha off -gravity NorthEast -fill gray27 -pointsize 61 -annotate +20+20 3MF png:"$2"' sh %i %o
+Exec=sh -c 'unzip -p "$1" Metadata/plate_1.png | magick png:- -background white -alpha remove -alpha off -gravity NorthEast -font /usr/share/fonts/liberation-sans-fonts/LiberationSans-Regular.ttf -fill gray27 -pointsize 61 -annotate +20+20 3MF png:"$2"' sh %i %o
 MimeType=model/3mf;application/vnd.ms-package.3dmanufacturing-3dmodel+xml;

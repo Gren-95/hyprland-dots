@@ -23,6 +23,7 @@ AZIMUTH_DEG = -35.0
 TILT_DEG = 58.0
 MARGIN = 0.08
 LABEL = "STL"
+LABEL_FONT = "/usr/share/fonts/liberation-sans-fonts/LiberationSans-Regular.ttf"
 LABEL_COLOR = (70, 70, 70)
 LABEL_HEIGHT = 0.12  # fraction of the thumbnail size
 LABEL_PADDING = 0.04
@@ -49,7 +50,7 @@ def view_matrix():
 
 def add_label(image):
     size = image.width
-    font = ImageFont.load_default(size=max(8, round(size * LABEL_HEIGHT)))
+    font = ImageFont.truetype(LABEL_FONT, max(8, round(size * LABEL_HEIGHT)))
     draw = ImageDraw.Draw(image)
     padding = round(size * LABEL_PADDING)
     draw.text((size - padding, padding), LABEL, font=font, fill=LABEL_COLOR, anchor="ra")
