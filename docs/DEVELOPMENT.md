@@ -4,7 +4,7 @@ Lint checks and the pre-commit hook.
 
 [`.github/workflows/lint.yml`](../.github/workflows/lint.yml) runs on every push and
 pull request. [`.githooks/pre-commit`](../.githooks/pre-commit) runs the same checks
-against the index at commit time — `setup.sh` enables it, or turn it on by hand:
+against the index at commit time — `dots.sh setup` enables it, or turn it on by hand:
 
 ```bash
 git config core.hooksPath .githooks
@@ -19,7 +19,7 @@ The checks by hand:
 shellcheck -S warning $(git ls-files '*.sh' | grep -v '^config/ranger/scope.sh$')
 luac -p $(git ls-files '*.lua')
 Hyprland --verify-config -c "$PWD/hypr/hyprland.lua"
-./dotfiles-manager.sh status
+./dots.sh status
 ```
 
 `--verify-config` catches unknown config keys as well as Lua syntax errors, so

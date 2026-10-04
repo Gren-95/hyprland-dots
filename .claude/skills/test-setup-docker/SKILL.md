@@ -1,9 +1,9 @@
 ---
 name: test-setup-docker
-description: Run setup.sh --yes in a throwaway Fedora Docker container to verify the dependency list and install flow. Use after changing scripts/lib/deps.sh, setup.sh or dotfiles-manager.sh, or when asked to test the installer or dependencies in docker.
+description: Run dots.sh setup --yes in a throwaway Fedora Docker container to verify the dependency list and install flow. Use after changing scripts/lib/deps.sh, dots.sh setup or dots.sh, or when asked to test the installer or dependencies in docker.
 ---
 
-# Test setup.sh in Docker
+# Test dots.sh setup in Docker
 
 Dependency test range for the installer. Manual use only, not a CI job.
 

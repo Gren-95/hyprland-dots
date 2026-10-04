@@ -57,8 +57,8 @@ sudo dnf install hyprland hyprland-devel quickshell kitty nautilus cliphist \
 ```bash
 git clone https://github.com/Gren-95/hyprland-dots.git ~/dotfiles
 cd ~/dotfiles
-chmod +x setup.sh
-./setup.sh
+chmod +x dots.sh
+./dots.sh setup
 ```
 
 The setup script will:

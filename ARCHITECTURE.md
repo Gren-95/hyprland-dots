@@ -54,14 +54,15 @@ Bird's-eye view of how the pieces fit together. For widget-level detail see
 
 `~/.config/<dir>` is a symlink into this repo for every managed directory
 (hypr, kitty, quickshell, swappy, scripts, wayvnc, fish, ranger, btop,
-gtk-3.0, gtk-4.0, immich, jellyfin), plus the `~/.config/kdeglobals` file. Two entry points:
+gtk-3.0, gtk-4.0, immich, jellyfin), plus the `~/.config/kdeglobals` file. One entry point, `dots.sh`:
 
-- `setup.sh` — first-time install on a fresh machine. Installs Fedora
-  packages, creates symlinks (delegates to `dotfiles-manager.sh`), prompts
-  for Immich/Jellyfin credentials and cron schedule.
-- `dotfiles-manager.sh` — symlink management with `backup` / `undo` /
-  `status` / `fix` commands. Single source of truth for which configs get
-  symlinked.
+- `dots.sh install` — curl bootstrap on a fresh machine: clones the repo to
+  `~/dotfiles`, then runs `setup`.
+- `dots.sh setup` — first-time install. Installs Fedora packages, creates
+  symlinks, prompts for Immich/Jellyfin credentials and cron schedule.
+- `dots.sh backup` / `undo` / `status` / `fix` / `prune` / `system` / `units`
+  — symlink and unit management. `CONFIG_ITEMS` in `dots.sh` is the single
+  source of truth for which configs get symlinked.
 
 ## Hot reload
 

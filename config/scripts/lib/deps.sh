@@ -1,6 +1,6 @@
 #!/bin/bash
 # deps.sh — single source of truth for the commands the dotfiles depend on.
-# Used by setup.sh (install) and doctor.sh (verify).
+# Used by dots.sh setup (install) and doctor.sh (verify).
 #
 # Source it:
 #   source "<repo>/scripts/lib/deps.sh"

@@ -36,7 +36,7 @@ Modals reachable from keybindings or the bar:
 </table>
 
 > [!TIP]
-> Use `setup.sh` for automated installation, or `dotfiles-manager.sh` for managing symlinks.
+> Use `dots.sh setup` for automated installation, or the other `dots.sh` commands for managing symlinks.
 
 > [!NOTE]
 > Built on Nobara 44 with Hyprland 0.56.2 and Quickshell 0.3.1. The Hyprland
@@ -61,7 +61,7 @@ Modals reachable from keybindings or the bar:
 ### One-command Install (Recommended)
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/Gren-95/hyprland-dots/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/Gren-95/hyprland-dots/main/dots.sh) install
 ```
 
 This will clone the repo to `~/dotfiles` and run the setup script automatically.
@@ -73,9 +73,9 @@ After install, see [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) for wallpape
 ## Dotfiles Manager
 
 ```bash
-./dotfiles-manager.sh status          # Check all symlink states
-./dotfiles-manager.sh backup          # Create symlinks (backs up existing dirs)
-./dotfiles-manager.sh backup --dry-run  # Preview without making changes
-./dotfiles-manager.sh fix             # Fix broken or inconsistent symlinks
-./dotfiles-manager.sh undo            # Restore backups and remove symlinks
+./dots.sh status          # Check all symlink states
+./dots.sh backup          # Create symlinks (backs up existing dirs)
+./dots.sh backup --dry-run  # Preview without making changes
+./dots.sh fix             # Fix broken or inconsistent symlinks
+./dots.sh undo            # Restore backups and remove symlinks
 ```

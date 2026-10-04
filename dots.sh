@@ -1,9 +1,12 @@
 #!/bin/bash
-
-################################################################################
-# Dotfiles Backup and Symlink Manager
-# Manages symlinks from dotfiles repository to ~/.config/
-################################################################################
+# dots.sh - Install, set up and manage the hyprland-dots dotfiles.
+#
+# Usage: dots.sh <command> [options]
+#
+# One-command install on a fresh machine:
+#   bash <(curl -fsSL https://raw.githubusercontent.com/Gren-95/hyprland-dots/main/dots.sh) install
+#
+# Run `dots.sh --help` for the command list.
 
 # Constants
 DOTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -11,7 +14,7 @@ DOTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_SRC_DIR="$DOTS_DIR/config"
 CONFIG_DIR="$HOME/.config"
 LOG_FILE="$CONFIG_DIR/.dotfiles_symlink.log"
-LOCK_FILE="/tmp/dotfiles-manager.lock"
+LOCK_FILE="/tmp/dots.lock"
 
 # Config items to manage
 CONFIG_ITEMS=(
@@ -62,6 +65,7 @@ SYSTEM_UNIT_DIR="/etc/systemd/system"
 DRY_RUN=false
 FORCE=false
 VERBOSE=false
+ASSUME_YES=false
 
 # Colors (if terminal supports it)
 if [[ -t 1 ]]; then
@@ -129,7 +133,7 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # Check if required tools are available
-check_dependencies() {
+check_manager_tools() {
     local missing=()
 
     command -v jq >/dev/null 2>&1 || missing+=("jq")
@@ -660,8 +664,8 @@ cmd_status() {
     if [[ $issues -gt 0 ]]; then
         echo ""
         log_info "Suggestions:"
-        echo "  - Run 'dotfiles-manager.sh fix' to fix inconsistent symlinks"
-        echo "  - Run 'dotfiles-manager.sh backup' to create missing symlinks"
+        echo "  - Run 'dots.sh fix' to fix inconsistent symlinks"
+        echo "  - Run 'dots.sh backup' to create missing symlinks"
     fi
 }
 
@@ -875,16 +879,516 @@ cmd_units() {
 }
 
 ################################################################################
+# Setup (dependencies, symlinks, units, one-time system configuration)
+################################################################################
+
+# Check if running on Fedora/Nobara
+check_distro() {
+    if [[ -f /etc/fedora-release ]] || [[ -f /etc/nobara-release ]]; then
+        return 0
+    else
+        log_warning "This script is optimized for Fedora/Nobara"
+        return 1
+    fi
+}
+
+# Check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# ask <prompt> <Y|N>: yes/no question; <Y|N> is the default answer (Enter).
+# Returns 0 for yes. With --yes every question is answered yes.
+ask() {
+    local prompt=$1 default=$2 reply=""
+    if [[ "$ASSUME_YES" == true ]]; then
+        echo "$prompt yes (--yes)"
+        return 0
+    fi
+    read -p "$prompt " -n 1 -r reply || true
+    echo
+    if [[ "$default" == "Y" ]]; then
+        [[ ! $reply =~ ^[Nn]$ ]]
+    else
+        [[ $reply =~ ^[Yy]$ ]]
+    fi
+}
+
+# Check dependencies
+check_setup_dependencies() {
+    log_info "Checking dependencies..."
+
+    local missing_deps=()
+    mapfile -t missing_deps < <(deps_missing_required)
+    if ! deps_have_pygobject; then
+        missing_deps+=("python3-gobject")
+    fi
+
+    if [[ ${#missing_deps[@]} -eq 0 ]]; then
+        log_success "All dependencies are installed"
+        return 0
+    else
+        log_warning "Missing dependencies: ${missing_deps[*]}"
+        return 1
+    fi
+}
+
+# Install dependencies (Fedora/Nobara)
+install_dependencies() {
+    if ! check_distro; then
+        log_error "Automatic installation only supported on Fedora/Nobara"
+        return 1
+    fi
+
+    log_info "Adding required COPR repositories..."
+    sudo dnf copr enable -y lionheartp/Hyprland
+    sudo dnf copr enable -y errornointernet/quickshell ||
+        log_warning "Quickshell COPR not available — build from source: https://quickshell.outfoxxed.me"
+
+    log_info "Installing dependencies..."
+    sudo dnf install -y "${DEPS_DNF[@]}"
+
+    log_success "Dependencies installed"
+
+    # ranger devicons plugin — provides file-type glyphs in the listing.
+    local plug_dir="$CONFIG_DIR/ranger/plugins/ranger_devicons"
+    if [[ ! -d "$plug_dir" ]]; then
+        log_info "Installing ranger devicons plugin..."
+        mkdir -p "$(dirname "$plug_dir")"
+        git clone --depth 1 https://github.com/alexanderjeurissen/ranger_devicons "$plug_dir" >/dev/null 2>&1 &&
+            log_success "ranger_devicons installed" ||
+            log_warning "Failed to install ranger_devicons (network?)"
+    fi
+}
+
+# Create symlinks via the single-source dots.sh.
+create_symlinks() {
+    log_info "Creating symlinks via dots.sh..."
+    bash "$DOTS_DIR/dots.sh" backup --force
+
+    # Avatar symlink: point ~/.config/hypr/avatar.png to AccountsService icon.
+    local avatar_link="$HOME/.config/hypr/avatar.png"
+    local avatar_source
+    avatar_source="/var/lib/AccountsService/icons/$(whoami)"
+    ln -sf "$avatar_source" "$avatar_link"
+    log_success "Avatar symlink -> $avatar_source"
+}
+
+# Check optional external dependencies
+check_optional_deps() {
+    local env_target="$HOME/.config/scripts/util.env"
+    if [[ ! -f "$env_target" ]]; then
+        log_warning "scripts/util.env not present — copy util.env.example to populate"
+        log_warning "  cp $HOME/.config/scripts/util.env.example $env_target"
+    fi
+}
+
+# Install and configure Immich CLI
+setup_immich_cli() {
+    log_info "Setting up Immich CLI..."
+
+    # Find a package manager
+    local pm=""
+    if command_exists bun; then
+        pm="bun"
+    elif command_exists npm; then
+        pm="npm"
+    else
+        log_warning "Neither bun nor npm found — installing Node.js via dnf"
+        sudo dnf install -y nodejs npm
+        pm="npm"
+    fi
+
+    # Install @immich/cli globally
+    if command_exists immich; then
+        log_success "Immich CLI already installed ($(immich --version 2>/dev/null || echo 'unknown version'))"
+    else
+        log_info "Installing @immich/cli via $pm..."
+        if [[ "$pm" == "bun" ]]; then
+            bun install -g @immich/cli
+        else
+            npm install -g @immich/cli
+        fi
+        log_success "Immich CLI installed"
+    fi
+
+    # Wait for user to provide server URL and API key
+    echo ""
+    log_info "Configure Immich server connection"
+    while true; do
+        read -p "  Server URL (e.g. https://immich.example.com): " immich_url
+        [[ -n "$immich_url" ]] && break
+        log_warning "URL cannot be empty"
+    done
+    while true; do
+        read -p "  API key (Immich → Account Settings → API Keys): " immich_key
+        [[ -n "$immich_key" ]] && break
+        log_warning "API key cannot be empty"
+    done
+
+    immich login "$immich_url/api" "$immich_key" &&
+        log_success "Logged in to Immich" ||
+        log_error "Login failed — check your URL and API key"
+
+    # Prompt for sync interval and write it to the crontab via sync-toggle.sh.
+    echo ""
+    log_info "How often should Immich sync run?"
+    echo "  1) Every 30 minutes"
+    echo "  2) Every 1 hour"
+    echo "  3) Every 2 hours"
+    echo "  4) Every 6 hours"
+    read -p "  Choose [1-4] (default: 2): " interval_choice
+    echo
+
+    local cron_expr="0 * * * *"
+    case "$interval_choice" in
+        1) cron_expr="*/30 * * * *" ;;
+        2) cron_expr="0 * * * *" ;;
+        3) cron_expr="0 */2 * * *" ;;
+        4) cron_expr="0 */6 * * *" ;;
+    esac
+
+    bash "$DOTS_DIR/config/scripts/sync-toggle.sh" schedule immich "$cron_expr"
+    log_success "Immich cron schedule: $cron_expr"
+
+    read -p "Enable Immich background sync now? (Y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+        bash "$DOTS_DIR/config/scripts/sync-toggle.sh" enable immich
+        log_success "Immich background sync enabled"
+    fi
+}
+
+# Set up Jellyfin music sync
+setup_jellyfin_sync() {
+    log_info "Setting up Jellyfin music sync..."
+
+    # Deploy the systemd user timer that runs the sync once a day. Real copies,
+    # NOT symlinks — `systemctl disable` deletes a symlinked unit file, which
+    # would break the Quick Actions toggle. The repo copies under systemd/user/
+    # are the source of truth; re-run setup (or re-copy) after editing them.
+    mkdir -p "$HOME/.config/systemd/user"
+    cp "$DOTS_DIR/systemd/user/jellyfin-sync.service" "$HOME/.config/systemd/user/"
+    cp "$DOTS_DIR/systemd/user/jellyfin-sync.timer" "$HOME/.config/systemd/user/"
+    systemctl --user daemon-reload
+    log_success "Jellyfin sync timer installed (once daily, Persistent — catches up missed runs)"
+
+    # Prompt for credentials now
+    local conf="$HOME/.config/jellyfin/sync.conf"
+    if [[ ! -f "$conf" ]]; then
+        log_info "Configure Jellyfin server connection"
+        while true; do
+            read -p "  Server URL (e.g. http://192.168.0.200:8096): " jf_url
+            [[ -n "$jf_url" ]] && break
+            log_warning "URL cannot be empty"
+        done
+        while true; do
+            read -p "  API key (Jellyfin → Dashboard → API Keys): " jf_key
+            [[ -n "$jf_key" ]] && break
+            log_warning "API key cannot be empty"
+        done
+        mkdir -p "$(dirname "$conf")"
+        cat >"$conf" <<EOF
+JELLYFIN_URL="$jf_url"
+JELLYFIN_API_KEY="$jf_key"
+EOF
+        chmod 600 "$conf"
+        log_success "Jellyfin credentials saved"
+    else
+        log_success "Jellyfin credentials already configured"
+    fi
+
+    read -p "Enable Jellyfin background sync now? (Y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+        bash "$DOTS_DIR/config/scripts/sync-toggle.sh" enable jellyfin
+        log_success "Jellyfin background sync enabled"
+    fi
+}
+
+# Set up scripts permissions
+setup_scripts() {
+    log_info "Setting up script permissions..."
+
+    if [[ -d "$DOTS_DIR/config/scripts" ]]; then
+        # battery-charge-schedule has no .sh extension (it is deployed to
+        # /usr/local/bin under that name), so the glob alone would skip it.
+        chmod +x "$DOTS_DIR"/config/scripts/*.sh "$DOTS_DIR"/config/scripts/lib/*.sh \
+            "$DOTS_DIR/config/scripts/battery-charge-schedule"
+        log_success "Script permissions set"
+    else
+        log_warning "Scripts directory not found"
+    fi
+}
+
+# Point git at the tracked hooks. .git/hooks is not version controlled, so the
+# pre-commit check only exists for a clone that opts in.
+setup_git_hooks() {
+    if [[ ! -d "$DOTS_DIR/.git" ]]; then
+        return 0
+    fi
+
+    log_info "Enabling the tracked git hooks..."
+    chmod +x "$DOTS_DIR"/.githooks/*
+    git -C "$DOTS_DIR" config core.hooksPath .githooks
+    log_success "core.hooksPath set to .githooks"
+}
+
+# Nautilus thumbnailers live outside ~/.config, so the symlink manager skips
+# them. Link each tracked entry into the user thumbnailer directory.
+setup_thumbnailers() {
+    local dest="$HOME/.local/share/thumbnailers"
+    local entry
+
+    log_info "Linking Nautilus thumbnailers..."
+    mkdir -p "$dest"
+    for entry in "$DOTS_DIR"/thumbnailers/*.thumbnailer; do
+        ln -sf "$entry" "$dest/$(basename "$entry")"
+    done
+    log_success "Thumbnailers linked into $dest"
+}
+
+# Session daemon user units (battery-notify, power-auto, media/fullscreen
+# inhibit). Installed and enabled; they start with the next graphical session.
+setup_user_units() {
+    log_info "Installing session daemon units..."
+    if bash "$DOTS_DIR/dots.sh" units; then
+        log_success "Session daemon units installed and enabled"
+    else
+        log_warning "Could not install the units (no systemd user session?). Re-run: dots.sh units"
+    fi
+}
+
+# Root-owned battery charge-cap timer (Dell charge_types). Needs sudo.
+setup_battery_timer() {
+    log_info "Installing the battery charge timer via dots.sh..."
+    if ! bash "$DOTS_DIR/dots.sh" system --force; then
+        log_warning "Battery timer install failed. Re-run: dots.sh system"
+    fi
+}
+
+# True when a battery exposes the charge_types file the script writes.
+has_charge_types() {
+    compgen -G "/sys/class/power_supply/BAT*/charge_types" >/dev/null
+}
+
+# Initial system setup
+system_setup() {
+    log_info "Running initial system setup..."
+
+    # Set GTK dark theme
+    if command_exists gsettings; then
+        log_info "Setting GTK dark theme..."
+        gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"
+        log_success "GTK theme configured"
+    fi
+
+    # Allow current user to manage Tailscale without sudo
+    if command_exists tailscale; then
+        log_info "Setting Tailscale operator to $USER..."
+        sudo tailscale set --operator="$USER"
+        log_success "Tailscale operator set to $USER"
+    fi
+}
+
+# Create expected user directories
+create_dirs() {
+    log_info "Creating user directories..."
+    local dirs=(
+        "$HOME/Pictures/Screenshots"
+        "$HOME/Pictures/wallpapers"
+        "$HOME/Videos/Recordings"
+        "$HOME/Music"
+    )
+    for d in "${dirs[@]}"; do
+        mkdir -p "$d"
+        log_success "Directory: $d"
+    done
+}
+
+# Display setup summary
+show_summary() {
+    echo ""
+    echo "========================================"
+    echo "  Dotfiles Setup Complete!"
+    echo "========================================"
+    echo ""
+    echo "Next steps:"
+    echo "1. Log out and log back into Hyprland"
+    echo "2. Drop wallpapers into ~/Pictures/wallpapers"
+    echo "3. Review keybindings in hypr/modules/keys.lua"
+    echo "4. Customize colors and themes to your liking"
+    echo ""
+    echo "Useful commands:"
+    echo "  - Super+B: Restart all services"
+    echo "  - Super+Shift+N: Change wallpaper"
+    echo "  - Super+R: Open app launcher"
+    echo ""
+    echo "  - immich login <url>/api <key>: Configure Immich CLI"
+    echo "For more info, see README.md"
+    echo "========================================"
+}
+
+# Main installation flow
+setup_avatar() {
+    log_info "Generating initials avatar..."
+    if ! command_exists python3; then
+        log_warning "python3 not found, skipping avatar generation"
+        return
+    fi
+    if ! python3 -c "from PIL import Image" 2>/dev/null; then
+        log_warning "python3-pillow not found, skipping avatar generation"
+        return
+    fi
+
+    bash "$CONFIG_DIR/scripts/generate-avatar.sh" &&
+        log_success "Avatar installed to /var/lib/AccountsService/icons/$(whoami)" ||
+        log_warning "Avatar generation failed"
+}
+
+# Full first-time setup. Safe to re-run: symlinks, units, directories and
+# permissions are re-applied idempotently. Credential-driven steps (Immich,
+# Jellyfin) are skipped with --yes.
+cmd_setup() {
+    set -e
+
+    # Shared dependency list (also used by scripts/doctor.sh).
+    source "$DOTS_DIR/config/scripts/lib/deps.sh"
+
+    echo "========================================"
+    echo "  Hyprland Dotfiles Setup"
+    echo "========================================"
+    echo ""
+
+    # Check dependencies
+    if ! check_setup_dependencies; then
+        if ask "Install missing dependencies? (y/N)" N; then
+            install_dependencies || {
+                log_error "Failed to install dependencies"
+                exit 1
+            }
+        else
+            log_warning "Proceeding without installing dependencies"
+        fi
+    fi
+
+    # Confirm before creating symlinks
+    echo ""
+    if ask "Create symlinks for config directories? (Y/n)" Y; then
+        create_symlinks
+    fi
+
+    # Check optional dependencies
+    check_optional_deps
+
+    # Create expected directories
+    create_dirs
+
+    # Set up scripts
+    setup_scripts
+
+    # Enable the tracked git hooks
+    setup_git_hooks
+
+    # Nautilus thumbnailers
+    setup_thumbnailers
+
+    # Session daemons as systemd user units
+    echo ""
+    if ask "Install and enable the session daemon units (battery, power, idle inhibitors)? (Y/n)" Y; then
+        setup_user_units
+    fi
+
+    # Root-owned battery charge timer
+    echo ""
+    if [[ "$ASSUME_YES" == true ]] && ! has_charge_types; then
+        log_info "No battery with charge_types found, skipping the battery charge timer"
+    elif ask "Install the root battery charge timer (needs sudo)? (y/N)" N; then
+        setup_battery_timer
+    fi
+
+    # System setup
+    echo ""
+    if ask "Run initial system setup (GTK theme)? (Y/n)" Y; then
+        system_setup
+    fi
+
+    # Credential-driven steps need typed input, so --yes skips them.
+    echo ""
+    if [[ "$ASSUME_YES" == true ]]; then
+        log_info "--yes: skipping Immich/Jellyfin setup (needs credentials); run dots.sh setup interactively for those"
+    else
+        if ask "Install and configure Immich CLI? (y/N)" N; then
+            setup_immich_cli
+        fi
+
+        echo ""
+        if ask "Set up Jellyfin music sync? (y/N)" N; then
+            setup_jellyfin_sync
+        fi
+    fi
+
+    # Generate avatar
+    echo ""
+    if ask "Generate initials avatar for lockscreen? (Y/n)" Y; then
+        setup_avatar
+    fi
+
+    # Show summary
+    show_summary
+}
+
+################################################################################
+# Install (curl bootstrap: clone the repo, then run setup)
+################################################################################
+
+cmd_install() {
+    local repo="https://github.com/Gren-95/hyprland-dots.git"
+    local dest="$HOME/dotfiles"
+
+    echo "========================================="
+    echo "  hyprland-dots installer"
+    echo "========================================="
+    echo ""
+
+    if ! command -v git >/dev/null 2>&1; then
+        log_info "Installing git..."
+        sudo dnf install -y git
+    fi
+
+    if [[ -d "$dest/.git" ]]; then
+        log_info "Dotfiles already cloned, pulling latest..."
+        git -C "$dest" pull
+    else
+        if [[ -d "$dest" ]]; then
+            log_error "$dest already exists but is not a git repo. Remove it and try again."
+            exit 1
+        fi
+        log_info "Cloning dotfiles to $dest..."
+        git clone "$repo" "$dest"
+    fi
+
+    log_success "Repo ready at $dest"
+    echo ""
+
+    local args=(setup)
+    [[ "$ASSUME_YES" == true ]] && args+=(--yes)
+    exec bash "$dest/dots.sh" "${args[@]}"
+}
+
+################################################################################
 # Main
 ################################################################################
 
 show_usage() {
     cat <<EOF
-Dotfiles Backup and Symlink Manager
+Hyprland dotfiles installer, setup and symlink manager
 
 Usage: $(basename "$0") <command> [options]
 
 Commands:
+  install   Clone the repo to ~/dotfiles and run setup (curl one-liner entry point)
+  setup     Install dependencies, symlinks, units and one-time system config
   backup    Create backups and symlinks
   undo      Restore backups and remove symlinks
   status    Show current symlink status
@@ -894,31 +1398,36 @@ Commands:
   units     Install and enable the session daemon user units (no sudo)
 
 Options:
+  -y, --yes    Non-interactive setup: answer yes to every prompt. Steps that
+               need credentials typed in (Immich, Jellyfin) are skipped.
   --dry-run    Preview changes without executing
   --force      Skip confirmation prompts
   --verbose    Show detailed output
   -h, --help   Show this help message
 
 Examples:
+  $(basename "$0") setup --yes         # Unattended first-time setup
   $(basename "$0") backup --dry-run    # Preview backup operation
-  $(basename "$0") backup               # Create backups and symlinks
-  $(basename "$0") status               # Check symlink status
-  $(basename "$0") fix                  # Fix inconsistent symlinks
-  $(basename "$0") undo                 # Undo last operation
-  $(basename "$0") system               # Install system scripts and units
-  $(basename "$0") units                # Install session daemon user units
+  $(basename "$0") status              # Check symlink status
+  $(basename "$0") fix                 # Fix inconsistent symlinks
+  $(basename "$0") undo                # Undo last operation
+  $(basename "$0") system              # Install system scripts and units
+  $(basename "$0") units               # Install session daemon user units
 
 EOF
 }
 
 main() {
-    # Parse command
     local command=""
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            backup | undo | status | fix | prune | system | units)
+            install | setup | backup | undo | status | fix | prune | system | units)
                 command="$1"
+                shift
+                ;;
+            -y | --yes)
+                ASSUME_YES=true
                 shift
                 ;;
             --dry-run)
@@ -951,42 +1460,34 @@ main() {
         exit 1
     fi
 
-    # Check dependencies
-    check_dependencies
+    case "$command" in
+        install)
+            cmd_install
+            return
+            ;;
+        setup)
+            verify_dots_dir
+            cmd_setup
+            return
+            ;;
+    esac
+
+    check_manager_tools
+    verify_dots_dir
 
     # Acquire lock (except for status command)
     if [[ "$command" != "status" ]]; then
         acquire_lock
     fi
 
-    # Execute command
     case "$command" in
-        backup)
-            cmd_backup
-            ;;
-        undo)
-            cmd_undo
-            ;;
-        status)
-            cmd_status
-            ;;
-        fix)
-            cmd_fix
-            ;;
-        prune)
-            cmd_prune
-            ;;
-        system)
-            cmd_system
-            ;;
-        units)
-            cmd_units
-            ;;
-        *)
-            log_error "Unknown command: $command"
-            show_usage
-            exit 1
-            ;;
+        backup) cmd_backup ;;
+        undo) cmd_undo ;;
+        status) cmd_status ;;
+        fix) cmd_fix ;;
+        prune) cmd_prune ;;
+        system) cmd_system ;;
+        units) cmd_units ;;
     esac
 }
 

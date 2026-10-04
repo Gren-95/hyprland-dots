@@ -15,7 +15,7 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | `lib/inhibit.sh` | `inhibit_start <app> <reason>` / `inhibit_stop`: holds an `org.freedesktop.ScreenSaver` inhibitor on a long-lived D-Bus connection. Used by `media-inhibit.sh`, `fullscreen-inhibit.sh`, `idle-inhibit-toggle.sh`. |
 | `lib/env.sh` | `load_util_env` loads `util.env` (`KEY=VALUE`) into the environment. |
 | `lib/screenshot.sh` | `capture_region "X,Y WxH"`: grim, wl-copy, notify, print path. Shared by both screenshot scripts. |
-| `lib/deps.sh` | Required/optional command lists and the dnf package list, shared by `setup.sh` and `doctor.sh`. |
+| `lib/deps.sh` | Required/optional command lists and the dnf package list, shared by `dots.sh setup` and `doctor.sh`. |
 | `paths.sh` | Canonical user-path env vars (`PICTURES_DIR`, `WALLPAPER_DIR`, `RECORDINGS_DIR`, `CACHE_DIR`, etc.). Sourced by every consumer. |
 
 ## Helpers and config
@@ -30,7 +30,7 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 ## Daemons (autostart / restart.sh)
 
 `battery-notify`, `power-auto`, `media-inhibit` and `fullscreen-inhibit` run as systemd user units
-(`systemd/user/*.service`, installed by `dotfiles-manager.sh units`); `restart.sh` restarts them with
+(`systemd/user/*.service`, installed by `dots.sh units`); `restart.sh` restarts them with
 `systemctl --user restart`.
 
 | File | Spawned by | What it does |
@@ -77,4 +77,4 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | `hyprlock-art.sh` | hypridle pre-lock hook (and direct call) | Copies the current MPRIS album art to `$LOCK_ART` so hyprlock can display it. Also picks a random wallpaper for the lock background. |
 | `restart.sh` | `Super+B` | Restarts every userspace service: xdg-desktop-portal, gnome-keyring, Quickshell, awww-daemon (restoring the saved wallpaper), hypridle, the four session units, cliphist, dotwatch. Sets GTK theme, fallback monitor. Logs OK/FAILED per step to stdout. |
 | `update-all.sh` | `upi` fish function | Timeshift snapshot (aborts on failure), then dnf clean metadata/makecache --refresh, dnf update/autoremove, flatpak update/cleanup, `npm update -g`, `uv tool upgrade --all`, `bun upgrade`, `fisher update`. Continues past failed steps and prints a summary; warns if `dnf needs-restarting -r` says a reboot is needed. |
-| `generate-avatar.sh` | `setup.sh` | Python+Pillow renders a circular initials avatar from `$USER`, installs to `/var/lib/AccountsService/icons/$USER` (used as lockscreen avatar). |
+| `generate-avatar.sh` | `dots.sh setup` | Python+Pillow renders a circular initials avatar from `$USER`, installs to `/var/lib/AccountsService/icons/$USER` (used as lockscreen avatar). |

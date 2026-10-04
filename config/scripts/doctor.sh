@@ -2,7 +2,7 @@
 # doctor.sh - Read-only health check of the dotfiles install.
 #
 # Checks: required commands, PyGObject, systemd user units (daemons active, none
-# failed), scripts executable, symlinks managed by dotfiles-manager.sh, and the
+# failed), scripts executable, symlinks managed by dots.sh, and the
 # root-owned battery timer. Prints PASS/FAIL/WARN lines and a summary; exits 1
 # when anything FAILed. Changes nothing.
 #
@@ -106,11 +106,11 @@ check_scripts_executable() {
     if ((bad == 0)); then pass "all scripts are executable"; fi
 }
 
-# Item names come from `dotfiles-manager.sh status` so the list has one owner.
+# Item names come from `dots.sh status` so the list has one owner.
 check_symlinks() {
     local status_out item state bad=0
-    status_out=$(bash "$DOTS_DIR/dotfiles-manager.sh" status 2>&1) || {
-        fail "dotfiles-manager.sh status failed"
+    status_out=$(bash "$DOTS_DIR/dots.sh" status 2>&1) || {
+        fail "dots.sh status failed"
         return 0
     }
     while read -r item state _; do
@@ -130,13 +130,13 @@ check_symlinks() {
 
 check_system_timer() {
     if [[ ! -x "$SYSTEM_BIN" ]]; then
-        warn "$SYSTEM_BIN not installed (run: dotfiles-manager.sh system)"
+        warn "$SYSTEM_BIN not installed (run: dots.sh system)"
         return 0
     fi
     if cmp -s "$SYSTEM_BIN" "$SCRIPTS_SRC/battery-charge-schedule"; then
         pass "$SYSTEM_BIN matches the repo copy"
     else
-        warn "$SYSTEM_BIN differs from the repo copy (re-run: dotfiles-manager.sh system)"
+        warn "$SYSTEM_BIN differs from the repo copy (re-run: dots.sh system)"
     fi
     if systemctl is-enabled --quiet "$SYSTEM_TIMER"; then
         pass "system timer enabled: $SYSTEM_TIMER"

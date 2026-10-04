@@ -1,6 +1,6 @@
 [Unit]
 Description=Sync music from Jellyfin to ~/Music
-# Nothing to do until setup.sh has written the server URL and API key.
+# Nothing to do until dots.sh setup has written the server URL and API key.
 ConditionPathExists=%h/.config/jellyfin/sync.conf
 
 [Service]
