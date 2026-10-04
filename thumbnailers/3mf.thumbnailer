@@ -1,0 +1,4 @@
+[Thumbnailer Entry]
+TryExec=magick
+Exec=sh -c 'unzip -p "$1" Metadata/plate_1.png | magick png:- -background white -alpha remove -alpha off png:"$2"' sh %i %o
+MimeType=model/3mf;application/vnd.ms-package.3dmanufacturing-3dmodel+xml;
