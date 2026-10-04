@@ -25,6 +25,8 @@ config/jellyfin/sync.conf
 config/quickshell/calendar.url
 config/quickshell/settings/
 config/scripts/util.env
+config/wayvnc/password
+config/wayvnc/*.pem
 
 # Runtime artifacts
 config/hypr/avatar.png

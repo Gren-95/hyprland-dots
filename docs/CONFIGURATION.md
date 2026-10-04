@@ -58,12 +58,13 @@ wayvnc is an optional VNC server for remote desktop access.
 
 **Connect:** Use any VNC viewer and connect to `127.0.0.1:5900`, or `<tailscale-ip>:5900` from another device (`wayvnc-toggle.sh` binds the Tailscale address when Tailscale is up).
 
-**Security:** The default config binds to `127.0.0.1` with no auth. Remote access goes through [Tailscale](https://tailscale.com); there is no LAN listener unless you change `config/wayvnc/config`.
+**Login:** the server asks for a username and password over TLS. The user is your login name; the password is a random string created on first start and kept in `~/.config/wayvnc/password` (gitignored, mode 600), next to a self-signed certificate and key. Print or replace it with:
 
-To add password auth, edit `config/wayvnc/config`:
-
-```ini
-enable_auth=true
-username=user
-password=yourpassword
+```bash
+~/.config/scripts/wayvnc-toggle.sh password   # show user and password
+~/.config/scripts/wayvnc-toggle.sh rotate     # new password; restart remote access after
 ```
+
+Super+Ctrl+R and the Services panel toggle run the same script, so both start the server with the login. Viewers show a certificate warning on first connect because the certificate is self-signed.
+
+**Security:** wayvnc binds `127.0.0.1`, or the Tailscale address while Tailscale is up (only the interface is checked, so a stopped Tailscale never leaves a stale bind). There is no LAN listener unless you change `config/wayvnc/config`. Never put the password into `config/wayvnc/config`, which is tracked.

@@ -91,7 +91,7 @@ else
     ok "no secrets assigned to literals"
 fi
 
-if git ls-files | grep -E '^config/(immich/auth\.yml|jellyfin/sync\.conf|scripts/util\.env|quickshell/calendar\.url)$' >&2; then
+if git ls-files | grep -E '^config/(immich/auth\.yml|jellyfin/sync\.conf|scripts/util\.env|quickshell/calendar\.url|wayvnc/password)$' >&2; then
     bad "credential file is tracked - remove it from the index"
 else
     ok "credential files untracked"
