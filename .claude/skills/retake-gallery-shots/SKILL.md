@@ -10,7 +10,7 @@ The script is `config/scripts/gallery-shots.sh` (also on PATH as `~/.config/scri
 ## Needs
 
 - A live Hyprland + Quickshell session. It cannot run in Docker or over SSH.
-- `magick`, `grim`, `hyprctl`, `wl-copy`, `cliphist`, `notify-send`.
+- `magick`, `grim`, `hyprctl`, `jq`, `cliphist`, `bluetoothctl`, `notify-send`.
 
 ## Run
 
