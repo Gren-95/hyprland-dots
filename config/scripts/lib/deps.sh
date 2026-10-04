@@ -38,7 +38,7 @@ DEPS_DNF=(
     brightnessctl playerctl powerprofilesctl gpu-screen-recorder
     network-manager-applet libnotify upower mpv bc curl
     gnome-keyring jq inotify-tools
-    fish ranger python3 python3-pillow python3-gobject unzip
+    fish ranger python3 python3-pillow python3-numpy python3-gobject unzip
 )
 
 # Print the required commands that are not on PATH, one per line.

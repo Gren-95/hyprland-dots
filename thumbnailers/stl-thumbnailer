@@ -1,0 +1,93 @@
+#!/usr/bin/python3
+"""Render a Nautilus thumbnail for a binary or ASCII STL file.
+
+Usage: stl-thumbnailer <input.stl> <output.png> [size]
+
+Pure numpy + Pillow software renderer, so it runs headless inside the file
+manager's thumbnail sandbox (which only sees /usr and has no display).
+Installed to /usr/local/bin by `dots.sh setup`.
+"""
+import re
+import struct
+import sys
+
+import numpy as np
+from PIL import Image, ImageDraw
+
+SUPERSAMPLE = 2
+MAX_TRIANGLES = 200_000
+SUPERSAMPLE_LIMIT = 60_000  # above this many triangles, skip supersampling for speed
+BACKGROUND = (255, 255, 255)
+BASE_COLOR = np.array([74, 144, 226], dtype=float)
+AZIMUTH_DEG = -35.0
+TILT_DEG = 58.0
+MARGIN = 0.08
+
+
+def load_triangles(path):
+    data = open(path, "rb").read()
+    if len(data) >= 84:
+        count = struct.unpack_from("<I", data, 80)[0]
+        if len(data) == 84 + 50 * count:
+            dtype = np.dtype([("n", "<f4", 3), ("v", "<f4", (3, 3)), ("a", "<u2")])
+            return np.frombuffer(data, dtype=dtype, count=count, offset=84)["v"].astype(float)
+    numbers = re.findall(rb"vertex\s+(\S+)\s+(\S+)\s+(\S+)", data)
+    coords = np.array(numbers, dtype=float)
+    return coords.reshape(-1, 3, 3)
+
+
+def view_matrix():
+    az, tilt = np.radians(AZIMUTH_DEG), np.radians(TILT_DEG)
+    rot_z = np.array([[np.cos(az), -np.sin(az), 0], [np.sin(az), np.cos(az), 0], [0, 0, 1]])
+    rot_x = np.array([[1, 0, 0], [0, np.cos(tilt), -np.sin(tilt)], [0, np.sin(tilt), np.cos(tilt)]])
+    return rot_x @ rot_z
+
+
+def render(triangles, size):
+    if len(triangles) > MAX_TRIANGLES:
+        triangles = triangles[:: len(triangles) // MAX_TRIANGLES + 1]
+
+    # Model z-up -> view space (x right, y toward viewer's up, z toward camera).
+    rotated = triangles @ view_matrix().T
+    rotated -= (rotated.reshape(-1, 3).max(axis=0) + rotated.reshape(-1, 3).min(axis=0)) / 2
+
+    edge1 = rotated[:, 1] - rotated[:, 0]
+    edge2 = rotated[:, 2] - rotated[:, 0]
+    normals = np.cross(edge1, edge2)
+    lengths = np.linalg.norm(normals, axis=1)
+    keep = (lengths > 1e-12) & (normals[:, 2] > 0)
+    rotated, normals, lengths = rotated[keep], normals[keep], lengths[keep]
+    if len(rotated) == 0:
+        raise ValueError("no visible triangles")
+    normals /= lengths[:, None]
+
+    light = np.array([-0.4, 0.6, 0.7])
+    light /= np.linalg.norm(light)
+    shade = 0.35 + 0.65 * np.clip(normals @ light, 0, 1)
+
+    span = np.abs(rotated[:, :, :2]).max()
+    canvas = size * (SUPERSAMPLE if len(rotated) <= SUPERSAMPLE_LIMIT else 1)
+    scale = canvas * (0.5 - MARGIN) / span
+    screen = rotated[:, :, :2] * scale
+    screen[:, :, 0] += canvas / 2
+    screen[:, :, 1] = canvas / 2 - screen[:, :, 1]
+
+    order = np.argsort(rotated[:, :, 2].mean(axis=1))
+    image = Image.new("RGB", (canvas, canvas), BACKGROUND)
+    draw = ImageDraw.Draw(image)
+    for index in order:
+        color = tuple((BASE_COLOR * shade[index]).astype(int))
+        points = [tuple(point) for point in screen[index]]
+        draw.polygon(points, fill=color, outline=color)
+    return image.resize((size, size), Image.LANCZOS)
+
+
+def main():
+    if len(sys.argv) < 3:
+        sys.exit("usage: stl-thumbnailer <input.stl> <output.png> [size]")
+    size = int(sys.argv[3]) if len(sys.argv) > 3 else 256
+    render(load_triangles(sys.argv[1]), size).save(sys.argv[2], "PNG")
+
+
+if __name__ == "__main__":
+    main()

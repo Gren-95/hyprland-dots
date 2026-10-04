@@ -1,0 +1,4 @@
+[Thumbnailer Entry]
+TryExec=/usr/local/bin/stl-thumbnailer
+Exec=/usr/local/bin/stl-thumbnailer %i %o %s
+MimeType=model/stl;application/sla;application/vnd.ms-pki.stl;

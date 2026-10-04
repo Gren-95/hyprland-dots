@@ -1051,6 +1051,46 @@ setup_thumbnailers() {
     log_success "Thumbnailers linked into $dest"
 }
 
+# STL thumbnails. The file manager's thumbnail sandbox only sees /usr, so the
+# renderer is installed to /usr/local/bin with sudo.
+setup_stl_thumbnailer() {
+    local dest="/usr/local/bin/stl-thumbnailer"
+
+    log_info "Installing the STL thumbnailer (needs sudo)..."
+    if sudo install -Dm755 "$DOTS_DIR/thumbnailers/stl-thumbnailer" "$dest"; then
+        rm -f "$HOME"/.cache/thumbnails/fail/gnome-thumbnail-factory/*
+        log_success "Installed $dest. Restart Nautilus (nautilus -q) to pick it up"
+    else
+        log_warning "STL thumbnailer install failed. Re-run: dots.sh setup"
+    fi
+}
+
+# Gcode Viewer (https://github.com/Gren-95/gcode-viewer): builds from source,
+# registers it as the default opener for .gcode and installs its thumbnailer
+# (sudo, same /usr sandbox reason as above).
+setup_gcode_viewer() {
+    local src="$HOME/.local/src/gcode-viewer"
+
+    log_info "Installing Gcode Viewer build dependencies..."
+    if ! sudo dnf install -y rust cargo libxkbcommon-devel wayland-devel; then
+        log_warning "Could not install the Rust toolchain; skipping Gcode Viewer"
+        return 0
+    fi
+
+    if [[ -d "$src/.git" ]]; then
+        git -C "$src" pull --ff-only
+    else
+        mkdir -p "$(dirname "$src")"
+        git clone https://github.com/Gren-95/gcode-viewer "$src"
+    fi
+
+    if bash "$src/scripts/install.sh" --all; then
+        log_success "Gcode Viewer installed as the .gcode opener and thumbnailer"
+    else
+        log_warning "Gcode Viewer install failed. Re-run: dots.sh setup"
+    fi
+}
+
 # Session daemon user units (battery-notify, power-auto, media/fullscreen
 # inhibit). Installed and enabled; they start with the next graphical session.
 setup_user_units() {
@@ -1183,6 +1223,12 @@ cmd_setup() {
     # Nautilus thumbnailers
     setup_thumbnailers
 
+    # STL thumbnails need a root-owned copy of the renderer
+    echo ""
+    if ask "Install the STL thumbnailer for Nautilus (needs sudo)? (Y/n)" Y; then
+        setup_stl_thumbnailer
+    fi
+
     # Session daemons as systemd user units
     echo ""
     if ask "Install and enable the session daemon units (battery, power, idle inhibitors)? (Y/n)" Y; then
@@ -1198,7 +1244,7 @@ cmd_setup() {
     # Credential-driven steps need typed input, so --yes skips them.
     echo ""
     if [[ "$ASSUME_YES" == true ]]; then
-        log_info "--yes: skipping Immich/Jellyfin setup (needs credentials); run dots.sh setup interactively for those"
+        log_info "--yes: skipping Immich/Jellyfin and Gcode Viewer (credentials or a long build); run dots.sh setup interactively for those"
     else
         if ask "Install and configure Immich CLI? (y/N)" N; then
             setup_immich_cli
@@ -1207,6 +1253,11 @@ cmd_setup() {
         echo ""
         if ask "Set up Jellyfin music sync? (y/N)" N; then
             setup_jellyfin_sync
+        fi
+
+        echo ""
+        if ask "Install Gcode Viewer as the .gcode opener and thumbnailer (builds from source, needs sudo)? (y/N)" N; then
+            setup_gcode_viewer
         fi
     fi
 
