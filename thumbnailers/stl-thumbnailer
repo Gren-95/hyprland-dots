@@ -24,7 +24,7 @@ TILT_DEG = 58.0
 MARGIN = 0.08
 LABEL = "STL"
 LABEL_COLOR = (70, 70, 70)
-LABEL_HEIGHT = 0.09  # fraction of the thumbnail size
+LABEL_HEIGHT = 0.12  # fraction of the thumbnail size
 LABEL_PADDING = 0.04
 
 
