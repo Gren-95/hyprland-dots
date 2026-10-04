@@ -26,13 +26,13 @@ jobs:
           sudo install -m755 shellcheck-v0.11.0/shellcheck /usr/local/bin/shellcheck
           shellcheck --version
 
-      # ranger/scope.sh is ranger's upstream file (it differs from
+      # config/ranger/scope.sh is ranger's upstream file (it differs from
       # /usr/share/doc/ranger/config/scope.sh only in the shebang), so its
       # warnings are not ours to fix.
       - name: ShellCheck
         shell: bash
         run: |
-          mapfile -t files < <(git ls-files '*.sh' .githooks scripts/battery-charge-schedule | grep -v '^ranger/scope\.sh$')
+          mapfile -t files < <(git ls-files '*.sh' .githooks config/scripts/battery-charge-schedule | grep -v '^config/ranger/scope\.sh$')
           shellcheck -S warning "${files[@]}"
 
       # Style comes from .editorconfig (4 spaces, indented case labels). Pinned
@@ -46,13 +46,13 @@ jobs:
       - name: shfmt
         shell: bash
         run: |
-          mapfile -t files < <(git ls-files '*.sh' .githooks scripts/battery-charge-schedule | grep -v '^ranger/scope\.sh$')
+          mapfile -t files < <(git ls-files '*.sh' .githooks config/scripts/battery-charge-schedule | grep -v '^config/ranger/scope\.sh$')
           shfmt -d "${files[@]}"
 
       - name: Parse every script
         shell: bash
         run: |
-          while read -r f; do bash -n "$f"; done < <(git ls-files '*.sh' .githooks scripts/battery-charge-schedule)
+          while read -r f; do bash -n "$f"; done < <(git ls-files '*.sh' .githooks config/scripts/battery-charge-schedule)
 
   lua:
     name: lua syntax
@@ -87,7 +87,7 @@ jobs:
           Hyprland --version | head -1
           useradd -m ci
           chmod -R a+rX "$GITHUB_WORKSPACE"
-          su ci -c "XDG_RUNTIME_DIR=/tmp Hyprland --verify-config -c '$GITHUB_WORKSPACE/hypr/hyprland.lua'"
+          su ci -c "XDG_RUNTIME_DIR=/tmp Hyprland --verify-config -c '$GITHUB_WORKSPACE/config/hypr/hyprland.lua'"
 
   fish:
     name: fish syntax
@@ -96,11 +96,11 @@ jobs:
       - uses: actions/checkout@v5
       - run: sudo apt-get update && sudo apt-get install -y fish
       # Only our own fish files are tracked; fisher-managed plugins are
-      # gitignored and restored from fish/fish_plugins.
+      # gitignored and restored from config/fish/fish_plugins.
       - name: fish --no-execute
         shell: bash
         run: |
-          mapfile -t files < <(git ls-files 'fish/*.fish')
+          mapfile -t files < <(git ls-files 'config/fish/*.fish')
           for f in "${files[@]}"; do
             fish --no-execute "$f" || exit 1
           done
@@ -117,8 +117,8 @@ jobs:
       - name: Lay out install paths
         run: |
           mkdir -p "$HOME/.config"
-          ln -s "$GITHUB_WORKSPACE/scripts" "$HOME/.config/scripts"
-          sudo install -m755 scripts/battery-charge-schedule /usr/local/bin/battery-charge-schedule
+          ln -s "$GITHUB_WORKSPACE/config/scripts" "$HOME/.config/scripts"
+          sudo install -m755 config/scripts/battery-charge-schedule /usr/local/bin/battery-charge-schedule
           mkdir -p "$HOME/.local/bin"
           install -m755 /bin/true "$HOME/.local/bin/librepods"
 
@@ -147,13 +147,13 @@ jobs:
       - uses: actions/checkout@v5
 
       # A hardcoded home directory makes the config work only for its author.
-      # Docs may spell out real paths; fish/functions/_tide_* and
-      # fish/functions/tide/ are vendored from the tide prompt, and
-      # btop/btop.conf is rewritten by btop itself and ships a
+      # Docs may spell out real paths; config/fish/functions/_tide_* and
+      # config/fish/functions/tide/ are vendored from the tide prompt, and
+      # config/btop/btop.conf is rewritten by btop itself and ships a
       # disk_filter example spelling out a home path.
       - name: No hardcoded home directories
         run: |
-          if git grep -InE '/home/[a-z_][a-z0-9_-]*' -- . ':!*.md' ':!screenshots' ':!fish/functions/_tide_*' ':!fish/functions/tide' ':!btop/btop.conf'; then
+          if git grep -InE '/home/[a-z_][a-z0-9_-]*' -- . ':!*.md' ':!screenshots' ':!config/fish/functions/_tide_*' ':!config/fish/functions/tide' ':!config/btop/btop.conf'; then
             echo "::error::hardcoded home directory - use \$HOME or os.getenv(\"HOME\")"
             exit 1
           fi
@@ -169,7 +169,7 @@ jobs:
       # commits one with `git add -f`.
       - name: Credential files stay untracked
         run: |
-          if git ls-files | grep -E '^(immich/auth\.yml|jellyfin/sync\.conf|scripts/util\.env|quickshell/calendar\.url)$'; then
+          if git ls-files | grep -E '^config/(immich/auth\.yml|jellyfin/sync\.conf|scripts/util\.env|quickshell/calendar\.url)$'; then
             echo "::error::credential file is tracked - remove it from the index"
             exit 1
           fi

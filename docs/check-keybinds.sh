@@ -1,12 +1,12 @@
 #!/bin/bash
-# Fail when KEYBINDS.md documents a Super+... combo that hypr/modules/keys.lua
+# Fail when KEYBINDS.md documents a Super+... combo that config/hypr/modules/keys.lua
 # does not bind. Catches stale rows after a bind is removed or moved.
 #
 # Usage: docs/check-keybinds.sh
 set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-exec python3 - "$root/KEYBINDS.md" "$root/hypr/modules/keys.lua" <<'PY'
+exec python3 - "$root/KEYBINDS.md" "$root/config/hypr/modules/keys.lua" <<'PY'
 import re, sys
 
 doc, lua = (open(p).read() for p in sys.argv[1:3])
@@ -45,7 +45,7 @@ for combo in sorted(set(re.findall(r"`(Super\+[^`]+)`", doc))):
         bad.append(combo)
 
 if bad:
-    print("KEYBINDS.md lists combos with no bind in hypr/modules/keys.lua:", file=sys.stderr)
+    print("KEYBINDS.md lists combos with no bind in config/hypr/modules/keys.lua:", file=sys.stderr)
     for c in bad:
         print(f"  {c}", file=sys.stderr)
     sys.exit(1)

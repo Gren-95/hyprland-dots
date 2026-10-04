@@ -52,9 +52,9 @@ Modals reachable from keybindings or the bar:
 - [`docs/DAEMONS.md`](docs/DAEMONS.md) — background daemons and dotwatch hot-reload
 - [`docs/SERVICES.md`](docs/SERVICES.md) — scheduled jobs, Immich, Jellyfin, WinApps
 - [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) — lint checks and the pre-commit hook
-- [`quickshell/DESIGN.md`](quickshell/DESIGN.md) — QML widget conventions and recipes
-- [`scripts/README.md`](scripts/README.md) — per-script breakdown (what runs when)
-- [`hypr/MODULES.md`](hypr/MODULES.md) — what each `hypr/modules/*.lua` owns
+- [`config/quickshell/DESIGN.md`](config/quickshell/DESIGN.md) — QML widget conventions and recipes
+- [`config/scripts/README.md`](config/scripts/README.md) — per-script breakdown (what runs when)
+- [`config/hypr/MODULES.md`](config/hypr/MODULES.md) — what each `config/hypr/modules/*.lua` owns
 
 ## Setup
 

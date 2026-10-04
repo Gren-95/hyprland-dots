@@ -1,8 +1,8 @@
 # Architecture
 
 Bird's-eye view of how the pieces fit together. For widget-level detail see
-`quickshell/DESIGN.md`; for keybinds see `KEYBINDS.md`; for scripts see
-`scripts/README.md`.
+`config/quickshell/DESIGN.md`; for keybinds see `KEYBINDS.md`; for scripts see
+`config/scripts/README.md`.
 
 ## The stack
 
@@ -31,7 +31,7 @@ Bird's-eye view of how the pieces fit together. For widget-level detail see
 
 1. User logs into Hyprland.
 2. Hyprland loads `hyprland.lua`, which requires the `modules/*.lua` files (and `hyprland-gui.lua` last for HyprMod overrides).
-3. `autostart.lua` fires `scripts/restart.sh`, which orchestrates every
+3. `autostart.lua` fires `config/scripts/restart.sh`, which orchestrates every
    userspace service.
 4. `restart.sh` starts in sequence: xdg-desktop-portal, gnome-keyring,
    Quickshell, awww-daemon, hypridle, battery-notify, media-inhibit, fullscreen-inhibit, power-auto,
@@ -46,9 +46,9 @@ Bird's-eye view of how the pieces fit together. For widget-level detail see
 | Layer | What it owns |
 |---|---|
 | **Hyprland compositor** | Window layout, workspaces, keyboard input, layer-shell protocol. |
-| **`scripts/`** | Long-running background daemons (battery/media-inhibit/fullscreen-inhibit/power-auto/dotwatch) + one-shot actions (screenshot/record/wallpaper). All notifications go through `scripts/lib/notify.sh`. |
+| **`config/scripts/`** | Long-running background daemons (battery/media-inhibit/fullscreen-inhibit/power-auto/dotwatch) + one-shot actions (screenshot/record/wallpaper). All notifications go through `config/scripts/lib/notify.sh`. |
 | **Quickshell** | Bar, popups, OSDs, notification daemon (replaces swaync), launcher (replaces rofi), polkit agent (replaces hyprpolkitagent). State for the bar's interactive bits (audio, brightness, BT) comes from `Quickshell.Services.*` modules talking directly to PipeWire / BlueZ / UPower / etc. Wi-Fi, wired and Tailscale are left to the nm-applet tray app (Tailscale through the NetworkManager Tailscale VPN plugin). |
-| **`cron`** | Periodic Immich and Jellyfin syncs. Managed by `scripts/sync-toggle.sh` (Quick Actions toggle UI). No persistent daemon; cron just fires the script on schedule. |
+| **`cron`** | Periodic Immich and Jellyfin syncs. Managed by `config/scripts/sync-toggle.sh` (Quick Actions toggle UI). No persistent daemon; cron just fires the script on schedule. |
 
 ## Dotfiles plumbing
 
@@ -67,12 +67,12 @@ gtk-3.0, gtk-4.0, immich, jellyfin), plus the `~/.config/kdeglobals` file. Two e
 
 `dotwatch.sh` runs `inotifywait` on the dots repo and, on file change:
 
-- `hypr/hyprland*.lua` or `hypr/modules/*` → `hyprctl reload`
-- `hypr/hypridle.conf` → restart hypridle
-- `hypr/hyprlock.conf` → notify (changes apply next lock)
-- `gtk-3.0/gtk.css` → notify (changes apply next GTK app launch)
+- `config/hypr/hyprland*.lua` or `config/hypr/modules/*` → `hyprctl reload`
+- `config/hypr/hypridle.conf` → restart hypridle
+- `config/hypr/hyprlock.conf` → notify (changes apply next lock)
+- `config/gtk-3.0/gtk.css` → notify (changes apply next GTK app launch)
 
-Quickshell auto-watches its own QML files — edits to `quickshell/*.qml` are
+Quickshell auto-watches its own QML files — edits to `config/quickshell/*.qml` are
 picked up automatically (sometimes a SIGTERM + restart is needed if the file
 watcher missed an atomic write).
 
@@ -89,8 +89,8 @@ watcher missed an atomic write).
 
 ## See also
 
-- `quickshell/DESIGN.md` — QML widget conventions, primitives, recipes
-- `scripts/README.md` — per-script breakdown
+- `config/quickshell/DESIGN.md` — QML widget conventions, primitives, recipes
+- `config/scripts/README.md` — per-script breakdown
 - `KEYBINDS.md` — flat keybind reference
-- `hypr/MODULES.md` — what each `hypr/modules/*.lua` does
+- `config/hypr/MODULES.md` — what each `config/hypr/modules/*.lua` does
 - `README.md` — install, dependencies, screenshots

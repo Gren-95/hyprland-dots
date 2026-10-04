@@ -16,7 +16,7 @@ works on a machine without Hyprland. Bypass it with `git commit --no-verify`.
 The checks by hand:
 
 ```bash
-shellcheck -S warning $(git ls-files '*.sh' | grep -v '^ranger/scope.sh$')
+shellcheck -S warning $(git ls-files '*.sh' | grep -v '^config/ranger/scope.sh$')
 luac -p $(git ls-files '*.lua')
 Hyprland --verify-config -c "$PWD/hypr/hyprland.lua"
 ./dotfiles-manager.sh status

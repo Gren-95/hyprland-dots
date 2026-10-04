@@ -22,8 +22,8 @@ Edits to dotfiles are picked up automatically without restarting your session:
 
 | File changed | Action |
 |---|---|
-| `hypr/hyprland*.lua`, `hypr/modules/*` | `hyprctl reload` |
-| `hypr/hypridle.conf` | Restart hypridle |
-| `hypr/hyprlock.conf` | Notification (applies on next lock) |
-| `gtk-3.0/gtk.css` | Notification (restart GTK apps to apply) |
-| `quickshell/*` | Quickshell auto-reloads on file changes |
+| `config/hypr/hyprland*.lua`, `config/hypr/modules/*` | `hyprctl reload` |
+| `config/hypr/hypridle.conf` | Restart hypridle |
+| `config/hypr/hyprlock.conf` | Notification (applies on next lock) |
+| `config/gtk-3.0/gtk.css` | Notification (restart GTK apps to apply) |
+| `config/quickshell/*` | Quickshell auto-reloads on file changes |

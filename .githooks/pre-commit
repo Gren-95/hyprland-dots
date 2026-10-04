@@ -22,9 +22,9 @@ staged=$(mktemp -d)
 trap 'rm -rf "$staged"' EXIT
 git checkout-index -a -f --prefix="$staged/"
 
-# ranger/scope.sh is ranger's upstream file; its warnings are not ours to fix.
-mapfile -t sh_files < <(git ls-files '*.sh' .githooks scripts/battery-charge-schedule | grep -v '^ranger/scope\.sh$')
-mapfile -t all_sh < <(git ls-files '*.sh' .githooks scripts/battery-charge-schedule)
+# config/ranger/scope.sh is ranger's upstream file; its warnings are not ours to fix.
+mapfile -t sh_files < <(git ls-files '*.sh' .githooks config/scripts/battery-charge-schedule | grep -v '^config/ranger/scope\.sh$')
+mapfile -t all_sh < <(git ls-files '*.sh' .githooks config/scripts/battery-charge-schedule)
 mapfile -t lua_files < <(git ls-files '*.lua')
 
 if ((${#sh_files[@]})); then
@@ -41,7 +41,7 @@ if ((${#sh_files[@]})); then
     elif (cd "$staged" && shfmt -d "${sh_files[@]}" >/dev/null); then
         ok "shfmt (${#sh_files[@]} scripts)"
     else
-        bad "shfmt - run: shfmt -w \$(git ls-files '*.sh' .githooks scripts/battery-charge-schedule)"
+        bad "shfmt - run: shfmt -w \$(git ls-files '*.sh' .githooks config/scripts/battery-charge-schedule)"
     fi
 
     for f in "${all_sh[@]}"; do
@@ -63,10 +63,10 @@ if ((${#lua_files[@]})); then
     fi
 fi
 
-if [[ -f "$staged/hypr/hyprland.lua" ]]; then
+if [[ -f "$staged/config/hypr/hyprland.lua" ]]; then
     if ! command -v Hyprland >/dev/null; then
         skip "Hyprland --verify-config" Hyprland
-    elif out=$(Hyprland --verify-config -c "$staged/hypr/hyprland.lua" 2>&1) &&
+    elif out=$(Hyprland --verify-config -c "$staged/config/hypr/hyprland.lua" 2>&1) &&
         grep -q "config ok" <<<"$out"; then
         ok "Hyprland --verify-config"
     else
@@ -76,10 +76,10 @@ if [[ -f "$staged/hypr/hyprland.lua" ]]; then
 fi
 
 # Hygiene, straight off the index. Docs may spell out real paths;
-# fish/functions/_tide_* and fish/functions/tide/ are vendored, and
-# btop/btop.conf is rewritten by btop itself and its shipped comments
+# config/fish/functions/_tide_* and config/fish/functions/tide/ are vendored, and
+# config/btop/btop.conf is rewritten by btop itself and its shipped comments
 # spell out a disk_filter example containing a home path.
-if git grep --cached -InE '/home/[a-z_][a-z0-9_-]*' -- . ':!*.md' ':!screenshots' ':!fish/functions/_tide_*' ':!fish/functions/tide' ':!btop/btop.conf' >&2; then
+if git grep --cached -InE '/home/[a-z_][a-z0-9_-]*' -- . ':!*.md' ':!screenshots' ':!config/fish/functions/_tide_*' ':!config/fish/functions/tide' ':!config/btop/btop.conf' >&2; then
     bad "hardcoded home directory - use \$HOME or os.getenv(\"HOME\")"
 else
     ok "no hardcoded home directories"
@@ -91,7 +91,7 @@ else
     ok "no secrets assigned to literals"
 fi
 
-if git ls-files | grep -E '^(immich/auth\.yml|jellyfin/sync\.conf|scripts/util\.env|quickshell/calendar\.url)$' >&2; then
+if git ls-files | grep -E '^config/(immich/auth\.yml|jellyfin/sync\.conf|scripts/util\.env|quickshell/calendar\.url)$' >&2; then
     bad "credential file is tracked - remove it from the index"
 else
     ok "credential files untracked"

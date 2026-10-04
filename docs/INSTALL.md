@@ -25,11 +25,11 @@ Dependencies and manual setup. The one-command install is in the [README](../REA
 - `ranger` — optional TUI file manager
 - `btop` — optional TUI system monitor
 
-Fish plugin files are not tracked. They are declared in [`fish/fish_plugins`](../fish/fish_plugins);
+Fish plugin files are not tracked. They are declared in [`config/fish/fish_plugins`](../config/fish/fish_plugins);
 on a fresh machine run `fisher update` ([fisher](https://github.com/jorgebucaran/fisher), see
-[`fish/README.md`](../fish/README.md)) to restore them; the prompt is
+[`config/fish/README.md`](../config/fish/README.md)) to restore them; the prompt is
 [tide](https://github.com/IlanCosman/tide). Its colours come from
-[`fish/tide-stone`](../fish/tide-stone) — `fish_variables` is gitignored, so on a new
+[`config/fish/tide-stone`](../config/fish/tide-stone) — `fish_variables` is gitignored, so on a new
 machine apply them with `fish ~/.config/fish/tide-stone/apply.fish`.
 
 ## Install Dependencies (Nobara 44)

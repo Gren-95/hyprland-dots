@@ -1,7 +1,7 @@
 # Stone — a tide colour preset
 
 `stone.fish` recolours the [tide](https://github.com/IlanCosman/tide) prompt
-with the palette in [`quickshell/Theme.qml`](../../quickshell/Theme.qml), so the
+with the palette in [`quickshell/Theme.qml`](../../../config/quickshell/Theme.qml), so the
 prompt reads as part of the same system as the bar, the window borders and the
 lock screen.
 

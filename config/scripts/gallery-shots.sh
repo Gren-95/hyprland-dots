@@ -21,7 +21,7 @@
 # while Super is held).
 set -euo pipefail
 
-OUT_DIR="$(dirname "${BASH_SOURCE[0]}")/../screenshots/gallery"
+OUT_DIR="$(dirname "${BASH_SOURCE[0]}")/../../screenshots/gallery"
 BAR_HEIGHT=40
 MARGIN=34
 SETTLE_SECONDS=1.5

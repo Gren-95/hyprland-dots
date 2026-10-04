@@ -7,6 +7,8 @@
 
 # Constants
 DOTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Every CONFIG_ITEMS entry lives under config/, mirroring ~/.config.
+CONFIG_SRC_DIR="$DOTS_DIR/config"
 CONFIG_DIR="$HOME/.config"
 LOG_FILE="$CONFIG_DIR/.dotfiles_symlink.log"
 LOCK_FILE="/tmp/dotfiles-manager.lock"
@@ -34,7 +36,7 @@ CONFIG_ITEMS=(
 # symlinked: systemd runs them as root, and root must not execute files that
 # live in a user-writable repo. Re-run "system" after editing them here.
 SYSTEM_SCRIPTS=(
-    "scripts/battery-charge-schedule"
+    "config/scripts/battery-charge-schedule"
 )
 SYSTEM_UNITS=(
     "systemd/system/battery-charge-schedule.service"
@@ -244,7 +246,7 @@ log_operation() {
 check_symlink() {
     local item="$1"
     local target="$CONFIG_DIR/$item"
-    local source="$DOTS_DIR/$item"
+    local source="$CONFIG_SRC_DIR/$item"
     local canonical_source
     canonical_source=$(get_canonical_path "$source")
 
@@ -308,7 +310,7 @@ backup_directory() {
 # Create symlink
 create_symlink() {
     local item="$1"
-    local source="$DOTS_DIR/$item"
+    local source="$CONFIG_SRC_DIR/$item"
     local target="$CONFIG_DIR/$item"
 
     if [[ ! -e "$source" ]]; then
@@ -409,7 +411,7 @@ cmd_backup() {
     local failed=0
 
     for item in "${CONFIG_ITEMS[@]}"; do
-        local source="$DOTS_DIR/$item"
+        local source="$CONFIG_SRC_DIR/$item"
         local target="$CONFIG_DIR/$item"
         local status
         status=$(check_symlink "$item")

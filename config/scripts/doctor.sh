@@ -11,7 +11,7 @@ set -euo pipefail
 
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 SCRIPTS_SRC="$(dirname "$SCRIPT_PATH")"
-DOTS_DIR="$(dirname "$SCRIPTS_SRC")"
+DOTS_DIR="$(dirname "$(dirname "$SCRIPTS_SRC")")"
 source "$SCRIPTS_SRC/lib/deps.sh"
 
 # User services that must be running in a graphical session.
@@ -121,7 +121,7 @@ check_symlinks() {
         [[ "$state" == OK ]] && continue
         # Items whose source is not in the repo (per-machine config) are skipped
         # by the manager too.
-        [[ -e "$DOTS_DIR/$item" ]] || continue
+        [[ -e "$DOTS_DIR/config/$item" ]] || continue
         fail "symlink $item: $state"
         bad=1
     done <<<"$status_out"

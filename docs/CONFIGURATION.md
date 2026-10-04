@@ -9,7 +9,7 @@ Put your wallpapers in `~/Pictures/wallpapers/`. They are preloaded automaticall
 ## Idle timeout
 
 ```bash
-$EDITOR hypr/hypridle.conf
+$EDITOR config/hypr/hypridle.conf
 ```
 
 ## Default apps
@@ -18,7 +18,7 @@ Open the launcher (`Super+R`) and type `default` — Browser, Terminal, Editor
 and File manager each open a picker listing the apps that declare themselves
 for that role. Browser and file manager also become the XDG default, so links
 and folders opened from other apps follow the same choice. `Super+T` and
-`Super+E` route through `scripts/default-app.sh`, so a pick takes effect
+`Super+E` route through `config/scripts/default-app.sh`, so a pick takes effect
 without touching the config.
 
 ## Hiding apps from the launcher
@@ -31,7 +31,7 @@ menus are unaffected.
 ## Keybinds
 
 ```bash
-$EDITOR hypr/modules/keys.lua
+$EDITOR config/hypr/modules/keys.lua
 ```
 
 Press `Super+F1` in session to view all active keybinds.
@@ -39,7 +39,7 @@ Press `Super+F1` in session to view all active keybinds.
 ## OSD
 
 Volume, brightness, and keyboard-backlight OSDs are rendered by Quickshell
-(`quickshell/Osd.qml`). It polls `/sys/class/backlight` and `/sys/class/leds`
+(`config/quickshell/Osd.qml`). It polls `/sys/class/backlight` and `/sys/class/leds`
 so any process changing brightness — key, `brightnessctl`, `hypridle` —
 triggers the OSD automatically. No daemon to enable.
 
@@ -58,9 +58,9 @@ wayvnc is an optional VNC server for remote desktop access.
 
 **Connect:** Use any VNC viewer and connect to `127.0.0.1:5900`, or `<tailscale-ip>:5900` from another device (`wayvnc-toggle.sh` binds the Tailscale address when Tailscale is up).
 
-**Security:** The default config binds to `127.0.0.1` with no auth. Remote access goes through [Tailscale](https://tailscale.com); there is no LAN listener unless you change `wayvnc/config`.
+**Security:** The default config binds to `127.0.0.1` with no auth. Remote access goes through [Tailscale](https://tailscale.com); there is no LAN listener unless you change `config/wayvnc/config`.
 
-To add password auth, edit `wayvnc/config`:
+To add password auth, edit `config/wayvnc/config`:
 
 ```ini
 enable_auth=true

@@ -16,7 +16,7 @@ CONFIG_DIR="$HOME/.config"
 ASSUME_YES=false
 
 # Shared dependency list (also used by scripts/doctor.sh).
-source "$SCRIPT_DIR/scripts/lib/deps.sh"
+source "$SCRIPT_DIR/config/scripts/lib/deps.sh"
 
 # Color codes for output
 RED='\033[0;31m'
@@ -200,13 +200,13 @@ setup_immich_cli() {
         4) cron_expr="0 */6 * * *" ;;
     esac
 
-    bash "$SCRIPT_DIR/scripts/sync-toggle.sh" schedule immich "$cron_expr"
+    bash "$SCRIPT_DIR/config/scripts/sync-toggle.sh" schedule immich "$cron_expr"
     print_success "Immich cron schedule: $cron_expr"
 
     read -p "Enable Immich background sync now? (Y/n) " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-        bash "$SCRIPT_DIR/scripts/sync-toggle.sh" enable immich
+        bash "$SCRIPT_DIR/config/scripts/sync-toggle.sh" enable immich
         print_success "Immich background sync enabled"
     fi
 }
@@ -253,7 +253,7 @@ EOF
     read -p "Enable Jellyfin background sync now? (Y/n) " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-        bash "$SCRIPT_DIR/scripts/sync-toggle.sh" enable jellyfin
+        bash "$SCRIPT_DIR/config/scripts/sync-toggle.sh" enable jellyfin
         print_success "Jellyfin background sync enabled"
     fi
 }
@@ -262,11 +262,11 @@ EOF
 setup_scripts() {
     print_info "Setting up script permissions..."
 
-    if [[ -d "$SCRIPT_DIR/scripts" ]]; then
+    if [[ -d "$SCRIPT_DIR/config/scripts" ]]; then
         # battery-charge-schedule has no .sh extension (it is deployed to
         # /usr/local/bin under that name), so the glob alone would skip it.
-        chmod +x "$SCRIPT_DIR"/scripts/*.sh "$SCRIPT_DIR"/scripts/lib/*.sh \
-            "$SCRIPT_DIR/scripts/battery-charge-schedule"
+        chmod +x "$SCRIPT_DIR"/config/scripts/*.sh "$SCRIPT_DIR"/config/scripts/lib/*.sh \
+            "$SCRIPT_DIR/config/scripts/battery-charge-schedule"
         print_success "Script permissions set"
     else
         print_warning "Scripts directory not found"

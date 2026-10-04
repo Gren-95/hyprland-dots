@@ -1,5 +1,5 @@
 #!/bin/bash
-# Regenerate KEYBINDS.md from the live bind table (scripts/hypr-binds.sh, which
+# Regenerate KEYBINDS.md from the live bind table (config/scripts/hypr-binds.sh, which
 # resolves the real dispatcher/arg for Lua-registered binds).
 #
 # The hand-written intro (everything above the first "## " heading) is kept;
@@ -25,8 +25,8 @@ command -v python3 >/dev/null || {
     exit 1
 }
 
-binds=$(bash "$root/scripts/hypr-binds.sh" 2>/dev/null) || {
-    echo "gen-keybinds: scripts/hypr-binds.sh failed" >&2
+binds=$(bash "$root/config/scripts/hypr-binds.sh" 2>/dev/null) || {
+    echo "gen-keybinds: config/scripts/hypr-binds.sh failed" >&2
     exit 1
 }
 [[ -n "$binds" ]] || {
@@ -73,7 +73,7 @@ EXEC_LABELS = [  # (substring of arg, category, label)
     ("default-app.sh run", APP, "Open default app"),
     ("hyprpicker", APP, "Color picker (hyprpicker)"),
     ("hyprlock", APP, "Lock screen (hyprlock + album art)"),
-    ("restart.sh", APP, "Restart all userspace services (`scripts/restart.sh`)"),
+    ("restart.sh", APP, "Restart all userspace services (`config/scripts/restart.sh`)"),
     ("screenshot-ocr.sh", CAP, "Screenshot region → OCR → clipboard text"),
     ("screenrecord.sh", CAP, "Toggle screen recording (gpu-screen-recorder)"),
     ("wallpaper.sh", CAP, "Random wallpaper"),
