@@ -12,7 +12,7 @@ import struct
 import sys
 
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 SUPERSAMPLE = 2
 MAX_TRIANGLES = 200_000
@@ -22,6 +22,10 @@ BASE_COLOR = np.array([74, 144, 226], dtype=float)
 AZIMUTH_DEG = -35.0
 TILT_DEG = 58.0
 MARGIN = 0.08
+LABEL = "STL"
+LABEL_COLOR = (70, 70, 70)
+LABEL_HEIGHT = 0.075  # fraction of the thumbnail size
+LABEL_PADDING = 0.04
 
 
 def load_triangles(path):
@@ -41,6 +45,15 @@ def view_matrix():
     rot_z = np.array([[np.cos(az), -np.sin(az), 0], [np.sin(az), np.cos(az), 0], [0, 0, 1]])
     rot_x = np.array([[1, 0, 0], [0, np.cos(tilt), -np.sin(tilt)], [0, np.sin(tilt), np.cos(tilt)]])
     return rot_x @ rot_z
+
+
+def add_label(image):
+    size = image.width
+    font = ImageFont.load_default(size=max(8, round(size * LABEL_HEIGHT)))
+    draw = ImageDraw.Draw(image)
+    padding = round(size * LABEL_PADDING)
+    draw.text((size - padding, padding), LABEL, font=font, fill=LABEL_COLOR, anchor="ra")
+    return image
 
 
 def render(triangles, size):
@@ -79,7 +92,7 @@ def render(triangles, size):
         color = tuple((BASE_COLOR * shade[index]).astype(int))
         points = [tuple(point) for point in screen[index]]
         draw.polygon(points, fill=color, outline=color)
-    return image.resize((size, size), Image.LANCZOS)
+    return add_label(image.resize((size, size), Image.LANCZOS))
 
 
 def main():
