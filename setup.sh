@@ -286,6 +286,20 @@ setup_git_hooks() {
     print_success "core.hooksPath set to .githooks"
 }
 
+# Nautilus thumbnailers live outside ~/.config, so the symlink manager skips
+# them. Link each tracked entry into the user thumbnailer directory.
+setup_thumbnailers() {
+    local dest="$HOME/.local/share/thumbnailers"
+    local entry
+
+    print_info "Linking Nautilus thumbnailers..."
+    mkdir -p "$dest"
+    for entry in "$SCRIPT_DIR"/thumbnailers/*.thumbnailer; do
+        ln -sf "$entry" "$dest/$(basename "$entry")"
+    done
+    print_success "Thumbnailers linked into $dest"
+}
+
 # Session daemon user units (battery-notify, power-auto, media/fullscreen
 # inhibit). Installed and enabled; they start with the next graphical session.
 setup_user_units() {
@@ -434,6 +448,9 @@ main() {
 
     # Enable the tracked git hooks
     setup_git_hooks
+
+    # Nautilus thumbnailers
+    setup_thumbnailers
 
     # Session daemons as systemd user units
     echo ""
