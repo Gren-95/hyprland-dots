@@ -24,8 +24,8 @@ DEPS_OPTIONAL=(
     wayvnc     # scripts/wayvnc-toggle.sh
     tailscale  # wayvnc binding address
     hyprsunset # scripts/night.sh
-    magick     # scripts/gallery-shots.sh (ImageMagick 7)
-    unzip      # scripts/extract.sh
+    magick     # scripts/gallery-shots.sh, thumbnailers/3mf.thumbnailer (ImageMagick 7)
+    unzip      # scripts/extract.sh, thumbnailers/3mf.thumbnailer
     expect     # scripts/ledvance.sh
     immich     # scripts/immich-sync.sh
     crontab    # sync-toggle.sh (immich schedule)
@@ -38,7 +38,7 @@ DEPS_DNF=(
     brightnessctl playerctl powerprofilesctl gpu-screen-recorder
     network-manager-applet libnotify upower mpv bc curl
     gnome-keyring jq inotify-tools
-    fish ranger python3 python3-pillow python3-gobject
+    fish ranger python3 python3-pillow python3-gobject unzip
 )
 
 # Print the required commands that are not on PATH, one per line.
