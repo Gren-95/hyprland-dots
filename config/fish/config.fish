@@ -33,6 +33,7 @@ if status is-interactive
     abbr -a rpgmd  xdg-open \$RPGMDECRYPT_PATH
     abbr -a vi  nvim
     abbr -a vim nvim
+    abbr -a nano nvim
     abbr -a keys kb
     # ipa, mvup, kb, dots, music live in functions/ (multi-token pipes don't read well inline)
 
