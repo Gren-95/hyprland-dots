@@ -47,3 +47,22 @@ hl.gesture({
 })
 
 -- gesture = 3, up, close
+
+-- 3-finger up = hyprexpo overview, 3-finger down = cancel. Plugin is a local
+-- build (hyprpm headers mismatch on Fedora); rebuild from ~/.local/src/hyprexpo
+-- after Hyprland updates. hl.plugin.load is declarative and must stay
+-- unguarded; the loaded check only gates calls into the plugin API.
+hl.plugin.load(os.getenv("HOME") .. "/.local/lib/hyprland/plugins/hyprexpo.so")
+
+local hyprexpo_loaded = false
+for _, plugin in ipairs(hl.get_loaded_plugins()) do
+    if plugin.name == "hyprexpo" then
+        hyprexpo_loaded = true
+        break
+    end
+end
+
+if hyprexpo_loaded then
+    hl.plugin.hyprexpo.gesture({ fingers = 3, direction = "up", action = "expo" })
+    hl.plugin.hyprexpo.gesture({ fingers = 3, direction = "down", action = "cancel" })
+end
