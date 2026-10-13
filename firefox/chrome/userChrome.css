@@ -264,8 +264,11 @@
  * not on :root, so they have to be set in the popup's own scope — a :root
  * override never reaches them.
  */
+/* Not .autoscroller: its marker icon is the --panel-background-color value
+ * (a colour + SVG shorthand) and its circle is --panel-border-radius, so
+ * overriding either turns the marker into a flat square. */
 menupopup,
-panel {
+panel:not(.autoscroller) {
   --panel-background-color: var(--qs-bg-alt) !important;
   --panel-text-color:       var(--qs-fg) !important;
   --panel-border-color:     var(--qs-popup-border) !important;
@@ -298,11 +301,16 @@ menuitem[disabled] {
   color: var(--qs-disabled) !important;
 }
 
+/* Separators are drawn from a border (menuseparator) or a ::before border in
+ * currentColor (toolbarseparator), inside a padded box. A background-color
+ * would fill that whole box — the gray blocks on the bookmarks toolbar. */
 menuseparator,
-toolbarseparator,
 .panel-separator {
   border-color: var(--qs-border) !important;
-  background-color: var(--qs-border) !important;
+}
+
+toolbarseparator {
+  color: var(--qs-border-strong) !important;
 }
 
 toolbarbutton.subviewbutton:hover,
