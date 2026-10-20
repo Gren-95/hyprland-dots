@@ -45,9 +45,13 @@ Scope {
     WeatherService { id: weatherService }
     AccentService { id: accentService }
     Notifications { id: notifService }
+    GameModeService { id: gameMode; notifs: notifService }
     IcsCalendar { id: calService }
     DayPanel { id: dayPanel; cal: calService; notifs: notifService }
     Spotlight { id: spotlight }
+    // Minimal launcher used while game mode hides the bar (Spotlight's flyout
+    // needs a visible bar to anchor to); the spotlight shortcut routes here.
+    GameLauncher { id: gameLauncher }
     Clipboard { id: clipboard }
     Osd { id: osd }
     Keybinds { id: keybinds }
@@ -69,6 +73,7 @@ Scope {
             id: bar
             required property var modelData
             screen: modelData
+            visible: !gameMode.active
 
             // True when this bar's monitor is the focused one. Shared flyouts
             // anchor to the active bar so they open on the current monitor.
@@ -111,6 +116,8 @@ Scope {
                     { name: "Power",          glyph: "󰐥", accent: Theme.accent.red,    keywords: "battery profile sleep reboot shutdown session", isToggle: false, run: () => powerMod.toggleOpen(batteryIcon.visible ? batteryIcon : null) },
                     { name: "Do Not Disturb", glyph: "󰂛", accent: Theme.accent.orange, keywords: "dnd mute quiet notifications",    isToggle: true,
                       state: () => notifService.dnd, run: () => notifService.dnd = !notifService.dnd },
+                    { name: "Game mode",      glyph: "󰊖", accent: Theme.accent.green,  keywords: "gaming performance bar dnd animations", isToggle: true,
+                      state: () => gameMode.active, run: () => gameMode.toggle() },
                     { name: "Stay Awake",     glyph: "󰒲", accent: Theme.accent.purple, keywords: "idle sleep inhibit caffeine",     isToggle: true,
                       state: () => idleService.effectiveInhibited, run: () => idleService.toggleManual() },
                     { name: "Calendar",       glyph: "󰃭", accent: Theme.accent.blue,   keywords: "date events schedule",            isToggle: false, run: () => dayPanel.openFrom(clockAnchor) },
@@ -493,6 +500,8 @@ Scope {
                 }
                 Shortcuts {
                     spotlightRef: spotlight
+                    gameModeRef: gameMode
+                    gameLauncherRef: gameLauncher
                     clipboardRef: clipboard
                     keybindsRef: keybinds
                     sysmonRef: sysmon

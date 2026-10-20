@@ -14,6 +14,8 @@ Scope {
     id: sc
 
     property var spotlightRef
+    property var gameModeRef
+    property var gameLauncherRef
     property var clipboardRef
     property var keybindsRef
     property var sysmonRef
@@ -29,8 +31,11 @@ Scope {
     property Item clockAnchorRef
 
     readonly property var table: [
+        // Game mode hides the bar, which Spotlight's flyout anchors to, so
+        // route to the standalone minimal launcher while game mode is on.
         { name: "spotlight", description: "Toggle app launcher",
-          run: () => sc.spotlightRef.toggle() },
+          run: () => (sc.gameModeRef && sc.gameModeRef.active)
+            ? sc.gameLauncherRef.toggle() : sc.spotlightRef.toggle() },
         // Pairs with Ctrl+D inside the launcher, which is what hides
         // an app. Getting back to one previously needed the launcher
         // open and an arrow press, which is a lot of steps for undoing
