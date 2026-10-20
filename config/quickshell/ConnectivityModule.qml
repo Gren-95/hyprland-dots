@@ -145,14 +145,8 @@ Item {
     MouseArea {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
-        onClicked: (e) => {
-            if (e.button === Qt.RightButton) {
-                if (bt.adapter) bt.adapter.enabled = !bt.adapter.enabled;
-                return;
-            }
-            bt.toggleOpen();
-        }
+        acceptedButtons: Qt.LeftButton
+        onClicked: bt.toggleOpen()
     }
 
     HoverHandler { id: btHover }
