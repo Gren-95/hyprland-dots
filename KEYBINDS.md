@@ -113,3 +113,4 @@ flags rows that no longer match.
 | `Super+Alt+S` | exec `bash ~/.config/scripts/screenshot-window.sh` |
 | `Super+Ctrl+N` | exec `bash ~/.config/scripts/night.sh toggle` |
 | `Super+Shift+I` | exec `bash ~/.config/scripts/idle-inhibit-toggle.sh` |
+| `Super+Shift+G` | exec `bash ~/.config/scripts/gamemode.sh toggle` |

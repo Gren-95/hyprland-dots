@@ -78,7 +78,7 @@ RowLayout {
             }
         }
     }
-    Timer { interval: 5000; running: true; repeat: true; triggeredOnStart: true; onTriggered: probe.running = true }
+    Timer { interval: 5000; running: !gameMode.active; repeat: true; triggeredOnStart: true; onTriggered: probe.running = true }
 
     component Dot: Item {
         id: dot

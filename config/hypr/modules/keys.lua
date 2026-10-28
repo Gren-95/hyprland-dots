@@ -50,6 +50,7 @@ hl.bind(var_mainMod .. " + X", hl.dsp.exec_cmd("bash ~/.config/scripts/scratchpa
 hl.bind(var_mainMod .. " + ALT + S", hl.dsp.exec_cmd("bash ~/.config/scripts/screenshot-window.sh"))
 hl.bind(var_mainMod .. " + CTRL + N", hl.dsp.exec_cmd("bash ~/.config/scripts/night.sh toggle"))
 hl.bind(var_mainMod .. " + SHIFT + I", hl.dsp.exec_cmd("bash ~/.config/scripts/idle-inhibit-toggle.sh"))
+hl.bind(var_mainMod .. " + SHIFT + G", hl.dsp.exec_cmd("bash ~/.config/scripts/gamemode.sh toggle"))
 
 -- Focus movement
 hl.bind(var_mainMod .. " + CTRL + left", hl.dsp.focus({ direction = "left" }))

@@ -63,6 +63,7 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | `night.sh` | `toggle\|on\|off\|status` night light via `hyprsunset`; `NIGHT_TEMPERATURE` in `util.env`. |
 | `scratchpad.sh` | Toggle a drop-down kitty on the `special:scratchpad` workspace. |
 | `idle-inhibit-toggle.sh` | Manual idle inhibit toggle; PID in `$XDG_RUNTIME_DIR/idle-inhibit.pid`. |
+| `gamemode.sh` | Game mode `{toggle\|on\|off\|status}`: animations/gaps/rounding off, performance profile; Quickshell hides the bar and enables DND. Holds an idle inhibitor and pauses Immich/Jellyfin sync, night light and running Docker containers, then resumes only what it paused. State in `$XDG_RUNTIME_DIR/gamemode`, paused items in `gamemode.paused`. |
 
 ## One-shots (keybind-triggered)
 

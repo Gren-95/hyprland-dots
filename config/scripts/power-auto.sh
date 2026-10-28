@@ -48,6 +48,9 @@ decide() {
 
 apply() {
     local target=$1
+    # Game mode pins the performance profile; gamemode.sh restores it on exit.
+    [[ -f "${XDG_RUNTIME_DIR:-/run/user/$UID}/gamemode" ]] &&
+        [[ "$(cut -d' ' -f1 "${XDG_RUNTIME_DIR:-/run/user/$UID}/gamemode")" == on ]] && return 0
     local cur
     cur=$(powerprofilesctl get 2>/dev/null)
     [[ "$cur" == "$target" ]] && return 0

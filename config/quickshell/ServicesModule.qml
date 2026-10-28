@@ -132,7 +132,7 @@ Item {
     Timer {
         interval: mod.popupOpen ? 3000 : 30000
         repeat: true
-        running: true
+        running: !gameMode.active
         triggeredOnStart: true
         onTriggered: probe.running = true
     }
