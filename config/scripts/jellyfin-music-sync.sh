@@ -81,7 +81,7 @@ EOF
 get_user_id() {
     local user_id
     user_id=$(curl -sf \
-        -H "X-Emby-Token: $JELLYFIN_API_KEY" \
+        -H "Authorization: MediaBrowser Client=\"jellyfin-sync\", Device=\"jellyfin-sync\", DeviceId=\"jellyfin-sync\", Version=\"1.0\", Token=\"$JELLYFIN_API_KEY\"" \
         "$JELLYFIN_URL/Users" | jq -r '.[0].Id')
 
     if [[ -z "$user_id" || "$user_id" == "null" ]]; then
@@ -108,7 +108,7 @@ sync_music() {
 
     local raw_items
     raw_items=$(curl -sf \
-        -H "X-Emby-Token: $JELLYFIN_API_KEY" \
+        -H "Authorization: MediaBrowser Client=\"jellyfin-sync\", Device=\"jellyfin-sync\", DeviceId=\"jellyfin-sync\", Version=\"1.0\", Token=\"$JELLYFIN_API_KEY\"" \
         "$JELLYFIN_URL/Users/$user_id/Items?Recursive=true&IncludeItemTypes=Audio&Fields=Path,Album,AlbumArtist&Limit=100000")
 
     if [[ -z "$raw_items" ]]; then
@@ -159,18 +159,20 @@ sync_music() {
         local tmp_file="$dest_file.part"
         local http_code
         http_code=$(curl -s -o "$tmp_file" -w "%{http_code}" \
-            "$JELLYFIN_URL/Audio/$id/stream?static=true&api_key=$JELLYFIN_API_KEY")
+            -H "Authorization: MediaBrowser Client=\"jellyfin-sync\", Device=\"jellyfin-sync\", DeviceId=\"jellyfin-sync\", Version=\"1.0\", Token=\"$JELLYFIN_API_KEY\"" \
+            "$JELLYFIN_URL/Audio/$id/stream?static=true")
 
         # Fall back: get direct stream URL from PlaybackInfo
         if [[ "$http_code" == "404" ]]; then
             local stream_url
             stream_url=$(curl -sf \
-                -H "X-Emby-Token: $JELLYFIN_API_KEY" \
+                -H "Authorization: MediaBrowser Client=\"jellyfin-sync\", Device=\"jellyfin-sync\", DeviceId=\"jellyfin-sync\", Version=\"1.0\", Token=\"$JELLYFIN_API_KEY\"" \
                 "$JELLYFIN_URL/Items/$id/PlaybackInfo?UserId=$user_id" |
                 jq -r '.MediaSources[0].DirectStreamUrl // empty')
 
             if [[ -n "$stream_url" ]]; then
                 http_code=$(curl -s -o "$tmp_file" -w "%{http_code}" \
+                    -H "Authorization: MediaBrowser Client=\"jellyfin-sync\", Device=\"jellyfin-sync\", DeviceId=\"jellyfin-sync\", Version=\"1.0\", Token=\"$JELLYFIN_API_KEY\"" \
                     "$JELLYFIN_URL$stream_url")
             fi
         fi
