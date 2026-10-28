@@ -138,6 +138,18 @@ hl.window_rule({
     center = 1,
 })
 
+-- WinApps windows: tile, open on workspace 9. Matches the per-app /wm-class
+-- names AND the full-desktop "Microsoft Windows" session. Tiling is safe;
+-- NEVER fullscreen a WinApps/sdl-freerdp window: SDL grabs the keyboard in
+-- fullscreen and locks the Hyprland session (no keyboard grab while tiled).
+hl.window_rule({
+    match = {
+        class = "^Microsoft (Word|Excel|PowerPoint|Outlook|OneNote|Publisher|Access|Windows)$",
+    },
+    workspace = "9",
+    tile = true,
+})
+
 -- Proton/Wine desktop tools (MO2, BodySlide, xEdit/SSEEdit, Creation Kit, etc.)
 
 -- run as native-Wayland toplevels (class = the .exe name). Under dwindle they
