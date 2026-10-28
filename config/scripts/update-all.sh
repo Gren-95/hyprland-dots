@@ -11,6 +11,28 @@ set -uo pipefail
 
 failed=()
 
+# Update every AppImage integrated with Gear Lever. Gear Lever re-downloads a
+# file on --update even when it is current, so gate the whole step on
+# --list-updates and only apply when at least one update is actually available.
+update_appimages() {
+    local gl=(flatpak run it.mijorus.gearlever)
+    if ! command -v flatpak >/dev/null 2>&1 ||
+        ! flatpak info it.mijorus.gearlever >/dev/null 2>&1; then
+        echo "Gear Lever not installed, skipping."
+        return 0
+    fi
+    if "${gl[@]}" --list-updates 2>/dev/null | grep -q "No updates available"; then
+        echo "No AppImage updates available."
+        return 0
+    fi
+    local rc=0 path
+    while read -r path; do
+        printf 'Updating %s\n' "$path"
+        echo y | "${gl[@]}" --update "$path" || rc=1
+    done < <("${gl[@]}" --list-installed 2>/dev/null | grep -oE '/home/[^[:space:]]+\.appimage')
+    return "$rc"
+}
+
 _step() {
     local name=$1
     shift
@@ -33,6 +55,7 @@ _step "dnf update" sudo dnf update
 _step "dnf autoremove" sudo dnf autoremove
 _step "flatpak update" flatpak update
 _step "flatpak cleanup" flatpak remove --unused
+_step "appimage updates (gear lever)" update_appimages
 _step "npm globals" npm update -g
 _step "uv tools" uv tool upgrade --all
 _step "bun" bun upgrade
