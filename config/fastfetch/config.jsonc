@@ -1,0 +1,135 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "source": "~/.config/fastfetch/nobara-logo.png",
+    "type": "kitty",
+    "width": 40,
+    "padding": {
+      "top": 1,
+      "left": 2,
+      "right": 3
+    }
+  },
+  "display": {
+    "separator": "  ",
+    "key": {
+      "width": 15
+    },
+    "percent": {
+      "type": [
+        "num",
+        "bar"
+      ]
+    },
+    "bar": {
+      "char": {
+        "elapsed": "●",
+        "total": "○"
+      },
+      "width": 10,
+      "border": {
+        "left": "",
+        "right": ""
+      }
+    },
+    "size": {
+      "binaryPrefix": "si"
+    }
+  },
+  "modules": [
+    {
+      "type": "custom",
+      "format": "\u001b[90m┌──────────────────────── \u001b[1;37mSystem\u001b[0;90m ────────────────────────┐"
+    },
+    {
+      "type": "os",
+      "key": "  OS",
+      "keyColor": "red"
+    },
+    {
+      "type": "kernel",
+      "key": "  Kernel",
+      "keyColor": "red"
+    },
+    {
+      "type": "packages",
+      "key": "  Packages",
+      "keyColor": "red"
+    },
+    {
+      "type": "uptime",
+      "key": "  Uptime",
+      "keyColor": "red"
+    },
+    {
+      "type": "custom",
+      "format": "\u001b[90m├─────────────────────── \u001b[1;37mDesktop\u001b[0;90m ────────────────────────┤"
+    },
+    {
+      "type": "wm",
+      "key": "  WM",
+      "keyColor": "yellow"
+    },
+    {
+      "type": "terminal",
+      "key": "  Terminal",
+      "keyColor": "yellow"
+    },
+    {
+      "type": "shell",
+      "key": "  Shell",
+      "keyColor": "yellow"
+    },
+    {
+      "type": "display",
+      "key": "  Display",
+      "keyColor": "yellow"
+    },
+    {
+      "type": "custom",
+      "format": "\u001b[90m├─────────────────────── \u001b[1;37mHardware\u001b[0;90m ───────────────────────┤"
+    },
+    {
+      "type": "host",
+      "key": "  Host",
+      "keyColor": "cyan"
+    },
+    {
+      "type": "cpu",
+      "key": "  CPU",
+      "keyColor": "cyan"
+    },
+    {
+      "type": "gpu",
+      "key": "  GPU",
+      "keyColor": "cyan"
+    },
+    {
+      "type": "memory",
+      "key": "  Memory",
+      "keyColor": "cyan"
+    },
+    {
+      "type": "disk",
+      "key": "  Disk",
+      "keyColor": "cyan"
+    },
+    {
+      "type": "battery",
+      "key": "  Battery",
+      "keyColor": "cyan"
+    },
+    {
+      "type": "custom",
+      "format": "\u001b[90m└────────────────────────────────────────────────────────┘"
+    },
+    {
+      "type": "break"
+    },
+    {
+      "type": "colors",
+      "paddingLeft": 2,
+      "symbol": "circle"
+    }
+  ]
+}
