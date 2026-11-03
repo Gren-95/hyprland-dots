@@ -185,6 +185,113 @@ def build_index():
     return index
 
 
+EXEC_TEXT = [
+    (r"default-app\.sh run terminal", "Open a terminal"),
+    (r"default-app\.sh run filemanager", "Open the file manager"),
+    (r"hyprlock", "Lock the screen"),
+    (r"hyprpicker", "Pick a color from the screen and copy it"),
+    (r"wallpaper\.sh", "Switch to a random wallpaper"),
+    (r"screenshot-ocr\.sh", "Screenshot a region and copy the text in it (OCR)"),
+    (r"screenshot-window\.sh", "Screenshot the focused window"),
+    (r"screenrecord\.sh", "Start or stop screen recording"),
+    (r"wayvnc-toggle\.sh", "Turn remote desktop (VNC) on or off"),
+    (r"restart\.sh", "Restart the shell and background services"),
+    (r"mpv --no-video", "Play the music folder on shuffle"),
+    (r"pkill mpv", "Stop the music"),
+    (r"scratchpad\.sh", "Show or hide the drop-down scratchpad terminal"),
+    (r"night\.sh toggle", "Turn the night light on or off"),
+    (r"idle-inhibit-toggle\.sh", "Stay Awake: block screen lock and sleep until toggled off"),
+    (r"gamemode\.sh toggle", "Turn game mode on or off"),
+    (r"set-volume .*5%\+", "Raise the volume"),
+    (r"set-volume .*5%-", "Lower the volume"),
+    (r"set-mute @DEFAULT_AUDIO_SINK@", "Mute or unmute the speakers"),
+    (r"set-mute @DEFAULT_AUDIO_SOURCE@", "Mute or unmute the microphone"),
+    (r"brightnessctl s 5%\+", "Raise the screen brightness"),
+    (r"brightnessctl s 5%-", "Lower the screen brightness"),
+    (r"kbd_backlight s \+1", "Keyboard backlight: next level"),
+    (r"kbd_backlight s 1-", "Keyboard backlight: previous level"),
+    (r"kbd_backlight g", "Cycle the keyboard backlight level"),
+    (r"playerctl next", "Next track"),
+    (r"playerctl previous", "Previous track"),
+    (r"playerctl play-pause", "Play or pause the music"),
+    (r"systemctl suspend", "Suspend the computer"),
+    (r"dpms.*\bon\b", "Lid opened: wake the display and restore brightness"),
+]
+
+GLOBAL_TEXT = {
+    "spotlight": "Open the app launcher",
+    "unhide": "Manage hidden apps in the launcher",
+    "notifications": "Open the notification center",
+    "clipboard": "Open the clipboard history",
+    "screenshot-region": "Screenshot a region you select with the mouse",
+    "powermenu": "Open the power menu (sleep, reboot, shut down)",
+    "keybinds": "Show this keybind list",
+    "sysmon": "Open the system monitor",
+    "quickactions": "Open Quick Actions (toggles and shortcuts)",
+    "audiopower": "Open sound, battery and power profile controls",
+    "calendar": "Open the calendar",
+    "wallpaper": "Browse wallpapers (keep Super held, release to apply)",
+    "wallpaper-apply": "Apply the wallpaper you are browsing",
+    "wallpaper-cancel": "Close the wallpaper browser without changing it",
+    "wallpaper-back": "Go back one wallpaper while browsing",
+    "bluetooth": "Open Bluetooth devices",
+    "overview-cycle": "Workspace overview: go to the next workspace",
+    "overview-cycle-prev": "Workspace overview: go to the previous workspace",
+}
+
+WORKSPACE_STEPS = {"m-1": "the previous workspace on this monitor", "m+1": "the next workspace on this monitor",
+                   "e-1": "the previous open workspace", "e+1": "the next open workspace"}
+
+
+def describe(b):
+    """Plain-language text for a bind, from its resolved dispatcher and arg."""
+    d, arg, key = b.get("dispatcher", ""), str(b.get("arg", "")), str(b.get("key", ""))
+    if d == "exec":
+        for pat, text in EXEC_TEXT:
+            if re.search(pat, arg):
+                return text
+        return ""
+    if d == "global":
+        return GLOBAL_TEXT.get(arg.split(":", 1)[-1], "")
+    if d == "killactive":
+        return "Close the focused window"
+    if d == "togglefloating":
+        return "Float or tile the focused window"
+    if d == "pseudo":
+        return "Toggle pseudo-tiling for the focused window"
+    if d == "togglesplit":
+        return "Flip the split direction of the focused window"
+    if d == "fullscreen":
+        return "Toggle fullscreen for the focused window"
+    if d == "cyclenext":
+        return "Cycle focus to the next window"
+    if d == "movefocus":
+        return f"Move focus to the window on the {arg}"
+    if d == "movewindow":
+        if key == "mouse:272":
+            return "Drag to move a window"
+        return f"Move the focused window {arg}"
+    if d == "resizeactive":
+        if key == "mouse:273":
+            return "Drag to resize a window"
+        x, y = (arg.split() + ["0", "0"])[:2]
+        grow = (int(x) + int(y)) > 0
+        return ("Grow" if grow else "Shrink") + " the focused window"
+    if d == "workspace":
+        if key.startswith("mouse_"):
+            return "Scroll to switch to " + WORKSPACE_STEPS.get(arg, "another workspace")
+        return "Switch to " + (WORKSPACE_STEPS[arg] if arg in WORKSPACE_STEPS else f"workspace {arg}")
+    if d == "movetoworkspace":
+        return "Send the focused window to " + (WORKSPACE_STEPS[arg] if arg in WORKSPACE_STEPS else f"workspace {arg}")
+    if d == "focusmonitor":
+        return "Focus the next monitor"
+    if d == "movecurrentworkspacetomonitor":
+        return "Send this workspace to the next monitor"
+    if d == "dpms":
+        return "Lid closed: turn the built-in display off"
+    return ""
+
+
 def main():
     try:
         raw = subprocess.run(["hyprctl", "binds", "-j"],
@@ -198,12 +305,17 @@ def main():
     index = build_index()
     hits = 0
     for b in binds:
-        if b.get("dispatcher") != "__lua":
+        # Hyprland 0.55 and 0.56 report "__lua"; 0.57 reports "HL.Dispatcher(name)".
+        disp = b.get("dispatcher", "")
+        if disp != "__lua" and not disp.startswith("HL.Dispatcher("):
             continue
         found = index.get((b.get("modmask", 0), str(b.get("key", "")).lower()))
         if found:
             b["dispatcher"], b["arg"], b["lua"] = found
             hits += 1
+    for b in binds:
+        if not b.get("description"):
+            b["description"] = describe(b)
     print(json.dumps(binds))
     print(f"hypr-binds: resolved {hits}/{len(binds)} binds", file=sys.stderr)
     return 0
