@@ -17,7 +17,7 @@ Item {
     // When > 0, each new sample slides the line left over this many
     // milliseconds instead of jumping, so the graph scrolls continuously.
     property int scrollMs: 0
-    property real shift: 0
+    property real shift: 0      // horizontal offset of the shape while scrolling
     readonly property real step: width / (samples - 1)
     onValuesChanged: {
         shiftAnim.stop();
@@ -47,7 +47,7 @@ Item {
         for (let i = 0; i < samples; i++) {
             const idx = i - (samples - n);
             const f = idx >= 0 ? Math.max(0, Math.min(1, values[idx] / scaleMax)) : 0;
-            pts.push(Qt.point(i * step + shift, mirror ? f * h : h - f * h));
+            pts.push(Qt.point(i * step, mirror ? f * h : h - f * h));
         }
         return pts;
     }
@@ -68,10 +68,12 @@ Item {
         }
     }
 
+    // The scroll animation only moves the whole shape sideways, so the line
+    // geometry is built once per sample, not once per frame.
     Shape {
         anchors.fill: parent
-        layer.enabled: true
-        layer.samples: 4
+        preferredRendererType: Shape.CurveRenderer
+        transform: Translate { x: graph.shift }
 
         ShapePath {
             strokeColor: "transparent"
