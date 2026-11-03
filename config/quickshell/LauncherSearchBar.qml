@@ -76,13 +76,18 @@ Rectangle {
                 height: Theme.fontSize.xl + 4
                 radius: 1
                 color: Theme.accentPrimary
-                // Only while the popup is on screen: an animation in a hidden
-                // window still wakes the main thread about 60 times a second.
-                SequentialAnimation on opacity {
+                // Steps between lit and dim on a timer, with a short fade, so
+                // the popup repaints a few times a second instead of every
+                // frame. Runs only while the popup is on screen: an animation
+                // in a hidden window still wakes the main thread at 60 Hz.
+                property bool lit: true
+                opacity: lit ? 1.0 : 0.15
+                Behavior on opacity { NumberAnimation { duration: 150 } }
+                Timer {
                     running: bar.Window.window ? bar.Window.window.visible : false
-                    loops: Animation.Infinite
-                    NumberAnimation { from: 1.0; to: 0.15; duration: 520; easing.type: Easing.InOutSine }
-                    NumberAnimation { from: 0.15; to: 1.0; duration: 520; easing.type: Easing.InOutSine }
+                    interval: 530
+                    repeat: true
+                    onTriggered: caret.lit = !caret.lit
                 }
             }
         }
