@@ -51,30 +51,27 @@ Scope {
         }
     }
 
-    // Keyboard layout: quickshell's Hyprland rawEvent stream doesn't
-    // deliver in this build, so poll the active keymap (only while the
-    // layout toast is enabled — no cost otherwise).
+    // Keyboard layout: Hyprland's activelayout event ("<device>,<layout>")
+    // fires for every keyboard on a switch, so the layout name is compared
+    // with the last one seen. One hyprctl read at startup seeds it.
     property string _layout: ""
     Process {
-        id: layoutProc
-        command: ["sh", "-c",
-            "hyprctl devices -j | sed -n 's/.*\"active_keymap\": \"\\([^\"]*\\)\".*/\\1/p' | head -1"]
-        running: false
+        running: true
+        command: ["sh", "-c", "hyprctl devices -j | jq -r '.keyboards[] | select(.main) | .active_keymap' | head -1"]
         stdout: StdioCollector {
-            onStreamFinished: {
-                const l = text.trim();
-                if (!l) return;
-                if (svc._layout !== "" && l !== svc._layout && svc._ready && svc.want("layout"))
-                    osd.showToast("󰌌", "Keyboard layout", l, Theme.accent.teal);
-                svc._layout = l;
-            }
+            onStreamFinished: if (svc._layout === "") svc._layout = text.trim()
         }
     }
-    Timer {
-        running: svc.want("layout")
-        interval: 3000
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: layoutProc.running = true
+    Connections {
+        target: Hyprland
+        function onRawEvent(event) {
+            if (event.name !== "activelayout") return;
+            const layout = event.data.slice(event.data.indexOf(",") + 1);
+            if (layout === "" || layout === svc._layout) return;
+            const seeded = svc._layout !== "";
+            svc._layout = layout;
+            if (seeded && svc._ready && svc.want("layout"))
+                osd.showToast("󰌌", "Keyboard layout", layout, Theme.accent.teal);
+        }
     }
 }
