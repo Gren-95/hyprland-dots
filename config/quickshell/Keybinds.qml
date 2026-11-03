@@ -177,6 +177,7 @@ Scope {
         return pool.filter(e =>
             e.combo.toLowerCase().includes(q) ||
             e.action.toLowerCase().includes(q) ||
+            e.description.toLowerCase().includes(q) ||
             e.raw.toLowerCase().includes(q) ||
             e.category.toLowerCase().includes(q)
         );
@@ -676,8 +677,8 @@ Scope {
             Text {
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
-                text: row.confirming ? "Click again to confirm: " + row.entry.action
-                                     : (row.entry ? row.entry.action : "")
+                readonly property string what: row.entry ? (row.entry.description || row.entry.action) : ""
+                text: row.confirming ? "Click again to confirm: " + what : what
                 color: row.confirming ? Theme.accent.red
                      : (row.highlighted ? Theme.fgMuted : Theme.muted)
                 font.family: Theme.font
