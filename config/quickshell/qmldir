@@ -53,6 +53,7 @@ QuickActionIcon QuickActionIcon.qml
 QaTile QaTile.qml
 QuickActions QuickActions.qml
 RegionSelector RegionSelector.qml
+RemoteSyncStatus RemoteSyncStatus.qml
 ScreenRecorder ScreenRecorder.qml
 ScreenshotActions ScreenshotActions.qml
 ServiceRow ServiceRow.qml

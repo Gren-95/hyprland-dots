@@ -6,11 +6,13 @@
 //   - red    → the screen is being recorded (gpu-screen-recorder), pulsing
 //   - blue   → WayVNC remote access is running
 //   - yellow → sleep/idle is being inhibited (Stay Awake / fullscreen / media)
-// Hover any dot for a label. One shared poll drives all of them.
+// Hover any dot for a label. Camera and mic come from PipeWire, recording from
+// ScreenRecorder, sleep inhibit from IdleService, and the rest from
+// RemoteSyncStatus, so nothing here polls.
 import QtQuick
 import QtQuick.Layouts
-import Quickshell.Io
 import Quickshell.Services.Mpris
+import Quickshell.Services.Pipewire
 
 RowLayout {
     id: si
@@ -18,14 +20,19 @@ RowLayout {
     spacing: 0
     Layout.fillHeight: true
 
-    property bool cameraOn: false
-    property bool micOn: false
-    property bool recording: false
-    property bool remoteOn: false
+    // Camera / mic: an app is capturing, i.e. a PipeWire input stream exists.
+    // (A camera opened straight through /dev/video*, bypassing PipeWire, is
+    // not seen.)
+    PwObjectTracker { objects: Pipewire.nodes.values }
+    readonly property bool cameraOn:
+        Pipewire.nodes.values.some(n => n.properties && n.properties["media.class"] === "Stream/Input/Video")
+    readonly property bool micOn: Pipewire.nodes.values.some(n => n.type === PwNodeType.AudioInStream)
+    readonly property bool recording: recorder.recording
+    readonly property bool remoteOn: remoteSyncStatus.remoteOn
     readonly property bool idleHyprOff: !idleService.daemonRunning   // Stay Awake
     readonly property bool fullscreenApp: idleService.fullscreenActive
-    property bool immichOn: false        // Immich sync schedule enabled
-    property bool jellyfinOn: false      // Jellyfin sync schedule enabled
+    readonly property bool immichOn: remoteSyncStatus.immichOn
+    readonly property bool jellyfinOn: remoteSyncStatus.jellyfinOn
 
     readonly property bool mediaPlaying: {
         const ps = (Mpris.players && Mpris.players.values) || [];
@@ -46,35 +53,6 @@ RowLayout {
         if (si.mediaPlaying)  r.push("media playing");
         return "Sleep prevented · " + r.join(" · ");
     }
-
-    Process {
-        id: probe
-        command: ["sh", "-c",
-            // Camera: either an app holds /dev/video* directly (OBS, Zoom…),
-            // or — for libcamera/PipeWire-portal apps like Firefox — a PipeWire
-            // Video/Source node is actively streaming (state "running").
-            "c=0; lsof /dev/video* 2>/dev/null | grep -vE 'COMMAND|pipewire|wireplumb' | grep -q . && c=1; " +
-            "[ \"$c\" = 0 ] && pw-dump 2>/dev/null | jq -e 'any(.[]; .type==\"PipeWire:Interface:Node\" and (.info.props[\"media.class\"]//\"\")==\"Video/Source\" and (.info.state//\"\")==\"running\")' >/dev/null 2>&1 && c=1; " +
-            "m=0; [ -n \"$(pactl list short source-outputs 2>/dev/null)\" ] && m=1; " +
-            "r=0; pgrep -x gpu-screen-recorder >/dev/null && r=1; " +
-            "v=0; pgrep -x wayvnc >/dev/null && v=1; " +
-            "s=$(bash $HOME/.config/scripts/sync-toggle.sh status all 2>/dev/null); " +
-            "i=0; echo \"$s\" | grep -q 'immich=1' && i=1; " +
-            "j=0; echo \"$s\" | grep -q 'jellyfin=1' && j=1; " +
-            "echo \"c$c m$m r$r v$v i$i j$j\""]
-        running: false
-        stdout: StdioCollector {
-            onStreamFinished: {
-                si.cameraOn      = text.indexOf("c1") >= 0;
-                si.micOn         = text.indexOf("m1") >= 0;
-                si.recording     = text.indexOf("r1") >= 0;
-                si.remoteOn      = text.indexOf("v1") >= 0;
-                si.immichOn      = text.indexOf("i1") >= 0;
-                si.jellyfinOn    = text.indexOf("j1") >= 0;
-            }
-        }
-    }
-    Timer { interval: 5000; running: !gameMode.active; repeat: true; triggeredOnStart: true; onTriggered: probe.running = true }
 
     component Dot: Item {
         id: dot
