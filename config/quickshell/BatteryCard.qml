@@ -14,6 +14,21 @@ Rectangle {
     readonly property bool present: !!dev && dev.isPresent
     readonly property real pct: dev ? dev.percentage * 100 : 0
     readonly property bool charging: !!dev && dev.state === UPowerDeviceState.Charging
+    // The charging animations run only while the card is really on screen.
+    // `visible` stays true inside a hidden popup, and an animation there still
+    // wakes Quickshell at 60 Hz.
+    readonly property bool onScreen: card.visible && (card.Window.window ? card.Window.window.visible : false)
+    // Health comes from the real battery: UPower's combined display device
+    // carries no wear data.
+    readonly property var battery: {
+        const list = UPower.devices.values;
+        for (let i = 0; i < list.length; i++)
+            if (list[i].type === UPowerDeviceType.Battery && list[i].healthSupported) return list[i];
+        return null;
+    }
+    readonly property real healthPct: battery ? battery.healthPercentage : 0
+    // Capacity when new, worked out from the current full capacity and the wear.
+    readonly property real designWh: healthPct > 0 ? battery.energyCapacity * 100 / healthPct : 0
     readonly property bool full: !!dev && dev.state === UPowerDeviceState.FullyCharged
     readonly property bool plugged: !UPower.onBattery
     readonly property color stateColor: charging || full || plugged ? Theme.accent.green
@@ -75,7 +90,7 @@ Rectangle {
                 scale: 1
                 visible: card.charging
                 ParallelAnimation {
-                    running: card.charging && card.visible
+                    running: card.charging && card.onScreen
                     loops: Animation.Infinite
                     SequentialAnimation {
                         NumberAnimation { target: halo; property: "opacity"; from: 0.45; to: 0.0; duration: 1600; easing.type: Easing.OutCubic }
@@ -91,8 +106,7 @@ Rectangle {
             Shape {
                 id: ring
                 anchors.fill: parent
-                layer.enabled: true
-                layer.samples: 4
+                preferredRendererType: Shape.CurveRenderer
 
                 readonly property real cx: width / 2
                 readonly property real r: width / 2 - 8
@@ -102,7 +116,7 @@ Rectangle {
                 readonly property real chaseLen: 26
 
                 SequentialAnimation on chase {
-                    running: card.charging && card.visible && ring.sweep > ring.chaseLen
+                    running: card.charging && card.onScreen && ring.sweep > ring.chaseLen
                     loops: Animation.Infinite
                     NumberAnimation { from: 0; to: 1; duration: 1900; easing.type: Easing.InOutSine }
                     PauseAnimation { duration: 350 }
@@ -150,13 +164,13 @@ Rectangle {
                     font.pixelSize: Theme.fontSize.lg
                     visible: card.charging
                     SequentialAnimation on opacity {
-                        running: card.charging && card.visible
+                        running: card.charging && card.onScreen
                         loops: Animation.Infinite
                         NumberAnimation { from: 1.0; to: 0.45; duration: 800; easing.type: Easing.InOutSine }
                         NumberAnimation { from: 0.45; to: 1.0; duration: 800; easing.type: Easing.InOutSine }
                     }
                     SequentialAnimation on scale {
-                        running: card.charging && card.visible
+                        running: card.charging && card.onScreen
                         loops: Animation.Infinite
                         NumberAnimation { from: 1.0; to: 1.18; duration: 800; easing.type: Easing.InOutSine }
                         NumberAnimation { from: 1.18; to: 1.0; duration: 800; easing.type: Easing.InOutSine }
@@ -199,7 +213,7 @@ Rectangle {
                         width: 7; height: 7; radius: 3.5
                         color: card.stateColor
                         SequentialAnimation on opacity {
-                            running: card.charging && card.visible
+                            running: card.charging && card.onScreen
                             loops: Animation.Infinite
                             NumberAnimation { from: 1.0; to: 0.25; duration: 700; easing.type: Easing.InOutSine }
                             NumberAnimation { from: 0.25; to: 1.0; duration: 700; easing.type: Easing.InOutSine }
@@ -244,15 +258,17 @@ Rectangle {
                     color: Theme.fg; font.family: Theme.font; font.pixelSize: Theme.fontSize.base
                 }
                 Text {
-                    visible: !!card.dev && card.dev.healthSupported
+                    visible: !!card.battery
                     text: "Health"
                     color: Theme.muted; font.family: Theme.font; font.pixelSize: Theme.fontSize.base
                 }
                 Text {
-                    visible: !!card.dev && card.dev.healthSupported
+                    visible: !!card.battery
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignRight
-                    text: card.dev ? Math.round(card.dev.healthPercentage) + "%" : ""
+                    text: card.battery
+                        ? Math.round(card.healthPct) + "% of " + card.designWh.toFixed(1) + " Wh new"
+                        : ""
                     color: Theme.fg; font.family: Theme.font; font.pixelSize: Theme.fontSize.base
                 }
             }
