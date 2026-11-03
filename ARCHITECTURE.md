@@ -34,7 +34,7 @@ Bird's-eye view of how the pieces fit together. For widget-level detail see
 3. `autostart.lua` fires `config/scripts/restart.sh`, which orchestrates every
    userspace service.
 4. `restart.sh` starts in sequence: xdg-desktop-portal, gnome-keyring,
-   Quickshell, awww-daemon, hypridle, battery-notify, media-inhibit, fullscreen-inhibit, power-auto,
+   Quickshell, awww-daemon, hypridle, battery-notify, power-auto,
    cliphist, dotwatch, and the tray app `nm-applet --indicator` (Wi-Fi/wired, Wi-Fi
    password prompts, and Tailscale via the NetworkManager Tailscale VPN
    plugin). Logs OK/FAILED per step.
@@ -46,7 +46,7 @@ Bird's-eye view of how the pieces fit together. For widget-level detail see
 | Layer | What it owns |
 |---|---|
 | **Hyprland compositor** | Window layout, workspaces, keyboard input, layer-shell protocol. |
-| **`config/scripts/`** | Long-running background daemons (battery/media-inhibit/fullscreen-inhibit/power-auto/dotwatch) + one-shot actions (screenshot/record/wallpaper). All notifications go through `config/scripts/lib/notify.sh`. |
+| **`config/scripts/`** | Long-running background daemons (battery/power-auto/dotwatch) + one-shot actions (screenshot/record/wallpaper). All notifications go through `config/scripts/lib/notify.sh`. |
 | **Quickshell** | Bar, popups, OSDs, notification daemon (replaces swaync), launcher (replaces rofi), polkit agent (replaces hyprpolkitagent). State for the bar's interactive bits (audio, brightness, BT) comes from `Quickshell.Services.*` modules talking directly to PipeWire / BlueZ / UPower / etc. Wi-Fi, wired and Tailscale are left to the nm-applet tray app (Tailscale through the NetworkManager Tailscale VPN plugin). |
 | **`cron`** | Periodic Immich and Jellyfin syncs. Managed by `config/scripts/sync-toggle.sh` (Quick Actions toggle UI). No persistent daemon; cron just fires the script on schedule. |
 

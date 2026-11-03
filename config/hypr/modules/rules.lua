@@ -227,9 +227,9 @@ hl.window_rule({
 
 -- fullscreen apps that need to prevent sleep should request the
 
--- org.freedesktop.ScreenSaver inhibit themselves, as media-inhibit.sh does
+-- org.freedesktop.ScreenSaver inhibit themselves. Quickshell IdleService
 
--- for media playback.)
+-- does that for media playback and for fullscreen windows.)
 hl.window_rule({
     match = {
         fullscreen = 1,
