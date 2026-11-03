@@ -18,6 +18,16 @@ Rectangle {
     // `visible` stays true inside a hidden popup, and an animation there still
     // wakes Quickshell at 60 Hz.
     readonly property bool onScreen: card.visible && (card.Window.window ? card.Window.window.visible : false)
+    // The flourish plays for a few seconds after the popup opens, then the card
+    // settles. Looping it forever costs about 6% of a core while the popup is
+    // open, because every frame repaints the whole popup.
+    property bool flourish: false
+    onOnScreenChanged: {
+        flourish = onScreen;
+        if (onScreen) settleTimer.restart(); else settleTimer.stop();
+    }
+    Timer { id: settleTimer; interval: 6000; onTriggered: card.flourish = false }
+    readonly property bool animating: charging && flourish
     // Health comes from the real battery: UPower's combined display device
     // carries no wear data.
     readonly property var battery: {
@@ -90,8 +100,9 @@ Rectangle {
                 scale: 1
                 visible: card.charging
                 ParallelAnimation {
-                    running: card.charging && card.onScreen
+                    running: card.animating
                     loops: Animation.Infinite
+                    onRunningChanged: if (!running) { halo.opacity = 0; halo.scale = 1; }
                     SequentialAnimation {
                         NumberAnimation { target: halo; property: "opacity"; from: 0.45; to: 0.0; duration: 1600; easing.type: Easing.OutCubic }
                         PauseAnimation { duration: 300 }
@@ -116,8 +127,9 @@ Rectangle {
                 readonly property real chaseLen: 26
 
                 SequentialAnimation on chase {
-                    running: card.charging && card.onScreen && ring.sweep > ring.chaseLen
+                    running: card.animating && ring.sweep > ring.chaseLen
                     loops: Animation.Infinite
+                    onRunningChanged: if (!running) ring.chase = 0
                     NumberAnimation { from: 0; to: 1; duration: 1900; easing.type: Easing.InOutSine }
                     PauseAnimation { duration: 350 }
                 }
@@ -164,14 +176,16 @@ Rectangle {
                     font.pixelSize: Theme.fontSize.lg
                     visible: card.charging
                     SequentialAnimation on opacity {
-                        running: card.charging && card.onScreen
+                        running: card.animating
                         loops: Animation.Infinite
+                        onRunningChanged: if (!running) bolt.opacity = 1
                         NumberAnimation { from: 1.0; to: 0.45; duration: 800; easing.type: Easing.InOutSine }
                         NumberAnimation { from: 0.45; to: 1.0; duration: 800; easing.type: Easing.InOutSine }
                     }
                     SequentialAnimation on scale {
-                        running: card.charging && card.onScreen
+                        running: card.animating
                         loops: Animation.Infinite
+                        onRunningChanged: if (!running) bolt.scale = 1
                         NumberAnimation { from: 1.0; to: 1.18; duration: 800; easing.type: Easing.InOutSine }
                         NumberAnimation { from: 1.18; to: 1.0; duration: 800; easing.type: Easing.InOutSine }
                     }
@@ -213,8 +227,9 @@ Rectangle {
                         width: 7; height: 7; radius: 3.5
                         color: card.stateColor
                         SequentialAnimation on opacity {
-                            running: card.charging && card.onScreen
+                            running: card.animating
                             loops: Animation.Infinite
+                            onRunningChanged: if (!running) dot.opacity = 1
                             NumberAnimation { from: 1.0; to: 0.25; duration: 700; easing.type: Easing.InOutSine }
                             NumberAnimation { from: 0.25; to: 1.0; duration: 700; easing.type: Easing.InOutSine }
                         }
