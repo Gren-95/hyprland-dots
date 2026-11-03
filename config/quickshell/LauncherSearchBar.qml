@@ -76,8 +76,10 @@ Rectangle {
                 height: Theme.fontSize.xl + 4
                 radius: 1
                 color: Theme.accentPrimary
+                // Only while the popup is on screen: an animation in a hidden
+                // window still wakes the main thread about 60 times a second.
                 SequentialAnimation on opacity {
-                    running: true
+                    running: bar.Window.window ? bar.Window.window.visible : false
                     loops: Animation.Infinite
                     NumberAnimation { from: 1.0; to: 0.15; duration: 520; easing.type: Easing.InOutSine }
                     NumberAnimation { from: 0.15; to: 1.0; duration: 520; easing.type: Easing.InOutSine }
