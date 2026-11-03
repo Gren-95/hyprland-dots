@@ -41,6 +41,7 @@ Scope {
     Binding { target: Theme; property: "radiusScale";       value: settingsStore.radiusScale }
 
     IdleService { id: idleService }
+    RemoteSyncStatus { id: remoteSyncStatus }
     EventToasts {}
     WeatherService { id: weatherService }
     AccentService { id: accentService }

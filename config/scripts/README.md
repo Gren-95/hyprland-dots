@@ -12,6 +12,7 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | File | Purpose |
 |---|---|
 | `lib/notify.sh` | `notify <urgency> <key> <icon> <title> <body> [timeout]` wrapper around `notify-send`. Always sets `-a hyprland-dots` and `-h x-canonical-private-synchronous:<key>` so repeat notifications replace instead of stacking. |
+| `lib/shell-ipc.sh` | `shell_ipc <target> <function> [args]`: best-effort `qs ipc call` into Quickshell (silent no-op when it is not running). Used by `screenrecord.sh`, `wayvnc-toggle.sh` and `sync-toggle.sh` to report state changes, so the shell never polls for them. |
 | `lib/inhibit.sh` | `inhibit_start <app> <reason>` / `inhibit_stop`: holds an `org.freedesktop.ScreenSaver` inhibitor on a long-lived D-Bus connection. Used by `idle-inhibit-hold.sh` and `idle-inhibit-toggle.sh`. |
 | `lib/env.sh` | `load_util_env` loads `util.env` (`KEY=VALUE`) into the environment. |
 | `lib/screenshot.sh` | `capture_region "X,Y WxH"`: grim, wl-copy, notify, print path. Shared by both screenshot scripts. |

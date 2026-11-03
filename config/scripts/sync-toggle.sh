@@ -20,6 +20,7 @@
 set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/shell-ipc.sh"
 
 # jellyfin runs off a Persistent systemd user timer (catches up missed runs on a
 # laptop); immich stays on cron. uses_timer routes the two backends. Everything
@@ -178,6 +179,7 @@ case "$cmd" in
         case "$arg" in
             immich | jellyfin)
                 flip_one "$arg"
+                shell_ipc status refresh
                 # Print the new state so callers can react in one call.
                 status_one "$arg"
                 ;;
@@ -189,7 +191,10 @@ case "$cmd" in
         ;;
     enable)
         case "$arg" in
-            immich | jellyfin) set_one "$arg" 1 ;;
+            immich | jellyfin)
+                set_one "$arg" 1
+                shell_ipc status refresh
+                ;;
             *)
                 echo "usage: $0 enable {immich|jellyfin}" >&2
                 exit 2
@@ -198,7 +203,10 @@ case "$cmd" in
         ;;
     disable)
         case "$arg" in
-            immich | jellyfin) set_one "$arg" 0 ;;
+            immich | jellyfin)
+                set_one "$arg" 0
+                shell_ipc status refresh
+                ;;
             *)
                 echo "usage: $0 disable {immich|jellyfin}" >&2
                 exit 2

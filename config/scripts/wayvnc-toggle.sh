@@ -18,6 +18,7 @@
 # tailnet only and never on the LAN.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/shell-ipc.sh"
 
 PORT=5900
 READY_TIMEOUT_DS=30 # deciseconds
@@ -65,6 +66,7 @@ esac
 
 if pgrep -x wayvnc >/dev/null; then
     pkill -x wayvnc || true
+    shell_ipc status refresh
     exit 0
 fi
 
@@ -98,6 +100,7 @@ wayvnc --config "$runtime_conf" "${args[@]}" &>/dev/null &
 # Readiness: wait until something listens on the port, or give up and say so.
 for ((i = 0; i < READY_TIMEOUT_DS; i++)); do
     if ss -ltn "sport = :$PORT" | grep -q LISTEN; then
+        shell_ipc status refresh
         exit 0
     fi
     sleep 0.1
