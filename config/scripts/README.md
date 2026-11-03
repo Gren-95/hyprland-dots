@@ -62,6 +62,7 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | `night.sh` | `toggle\|on\|off\|status` night light via `hyprsunset`; `NIGHT_TEMPERATURE` in `util.env`. |
 | `scratchpad.sh` | Toggle a drop-down kitty on the `special:scratchpad` workspace. |
 | `idle-inhibit-toggle.sh` | Manual idle inhibit toggle; PID in `$XDG_RUNTIME_DIR/idle-inhibit.pid`. |
+| `claude-activity.sh` | Claude Code hooks | Reports working Claude Code sessions to Quickshell `IdleService` (`start`, `beat`, `stop`, `prune`), so the screen does not idle-lock mid-task. One file per session under `$XDG_RUNTIME_DIR/claude-activity/`; a session untouched for 15 minutes stops counting. Hook setup is in `docs/DAEMONS.md`. |
 | `idle-inhibit-hold.sh` | Started by Quickshell `IdleService` while media plays or a window is fullscreen. Holds a ScreenSaver inhibitor until terminated; the kernel ends it if Quickshell dies. |
 | `gamemode.sh` | Game mode `{toggle\|on\|off\|status}`: animations/gaps/rounding off, performance profile; Quickshell hides the bar and enables DND. Holds an idle inhibitor and pauses Immich/Jellyfin sync, night light and running Docker containers, then resumes only what it paused. State in `$XDG_RUNTIME_DIR/gamemode`, paused items in `gamemode.paused`. |
 
