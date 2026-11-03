@@ -8,7 +8,7 @@ set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 
 # Session daemons, started by restart.sh at login.
-for d in battery-notify power-auto media-inhibit fullscreen-inhibit dotwatch; do
+for d in battery-notify power-auto dotwatch; do
     if pgrep -f "$d\.sh" >/dev/null 2>&1; then
         printf '%s=1 ' "$d"
     else

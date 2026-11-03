@@ -42,8 +42,11 @@ CONFIG_ITEMS=(
 USER_UNITS=(
     "systemd/user/battery-notify.service"
     "systemd/user/power-auto.service"
-    "systemd/user/media-inhibit.service"
-    "systemd/user/fullscreen-inhibit.service"
+)
+# Units that no longer exist; `dots.sh units` stops, disables and removes them.
+RETIRED_USER_UNITS=(
+    "media-inhibit.service"
+    "fullscreen-inhibit.service"
 )
 USER_UNIT_DIR="$HOME/.config/systemd/user"
 
@@ -765,6 +768,17 @@ cmd_units() {
             return 1
         }
         log_success "Installed: $USER_UNIT_DIR/$unit"
+    done
+
+    for unit in "${RETIRED_USER_UNITS[@]}"; do
+        [[ -f "$USER_UNIT_DIR/$unit" ]] || continue
+        if [[ "$DRY_RUN" == true ]]; then
+            log_info "[DRY RUN] Would stop, disable and remove retired unit $unit"
+            continue
+        fi
+        systemctl --user disable --now "$unit" >/dev/null 2>&1 || true
+        rm -f "$USER_UNIT_DIR/$unit"
+        log_success "Removed retired unit: $unit"
     done
 
     [[ "$DRY_RUN" == true ]] && return 0

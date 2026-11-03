@@ -34,8 +34,6 @@ Item {
     readonly property var daemons: [
         { key: "battery-notify",     glyph: "󰁹", label: "Battery notify",   detail: "warns at 20% and 10%",            script: "battery-notify.sh" },
         { key: "power-auto",         glyph: "󰉁", label: "Power profile",    detail: "follows AC and battery level",    script: "power-auto.sh" },
-        { key: "media-inhibit",      glyph: "󰅶", label: "Media inhibit",    detail: "no sleep while media plays",      script: "media-inhibit.sh" },
-        { key: "fullscreen-inhibit", glyph: "󰊓", label: "Fullscreen inhibit", detail: "no idle while fullscreen",      script: "fullscreen-inhibit.sh" },
         { key: "dotwatch",           glyph: "󰼂", label: "Dotwatch",         detail: "hot-reloads edited dotfiles",     script: "dotwatch.sh" }
     ]
     readonly property var scheduled: [

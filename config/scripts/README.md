@@ -12,7 +12,7 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | File | Purpose |
 |---|---|
 | `lib/notify.sh` | `notify <urgency> <key> <icon> <title> <body> [timeout]` wrapper around `notify-send`. Always sets `-a hyprland-dots` and `-h x-canonical-private-synchronous:<key>` so repeat notifications replace instead of stacking. |
-| `lib/inhibit.sh` | `inhibit_start <app> <reason>` / `inhibit_stop`: holds an `org.freedesktop.ScreenSaver` inhibitor on a long-lived D-Bus connection. Used by `media-inhibit.sh`, `fullscreen-inhibit.sh`, `idle-inhibit-toggle.sh`. |
+| `lib/inhibit.sh` | `inhibit_start <app> <reason>` / `inhibit_stop`: holds an `org.freedesktop.ScreenSaver` inhibitor on a long-lived D-Bus connection. Used by `idle-inhibit-hold.sh` and `idle-inhibit-toggle.sh`. |
 | `lib/env.sh` | `load_util_env` loads `util.env` (`KEY=VALUE`) into the environment. |
 | `lib/screenshot.sh` | `capture_region "X,Y WxH"`: grim, wl-copy, notify, print path. Shared by both screenshot scripts. |
 | `lib/deps.sh` | Required/optional command lists and the dnf package list, shared by `dots.sh setup` and `doctor.sh`. |
@@ -29,15 +29,13 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 
 ## Daemons (autostart / restart.sh)
 
-`battery-notify`, `power-auto`, `media-inhibit` and `fullscreen-inhibit` run as systemd user units
+`battery-notify` and `power-auto` run as systemd user units
 (`systemd/user/*.service`, installed by `dots.sh units`); `restart.sh` restarts them with
 `systemctl --user restart`.
 
 | File | Spawned by | What it does |
 |---|---|---|
 | `battery-notify.sh` | `restart.sh` | Polls `/sys/class/power_supply/BAT*` every 60s. Sends critical/normal notifications at 10% / 20% (replace-key `battery`). |
-| `media-inhibit.sh` | `restart.sh` | Polls `playerctl status` every 3s. Inhibits `org.freedesktop.ScreenSaver` while a player is `Playing` so hypridle doesn't lock during playback. |
-| `fullscreen-inhibit.sh` | `restart.sh` | Polls `hyprctl workspaces` every 5s. Inhibits `org.freedesktop.ScreenSaver` while any window is fullscreen so hypridle doesn't dim/lock/suspend during controller-driven games (gamepad input doesn't reset the Wayland idle timer). |
 | `power-auto.sh` | `restart.sh` + autostart | Listens to `upower --monitor-detail`. Sets `performance` on AC, `balanced` on battery ≥30%, `power-saver` <30% via `powerprofilesctl`. Idempotent (skips if already at target). |
 | `build-librepods.sh` | manual | Builds LibrePods at a pinned commit with `librepods/battery-export.patch` (writes `$XDG_RUNTIME_DIR/librepods-battery.json` for `AirPodsBattery.qml`) and installs it to `~/.local/bin/librepods`. |
 | `dotwatch.sh` | `restart.sh` | `inotifywait` on the dots repo. Reloads Hyprland / hypridle config in-place when their files change. Hot-reloads `gtk-3.0/gtk.css` notify and hyprlock config notify. |
@@ -63,6 +61,7 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | `night.sh` | `toggle\|on\|off\|status` night light via `hyprsunset`; `NIGHT_TEMPERATURE` in `util.env`. |
 | `scratchpad.sh` | Toggle a drop-down kitty on the `special:scratchpad` workspace. |
 | `idle-inhibit-toggle.sh` | Manual idle inhibit toggle; PID in `$XDG_RUNTIME_DIR/idle-inhibit.pid`. |
+| `idle-inhibit-hold.sh` | Started by Quickshell `IdleService` while media plays or a window is fullscreen. Holds a ScreenSaver inhibitor until terminated; the kernel ends it if Quickshell dies. |
 | `gamemode.sh` | Game mode `{toggle\|on\|off\|status}`: animations/gaps/rounding off, performance profile; Quickshell hides the bar and enables DND. Holds an idle inhibitor and pauses Immich/Jellyfin sync, night light and running Docker containers, then resumes only what it paused. State in `$XDG_RUNTIME_DIR/gamemode`, paused items in `gamemode.paused`. |
 
 ## One-shots (keybind-triggered)

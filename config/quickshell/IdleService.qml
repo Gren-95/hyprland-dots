@@ -1,11 +1,15 @@
-// Owns the hypridle lifecycle — inhibited = daemon stopped. Combines the
-// manual Stay Awake toggle with automatic conditions (media playing / on
-// AC power, per settings). Instantiated once in shell.qml as idleService;
-// QuickActions' Stay Awake tile and StatusIndicators' pgrep dot both
-// observe the same daemon state.
+// The one place that decides "idle inhibited, and why". Two mechanisms:
+//  - Stay Awake (manual toggle, plus media / AC power per settings) stops the
+//    hypridle daemon.
+//  - Media playing or a fullscreen window holds a ScreenSaver inhibitor
+//    (scripts/idle-inhibit-hold.sh) while hypridle keeps running, so its
+//    lock-before-sleep still works.
+// Instantiated once in shell.qml as idleService; QuickActions' Stay Awake tile
+// and StatusIndicators observe the same state.
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import Quickshell.Services.Mpris
 import Quickshell.Services.UPower
 
@@ -13,7 +17,7 @@ Scope {
     id: svc
 
     property bool manual: false          // the user's Stay Awake toggle
-    property bool daemonRunning: true    // reconciled via pgrep below
+    property bool daemonRunning: true    // set by apply(); pgrep re-checks slowly
     property bool inFlight: false        // skip reconcile while toggling
 
     readonly property bool anyPlaying: {
@@ -25,10 +29,21 @@ Scope {
     readonly property bool wantInhibit: manual
         || (settingsStore.idleInhibitOnMedia && anyPlaying)
         || (settingsStore.idleInhibitOnPower && onAC)
-    readonly property bool effectiveInhibited: !daemonRunning
+    // Any workspace has a fullscreen window. Quickshell keeps the workspace
+    // objects current from Hyprland's events.
+    readonly property bool fullscreenActive:
+        Hyprland.workspaces.values.some(w => w.lastIpcObject && w.lastIpcObject.hasfullscreen === true)
+
+    // Automatic holder: wanted while media plays or a window is fullscreen.
+    readonly property bool wantHold: anyPlaying || fullscreenActive
+    property bool holding: false
+    readonly property string holdReason: anyPlaying ? "media playing" : "fullscreen"
+
+    readonly property bool effectiveInhibited: !daemonRunning || holding
     readonly property string reason: manual ? "manual"
         : (settingsStore.idleInhibitOnMedia && anyPlaying) ? "media playing"
         : (settingsStore.idleInhibitOnPower && onAC) ? "on AC power"
+        : holding ? holdReason
         : ""
 
     function toggleManual() {
@@ -59,7 +74,25 @@ Scope {
         onTriggered: { svc.inFlight = false; checkProc.running = true; }
     }
 
-    // Reconcile against reality (covers external kills/starts of hypridle).
+    // The holder starts at once but lets go 2 s late, so a track skip or a
+    // brief pause does not churn it.
+    onWantHoldChanged: {
+        if (wantHold) { holdOff.stop(); holding = true; }
+        else holdOff.restart();
+    }
+    Timer { id: holdOff; interval: 2000; onTriggered: svc.holding = false }
+    onHoldingChanged: holdProc.running = holding
+    Component.onCompleted: if (wantHold) holding = true
+
+    Process {
+        id: holdProc
+        command: ["bash", Paths.scripts + "/idle-inhibit-hold.sh", "idle-service", svc.holdReason]
+        // The holder exits when it cannot register (hypridle down); try again.
+        onExited: if (svc.holding) holdRetry.restart()
+    }
+    Timer { id: holdRetry; interval: 5000; onTriggered: if (svc.holding) holdProc.running = true }
+
+    // Slow check against reality, covering external kills/starts of hypridle.
     Process {
         id: checkProc
         command: ["sh", "-c", "pgrep -x hypridle >/dev/null && echo 1 || echo 0"]
@@ -70,7 +103,7 @@ Scope {
     }
     Timer {
         running: !svc.inFlight
-        interval: 5000
+        interval: 60000
         repeat: true
         triggeredOnStart: true
         onTriggered: checkProc.running = true

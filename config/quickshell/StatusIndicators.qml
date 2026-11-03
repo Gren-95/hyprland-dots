@@ -22,8 +22,8 @@ RowLayout {
     property bool micOn: false
     property bool recording: false
     property bool remoteOn: false
-    property bool idleHyprOff: false     // hypridle not running (Stay Awake)
-    property bool fullscreenApp: false
+    readonly property bool idleHyprOff: !idleService.daemonRunning   // Stay Awake
+    readonly property bool fullscreenApp: idleService.fullscreenActive
     property bool immichOn: false        // Immich sync schedule enabled
     property bool jellyfinOn: false      // Jellyfin sync schedule enabled
 
@@ -58,12 +58,10 @@ RowLayout {
             "m=0; [ -n \"$(pactl list short source-outputs 2>/dev/null)\" ] && m=1; " +
             "r=0; pgrep -x gpu-screen-recorder >/dev/null && r=1; " +
             "v=0; pgrep -x wayvnc >/dev/null && v=1; " +
-            "h=0; pgrep -x hypridle >/dev/null || h=1; " +
-            "f=0; hyprctl workspaces -j 2>/dev/null | jq -e 'any(.[]; .hasfullscreen // false)' >/dev/null 2>&1 && f=1; " +
             "s=$(bash $HOME/.config/scripts/sync-toggle.sh status all 2>/dev/null); " +
             "i=0; echo \"$s\" | grep -q 'immich=1' && i=1; " +
             "j=0; echo \"$s\" | grep -q 'jellyfin=1' && j=1; " +
-            "echo \"c$c m$m r$r v$v h$h f$f i$i j$j\""]
+            "echo \"c$c m$m r$r v$v i$i j$j\""]
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
@@ -71,8 +69,6 @@ RowLayout {
                 si.micOn         = text.indexOf("m1") >= 0;
                 si.recording     = text.indexOf("r1") >= 0;
                 si.remoteOn      = text.indexOf("v1") >= 0;
-                si.idleHyprOff   = text.indexOf("h1") >= 0;
-                si.fullscreenApp = text.indexOf("f1") >= 0;
                 si.immichOn      = text.indexOf("i1") >= 0;
                 si.jellyfinOn    = text.indexOf("j1") >= 0;
             }

@@ -12,8 +12,6 @@ daemon that has died.
 |---|---|
 | `battery-notify.sh` | Notifies at 20% and 10% battery; dismisses the alert when plugged in |
 | `power-auto.sh` | Sets the power profile from AC state and battery level (`performance` on AC, `balanced` ≥30%, `power-saver` below) |
-| `media-inhibit.sh` | Prevents screen sleep during media playback |
-| `fullscreen-inhibit.sh` | Prevents idle while a window is fullscreen |
 | `dotwatch.sh` | Watches dotfiles for changes and hot-reloads affected services |
 
 ## dotwatch — hot-reload
