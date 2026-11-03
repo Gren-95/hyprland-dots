@@ -76,13 +76,13 @@ Rectangle {
                 height: Theme.fontSize.xl + 4
                 radius: 1
                 color: Theme.accentPrimary
-                // Steps between lit and dim on a timer, with a short fade, so
-                // the popup repaints a few times a second instead of every
-                // frame. Runs only while the popup is on screen: an animation
-                // in a hidden window still wakes the main thread at 60 Hz.
+                // Hard on/off blink on a timer, like a terminal caret. Any fade
+                // here repaints the whole popup every frame while it runs
+                // (measured: about 4% of a core while a launcher is open), and
+                // a timer that runs in a hidden window still wakes Quickshell,
+                // so it runs only while the popup is on screen.
                 property bool lit: true
                 opacity: lit ? 1.0 : 0.15
-                Behavior on opacity { NumberAnimation { duration: 150 } }
                 Timer {
                     running: bar.Window.window ? bar.Window.window.visible : false
                     interval: 530
