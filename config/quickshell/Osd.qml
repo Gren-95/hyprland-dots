@@ -1,6 +1,6 @@
 // On-screen display for volume, mic, screen brightness, and keyboard backlight.
 // Volume/mic react to Pipewire property changes. Brightness/keyboard-backlight
-// are detected by polling sysfs files (libudev-style behaviour):
+// are detected by watching the sysfs brightness files with inotify:
 // any process that changes brightness — key, brightnessctl, hypridle — triggers
 // the OSD.
 import QtQuick
@@ -119,42 +119,33 @@ Scope {
         }
     }
 
-    // Polling reader: emits one stdout line per fire with "<bl> <kb>".
-    Process {
-        id: pollProc
-        running: false
-        command: ["sh", "-c",
-            "bl=$(cat /sys/class/backlight/" + (root.blDev || "x") + "/brightness 2>/dev/null || echo -1);" +
-            "kb=$(cat /sys/class/leds/" + (root.kbDev || "x") + "/brightness 2>/dev/null || echo -1);" +
-            "echo \"$bl $kb\""]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const parts = text.trim().split(/\s+/);
-                const bl = parseInt(parts[0]);
-                const kb = parseInt(parts[1]);
-                if (isFinite(bl) && bl >= 0) {
-                    if (root.blLast === -1) root.blLast = bl;
-                    else if (bl !== root.blLast) {
-                        root.blLast = bl;
-                        if (root._ready) root.showBrightness(bl);
-                    }
-                }
-                if (isFinite(kb) && kb >= 0) {
-                    if (root.kbLast === -1) root.kbLast = kb;
-                    else if (kb !== root.kbLast) {
-                        root.kbLast = kb;
-                        if (root._ready) root.showKbBacklight(kb);
-                    }
-                }
-            }
+    // Change detection: the kernel notifies sysfs watchers whenever a
+    // brightness attribute is written, so inotify replaces polling. (udev
+    // emits no events for these devices.)
+    FileView {
+        path: root.blDev ? "/sys/class/backlight/" + root.blDev + "/brightness" : ""
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: {
+            const bl = parseInt(text());
+            if (!isFinite(bl) || bl < 0) return;
+            const seeded = root.blLast !== -1;
+            const changed = bl !== root.blLast;
+            root.blLast = bl;
+            if (seeded && changed && root._ready) root.showBrightness(bl);
         }
     }
-    Timer {
-        interval: 200
-        running: root.blDev !== "" && root.blMax > 0
-        repeat: true
-        onTriggered: {
-            if (!pollProc.running) pollProc.running = true;
+    FileView {
+        path: root.kbDev ? "/sys/class/leds/" + root.kbDev + "/brightness" : ""
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: {
+            const kb = parseInt(text());
+            if (!isFinite(kb) || kb < 0) return;
+            const seeded = root.kbLast !== -1;
+            const changed = kb !== root.kbLast;
+            root.kbLast = kb;
+            if (seeded && changed && root._ready) root.showKbBacklight(kb);
         }
     }
 
