@@ -1,9 +1,10 @@
 // The one place that decides "idle inhibited, and why". Two mechanisms:
 //  - Stay Awake (manual toggle, plus media / AC power per settings) stops the
 //    hypridle daemon.
-//  - Media playing or a fullscreen window holds a ScreenSaver inhibitor
-//    (scripts/idle-inhibit-hold.sh) while hypridle keeps running, so its
-//    lock-before-sleep still works.
+//  - Media playing, a fullscreen window, or a Claude Code session at work holds
+//    a ScreenSaver inhibitor (scripts/idle-inhibit-hold.sh) while hypridle keeps
+//    running, so its lock-before-sleep still works. Claude Code reports its
+//    sessions through hooks (scripts/claude-activity.sh).
 // Instantiated once in shell.qml as idleService; QuickActions' Stay Awake tile
 // and StatusIndicators observe the same state.
 import QtQuick
@@ -34,10 +35,15 @@ Scope {
     readonly property bool fullscreenActive:
         Hyprland.workspaces.values.some(w => w.lastIpcObject && w.lastIpcObject.hasfullscreen === true)
 
-    // Automatic holder: wanted while media plays or a window is fullscreen.
-    readonly property bool wantHold: anyPlaying || fullscreenActive
+    // Claude Code sessions currently working, reported by claude-activity.sh.
+    property int claudeSessions: 0
+
+    // Automatic holder: wanted while media plays, a window is fullscreen, or
+    // Claude Code is working.
+    readonly property bool wantHold: anyPlaying || fullscreenActive || claudeSessions > 0
     property bool holding: false
-    readonly property string holdReason: anyPlaying ? "media playing" : "fullscreen"
+    readonly property string holdReason: anyPlaying ? "media playing"
+        : fullscreenActive ? "fullscreen" : "Claude working"
 
     readonly property bool effectiveInhibited: !daemonRunning || holding
     readonly property string reason: manual ? "manual"
@@ -82,15 +88,36 @@ Scope {
     }
     Timer { id: holdOff; interval: 2000; onTriggered: svc.holding = false }
     onHoldingChanged: holdProc.running = holding
-    Component.onCompleted: if (wantHold) holding = true
+    // With hypridle stopped (Stay Awake) the holder has nothing to register
+    // with; start it once hypridle is back.
+    onDaemonRunningChanged: if (daemonRunning && holding && !holdProc.running) holdProc.running = true
+
+    // The claude-activity.sh hooks call this through `qs ipc call claude active`.
+    IpcHandler {
+        target: "claude"
+        function active(count: int): void { svc.claudeSessions = count; }
+    }
+    // Read the sessions already working when Quickshell starts, and drop ones
+    // whose Stop hook never came (a crashed session) while any is counted.
+    Process { id: pruneProc; command: ["bash", Paths.scripts + "/claude-activity.sh", "prune"] }
+    Timer {
+        running: svc.claudeSessions > 0
+        interval: 60000
+        repeat: true
+        onTriggered: pruneProc.running = true
+    }
+    Component.onCompleted: {
+        if (wantHold) holding = true;
+        pruneProc.running = true;
+    }
 
     Process {
         id: holdProc
         command: ["bash", Paths.scripts + "/idle-inhibit-hold.sh", "idle-service", svc.holdReason]
         // The holder exits when it cannot register (hypridle down); try again.
-        onExited: if (svc.holding) holdRetry.restart()
+        onExited: if (svc.holding && svc.daemonRunning) holdRetry.restart()
     }
-    Timer { id: holdRetry; interval: 5000; onTriggered: if (svc.holding) holdProc.running = true }
+    Timer { id: holdRetry; interval: 5000; onTriggered: if (svc.holding && svc.daemonRunning) holdProc.running = true }
 
     // Slow check against reality, covering external kills/starts of hypridle.
     Process {

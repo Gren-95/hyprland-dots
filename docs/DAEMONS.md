@@ -25,3 +25,22 @@ Edits to dotfiles are picked up automatically without restarting your session:
 | `config/hypr/hyprlock.conf` | Notification (applies on next lock) |
 | `config/gtk-3.0/gtk.css` | Notification (restart GTK apps to apply) |
 | `config/quickshell/*` | Quickshell auto-reloads on file changes |
+
+## Claude Code activity (keeps the screen from idle-locking mid-task)
+
+`IdleService` holds an idle inhibitor while any Claude Code session is working
+(hypridle keeps running, so lock-before-sleep still works). Claude Code reports
+its sessions through hooks in `~/.claude/settings.json` (or `$CLAUDE_CONFIG_DIR`),
+which are not part of this repo. Add them alongside any existing hooks:
+
+```json
+"hooks": {
+  "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "bash $HOME/.config/scripts/claude-activity.sh start", "async": true, "timeout": 10 }] }],
+  "PostToolUse":      [{ "hooks": [{ "type": "command", "command": "bash $HOME/.config/scripts/claude-activity.sh beat",  "async": true, "timeout": 10 }] }],
+  "Stop":             [{ "hooks": [{ "type": "command", "command": "bash $HOME/.config/scripts/claude-activity.sh stop",  "async": true, "timeout": 10 }] }],
+  "SessionEnd":       [{ "hooks": [{ "type": "command", "command": "bash $HOME/.config/scripts/claude-activity.sh stop",  "async": true, "timeout": 10 }] }]
+}
+```
+
+Open `/hooks` once (or restart Claude Code) after editing so the hooks load. The
+bar's Stay Awake reason reads "Claude working" while a session is active.
