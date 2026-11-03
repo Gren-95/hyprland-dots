@@ -136,135 +136,138 @@ Scope {
     // has a card to turn over.
     Component.onCompleted: root.refresh()
 
-    Variants {
-        model: Quickshell.screens
-        PanelWindow {
-            id: win
-            required property var modelData
-            screen: modelData
-            // Only the monitor with focus — a hand of cards is held in front
-            // of you, not mirrored onto every screen.
-            readonly property bool onActiveMonitor: Hyprland.focusedMonitor
-                && Hyprland.focusedMonitor.name === modelData.name
-            visible: root.open && onActiveMonitor
-            color: "transparent"
+    LazyView {
+        shown: root.open
+        Variants {
+            model: Quickshell.screens
+            PanelWindow {
+                id: win
+                required property var modelData
+                screen: modelData
+                // Only the monitor with focus — a hand of cards is held in front
+                // of you, not mirrored onto every screen.
+                readonly property bool onActiveMonitor: Hyprland.focusedMonitor
+                    && Hyprland.focusedMonitor.name === modelData.name
+                visible: root.open && onActiveMonitor
+                color: "transparent"
 
-            // A strip along the bottom edge: the fan rises out of it, pivoting
-            // from a point below the screen.
-            anchors { bottom: true; left: true; right: true }
-            implicitHeight: 500
-            WlrLayershell.exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.layer: WlrLayer.Overlay
-            // Never takes focus. An exclusive grab here stopped the
-            // compositor's Super-release bind from firing for the cycle that
-            // opened the deck, which meant Super had to be pressed a second
-            // time to apply. Every key the deck responds to is a global
-            // shortcut instead — see shell.qml.
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-            mask: emptyRegion
-            Region { id: emptyRegion }
+                // A strip along the bottom edge: the fan rises out of it, pivoting
+                // from a point below the screen.
+                anchors { bottom: true; left: true; right: true }
+                implicitHeight: 500
+                WlrLayershell.exclusionMode: ExclusionMode.Ignore
+                WlrLayershell.layer: WlrLayer.Overlay
+                // Never takes focus. An exclusive grab here stopped the
+                // compositor's Super-release bind from firing for the cycle that
+                // opened the deck, which meant Super had to be pressed a second
+                // time to apply. Every key the deck responds to is a global
+                // shortcut instead — see shell.qml.
+                WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+                mask: emptyRegion
+                Region { id: emptyRegion }
 
-            // Shadow under the hand rather than a full-screen scrim: the fan
-            // only occupies the bottom of the screen, so only the bottom needs
-            // darkening to lift the cards off the wallpaper.
-            Rectangle {
-                anchors.fill: parent
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: Theme.alpha(Theme.scrim, 0) }
-                    GradientStop { position: 0.55; color: Theme.alpha(Theme.scrim, 0.4) }
-                    GradientStop { position: 1.0;  color: Theme.alpha(Theme.scrim, 0.8) }
+                // Shadow under the hand rather than a full-screen scrim: the fan
+                // only occupies the bottom of the screen, so only the bottom needs
+                // darkening to lift the cards off the wallpaper.
+                Rectangle {
+                    anchors.fill: parent
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: Theme.alpha(Theme.scrim, 0) }
+                        GradientStop { position: 0.55; color: Theme.alpha(Theme.scrim, 0.4) }
+                        GradientStop { position: 1.0;  color: Theme.alpha(Theme.scrim, 0.8) }
+                    }
                 }
-            }
 
-            Item {
-                id: fan
-                anchors.fill: parent
-                opacity: root.open ? 1.0 : 0.0
-                Behavior on opacity { NumberAnimation { duration: Theme.duration.fast } }
+                Item {
+                    id: fan
+                    anchors.fill: parent
+                    opacity: root.open ? 1.0 : 0.0
+                    Behavior on opacity { NumberAnimation { duration: Theme.duration.fast } }
 
-                Repeater {
-                    // Outermost cards first so the middle of the hand paints
-                    // over them, leaving the card in play fully visible.
-                    model: 2 * root.fanSpread + 1
-                    delegate: DeckCard {
-                        required property int index
-                        // -3 … 0 … +3, 0 being the card that gets applied.
-                        readonly property int slot: index - root.fanSpread
-                        readonly property int dist: Math.abs(slot)
-                        readonly property bool inHand: slot === 0
+                    Repeater {
+                        // Outermost cards first so the middle of the hand paints
+                        // over them, leaving the card in play fully visible.
+                        model: 2 * root.fanSpread + 1
+                        delegate: DeckCard {
+                            required property int index
+                            // -3 … 0 … +3, 0 being the card that gets applied.
+                            readonly property int slot: index - root.fanSpread
+                            readonly property int dist: Math.abs(slot)
+                            readonly property bool inHand: slot === 0
 
-                        file: root._at(slot)
-                        highlighted: inHand
+                            file: root._at(slot)
+                            highlighted: inHand
 
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.bottom: parent.bottom
-                        // Bottom edge sits below the screen, as if the cards
-                        // carried on into a hand.
-                        // Cut off by the bottom edge the way a hand cuts off
-                        // the cards it is holding, the played one least of all.
-                        anchors.bottomMargin: inHand ? -14 : -36
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.bottom: parent.bottom
+                            // Bottom edge sits below the screen, as if the cards
+                            // carried on into a hand.
+                            // Cut off by the bottom edge the way a hand cuts off
+                            // the cards it is holding, the played one least of all.
+                            anchors.bottomMargin: inHand ? -14 : -36
 
-                        opacity: 1.0 - dist * 0.13
-                        z: root.fanSpread - dist
-                        scale: inHand ? 1.06 : 1.0
-                        Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
+                            opacity: 1.0 - dist * 0.13
+                            z: root.fanSpread - dist
+                            scale: inHand ? 1.06 : 1.0
+                            Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.standard } }
 
-                        // Rotating about a point well below the card fans the
-                        // hand along an arc — the sideways spread falls out of
-                        // the rotation instead of being positioned by hand.
-                        transform: Rotation {
-                            origin.x: root.cardW / 2
-                            origin.y: root.cardH + root.pivotDrop
-                            angle: slot * root.fanAngle
+                            // Rotating about a point well below the card fans the
+                            // hand along an arc — the sideways spread falls out of
+                            // the rotation instead of being positioned by hand.
+                            transform: Rotation {
+                                origin.x: root.cardW / 2
+                                origin.y: root.cardH + root.pivotDrop
+                                angle: slot * root.fanAngle
+                            }
                         }
                     }
                 }
-            }
 
-            // Name and keys ride above the fan rather than on the card: the
-            // card in hand is clipped by the screen edge, and a label down
-            // there would be half off it.
-            Column {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.top
-                anchors.topMargin: Theme.spacing.md
-                spacing: Theme.spacing.sm
-                opacity: fan.opacity
-
-                Rectangle {
+                // Name and keys ride above the fan rather than on the card: the
+                // card in hand is clipped by the screen edge, and a label down
+                // there would be half off it.
+                Column {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    implicitWidth: name.implicitWidth + 32
-                    implicitHeight: 34
-                    radius: 17 * Theme.radiusScale
-                    color: Theme.bgDeep
-                    border.color: Theme.accentPrimary
-                    border.width: 1
-                    Text {
-                        id: name
-                        anchors.centerIn: parent
-                        text: root.topFile.split("/").pop()
-                        color: Theme.fg
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.md
-                        font.bold: true
+                    anchors.top: parent.top
+                    anchors.topMargin: Theme.spacing.md
+                    spacing: Theme.spacing.sm
+                    opacity: fan.opacity
+
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        implicitWidth: name.implicitWidth + 32
+                        implicitHeight: 34
+                        radius: 17 * Theme.radiusScale
+                        color: Theme.bgDeep
+                        border.color: Theme.accentPrimary
+                        border.width: 1
+                        Text {
+                            id: name
+                            anchors.centerIn: parent
+                            text: root.topFile.split("/").pop()
+                            color: Theme.fg
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.md
+                            font.bold: true
+                        }
                     }
-                }
-                Rectangle {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    implicitWidth: hint.implicitWidth + 28
-                    implicitHeight: 26
-                    radius: 13 * Theme.radiusScale
-                    color: Theme.bgDeep
-                    border.color: Theme.borderStrong
-                    border.width: 1
-                    Text {
-                        id: hint
-                        anchors.centerIn: parent
-                        text: "W  next    ·    ⇧W  back    ·    ↵  apply    ·    Esc  cancel"
-                        color: Theme.muted
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.sm
-                        font.letterSpacing: 1
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        implicitWidth: hint.implicitWidth + 28
+                        implicitHeight: 26
+                        radius: 13 * Theme.radiusScale
+                        color: Theme.bgDeep
+                        border.color: Theme.borderStrong
+                        border.width: 1
+                        Text {
+                            id: hint
+                            anchors.centerIn: parent
+                            text: "W  next    ·    ⇧W  back    ·    ↵  apply    ·    Esc  cancel"
+                            color: Theme.muted
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.sm
+                            font.letterSpacing: 1
+                        }
                     }
                 }
             }
