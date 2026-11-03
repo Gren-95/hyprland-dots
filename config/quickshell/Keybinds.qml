@@ -248,283 +248,286 @@ Scope {
     readonly property real popupHeight: Math.min(
         anchorBar && anchorBar.screen ? anchorBar.screen.height - 160 : 700, 700)
 
-    BarFlyout {
-        parentBar: root.anchorBar
-        anchorItem: root._openAnchor ?? root.anchorItem
-        open: root.open && root.anchorBar !== null
-        pinned: root.pinned
-        cardWidth: settingsStore.flyoutSize("keybinds", "w", 700)
-        cardHeight: settingsStore.flyoutSize("keybinds", "h", root.popupHeight)
-        onDismissed: root.close()
-        onKeyPressed: (e) => {
-            const n = root.filtered.length;
-            if (e.key === Qt.Key_Down) {
-                if (n > 0) root.selectedIndex = Math.min(n - 1, root.selectedIndex + 1);
-                e.accepted = true;
-            } else if (e.key === Qt.Key_Up) {
-                root.selectedIndex = Math.max(0, root.selectedIndex - 1);
-                e.accepted = true;
-            } else if (e.key === Qt.Key_PageDown) {
-                if (n > 0) root.selectedIndex = Math.min(n - 1, root.selectedIndex + 10);
-                e.accepted = true;
-            } else if (e.key === Qt.Key_PageUp) {
-                root.selectedIndex = Math.max(0, root.selectedIndex - 10);
-                e.accepted = true;
-            } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
-                if (n > 0) root.run(root.filtered[root.selectedIndex]);
-                e.accepted = true;
-            } else if (e.key === Qt.Key_F5) {
-                root.refresh(); e.accepted = true;
-            } else if (e.key === Qt.Key_Backspace) {
-                root.query = root.query.slice(0, -1);
-                root.selectedIndex = 0;
-                e.accepted = true;
-            } else if (e.text && e.text.length > 0 && e.text.charCodeAt(0) >= 32) {
-                root.query += e.text;
-                root.selectedIndex = 0;
-                e.accepted = true;
-            }
-        }
-        ColumnLayout {
-            id: contentCol
-            anchors.fill: parent
-            anchors.margins: Theme.spacing.xl
-            spacing: Theme.spacing.lg
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Theme.spacing.md
-                PinButton {
-                    pinned: root.pinned
-                    onToggled: root.pinned = !root.pinned
+    LazyView {
+        shown: root.open
+        BarFlyout {
+            parentBar: root.anchorBar
+            anchorItem: root._openAnchor ?? root.anchorItem
+            open: root.open && root.anchorBar !== null
+            pinned: root.pinned
+            cardWidth: settingsStore.flyoutSize("keybinds", "w", 700)
+            cardHeight: settingsStore.flyoutSize("keybinds", "h", root.popupHeight)
+            onDismissed: root.close()
+            onKeyPressed: (e) => {
+                const n = root.filtered.length;
+                if (e.key === Qt.Key_Down) {
+                    if (n > 0) root.selectedIndex = Math.min(n - 1, root.selectedIndex + 1);
+                    e.accepted = true;
+                } else if (e.key === Qt.Key_Up) {
+                    root.selectedIndex = Math.max(0, root.selectedIndex - 1);
+                    e.accepted = true;
+                } else if (e.key === Qt.Key_PageDown) {
+                    if (n > 0) root.selectedIndex = Math.min(n - 1, root.selectedIndex + 10);
+                    e.accepted = true;
+                } else if (e.key === Qt.Key_PageUp) {
+                    root.selectedIndex = Math.max(0, root.selectedIndex - 10);
+                    e.accepted = true;
+                } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
+                    if (n > 0) root.run(root.filtered[root.selectedIndex]);
+                    e.accepted = true;
+                } else if (e.key === Qt.Key_F5) {
+                    root.refresh(); e.accepted = true;
+                } else if (e.key === Qt.Key_Backspace) {
+                    root.query = root.query.slice(0, -1);
+                    root.selectedIndex = 0;
+                    e.accepted = true;
+                } else if (e.text && e.text.length > 0 && e.text.charCodeAt(0) >= 32) {
+                    root.query += e.text;
+                    root.selectedIndex = 0;
+                    e.accepted = true;
                 }
-                Text {
-                    Layout.fillWidth: true
-                    text: "Keybinds"
-                    color: Theme.fg
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.lg
-                    font.bold: true
-                    horizontalAlignment: Text.AlignHCenter
-                }
-                // Balances the pin button so the title stays centered.
-                Item { implicitWidth: 22; implicitHeight: 22 }
             }
-
-            // ===== Search =====
-            Rectangle {
-                Layout.fillWidth: true
-                implicitHeight: 52
-                radius: 10 * Theme.radiusScale
-                color: Theme.bg
-                border.color: root.query ? Theme.accentPrimary : Theme.border
-                border.width: 1
-                Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }
+            ColumnLayout {
+                id: contentCol
+                anchors.fill: parent
+                anchors.margins: Theme.spacing.xl
+                spacing: Theme.spacing.lg
 
                 RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: Theme.spacing.xl
-                    anchors.rightMargin: Theme.spacing.md
-                    spacing: Theme.spacing.lg
-                    Text {
-                        text: "󰌌"
-                        color: root.query ? Theme.accentPrimary : Theme.muted
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.xxl
-                        Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+                    Layout.fillWidth: true
+                    spacing: Theme.spacing.md
+                    PinButton {
+                        pinned: root.pinned
+                        onToggled: root.pinned = !root.pinned
                     }
                     Text {
                         Layout.fillWidth: true
-                        text: root.query || "Type to search keybinds"
-                        color: root.query ? Theme.fg : Theme.mutedDeep
+                        text: "Keybinds"
+                        color: Theme.fg
                         font.family: Theme.font
                         font.pixelSize: Theme.fontSize.lg
-                        elide: Text.ElideRight
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
                     }
-                    Text {
-                        text: root.filtered.length + " / " + root.entries.length
-                        color: Theme.mutedDeep
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.base
-                    }
-                    Rectangle {
-                        id: clearBtn
-                        implicitWidth: 36
-                        implicitHeight: 36
-                        radius: 8 * Theme.radiusScale
-                        opacity: root.query ? 1 : 0
-                        visible: opacity > 0
-                        color: clearMa.pressed ? Theme.bgActive : (clearMa.containsMouse ? Theme.bgHover : "transparent")
-                        scale: clearMa.pressed ? 0.9 : 1
-                        Behavior on opacity { NumberAnimation { duration: Theme.duration.fast } }
-                        Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
-                        Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
+                    // Balances the pin button so the title stays centered.
+                    Item { implicitWidth: 22; implicitHeight: 22 }
+                }
+
+                // ===== Search =====
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: 52
+                    radius: 10 * Theme.radiusScale
+                    color: Theme.bg
+                    border.color: root.query ? Theme.accentPrimary : Theme.border
+                    border.width: 1
+                    Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: Theme.spacing.xl
+                        anchors.rightMargin: Theme.spacing.md
+                        spacing: Theme.spacing.lg
                         Text {
-                            anchors.centerIn: parent
-                            text: "󰅖"
-                            color: clearMa.containsMouse ? Theme.fg : Theme.muted
+                            text: "󰌌"
+                            color: root.query ? Theme.accentPrimary : Theme.muted
                             font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.lg
+                            font.pixelSize: Theme.fontSize.xxl
                             Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
                         }
-                        MouseArea {
-                            id: clearMa
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: { root.query = ""; root.selectedIndex = 0; }
+                        Text {
+                            Layout.fillWidth: true
+                            text: root.query || "Type to search keybinds"
+                            color: root.query ? Theme.fg : Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.lg
+                            elide: Text.ElideRight
                         }
-                    }
-                }
-            }
-
-            // ===== Category filter chips =====
-            Flow {
-                Layout.fillWidth: true
-                spacing: Theme.spacing.md
-                visible: root.categories.length > 0
-
-                CategoryChip {
-                    label: "All"
-                    icon: "󰒓"
-                    tint: Theme.accentPrimary
-                    selected: root.category === ""
-                    onClicked: { root.category = ""; root.selectedIndex = 0; }
-                }
-                Repeater {
-                    model: root.categories
-                    delegate: CategoryChip {
-                        required property var modelData
-                        label: modelData.name.charAt(0).toUpperCase() + modelData.name.slice(1)
-                        icon: modelData.icon
-                        tint: modelData.color
-                        selected: root.category === modelData.name
-                        onClicked: {
-                            root.category = root.category === modelData.name ? "" : modelData.name;
-                            root.selectedIndex = 0;
+                        Text {
+                            text: root.filtered.length + " / " + root.entries.length
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.base
                         }
-                    }
-                }
-            }
-
-            // ===== Results =====
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                radius: 10 * Theme.radiusScale
-                color: Theme.bg
-                border.color: Theme.border
-                border.width: 1
-
-                Flickable {
-                    id: results
-                    anchors.fill: parent
-                    anchors.margins: Theme.spacing.md
-                    contentWidth: width
-                    contentHeight: resultsCol.implicitHeight
-                    clip: true
-                    boundsBehavior: Flickable.StopAtBounds
-                    ScrollBar.vertical: ThinScrollBar {
-                        policy: results.contentHeight > results.height + 2 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
-                    }
-
-                    ColumnLayout {
-                        id: resultsCol
-                        width: results.width - Theme.spacing.md
-                        spacing: 2
-
-                        Repeater {
-                            id: rowRepeater
-                            model: root.filtered
-                            delegate: ColumnLayout {
-                                id: group
-                                required property var modelData
-                                required property int index
-                                readonly property bool startsGroup: index === 0
-                                    || root.filtered[index - 1].category !== modelData.category
-                                Layout.fillWidth: true
-                                spacing: 2
-
-                                RowLayout {
-                                    visible: group.startsGroup
-                                    Layout.fillWidth: true
-                                    Layout.topMargin: group.index === 0 ? 0 : Theme.spacing.lg
-                                    Layout.leftMargin: Theme.spacing.md
-                                    Layout.bottomMargin: Theme.spacing.xs
-                                    spacing: Theme.spacing.md
-                                    Text {
-                                        text: group.modelData.catIcon
-                                        color: group.modelData.catColor
-                                        font.family: Theme.font
-                                        font.pixelSize: Theme.fontSize.md
-                                    }
-                                    Text {
-                                        text: group.modelData.category.toUpperCase()
-                                        color: Theme.mutedDeep
-                                        font.family: Theme.font
-                                        font.pixelSize: Theme.fontSize.sm
-                                        font.letterSpacing: 1
-                                        font.bold: true
-                                    }
-                                }
-                                BindRow {
-                                    Layout.fillWidth: true
-                                    entry: group.modelData
-                                    highlighted: root.selectedIndex === group.index
-                                    confirming: root.confirming === group.modelData.combo
-                                    onHovered: root.selectedIndex = group.index
-                                    onActivated: root.run(group.modelData)
-                                }
+                        Rectangle {
+                            id: clearBtn
+                            implicitWidth: 36
+                            implicitHeight: 36
+                            radius: 8 * Theme.radiusScale
+                            opacity: root.query ? 1 : 0
+                            visible: opacity > 0
+                            color: clearMa.pressed ? Theme.bgActive : (clearMa.containsMouse ? Theme.bgHover : "transparent")
+                            scale: clearMa.pressed ? 0.9 : 1
+                            Behavior on opacity { NumberAnimation { duration: Theme.duration.fast } }
+                            Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
+                            Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
+                            Text {
+                                anchors.centerIn: parent
+                                text: "󰅖"
+                                color: clearMa.containsMouse ? Theme.fg : Theme.muted
+                                font.family: Theme.font
+                                font.pixelSize: Theme.fontSize.lg
+                                Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
                             }
-                        }
-
-                        Text {
-                            visible: root.entries.length === 0
-                            text: "Loading binds…"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.md
-                            Layout.alignment: Qt.AlignHCenter
-                            Layout.topMargin: 24
-                        }
-                        Text {
-                            visible: root.entries.length > 0 && root.filtered.length === 0
-                            text: "No matches"
-                            color: Theme.mutedDeep
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.md
-                            Layout.alignment: Qt.AlignHCenter
-                            Layout.topMargin: 24
-                        }
-                    }
-
-                    // Auto-scroll the selected row into view.
-                    Connections {
-                        target: root
-                        function onSelectedIndexChanged() {
-                            const item = rowRepeater.itemAt(root.selectedIndex);
-                            if (!item) return;
-                            const top = item.y;
-                            const bottom = item.y + item.height;
-                            if (top < results.contentY) results.contentY = top;
-                            else if (bottom > results.contentY + results.height) {
-                                const max = Math.max(0, results.contentHeight - results.height);
-                                results.contentY = Math.min(max, bottom - results.height);
+                            MouseArea {
+                                id: clearMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: { root.query = ""; root.selectedIndex = 0; }
                             }
                         }
                     }
                 }
-            }
 
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Theme.spacing.xl
-                Item { Layout.fillWidth: true }
-                Text { text: "Click / ↵ Run"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
-                Text { text: "↑↓ Navigate"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
-                Text { text: "F5 Refresh"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
-                Text { text: "Esc Close"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
-                Item { Layout.fillWidth: true }
+                // ===== Category filter chips =====
+                Flow {
+                    Layout.fillWidth: true
+                    spacing: Theme.spacing.md
+                    visible: root.categories.length > 0
+
+                    CategoryChip {
+                        label: "All"
+                        icon: "󰒓"
+                        tint: Theme.accentPrimary
+                        selected: root.category === ""
+                        onClicked: { root.category = ""; root.selectedIndex = 0; }
+                    }
+                    Repeater {
+                        model: root.categories
+                        delegate: CategoryChip {
+                            required property var modelData
+                            label: modelData.name.charAt(0).toUpperCase() + modelData.name.slice(1)
+                            icon: modelData.icon
+                            tint: modelData.color
+                            selected: root.category === modelData.name
+                            onClicked: {
+                                root.category = root.category === modelData.name ? "" : modelData.name;
+                                root.selectedIndex = 0;
+                            }
+                        }
+                    }
+                }
+
+                // ===== Results =====
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    radius: 10 * Theme.radiusScale
+                    color: Theme.bg
+                    border.color: Theme.border
+                    border.width: 1
+
+                    Flickable {
+                        id: results
+                        anchors.fill: parent
+                        anchors.margins: Theme.spacing.md
+                        contentWidth: width
+                        contentHeight: resultsCol.implicitHeight
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
+                        ScrollBar.vertical: ThinScrollBar {
+                            policy: results.contentHeight > results.height + 2 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                        }
+
+                        ColumnLayout {
+                            id: resultsCol
+                            width: results.width - Theme.spacing.md
+                            spacing: 2
+
+                            Repeater {
+                                id: rowRepeater
+                                model: root.filtered
+                                delegate: ColumnLayout {
+                                    id: group
+                                    required property var modelData
+                                    required property int index
+                                    readonly property bool startsGroup: index === 0
+                                        || root.filtered[index - 1].category !== modelData.category
+                                    Layout.fillWidth: true
+                                    spacing: 2
+
+                                    RowLayout {
+                                        visible: group.startsGroup
+                                        Layout.fillWidth: true
+                                        Layout.topMargin: group.index === 0 ? 0 : Theme.spacing.lg
+                                        Layout.leftMargin: Theme.spacing.md
+                                        Layout.bottomMargin: Theme.spacing.xs
+                                        spacing: Theme.spacing.md
+                                        Text {
+                                            text: group.modelData.catIcon
+                                            color: group.modelData.catColor
+                                            font.family: Theme.font
+                                            font.pixelSize: Theme.fontSize.md
+                                        }
+                                        Text {
+                                            text: group.modelData.category.toUpperCase()
+                                            color: Theme.mutedDeep
+                                            font.family: Theme.font
+                                            font.pixelSize: Theme.fontSize.sm
+                                            font.letterSpacing: 1
+                                            font.bold: true
+                                        }
+                                    }
+                                    BindRow {
+                                        Layout.fillWidth: true
+                                        entry: group.modelData
+                                        highlighted: root.selectedIndex === group.index
+                                        confirming: root.confirming === group.modelData.combo
+                                        onHovered: root.selectedIndex = group.index
+                                        onActivated: root.run(group.modelData)
+                                    }
+                                }
+                            }
+
+                            Text {
+                                visible: root.entries.length === 0
+                                text: "Loading binds…"
+                                color: Theme.mutedDeep
+                                font.family: Theme.font
+                                font.pixelSize: Theme.fontSize.md
+                                Layout.alignment: Qt.AlignHCenter
+                                Layout.topMargin: 24
+                            }
+                            Text {
+                                visible: root.entries.length > 0 && root.filtered.length === 0
+                                text: "No matches"
+                                color: Theme.mutedDeep
+                                font.family: Theme.font
+                                font.pixelSize: Theme.fontSize.md
+                                Layout.alignment: Qt.AlignHCenter
+                                Layout.topMargin: 24
+                            }
+                        }
+
+                        // Auto-scroll the selected row into view.
+                        Connections {
+                            target: root
+                            function onSelectedIndexChanged() {
+                                const item = rowRepeater.itemAt(root.selectedIndex);
+                                if (!item) return;
+                                const top = item.y;
+                                const bottom = item.y + item.height;
+                                if (top < results.contentY) results.contentY = top;
+                                else if (bottom > results.contentY + results.height) {
+                                    const max = Math.max(0, results.contentHeight - results.height);
+                                    results.contentY = Math.min(max, bottom - results.height);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Theme.spacing.xl
+                    Item { Layout.fillWidth: true }
+                    Text { text: "Click / ↵ Run"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
+                    Text { text: "↑↓ Navigate"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
+                    Text { text: "F5 Refresh"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
+                    Text { text: "Esc Close"; color: Theme.mutedDeep; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
+                    Item { Layout.fillWidth: true }
+                }
             }
         }
     }

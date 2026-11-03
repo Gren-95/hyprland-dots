@@ -56,144 +56,147 @@ Scope {
 
     // One overlay per screen. Each translates local mouse coords to global
     // Hyprland coords using its screen.x / screen.y offset.
-    Variants {
-        model: Quickshell.screens
-        PanelWindow {
-            id: overlay
-            required property var modelData
-            screen: modelData
-            visible: root.active
-            color: "transparent"
-            anchors { top: true; bottom: true; left: true; right: true }
-            WlrLayershell.exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: root.active
-                ? WlrKeyboardFocus.Exclusive
-                : WlrKeyboardFocus.None
-
-            readonly property int ox: modelData.x
-            readonly property int oy: modelData.y
-
-            // Dim everything except the selection rectangle. We draw 4
-            // dim rects (top/left/right/bottom of selection) instead of
-            // one full-screen dim with a "cutout" because QML has no
-            // composite-subtract primitive.
-            Rectangle {
-                // Top dim
-                anchors { left: parent.left; right: parent.right; top: parent.top }
-                height: Math.max(0, root.selY - overlay.oy)
-                color: Theme.alpha(Theme.scrim, 0.5)
-                visible: root.dragging
-            }
-            Rectangle {
-                // Bottom dim
-                anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
-                height: Math.max(0, (overlay.height + overlay.oy) - (root.selY + root.selH))
-                color: Theme.alpha(Theme.scrim, 0.5)
-                visible: root.dragging
-            }
-            Rectangle {
-                // Left dim
-                anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
-                width: Math.max(0, root.selX - overlay.ox)
-                color: Theme.alpha(Theme.scrim, 0.5)
-                visible: root.dragging
-            }
-            Rectangle {
-                // Right dim
-                anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
-                width: Math.max(0, (overlay.width + overlay.ox) - (root.selX + root.selW))
-                color: Theme.alpha(Theme.scrim, 0.5)
-                visible: root.dragging
-            }
-            // Idle dim (whole screen) before drag starts.
-            Rectangle {
-                anchors.fill: parent
-                color: Theme.alpha(Theme.scrim, 0.4)
-                visible: !root.dragging
-            }
-
-            // Selection outline.
-            Rectangle {
-                visible: root.dragging
-                x: root.selX - overlay.ox
-                y: root.selY - overlay.oy
-                width: root.selW
-                height: root.selH
+    LazyView {
+        shown: root.active
+        Variants {
+            model: Quickshell.screens
+            PanelWindow {
+                id: overlay
+                required property var modelData
+                screen: modelData
+                visible: root.active
                 color: "transparent"
-                border.color: Theme.accent.blue
-                border.width: 2
-            }
+                anchors { top: true; bottom: true; left: true; right: true }
+                WlrLayershell.exclusionMode: ExclusionMode.Ignore
+                WlrLayershell.layer: WlrLayer.Overlay
+                WlrLayershell.keyboardFocus: root.active
+                    ? WlrKeyboardFocus.Exclusive
+                    : WlrKeyboardFocus.None
 
-            // Dimensions tooltip — anchored just below the selection,
-            // flipped above if it would clip off-screen.
-            Rectangle {
-                visible: root.dragging && root.selW > 0
-                x: Math.min(overlay.width - implicitWidth - 6,
-                            Math.max(6, (root.selX - overlay.ox) + root.selW - implicitWidth))
-                y: {
-                    const below = (root.selY - overlay.oy) + root.selH + 6;
-                    return below + implicitHeight < overlay.height
-                        ? below
-                        : (root.selY - overlay.oy) - implicitHeight - 6;
+                readonly property int ox: modelData.x
+                readonly property int oy: modelData.y
+
+                // Dim everything except the selection rectangle. We draw 4
+                // dim rects (top/left/right/bottom of selection) instead of
+                // one full-screen dim with a "cutout" because QML has no
+                // composite-subtract primitive.
+                Rectangle {
+                    // Top dim
+                    anchors { left: parent.left; right: parent.right; top: parent.top }
+                    height: Math.max(0, root.selY - overlay.oy)
+                    color: Theme.alpha(Theme.scrim, 0.5)
+                    visible: root.dragging
                 }
-                implicitWidth: dimText.implicitWidth + 14
-                implicitHeight: dimText.implicitHeight + 8
-                radius: 6 * Theme.radiusScale
-                color: Theme.alpha(Theme.scrim, 0.87)
-                border.color: Theme.accent.blue
-                border.width: 1
+                Rectangle {
+                    // Bottom dim
+                    anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+                    height: Math.max(0, (overlay.height + overlay.oy) - (root.selY + root.selH))
+                    color: Theme.alpha(Theme.scrim, 0.5)
+                    visible: root.dragging
+                }
+                Rectangle {
+                    // Left dim
+                    anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+                    width: Math.max(0, root.selX - overlay.ox)
+                    color: Theme.alpha(Theme.scrim, 0.5)
+                    visible: root.dragging
+                }
+                Rectangle {
+                    // Right dim
+                    anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
+                    width: Math.max(0, (overlay.width + overlay.ox) - (root.selX + root.selW))
+                    color: Theme.alpha(Theme.scrim, 0.5)
+                    visible: root.dragging
+                }
+                // Idle dim (whole screen) before drag starts.
+                Rectangle {
+                    anchors.fill: parent
+                    color: Theme.alpha(Theme.scrim, 0.4)
+                    visible: !root.dragging
+                }
+
+                // Selection outline.
+                Rectangle {
+                    visible: root.dragging
+                    x: root.selX - overlay.ox
+                    y: root.selY - overlay.oy
+                    width: root.selW
+                    height: root.selH
+                    color: "transparent"
+                    border.color: Theme.accent.blue
+                    border.width: 2
+                }
+
+                // Dimensions tooltip — anchored just below the selection,
+                // flipped above if it would clip off-screen.
+                Rectangle {
+                    visible: root.dragging && root.selW > 0
+                    x: Math.min(overlay.width - implicitWidth - 6,
+                                Math.max(6, (root.selX - overlay.ox) + root.selW - implicitWidth))
+                    y: {
+                        const below = (root.selY - overlay.oy) + root.selH + 6;
+                        return below + implicitHeight < overlay.height
+                            ? below
+                            : (root.selY - overlay.oy) - implicitHeight - 6;
+                    }
+                    implicitWidth: dimText.implicitWidth + 14
+                    implicitHeight: dimText.implicitHeight + 8
+                    radius: 6 * Theme.radiusScale
+                    color: Theme.alpha(Theme.scrim, 0.87)
+                    border.color: Theme.accent.blue
+                    border.width: 1
+                    Text {
+                        id: dimText
+                        anchors.centerIn: parent
+                        text: Math.round(root.selW) + " × " + Math.round(root.selH)
+                        color: Theme.fg
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize.sm
+                        font.bold: true
+                    }
+                }
+
+                // Hint text shown before drag begins.
                 Text {
-                    id: dimText
+                    visible: !root.dragging
                     anchors.centerIn: parent
-                    text: Math.round(root.selW) + " × " + Math.round(root.selH)
+                    text: "Click and drag to select region · Esc to cancel"
                     color: Theme.fg
                     font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.sm
+                    font.pixelSize: Theme.fontSize.md
                     font.bold: true
                 }
-            }
 
-            // Hint text shown before drag begins.
-            Text {
-                visible: !root.dragging
-                anchors.centerIn: parent
-                text: "Click and drag to select region · Esc to cancel"
-                color: Theme.fg
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.md
-                font.bold: true
-            }
-
-            FocusScope {
-                anchors.fill: parent
-                focus: root.active
-                Keys.onPressed: (e) => {
-                    if (e.key === Qt.Key_Escape) { root.cancel(); e.accepted = true; }
-                    else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
-                        root.commit(); e.accepted = true;
-                    }
-                }
-
-                MouseArea {
+                FocusScope {
                     anchors.fill: parent
-                    cursorShape: Qt.CrossCursor
-                    acceptedButtons: Qt.LeftButton | Qt.RightButton
-                    onPressed: (e) => {
-                        if (e.button === Qt.RightButton) { root.cancel(); return; }
-                        root.startX = e.x + overlay.ox;
-                        root.startY = e.y + overlay.oy;
-                        root.curX = root.startX;
-                        root.curY = root.startY;
-                        root.dragging = true;
-                    }
-                    onPositionChanged: (e) => {
-                        if (root.dragging) {
-                            root.curX = e.x + overlay.ox;
-                            root.curY = e.y + overlay.oy;
+                    focus: root.active
+                    Keys.onPressed: (e) => {
+                        if (e.key === Qt.Key_Escape) { root.cancel(); e.accepted = true; }
+                        else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
+                            root.commit(); e.accepted = true;
                         }
                     }
-                    onReleased: { if (root.dragging) root.commit(); }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.CrossCursor
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        onPressed: (e) => {
+                            if (e.button === Qt.RightButton) { root.cancel(); return; }
+                            root.startX = e.x + overlay.ox;
+                            root.startY = e.y + overlay.oy;
+                            root.curX = root.startX;
+                            root.curY = root.startY;
+                            root.dragging = true;
+                        }
+                        onPositionChanged: (e) => {
+                            if (root.dragging) {
+                                root.curX = e.x + overlay.ox;
+                                root.curY = e.y + overlay.oy;
+                            }
+                        }
+                        onReleased: { if (root.dragging) root.commit(); }
+                    }
                 }
             }
         }

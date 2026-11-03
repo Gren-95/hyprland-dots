@@ -68,6 +68,7 @@ LauncherFooter LauncherFooter.qml
 LauncherSearchBar LauncherSearchBar.qml
 LauncherSectionHeader LauncherSectionHeader.qml
 LauncherSelection LauncherSelection.qml
+LazyView LazyView.qml
 SuperWatch SuperWatch.qml
 SproutBg SproutBg.qml
 SoundModule SoundModule.qml
