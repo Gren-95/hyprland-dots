@@ -7,6 +7,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/shell-ipc.sh"
 
 PIDFILE="$SCREENRECORD_PID"
 LOCKFILE="$RUNTIME_DIR/screenrecord.lock"
@@ -31,6 +32,7 @@ if recorder_running; then
     # abort on signal failure — we still want to remove the pidfile.
     kill -SIGINT "$(<"$PIDFILE")" 2>/dev/null || true
     rm -f "$PIDFILE"
+    shell_ipc recorder stopped
     notify normal screenrecord media-record "Recording stopped" "Saved in $RECORDINGS_DIR" 3000
     exit 0
 fi
@@ -45,14 +47,16 @@ FILE="$RECORDINGS_DIR/$(date +%Y%m%d-%H%M%S).mp4"
 gpu-screen-recorder -w screen -c mp4 -f 60 -o "$FILE" 9>&- &
 pid=$!
 
-# Publish the pidfile at once (the Quickshell HUD polls it), then confirm the
+# Publish the pidfile at once and tell the Quickshell HUD, then confirm the
 # recorder survived startup; on failure withdraw the pidfile and say so.
 echo "$pid" >"$PIDFILE.tmp"
 mv -f "$PIDFILE.tmp" "$PIDFILE"
+shell_ipc recorder started "$(date +%s)"
 
 sleep "$START_CHECK_SECONDS"
 if ! kill -0 "$pid" 2>/dev/null; then
     rm -f "$PIDFILE"
+    shell_ipc recorder stopped
     notify critical screenrecord dialog-error "Recording failed" "gpu-screen-recorder exited right after start" 5000
     exit 1
 fi

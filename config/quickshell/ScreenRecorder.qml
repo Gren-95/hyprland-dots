@@ -1,6 +1,8 @@
-// Screen-recording state + HUD. Wraps ~/.config/scripts/screenrecord.sh —
-// polls its pidfile so the UI stays in sync no matter who toggles it
-// (bar icon, Super+Ctrl+R, or external runs of the script).
+// Screen-recording state + HUD. Wraps ~/.config/scripts/screenrecord.sh,
+// which reports starts and stops through the "recorder" IpcHandler below, so
+// the UI stays in sync no matter who toggles it (bar icon, keybind, or
+// external runs of the script). The pidfile is read once at startup and
+// re-checked slowly while recording, to notice a recorder that died.
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -46,10 +48,24 @@ Scope {
         onTriggered: root.nowEpoch = Date.now() / 1000
     }
 
-    // Poll the pidfile state. Cheap (file stat in shell).
+    // The script calls these through `qs ipc call recorder ...`.
+    IpcHandler {
+        target: "recorder"
+        function started(epoch: int): void {
+            root.startEpoch = epoch;
+            root.nowEpoch = Date.now() / 1000;
+            root.recording = true;
+        }
+        function stopped(): void {
+            root.recording = false;
+        }
+    }
+
+    // Reads the pidfile: recovers state after a Quickshell restart and
+    // detects a recorder that died without telling us.
     Process {
-        id: pollProc
-        running: false
+        id: checkProc
+        running: true
         command: ["sh", "-c",
             "p=" + root.pidfile + "; " +
             "if [ -f \"$p\" ] && kill -0 \"$(cat \"$p\" 2>/dev/null)\" 2>/dev/null; then " +
@@ -73,11 +89,10 @@ Scope {
         }
     }
     Timer {
-        interval: 1000
-        running: true
+        interval: 10000
+        running: root.recording
         repeat: true
-        triggeredOnStart: true
-        onTriggered: pollProc.running = true
+        onTriggered: checkProc.running = true
     }
 
     // The HUD flashes for ~2s whenever recording starts or stops so the user
