@@ -49,9 +49,10 @@ hl.gesture({
 -- gesture = 3, up, close
 
 -- 4-finger up = hyprexpo overview, 4-finger down = cancel. Plugin is a local
--- build (hyprpm headers mismatch on Fedora); rebuild from ~/.local/src/hyprexpo
--- after Hyprland updates. hl.plugin.load is declarative and must stay
--- unguarded; the loaded check only gates calls into the plugin API.
+-- build (hyprpm headers mismatch on Fedora). A dnf5 action rebuilds it after
+-- Hyprland updates (config/scripts/build-hyprexpo.sh --install-hook installs
+-- it); run that script by hand to rebuild. hl.plugin.load is declarative and
+-- must stay unguarded; the loaded check only gates calls into the plugin API.
 hl.plugin.load(os.getenv("HOME") .. "/.local/lib/hyprland/plugins/hyprexpo.so")
 
 local hyprexpo_loaded = false
