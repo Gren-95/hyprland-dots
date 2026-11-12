@@ -3,6 +3,7 @@
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/server.sh"
 
 IMMICH_BIN="$HOME/.npm-global/bin/immich"
 LOG_MAX_BYTES=$((1024 * 1024))
@@ -25,6 +26,18 @@ run_upload() {
         bin="$IMMICH_BIN"
     else
         return
+    fi
+
+    # The server is only reachable on the home network. Away from home that is
+    # expected, not an error: log it and try again on the next run, without a
+    # critical notification every hour. A missing URL means the CLI is not logged
+    # in, which the upload below reports.
+    local url
+    url=$(sed -n 's/^url: *//p' "$IMMICH_AUTH" 2>/dev/null)
+    if [[ -n "$url" ]] && ! server_reachable "$url/server/ping"; then
+        echo "$(date): server unreachable at $url, upload skipped" >>"$IMMICH_LOG"
+        [[ -t 1 ]] && echo "Immich server unreachable at $url, upload skipped"
+        return 0
     fi
 
     local output exit_code
