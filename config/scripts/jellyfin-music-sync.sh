@@ -5,9 +5,14 @@
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/server.sh"
 
 CONFIG="$JELLYFIN_CONF"
 LOG="$JELLYFIN_LOG"
+
+# Give up on a connection that cannot be opened in 10s or that stalls below
+# 1 KB/s for 30s, so a server that drops mid-sync cannot hang the run.
+CURL_OPTS=(--connect-timeout 10 --speed-limit 1024 --speed-time 30)
 
 # One sync at a time: the cron entry and the systemd timer must not overlap.
 # The lock is released when this process exits.
@@ -80,7 +85,7 @@ EOF
 # Get the first user's ID from Jellyfin (API keys are not user-scoped)
 get_user_id() {
     local user_id
-    user_id=$(curl -sf \
+    user_id=$(curl -sf "${CURL_OPTS[@]}" \
         -H "Authorization: MediaBrowser Client=\"jellyfin-sync\", Device=\"jellyfin-sync\", DeviceId=\"jellyfin-sync\", Version=\"1.0\", Token=\"$JELLYFIN_API_KEY\"" \
         "$JELLYFIN_URL/Users" | jq -r '.[0].Id')
 
@@ -98,6 +103,14 @@ sanitize() {
 }
 
 sync_music() {
+    # The server is only reachable on the home network. Away from home that is
+    # expected, not an error: skip quietly and try again on the next run.
+    if ! server_reachable "$JELLYFIN_URL"; then
+        print_warning "Jellyfin server unreachable at $JELLYFIN_URL, sync skipped"
+        echo "$(date): server unreachable at $JELLYFIN_URL, sync skipped" >>"$LOG"
+        return 0
+    fi
+
     local user_id
     if ! user_id=$(get_user_id); then
         notify critical jellyfin-sync dialog-error "Jellyfin Sync Failed" "Could not reach server — check URL and API key"
@@ -107,7 +120,7 @@ sync_music() {
     print_info "Fetching music library from Jellyfin..."
 
     local raw_items
-    raw_items=$(curl -sf \
+    raw_items=$(curl -sf "${CURL_OPTS[@]}" \
         -H "Authorization: MediaBrowser Client=\"jellyfin-sync\", Device=\"jellyfin-sync\", DeviceId=\"jellyfin-sync\", Version=\"1.0\", Token=\"$JELLYFIN_API_KEY\"" \
         "$JELLYFIN_URL/Users/$user_id/Items?Recursive=true&IncludeItemTypes=Audio&Fields=Path,Album,AlbumArtist&Limit=100000")
 
@@ -119,6 +132,17 @@ sync_music() {
 
     local total
     total=$(echo "$raw_items" | jq '.TotalRecordCount')
+
+    # Jellyfin is the master, so tracks missing from its list are deleted below.
+    # An unreadable reply or an empty library (a server whose media mount is
+    # down answers 200 with no items) would delete every local track; stop
+    # before that.
+    if [[ ! "$total" =~ ^[0-9]+$ || "$total" -eq 0 ]]; then
+        print_warning "Server returned no tracks, sync skipped so ~/Music is left untouched"
+        echo "$(date): server returned no tracks, sync skipped" >>"$LOG"
+        return 0
+    fi
+
     print_info "Found $total tracks on server"
 
     mkdir -p "$MUSIC_DIR"
@@ -158,23 +182,32 @@ sync_music() {
         # existing good local copy.
         local tmp_file="$dest_file.part"
         local http_code
-        http_code=$(curl -s -o "$tmp_file" -w "%{http_code}" \
+        http_code=$(curl -s "${CURL_OPTS[@]}" -o "$tmp_file" -w "%{http_code}" \
             -H "Authorization: MediaBrowser Client=\"jellyfin-sync\", Device=\"jellyfin-sync\", DeviceId=\"jellyfin-sync\", Version=\"1.0\", Token=\"$JELLYFIN_API_KEY\"" \
             "$JELLYFIN_URL/Audio/$id/stream?static=true")
 
         # Fall back: get direct stream URL from PlaybackInfo
         if [[ "$http_code" == "404" ]]; then
             local stream_url
-            stream_url=$(curl -sf \
+            stream_url=$(curl -sf "${CURL_OPTS[@]}" \
                 -H "Authorization: MediaBrowser Client=\"jellyfin-sync\", Device=\"jellyfin-sync\", DeviceId=\"jellyfin-sync\", Version=\"1.0\", Token=\"$JELLYFIN_API_KEY\"" \
                 "$JELLYFIN_URL/Items/$id/PlaybackInfo?UserId=$user_id" |
                 jq -r '.MediaSources[0].DirectStreamUrl // empty')
 
             if [[ -n "$stream_url" ]]; then
-                http_code=$(curl -s -o "$tmp_file" -w "%{http_code}" \
+                http_code=$(curl -s "${CURL_OPTS[@]}" -o "$tmp_file" -w "%{http_code}" \
                     -H "Authorization: MediaBrowser Client=\"jellyfin-sync\", Device=\"jellyfin-sync\", DeviceId=\"jellyfin-sync\", Version=\"1.0\", Token=\"$JELLYFIN_API_KEY\"" \
                     "$JELLYFIN_URL$stream_url")
             fi
+        fi
+
+        # 000 means curl got no HTTP reply at all: the server went away mid-sync.
+        # Stop without deleting anything; the next run picks up where this left off.
+        if [[ "$http_code" == "000" ]]; then
+            rm -f "$tmp_file"
+            print_warning "Lost connection to the server, sync stopped after $downloaded downloaded"
+            echo "$(date): connection lost, sync stopped after downloaded=$downloaded" >>"$LOG"
+            return 0
         fi
 
         if [[ "$http_code" == "200" ]]; then

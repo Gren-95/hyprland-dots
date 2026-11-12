@@ -34,4 +34,5 @@ IMMICH_LOG="$HOME/.cache/immich-sync.log"
 JELLYFIN_LOG="$HOME/.cache/jellyfin-sync.log"
 
 # External tool configs
+IMMICH_AUTH="$HOME/.config/immich/auth.yml"
 JELLYFIN_CONF="$HOME/.config/jellyfin/sync.conf"

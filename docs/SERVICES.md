@@ -26,7 +26,7 @@ so `ExecStart` must not point into a user-writable path.
 
 ### Immich (photo sync)
 
-Uploads `~/Pictures/` to your Immich server every hour while enabled. Notifies when new photos are uploaded.
+Uploads `~/Pictures/` to your Immich server every hour while enabled. Notifies when new photos are uploaded. When the server is unreachable (for example away from home) the run is skipped quietly with a line in `~/.cache/immich-sync.log`, and the next run tries again.
 
 **Setup:**
 
@@ -39,7 +39,7 @@ Auth is stored in `~/.config/immich/auth.yml` (gitignored).
 
 ### Jellyfin (music sync)
 
-Syncs your Jellyfin music library to `~/Music/` once a day. Jellyfin is the master — tracks removed from Jellyfin are deleted locally. Notifies after each sync with a download/skip/remove summary.
+Syncs your Jellyfin music library to `~/Music/` once a day. Jellyfin is the master — tracks removed from Jellyfin are deleted locally. Notifies after each sync with a download/skip/remove summary. When the server is unreachable the sync is skipped quietly (logged in `~/.cache/jellyfin-sync.log`); a connection lost mid-sync stops the run without deleting anything, and a server that reports zero tracks never empties `~/Music`.
 
 **Setup:**
 
