@@ -27,6 +27,7 @@ CONFIG_ITEMS=(
     "fish"
     "ranger"
     "btop"
+    "mpv"
     "gtk-3.0"
     "gtk-4.0"
     "kdeglobals"
