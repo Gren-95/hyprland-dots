@@ -120,6 +120,24 @@ Scope {
         _closeEntries(e => e.id === id);
         historyList = historyList.filter(e => e.id !== id);
     }
+    // Copy a replaced notification's new text into its entries. The lists are
+    // reassigned so the cards rebuild; a toast still on screen gets a fresh
+    // deadline, as a new notification would.
+    function _refresh(n) {
+        const update = e => {
+            if (e.id !== n.id) return e;
+            const u = Object.assign({}, e, { summary: n.summary || "", body: n.body || "" });
+            if (e.toastUntil !== undefined) {
+                const ttl = n.expireTimeout > 0
+                    ? Math.min(n.expireTimeout, settingsStore.toastTimeout)
+                    : settingsStore.toastTimeout;
+                u.toastUntil = Date.now() + ttl;
+            }
+            return u;
+        };
+        activeList = activeList.map(update);
+        historyList = historyList.map(update);
+    }
     function _remove(id) {
         activeList = activeList.filter(e => e.id !== id);
     }
@@ -259,6 +277,11 @@ Scope {
         onNotification: (n) => {
             n.tracked = true;
             n.closed.connect(() => root._remove(n.id));
+            // A sender that replaces its notification (progress, now playing)
+            // updates this same object in place; onNotification does not fire
+            // again, so follow the text here.
+            n.summaryChanged.connect(() => root._refresh(n));
+            n.bodyChanged.connect(() => root._refresh(n));
             // Carried over from the previous config generation: it already had
             // its showing, so file it in history rather than toasting it a
             // second time. Anything arriving under DND takes the same path —
