@@ -58,9 +58,13 @@ DayCard {
     title: "Now playing"
     visible: hasPlayer
 
-    // Keep the scrub position fresh while visible and playing.
+    // `visible` stays true inside the closed day panel, so the position and
+    // its animation only run while the panel window is actually shown.
+    readonly property bool onScreen: media.visible && (media.Window.window ? media.Window.window.visible : false)
+
+    // Keep the scrub position fresh while on screen and playing.
     Timer {
-        running: media.visible && media.isPlaying
+        running: media.onScreen && media.isPlaying
         interval: 1000
         repeat: true
         triggeredOnStart: true
