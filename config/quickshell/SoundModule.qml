@@ -204,7 +204,6 @@ Item {
     BarFlyout {
         id: apPopup
         parentBar: ap.parentBar
-        anchorItem: ap._openAnchor ?? ap.flyoutAnchor ?? ap
         open: ap.popupOpen
         cardWidth: settingsStore.flyoutSize("audiopower", "w", 460)
         cardHeight: settingsStore.flyoutSize("audiopower", "h", ap.lockedHeight > 0 ? ap.lockedHeight : ap.fitHeight)

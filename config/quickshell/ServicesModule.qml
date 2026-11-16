@@ -19,7 +19,6 @@ Item {
     property var parentBar
     property bool popupOpen: false
     property bool pinned: false
-    property Item flyoutAnchor: null
 
     // key → bool, rebuilt wholesale on every probe (mutating a JS object in
     // place would not re-evaluate the bindings that read it).
@@ -180,7 +179,6 @@ Item {
     BarFlyout {
         id: flyout
         parentBar: mod.parentBar
-        anchorItem: mod.flyoutAnchor ?? mod
         open: mod.popupOpen
         pinned: mod.pinned
         cardWidth: settingsStore.flyoutSize("services", "w", 460)

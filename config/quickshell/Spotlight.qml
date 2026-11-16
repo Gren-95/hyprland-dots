@@ -12,7 +12,6 @@ Scope {
     property int selectedIndex: 0
     // Set from the bar so the launcher flyout hangs under the launcher icon.
     property var anchorBar: null
-    property var anchorItem: null
     signal navigateNext()
     signal navigatePrev()
 
@@ -221,7 +220,6 @@ Scope {
 
     BarFlyout {
         parentBar: root.anchorBar
-        anchorItem: root.anchorItem
         open: root.open && root.anchorBar !== null
         cardWidth: settingsStore.flyoutSize("spotlight", "w", 560)
         cardHeight: settingsStore.flyoutSize("spotlight", "h", root.fitHeight)

@@ -14,9 +14,8 @@ Item {
     property var parentBar
     property bool popupOpen: false
     property bool pinned: false
-    // Default flyout anchor (placement-aware, bound from shell.qml) and a
-    // per-open override set by toggleOpen(from).
-    property Item flyoutAnchor: null
+    // The item that opened the flyout, set by toggleOpen(from); the bar
+    // highlights it while the flyout is open.
     property Item _openAnchor: null
     signal navigateNext()
     signal navigatePrev()
@@ -152,7 +151,6 @@ Item {
     BarFlyout {
         id: pwrPopup
         parentBar: ap.parentBar
-        anchorItem: ap._openAnchor ?? ap.flyoutAnchor ?? ap
         open: ap.popupOpen
         cardWidth: settingsStore.flyoutSize("power", "w", 460)
         cardHeight: settingsStore.flyoutSize("power", "h", ap.fitHeight)

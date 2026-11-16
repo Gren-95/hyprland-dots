@@ -13,7 +13,6 @@ Scope {
     property bool pinned: false
     // Set from the bar so the monitor flyout hangs by the clock cluster.
     property var anchorBar: null
-    property var anchorItem: null
     property var data: ({
         cpu_pct: 0, cpu_cores: [], cpu_temp: 0, cpu_model: "", cpu_freq_mhz: 0, load: [0, 0, 0],
         ram_used_gb: 0, ram_total_gb: 0, ram_pct: 0,
@@ -188,7 +187,6 @@ Scope {
         shown: root.open
         BarFlyout {
             parentBar: root.anchorBar
-            anchorItem: root.anchorItem
             open: root.open && root.anchorBar !== null
             pinned: root.pinned
             cardWidth: settingsStore.flyoutSize("sysmon", "w", root.fitWidth)

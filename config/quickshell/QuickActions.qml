@@ -156,10 +156,10 @@ Item {
             settingsStore.activityIconsVisible = !settingsStore.activityIconsVisible;
         } else if (entry.action === "keybinds") {
             actions.popupOpen = false;
-            keybinds.toggle(from);
+            keybinds.toggle();
         } else if (entry.action === "clipboard") {
             actions.popupOpen = false;
-            clipboard.openMenu(from);
+            clipboard.openMenu();
         } else if (entry.cmd) {
             actions.popupOpen = false;
             runProc.command = entry.cmd;
@@ -197,7 +197,6 @@ Item {
     BarFlyout {
         id: actionsPopup
         parentBar: actions.parentBar
-        anchorItem: actions._openAnchor ?? actions.flyoutAnchor ?? actions
         open: actions.popupOpen
         pinned: actions.pinned || actions.menusOpen > 0
         cardWidth: settingsStore.flyoutSize("quickactions", "w", 460)

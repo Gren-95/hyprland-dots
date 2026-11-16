@@ -198,7 +198,6 @@ Item {
     BarFlyout {
         id: popup
         parentBar: bt.parentBar
-        anchorItem: bt._openAnchor ?? bt.flyoutAnchor ?? bt
         open: bt.popupOpen
         cardWidth: settingsStore.flyoutSize("network", "w", 460)
         cardHeight: settingsStore.flyoutSize("network", "h", bt.lockedHeight > 0 ? bt.lockedHeight : bt.fitHeight)

@@ -29,9 +29,9 @@ resolved everywhere via the id scope chain (same pattern as `notifService`).
 Theme survives as a singleton only because shell.qml reads it directly;
 `Paths`, `Backlight` and `Cmd` are kept alive by `_singletons` in shell.qml.
 
-**Unified-shell rule:** nothing opens as a free-floating centered window.
-Every surface either hangs under its bar icon (`BarFlyout`), drops from the
-bar edge (`PopupCard` top drawer, WorkspaceOverview strip), or is inherently
+**Unified-shell rule:** every surface is one of three kinds: a `BarFlyout`
+(centred on the screen of the bar that opened it, one at a time), a drop from
+the bar edge (`PopupCard` top drawer, WorkspaceOverview strip), or inherently
 fullscreen (RegionSelector). The power menu is PowerModule's popup (session buttons on the bottom row);
 `quickshell:powermenu` toggles it.
 
@@ -116,20 +116,17 @@ shell.qml. Fallback chain: `_openAnchor ?? flyoutAnchor ?? self`.
 ## Primitives
 
 ### `BarFlyout`
-The single popup primitive: a card hanging directly under a bar item, with
-the SproutBg tail pointing up at it, growing downward out of the bar. Used
-by every bar module and flyout modal. Wraps `PopupWindow + SproutBg +
+The single popup primitive: a card centred on the screen of `parentBar`.
+Used by every bar module and flyout modal. Wraps `PopupWindow + SproutBg +
 animated FocusScope`. Content goes directly inside the braces — it lands in
-the inner FocusScope via the default property alias, below the tail.
-Positioning is computed into `anchor.rect`: centered under `anchorItem`,
-clamped to the screen edges (the tail keeps tracking the icon when clamped).
-Registers with `PopupManager` so only one flyout is open at a time.
+the inner FocusScope via the default property alias. Registers with
+`PopupManager` so only one flyout is open at a time. Bar modules still keep
+`_openAnchor` (the icon that opened them), but only for the bar highlight.
 Unaccepted Escape closes by default.
 
 ```qml
 BarFlyout {
-    parentBar: bar
-    anchorItem: someBarIcon   // the item it hangs from
+    parentBar: bar            // the flyout opens centred on this bar's screen
     open: mod.popupOpen
     cardWidth: 380
     cardHeight: 460
@@ -147,12 +144,12 @@ binding source (e.g. `mod.popupOpen = false`). Do not assign to `card.open`
 directly — it breaks the `open: mod.popupOpen` binding and the popup can't
 reopen.
 
-**Anchor wiring for Scope-level modals**: modals instantiated in `shell.qml`
-(Spotlight, Clipboard, Keybinds, SystemMonitor, DayPanel)
-expose `anchorBar` / `anchorItem` properties, assigned once
-from the bar's `Component.onCompleted` (or the anchor item's, for the
-clock/bell). Their flyout binds
-`open: root.open && root.anchorBar !== null`.
+**Bar wiring for Scope-level modals**: modals instantiated in `shell.qml`
+(Spotlight, Clipboard, Keybinds, SystemMonitor, DayPanel) expose an
+`anchorBar` property, bound once to the active bar from the bar's
+`Component.onCompleted`. Their flyout binds
+`open: root.open && root.anchorBar !== null`. DayPanel also keeps
+`anchorItem` (clock or bell) so the opener stays highlighted.
 
 ### `PopupCard`
 Top drawer: a card hanging from the bar's bottom edge — top-center by
@@ -161,7 +158,8 @@ default, `edge: "right"` for toast-like sheets. Used by `PolkitPrompt`
 Pass content via `contentComponent: Component { … }`.
 
 ### `SproutBg`
-The speech-bubble background shape (rounded rect + optional tail).
+The flyout background: a rounded rect with an optional tail (BarFlyout
+draws it without the tail).
 
 ## Bar modules
 
@@ -385,12 +383,12 @@ close the popup.
 
 1. Create `MyModal.qml`. Root is `Scope`.
 2. Add `property bool open: false`, `function toggle()`, `function close()`,
-   plus `property var anchorBar: null` / `property var anchorItem: null`.
-3. Use `BarFlyout { parentBar: root.anchorBar; anchorItem: root.anchorItem;
+   plus `property var anchorBar: null`.
+3. Use `BarFlyout { parentBar: root.anchorBar;
    open: root.open && root.anchorBar !== null; … }` with content inside the
    braces. (Only use `PopupCard` for bar-edge drawers with no natural icon.)
-4. Pick the bar item it should hang from and assign the anchors in the bar's
-   `Component.onCompleted` in `shell.qml`.
+4. Bind `anchorBar` to the active bar in the bar's `Component.onCompleted`
+   in `shell.qml` (`myModal.anchorBar = Qt.binding(() => shellRoot.activeBar)`).
 5. Add a plain-English modal title at the top of the content.
 6. Add uppercase section headers above each visual grouping.
 7. Instantiate it once at the top of `shell.qml`: `MyModal { id: myModal }`.

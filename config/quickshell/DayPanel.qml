@@ -69,7 +69,6 @@ Scope {
     BarFlyout {
         id: panel
         parentBar: root.anchorBar
-        anchorItem: root.anchorItem
         open: root.open && root.anchorBar !== null
         cardWidth: settingsStore.flyoutSize("daypanel", "w", root.fitWidth)
         cardHeight: settingsStore.flyoutSize("daypanel", "h", root.fitHeight)

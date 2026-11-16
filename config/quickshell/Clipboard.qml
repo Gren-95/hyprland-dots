@@ -13,12 +13,8 @@ Scope {
     property string query: ""
     property int selectedIndex: 0
     property var items: []
-    // Default anchor set from the bar (the Quick Actions chevron); openers
-    // can pass their own item via toggle(from)/openMenu(from) so the flyout
-    // hangs under whatever was actually clicked (QA tile, promoted icon).
+    // The bar whose screen the flyout opens on (it is screen-centred).
     property var anchorBar: null
-    property var anchorItem: null
-    property Item _openAnchor: null
 
     // Decoded image previews: private to this user (the runtime dir is 0700
     // and removed at logout), unlike a fixed path under the shared /tmp.
@@ -68,12 +64,11 @@ Scope {
         };
     }
 
-    function toggle(from) {
+    function toggle() {
         if (open) close();
-        else openMenu(from);
+        else openMenu();
     }
-    function openMenu(from) {
-        _openAnchor = from ?? null;
+    function openMenu() {
         query = "";
         selectedIndex = 0;
         items = [];
@@ -121,7 +116,6 @@ Scope {
 
     BarFlyout {
         parentBar: root.anchorBar
-        anchorItem: root._openAnchor ?? root.anchorItem
         open: root.open && root.anchorBar !== null
         cardWidth: settingsStore.flyoutSize("clipboard", "w", 560)
         cardHeight: settingsStore.flyoutSize("clipboard", "h", root.fitHeight)

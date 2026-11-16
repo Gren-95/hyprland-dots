@@ -93,7 +93,7 @@ Scope {
                 // Seed the active bar so flyouts have an anchor before the first
                 // monitor-focus change fires.
                 if (onActiveMonitor || !shellRoot.activeBar) shellRoot.activeBar = bar;
-                spotlight.anchorBar = Qt.binding(() => shellRoot.activeBar); spotlight.anchorItem = launcherIcon;
+                spotlight.anchorBar = Qt.binding(() => shellRoot.activeBar);
                 dayPanel.anchorBar = Qt.binding(() => shellRoot.activeBar);
                 // Command palette: every Quick Actions item (auto-synced from
                 // its arrays) + the flyout destinations;
@@ -131,10 +131,9 @@ Scope {
                 // so the default is a LIVE binding falling back to the
                 // overflow chevron, then bar-center (null). Anchoring to an
                 // invisible item puts the flyout at a garbage position.
-                const qaOr = () => quickMod.visible ? quickMod : null;
-                clipboard.anchorBar = Qt.binding(() => shellRoot.activeBar);       clipboard.anchorItem = Qt.binding(qaOr);
-                keybinds.anchorBar = Qt.binding(() => shellRoot.activeBar);        keybinds.anchorItem = Qt.binding(qaOr);
-                sysmon.anchorBar = Qt.binding(() => shellRoot.activeBar);          sysmon.anchorItem = clockAnchor;
+                clipboard.anchorBar = Qt.binding(() => shellRoot.activeBar);
+                keybinds.anchorBar = Qt.binding(() => shellRoot.activeBar);
+                sysmon.anchorBar = Qt.binding(() => shellRoot.activeBar);
             }
 
             Rectangle {
@@ -458,7 +457,6 @@ Scope {
                     PowerModule {
                         id: powerMod
                         parentBar: bar
-                        flyoutAnchor: batteryIcon.visible ? null : (quickMod.visible ? quickMod : null)
                         onNavigateNext: { popupOpen = false; spotlight.openAt(0); }
                         onNavigatePrev: { popupOpen = false; soundMod.openAt(); }
                     }

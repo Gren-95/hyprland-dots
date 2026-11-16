@@ -16,19 +16,14 @@ Scope {
     property int selectedIndex: 0
     property var entries: []
     property bool pinned: false
-    // Default anchor set from the bar (the Quick Actions chevron); openers
-    // can pass their own item via toggle(from)/openMenu(from) so the flyout
-    // hangs under whatever was actually clicked (QA tile, promoted icon).
+    // The bar whose screen the flyout opens on (it is screen-centred).
     property var anchorBar: null
-    property var anchorItem: null
-    property Item _openAnchor: null
 
-    function toggle(from) {
+    function toggle() {
         if (open) close();
-        else openMenu(from);
+        else openMenu();
     }
-    function openMenu(from) {
-        _openAnchor = from ?? null;
+    function openMenu() {
         query = "";
         category = "";
         selectedIndex = 0;
@@ -252,7 +247,6 @@ Scope {
         shown: root.open
         BarFlyout {
             parentBar: root.anchorBar
-            anchorItem: root._openAnchor ?? root.anchorItem
             open: root.open && root.anchorBar !== null
             pinned: root.pinned
             cardWidth: settingsStore.flyoutSize("keybinds", "w", 700)
