@@ -123,7 +123,7 @@ The setup script will:
 - Create required user directories (`~/Pictures/Screenshots`, `~/Music`, etc.)
 - Install Iosevka Nerd Font
 - Set script permissions and enable the tracked git hooks
-- Link the Nautilus thumbnailers, and optionally install the STL thumbnailer (sudo)
+- Link the Nautilus thumbnailers (3MF, PSD, STL, GLB, OBJ), and install the programs the 3D ones run to `/usr/local/bin` (sudo)
 - Install and enable the systemd user units (`dots.sh units`)
 - Configure the GTK theme (and the Tailscale operator when Tailscale is installed)
 - Optionally set up the Immich CLI, Jellyfin music sync and Gcode Viewer (skipped with `--yes`)

@@ -1096,18 +1096,32 @@ setup_thumbnailers() {
     log_success "Thumbnailers linked into $dest"
 }
 
-# STL thumbnails. The file manager's thumbnail sandbox only sees /usr, so the
-# renderer is installed to /usr/local/bin with sudo.
-setup_stl_thumbnailer() {
-    local dest="/usr/local/bin/stl-thumbnailer"
+# Thumbnailer programs. The file manager's thumbnail sandbox only sees /usr,
+# so the scripts the .thumbnailer files call are installed to /usr/local/bin
+# with sudo. model-thumbnailer renders STL, GLB and OBJ models.
+SANDBOX_THUMBNAILERS=(model-thumbnailer)
+# Programs from earlier versions, removed on install.
+RETIRED_THUMBNAILERS=(stl-thumbnailer)
 
-    log_info "Installing the STL thumbnailer (needs sudo)..."
-    if sudo install -Dm755 "$DOTS_DIR/thumbnailers/stl-thumbnailer" "$dest"; then
-        rm -f "$HOME"/.cache/thumbnails/fail/gnome-thumbnail-factory/*
-        log_success "Installed $dest. Restart Nautilus (nautilus -q) to pick it up"
-    else
-        log_warning "STL thumbnailer install failed. Re-run: dots.sh setup"
-    fi
+setup_sandbox_thumbnailers() {
+    local name ok=true
+
+    log_info "Installing thumbnailer programs to /usr/local/bin (needs sudo)..."
+    for name in "${SANDBOX_THUMBNAILERS[@]}"; do
+        if sudo install -Dm755 "$DOTS_DIR/thumbnailers/$name" "/usr/local/bin/$name"; then
+            log_success "Installed /usr/local/bin/$name"
+        else
+            log_warning "Could not install $name"
+            ok=false
+        fi
+    done
+    for name in "${RETIRED_THUMBNAILERS[@]}"; do
+        [[ -e "/usr/local/bin/$name" ]] && sudo rm -f "/usr/local/bin/$name"
+    done
+    # Files that failed before the programs existed are retried after this.
+    rm -f "$HOME"/.cache/thumbnails/fail/gnome-thumbnail-factory/*
+    [[ $ok == true ]] || return 1
+    log_success "Restart Nautilus (nautilus -q) to pick them up"
 }
 
 # Gcode Viewer (https://github.com/Gren-95/gcode-viewer): builds from source,
@@ -1285,10 +1299,10 @@ cmd_setup() {
     # Nautilus thumbnailers
     setup_step "Thumbnailers" setup_thumbnailers
 
-    # STL thumbnails need a root-owned copy of the renderer
+    # Thumbnailers that run a program need a root-owned copy of it
     echo ""
-    if ask "Install the STL thumbnailer for Nautilus (needs sudo)? (Y/n)" Y; then
-        setup_step "STL thumbnailer" setup_stl_thumbnailer
+    if ask "Install the 3D model and AppImage thumbnailers for Nautilus (needs sudo)? (Y/n)" Y; then
+        setup_step "Thumbnailer programs" setup_sandbox_thumbnailers
     fi
 
     # Session daemons as systemd user units

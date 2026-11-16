@@ -1,0 +1,4 @@
+[Thumbnailer Entry]
+TryExec=/usr/local/bin/model-thumbnailer
+Exec=/usr/local/bin/model-thumbnailer %i %o %s
+MimeType=model/obj;
