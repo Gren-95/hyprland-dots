@@ -23,9 +23,13 @@ RowLayout {
     // Camera / mic: an app is capturing, i.e. a PipeWire input stream exists.
     // (A camera opened straight through /dev/video*, bypassing PipeWire, is
     // not seen.)
-    PwObjectTracker { objects: Pipewire.nodes.values }
+    // A node's properties are only filled in while it is bound, so the camera
+    // check needs a tracker; binding only the app streams (a handful) instead
+    // of every node keeps PipeWire from tracking params for the whole graph.
+    readonly property var streams: Pipewire.nodes.values.filter(n => n.isStream)
+    PwObjectTracker { objects: si.streams }
     readonly property bool cameraOn:
-        Pipewire.nodes.values.some(n => n.properties && n.properties["media.class"] === "Stream/Input/Video")
+        si.streams.some(n => n.properties && n.properties["media.class"] === "Stream/Input/Video")
     readonly property bool micOn: Pipewire.nodes.values.some(n => n.type === PwNodeType.AudioInStream)
     readonly property bool recording: recorder.recording
     readonly property bool remoteOn: remoteSyncStatus.remoteOn
