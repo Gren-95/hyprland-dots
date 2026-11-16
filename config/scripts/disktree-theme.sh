@@ -33,6 +33,24 @@ qml_color() {
     exit 1
 }
 
+# Resolve every colour before writing anything. A failed lookup inside the
+# heredoc would only end its own command substitution, and the file would be
+# written with empty values; as plain assignments, set -e stops the script.
+c_orange=$(qml_color orange)
+c_bgActive=$(qml_color bgActive)
+c_borderStrong=$(qml_color borderStrong)
+c_bg=$(qml_color bg)
+c_bgDeep=$(qml_color bgDeep)
+c_bgAlt=$(qml_color bgAlt)
+c_fgDim=$(qml_color fgDim)
+c_fg=$(qml_color fg)
+c_red=$(qml_color red)
+c_yellow=$(qml_color yellow)
+c_green=$(qml_color green)
+c_teal=$(qml_color teal)
+c_blue=$(qml_color blue)
+c_purple=$(qml_color purple)
+
 mkdir -p "$CURRENT_DIR/theme"
 
 # Written to a temp file and renamed: Disktree watches the file, and a half
@@ -42,24 +60,24 @@ trap 'rm -f "$tmp"' EXIT
 cat >"$tmp" <<EOF
 mode = "dark"
 
-accent = "$(qml_color orange)"
-selection = "$(qml_color bgActive)"
-muted = "$(qml_color borderStrong)"
+accent = "$c_orange"
+selection = "$c_bgActive"
+muted = "$c_borderStrong"
 
-background = "$(qml_color bg)"
-dark_background = "$(qml_color bgDeep)"
-lighter_background = "$(qml_color bgAlt)"
+background = "$c_bg"
+dark_background = "$c_bgDeep"
+lighter_background = "$c_bgAlt"
 
-foreground = "$(qml_color fgDim)"
-bright_foreground = "$(qml_color fg)"
+foreground = "$c_fgDim"
+bright_foreground = "$c_fg"
 
-red = "$(qml_color red)"
-yellow = "$(qml_color yellow)"
-orange = "$(qml_color orange)"
-green = "$(qml_color green)"
-cyan = "$(qml_color teal)"
-blue = "$(qml_color blue)"
-magenta = "$(qml_color purple)"
+red = "$c_red"
+yellow = "$c_yellow"
+orange = "$c_orange"
+green = "$c_green"
+cyan = "$c_teal"
+blue = "$c_blue"
+magenta = "$c_purple"
 EOF
 chmod 644 "$tmp"
 mv -f "$tmp" "$CURRENT_DIR/theme/colors.toml"
