@@ -424,7 +424,10 @@ Scope {
                         // cancelable 15 s countdown fires the configured
                         // action; charging cancels it.
                         onPctChanged: batteryLogic()
+                        // Plugged in counts even when a charge threshold keeps
+                        // the battery from charging.
                         onChargingChanged: if (charging) criticalTimer.stop();
+                        onPluggedChanged: if (plugged) criticalTimer.stop();
                         function batteryLogic() {
                             if (charging || plugged || pct <= 0) return;
                             const crit = settingsStore.batteryCriticalPct;

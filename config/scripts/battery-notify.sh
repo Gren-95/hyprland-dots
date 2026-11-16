@@ -17,8 +17,10 @@ while true; do
     CAPACITY=$(cat "/sys/class/power_supply/$BATTERY/capacity" 2>/dev/null)
     STATUS=$(cat "/sys/class/power_supply/$BATTERY/status" 2>/dev/null)
 
-    if [[ "$STATUS" == "Charging" || "$STATUS" == "Full" ]]; then
-        # Reset latch so the next discharge cycle can re-warn. Existing
+    if [[ "$STATUS" != "Discharging" ]]; then
+        # On external power: Charging, Full, or "Not charging" when a charge
+        # threshold holds the battery below full. Reset the latch so the next
+        # discharge cycle can re-warn. Existing
         # warnings are cleared from both the toast stack and the notification
         # center by Notifications.qml as soon as UPower reports power.
         WARNED_20=false
