@@ -22,10 +22,14 @@ Item {
     property string expandedAddress: ""
     signal navigateNext()
     signal navigatePrev()
-    readonly property int tabStopCount: 2 + visibleDevices.length + availableDevices.length
+    // With the adapter off only the power button is shown, so it is the only
+    // stop; the scan button and device rows are hidden.
+    readonly property int tabStopCount: powered
+        ? 2 + visibleDevices.length + availableDevices.length : 1
     readonly property int selectedIndex: tabIndex >= 2 ? tabIndex - 2 : -1
     readonly property var adapter: Bluetooth.defaultAdapter
     readonly property bool powered: adapter && adapter.enabled
+    onPoweredChanged: if (!powered) tabIndex = 0
     readonly property var connectedDevices: {
         const list = [];
         if (!Bluetooth.devices) return list;
