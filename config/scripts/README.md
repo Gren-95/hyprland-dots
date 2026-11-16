@@ -36,14 +36,14 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 
 | File | Spawned by | What it does |
 |---|---|---|
-| `battery-notify.sh` | `restart.sh` | Polls `/sys/class/power_supply/BAT*` every 60s. Sends critical/normal notifications at 10% / 20% (replace-key `battery`). |
-| `power-auto.sh` | `restart.sh` + autostart | Listens to `upower --monitor-detail`. Sets `performance` on AC, `balanced` on battery ≥30%, `power-saver` <30% via `powerprofilesctl`. Idempotent (skips if already at target). |
-| `bt-audio-recover.sh` | `restart.sh` + autostart | Watches `pactl subscribe` for card events. A connected `bluez_card.*` still on the `off` profile 5 s after the last event is set to `a2dp-sink` (AirPods can connect and stay off after a reconnect) and a notification says so. Exits non-zero if the sound server goes away so systemd restarts it. |
+| `battery-notify.sh` | systemd user unit (restarted by `restart.sh`) | Polls `/sys/class/power_supply/BAT*` every 60s. Sends critical/normal notifications at 10% / 20% (replace-key `battery`). |
+| `power-auto.sh` | systemd user unit (restarted by `restart.sh`) | Listens to `upower --monitor-detail`. Sets `performance` on AC, `balanced` on battery ≥30%, `power-saver` <30% via `powerprofilesctl`. Idempotent (skips if already at target). |
+| `bt-audio-recover.sh` | systemd user unit (restarted by `restart.sh`) | Watches `pactl subscribe` for card events. A connected `bluez_card.*` still on the `off` profile 5 s after the last event is set to `a2dp-sink` (AirPods can connect and stay off after a reconnect) and a notification says so. Exits non-zero if the sound server goes away so systemd restarts it. |
 | `build-librepods.sh` | manual | Builds LibrePods at a pinned commit with `librepods/battery-export.patch` (writes `$XDG_RUNTIME_DIR/librepods-battery.json` for `AirPodsBattery.qml`) and installs it to `~/.local/bin/librepods`. |
 | `build-hyprexpo.sh` | dnf5 action (`--install-hook`) | Rebuilds the local hyprexpo plugin from `~/.local/src/hyprexpo` when the installed one does not embed the current Hyprland commit hash, and installs it to `~/.local/lib/hyprland/plugins/` with an atomic rename. Sends a notification and logs to `~/.cache/hyprexpo-build.log`. `--install-hook` (sudo, once) writes `/etc/dnf/libdnf5-plugins/actions.d/hyprexpo.actions`, which runs the script after every dnf transaction that updates `hyprland-devel`. The new build loads at the next Hyprland start. |
 | `dotwatch.sh` | `restart.sh` | `inotifywait` on the dots repo. Reloads Hyprland / hypridle config in-place when their files change. Hot-reloads `gtk-3.0/gtk.css` notify and hyprlock config notify. |
 | `immich-sync.sh` | cron (via `sync-toggle.sh`) | Runs once by default. `--daemon` flag for legacy loop mode (unused by current setup). Uses the `immich` CLI to upload `$PICTURES_DIR` (excluding `**/ocr/**`). |
-| `jellyfin-music-sync.sh` | cron (via `sync-toggle.sh`) | Same shape — single run by default, `--daemon` for the loop. Mirrors Jellyfin music library to `$MUSIC_DIR`, deleting local files no longer on the server. |
+| `jellyfin-music-sync.sh` | `jellyfin-sync.timer` user timer (daily; switched by `sync-toggle.sh`) | Same shape — single run by default, `--daemon` for the loop. Mirrors Jellyfin music library to `$MUSIC_DIR`, deleting local files no longer on the server. |
 
 ## Toggles (Hyprland keybind / Quickshell UI)
 
@@ -52,7 +52,9 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | `default-app.sh` | Hyprland binds (`run`), Spotlight's default-app pickers (`set`) | Which app fills a role — browser, terminal, editor, filemanager. `get` prefers XDG's own answer where one exists; `set` writes `~/.config/default-apps.conf` and registers the XDG default for browser/file manager; `run` resolves the entry across the XDG application directories and launches it, falling back to kitty/nautilus when nothing is chosen. |
 | `services-status.sh` | Quickshell Services panel | One probe for the whole panel: prints `key=value` pairs on a single line — each session daemon's pgrep state, wayvnc, the WinApps container, both sync schedules, and the Jellyfin timer's next run as a unix timestamp. |
 | `wayvnc-toggle.sh` | Services panel "Remote access" toggle, or `Super+Ctrl+R` | Starts wayvnc if not running (bound to the Tailscale IPv4 when available, else loopback), waits until the port listens, kills it if running. Notifies only on failure. |
-| `sync-toggle.sh` | Services panel "Immich/Jellyfin sync" toggles | Manages cron entries between `# QSSYNC:<kind>` markers. Commands: `status [all\|<kind>]`, `toggle <kind>`, `enable <kind>`, `disable <kind>`, `schedule <kind> '<cron-expr>'`. Self-installs commented-out lines on first call. |
+| `sync-toggle.sh` | Services panel "Immich/Jellyfin sync" toggles | Immich: manages a cron entry between `# QSSYNC:immich` markers (off with a note when crontab is missing). Jellyfin: enables or disables `jellyfin-sync.timer`; `schedule jellyfin` writes a drop-in.  Commands: `status [all\|<kind>]`, `toggle <kind>`, `enable <kind>`, `disable <kind>`, `schedule <kind> '<cron-expr>'`. Self-installs commented-out lines on first call. |
+| `games-browser-toggle.sh` | Services panel "Games browser" row | `toggle\|start\|stop\|status` for the games-browser docker compose service (web UI on `http://127.0.0.1:8080/`); `status` prints 1 or 0. |
+| `winvm-toggle.sh` | Services panel "Windows VM" row | `toggle\|start\|stop\|status [--force]` for the WinApps Windows container. Stopping it is what frees the VM's RAM (WinApps' own pause keeps it resident); `status` prints 1 or 0. |
 
 ## New helpers
 
