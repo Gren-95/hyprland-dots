@@ -5,7 +5,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/server.sh"
 
-IMMICH_BIN="$HOME/.npm-global/bin/immich"
+# Where `dots.sh setup` can put the CLI: npm with a user prefix, or bun.
+# Cron runs with PATH=/usr/bin:/bin, so neither is on PATH there.
+IMMICH_BIN_CANDIDATES=("$HOME/.npm-global/bin/immich" "$HOME/.bun/bin/immich")
 LOG_MAX_BYTES=$((1024 * 1024))
 
 # Keep one rotated generation so the log cannot grow without bound.
@@ -19,13 +21,20 @@ rotate_log() {
 run_upload() {
     rotate_log
 
-    local bin=""
+    local bin="" candidate
     if command -v immich >/dev/null 2>&1; then
         bin="immich"
-    elif [[ -x "$IMMICH_BIN" ]]; then
-        bin="$IMMICH_BIN"
     else
-        return
+        for candidate in "${IMMICH_BIN_CANDIDATES[@]}"; do
+            [[ -x "$candidate" ]] && bin="$candidate" && break
+        done
+    fi
+    if [[ -z "$bin" ]]; then
+        echo "$(date): immich CLI not found (PATH, ${IMMICH_BIN_CANDIDATES[*]}), upload skipped" >>"$IMMICH_LOG"
+        # Same key every run, so an hourly cron replaces the notification
+        # instead of stacking a new one.
+        notify normal immich-sync dialog-warning "Immich sync skipped" "The immich CLI is not installed. Run dots.sh setup to install it."
+        return 0
     fi
 
     # The server is only reachable on the home network. Away from home that is
