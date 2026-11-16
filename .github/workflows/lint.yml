@@ -167,7 +167,7 @@ jobs:
       # commits one with `git add -f`.
       - name: Credential files stay untracked
         run: |
-          if git ls-files | grep -E '^config/(immich/auth\.yml|jellyfin/sync\.conf|scripts/util\.env|quickshell/calendar\.url)$'; then
+          if git ls-files | grep -E '^config/(immich/auth\.yml|jellyfin/sync\.conf|scripts/util\.env|quickshell/calendar\.url|wayvnc/password)$'; then
             echo "::error::credential file is tracked - remove it from the index"
             exit 1
           fi
