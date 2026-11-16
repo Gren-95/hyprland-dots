@@ -48,14 +48,22 @@ sudo dnf copr enable errornointernet/quickshell  # quickshell (or build from sou
 
 ### Install all dependencies
 
+`dots.sh setup` installs these for you. By hand, this is the same list as
+`DEPS_DNF` in [`config/scripts/lib/deps.sh`](../config/scripts/lib/deps.sh):
+
 ```bash
-sudo dnf install hyprland hyprland-devel quickshell kitty nautilus cliphist \
-  awww hyprpicker hypridle hyprlock grim slurp swappy tesseract \
-  wl-clipboard firefox brightnessctl playerctl \
-  gnome-keyring jq ImageMagick pulseaudio-utils bluez hyprshutdown timeshift \
-  powerprofilesctl gpu-screen-recorder inotify-tools \
-  fish fzf zoxide ranger python3 python3-pillow
+sudo dnf install hyprland hyprland-devel quickshell kitty nautilus cliphist awww \
+  hyprpicker hypridle hyprlock grim slurp swappy tesseract \
+  tesseract-langpack-est ImageMagick wl-clipboard firefox \
+  brightnessctl playerctl powerprofilesctl gpu-screen-recorder \
+  network-manager-applet libnotify upower mpv bc curl gnome-keyring \
+  jq inotify-tools pulseaudio-utils bluez hyprshutdown timeshift fzf \
+  fish ranger python3 python3-pillow python3-numpy python3-gobject \
+  unzip liberation-sans-fonts
 ```
+
+Optional extras, used by single features: `zoxide` (directory jumping in fish),
+`hyprsunset` (night light), `wayvnc` (remote access), `btop`.
 
 ### Font
 
