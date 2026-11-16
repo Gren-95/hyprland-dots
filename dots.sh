@@ -46,6 +46,13 @@ USER_UNITS=(
     "systemd/user/power-auto.service"
     "systemd/user/bt-audio-recover.service"
 )
+# Installed (and kept in sync with the repo) by `dots.sh units`, but not
+# enabled there: whether they run is the user's choice, made through
+# sync-toggle.sh (the Services panel) or setup.
+INSTALL_ONLY_UNITS=(
+    "systemd/user/jellyfin-sync.service"
+    "systemd/user/jellyfin-sync.timer"
+)
 # Units that no longer exist; `dots.sh units` stops, disables and removes them.
 RETIRED_USER_UNITS=(
     "media-inhibit.service"
@@ -761,7 +768,7 @@ cmd_units() {
     verify_dots_dir
 
     local item source unit
-    for item in "${USER_UNITS[@]}"; do
+    for item in "${USER_UNITS[@]}" "${INSTALL_ONLY_UNITS[@]}"; do
         source="$DOTS_DIR/$item"
         unit="$(basename "$item")"
         if [[ ! -f "$source" ]]; then
@@ -1016,15 +1023,13 @@ setup_immich_cli() {
 setup_jellyfin_sync() {
     log_info "Setting up Jellyfin music sync..."
 
-    # Deploy the systemd user timer that runs the sync once a day. Real copies,
-    # NOT symlinks — `systemctl disable` deletes a symlinked unit file, which
-    # would break the Quick Actions toggle. The repo copies under systemd/user/
-    # are the source of truth; re-run setup (or re-copy) after editing them.
-    mkdir -p "$HOME/.config/systemd/user"
-    cp "$DOTS_DIR/systemd/user/jellyfin-sync.service" "$HOME/.config/systemd/user/"
-    cp "$DOTS_DIR/systemd/user/jellyfin-sync.timer" "$HOME/.config/systemd/user/"
-    systemctl --user daemon-reload
-    log_success "Jellyfin sync timer installed (once daily, Persistent — catches up missed runs)"
+    # The timer that runs the sync once a day is installed with the other user
+    # units (copies, kept in sync with systemd/user/ by `dots.sh units`).
+    if bash "$DOTS_DIR/dots.sh" units; then
+        log_success "Jellyfin sync timer installed (once daily, Persistent — catches up missed runs)"
+    else
+        log_warning "Could not install the Jellyfin units. Re-run: dots.sh units"
+    fi
 
     # Prompt for credentials now
     local conf="$HOME/.config/jellyfin/sync.conf"

@@ -27,7 +27,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 # laptop); immich stays on cron. uses_timer routes the two backends. Everything
 # below (status/toggle/enable/disable/schedule) branches on it.
 JELLYFIN_TIMER="jellyfin-sync.timer"
-JELLYFIN_UNIT_FILE="$HOME/.config/systemd/user/jellyfin-sync.timer"
+# Schedule override for the timer. A drop-in, so `dots.sh units` can refresh
+# the unit from the repo without undoing a schedule set here.
+JELLYFIN_SCHEDULE_DROPIN="$HOME/.config/systemd/user/jellyfin-sync.timer.d/schedule.conf"
 uses_timer() { [[ "$1" == "jellyfin" ]]; }
 
 # Default cron schedule per kind (used when first installing the entry).
@@ -154,12 +156,11 @@ schedule_set() {
     local kind=$1 new_sched=$2
     if uses_timer "$kind"; then
         # For the timer $2 is a systemd OnCalendar expression (e.g. "daily" or
-        # "*-*-* 04:00:00"), NOT a cron expression. Rewrite it in the unit and
-        # reload. --follow-symlinks edits the repo file the symlink points to.
-        if [[ -e "$JELLYFIN_UNIT_FILE" ]]; then
-            sed --follow-symlinks -i "s|^OnCalendar=.*|OnCalendar=${new_sched}|" "$JELLYFIN_UNIT_FILE"
-            systemctl --user daemon-reload >/dev/null 2>&1 || true
-        fi
+        # "*-*-* 04:00:00"), NOT a cron expression. The empty OnCalendar=
+        # clears the unit's own schedule before setting the new one.
+        mkdir -p "$(dirname "$JELLYFIN_SCHEDULE_DROPIN")"
+        printf '[Timer]\nOnCalendar=\nOnCalendar=%s\n' "$new_sched" >"$JELLYFIN_SCHEDULE_DROPIN"
+        systemctl --user daemon-reload >/dev/null 2>&1 || true
         return
     fi
     have_cron || cron_missing "$kind" || return 0
