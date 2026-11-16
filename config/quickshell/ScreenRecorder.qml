@@ -81,6 +81,10 @@ Scope {
                 if (alive && !root.recording) {
                     root.startEpoch = started > 0 ? started : (Date.now() / 1000);
                     root.nowEpoch = Date.now() / 1000;
+                    // Picking up a recording that is already running (after
+                    // a shell reload) is not a start: no flash, or it would
+                    // end up in the video.
+                    root._recovering = true;
                     root.recording = true;
                 } else if (!alive && root.recording) {
                     root.recording = false;
@@ -101,7 +105,9 @@ Scope {
     // and can't be excluded by Wayland layer rules).
     property bool _showHud: false
     property bool _justStarted: false
+    property bool _recovering: false
     onRecordingChanged: {
+        if (_recovering) { _recovering = false; return; }
         _justStarted = recording;
         _showHud = true;
         flashHide.restart();
