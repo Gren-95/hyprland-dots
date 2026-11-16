@@ -18,6 +18,8 @@ flags rows that no longer match.
 | `Super+C` | Color picker (hyprpicker) |
 | `Super+B` | Restart all userspace services (`config/scripts/restart.sh`) |
 | `Super+Shift+E` / `Ctrl+Alt+Delete` | Power popup (battery, power profile, brightness, Sleep / Logout / Reboot / Shutdown) |
+| `Super+Shift+I` | Keep the screen awake until pressed again (idle inhibitor) |
+| `Super+Shift+G` | Game mode on / off |
 
 ## Quickshell modals
 
@@ -48,6 +50,7 @@ flags rows that no longer match.
 | `Super+Ctrl+Shift+S` | Screenshot region → OCR → clipboard text |
 | `Super+Ctrl+R` | Toggle WayVNC remote access |
 | `Super+Shift+R` | Toggle screen recording (gpu-screen-recorder) |
+| `Super+Alt+S` | Screenshot the active window → file + clipboard |
 
 ## Window management
 
@@ -57,6 +60,7 @@ flags rows that no longer match.
 | `Super+G` | Toggle floating |
 | `Super+P` | Pseudo-tile |
 | `Super+J` | Toggle split direction |
+| `Super+X` | Scratchpad terminal (toggle) |
 | `Super+Ctrl+arrow` | Focus window in direction |
 | `Super+arrow` | Move window in direction |
 | `Alt+Tab` | Cycle windows next (no overlay) |
@@ -89,6 +93,7 @@ flags rows that no longer match.
 |---|---|
 | `Lid close` | Lid closed → lock (unless an external monitor is connected), screen off |
 | `Lid open` | Lid opened → screen on |
+| `Super+Ctrl+N` | Night light on / off (hyprsunset) |
 | `XF86AudioRaiseVolume` / `XF86AudioLowerVolume` | Sink volume ±5% |
 | `XF86AudioMute` | Toggle sink mute |
 | `XF86AudioMicMute` | Toggle source mute |
@@ -107,13 +112,3 @@ flags rows that no longer match.
 |---|---|
 | `Super+Shift+M` | Shuffle-play `~/Music` (once; a second press does nothing) |
 | `Super+Shift+K` | Stop the music player (other mpv windows keep playing) |
-
-## Other
-
-| Key | Action |
-|---|---|
-| `Super+X` | exec `bash ~/.config/scripts/scratchpad.sh` |
-| `Super+Alt+S` | exec `bash ~/.config/scripts/screenshot-window.sh` |
-| `Super+Ctrl+N` | exec `bash ~/.config/scripts/night.sh toggle` |
-| `Super+Shift+I` | exec `bash ~/.config/scripts/idle-inhibit-toggle.sh` |
-| `Super+Shift+G` | exec `bash ~/.config/scripts/gamemode.sh toggle` |
