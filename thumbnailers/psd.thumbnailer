@@ -1,0 +1,4 @@
+[Thumbnailer Entry]
+TryExec=magick
+Exec=magick %i[0] -background white -alpha remove -alpha off -thumbnail %sx%s png:%o
+MimeType=image/vnd.adobe.photoshop;image/x-psd;application/x-photoshop;
