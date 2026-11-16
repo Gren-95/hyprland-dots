@@ -47,8 +47,7 @@ Singleton {
                 job.destroy();
             }
             // Exit and EOF on the pipes arrive in no fixed order, so finish
-            // once all three are in; the timer covers a pipe that never
-            // reports EOF.
+            // once all three are in.
             function maybeFinish() { if (exitSeen && outSeen && errSeen) finish(); }
 
             property Process proc: Process {
@@ -66,7 +65,11 @@ Singleton {
                 onRunningChanged: if (!running && job.started) job.grace.start()
             }
             property bool started: false
-            property Timer grace: Timer { interval: 100; onTriggered: job.finish() }
+            // Normally all three signals arrive and finish() runs at once; the
+            // grace period only matters when a pipe never reports EOF (a
+            // backgrounded child keeping it open). It used to be 100 ms, which
+            // under load could hand a large output over before it was all read.
+            property Timer grace: Timer { interval: 2000; onTriggered: job.finish() }
         }
     }
 }
