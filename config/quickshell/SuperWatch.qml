@@ -48,15 +48,20 @@ Scope {
         }
     }
 
-    // Exits 10 while either Super key is down, 0 once both are up.
+    // Exits 10 while either Super key is down, 0 once both are up, 2 when no
+    // keyboard device could be read (then the timer fallback takes over
+    // instead of treating "nothing read" as "released").
+    // Keyboards are every input device with the kbd handler, which includes
+    // Bluetooth keyboards; /dev/input/by-path has no entry for those.
     Process {
         id: probe
         command: ["sh", "-c",
-            "for d in /dev/input/by-path/*-event-kbd; do " +
-            "[ -r \"$d\" ] || continue; " +
+            "found=0; " +
+            "for e in $(awk '/^H: Handlers=/ && /kbd/ { match($0, /event[0-9]+/); print substr($0, RSTART, RLENGTH) }' /proc/bus/input/devices); do " +
+            "d=/dev/input/$e; [ -r \"$d\" ] || continue; found=1; " +
             "evtest --query \"$d\" EV_KEY KEY_LEFTMETA;  [ $? -eq 10 ] && exit 10; " +
             "evtest --query \"$d\" EV_KEY KEY_RIGHTMETA; [ $? -eq 10 ] && exit 10; " +
-            "done; exit 0"]
+            "done; [ $found -eq 1 ] || exit 2; exit 0"]
         running: false
         onExited: (code) => {
             if (!root.active) return;
