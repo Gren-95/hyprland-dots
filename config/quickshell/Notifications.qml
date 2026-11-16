@@ -302,6 +302,11 @@ Scope {
                         entry: modelData
                         Layout.fillWidth: true
                         onDismiss: { if (modelData.ref) modelData.ref.dismiss(); }
+                        // Timing out only hides the toast. The notification
+                        // stays open on the server, so its history entry
+                        // survives a config reload and the app is not told
+                        // the user dismissed it.
+                        onTimedOut: root._remove(modelData.id)
                     }
                 }
             }
@@ -312,6 +317,7 @@ Scope {
         id: card
         property var entry
         signal dismiss()
+        signal timedOut()
         implicitHeight: cardBg.implicitHeight + 16
 
         Rectangle {
@@ -455,7 +461,7 @@ Scope {
             interval: Math.max(1, (card.entry ? card.entry.toastUntil : 0) - Date.now())
             running: true
             repeat: false
-            onTriggered: if (card.entry && card.entry.ref) card.dismiss();
+            onTriggered: card.timedOut()
         }
     }
 }
