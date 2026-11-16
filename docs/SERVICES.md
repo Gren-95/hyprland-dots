@@ -17,11 +17,6 @@ schedule in place rather than losing it.
 `Persistent=true` matters on a laptop: a timer that fires while the machine is
 asleep runs on the next boot instead of being skipped.
 
-The battery cap runs uncapped Friday through Sunday and applies a 75–80% cap on
-weekdays, so the cell ages slower without getting in the way at the weekend. Its
-script is deployed as a **copy** to `/usr/local/bin` — systemd runs it as root,
-so `ExecStart` must not point into a user-writable path.
-
 ## Optional Services
 
 ### Immich (photo sync)
