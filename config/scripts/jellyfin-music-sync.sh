@@ -1,5 +1,5 @@
 #!/bin/bash
-# Syncs music from Jellyfin to ~/Music
+# Syncs music from Jellyfin to ~/Music/<Artist>/<Album>/<Track>.<ext>
 # Jellyfin is the master — files removed from Jellyfin are deleted locally
 # Config is saved to ~/.config/jellyfin/sync.conf on first run
 set -uo pipefail
@@ -162,17 +162,29 @@ sync_music() {
     local downloaded=0 skipped=0 failed=0
 
     while IFS= read -r item; do
-        local id name artist ext dest_file server_path
+        local id name artist album ext dest_file flat_file server_path
 
         id=$(echo "$item" | jq -r '.Id')
         name=$(echo "$item" | jq -r '.Name')
         artist=$(echo "$item" | jq -r '.AlbumArtist // "Unknown Artist"')
+        album=$(echo "$item" | jq -r '.Album // "Unknown Album"')
         server_path=$(echo "$item" | jq -r '.Path // ""')
 
         ext="${server_path##*.}"
         [[ -z "$ext" || "$ext" == "$server_path" ]] && ext="mp3"
 
-        dest_file="$MUSIC_DIR/$(sanitize "$name").$ext"
+        # Artist/Album/Track, so tracks that share a name on different albums
+        # do not land on the same file.
+        dest_file="$MUSIC_DIR/$(sanitize "$artist")/$(sanitize "$album")/$(sanitize "$name").$ext"
+        mkdir -p "$(dirname "$dest_file")"
+
+        # Libraries synced before the Artist/Album layout kept every track flat
+        # in $MUSIC_DIR. Move such a file into place instead of downloading it
+        # again; the first track that claims a flat name takes it.
+        flat_file="$MUSIC_DIR/$(sanitize "$name").$ext"
+        if [[ ! -f "$dest_file" && -f "$flat_file" ]]; then
+            mv "$flat_file" "$dest_file"
+        fi
 
         # Track this file as expected
         expected_files["$dest_file"]=1
