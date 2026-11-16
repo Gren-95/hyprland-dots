@@ -58,6 +58,15 @@ load_config() {
         # shellcheck source=/dev/null
         source "$CONFIG"
     fi
+    # Unset until the config provides them; set -u would abort otherwise.
+    JELLYFIN_URL=${JELLYFIN_URL:-}
+    JELLYFIN_API_KEY=${JELLYFIN_API_KEY:-}
+
+    # Run from the timer or cron with nothing configured: there is nobody to
+    # ask, so there is nothing to do yet.
+    if [[ (-z "$JELLYFIN_URL" || -z "$JELLYFIN_API_KEY") && ! -t 0 ]]; then
+        exit 0
+    fi
 
     if [[ -z "$JELLYFIN_URL" ]]; then
         while true; do
