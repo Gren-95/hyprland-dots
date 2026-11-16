@@ -10,11 +10,16 @@ Dependencies and manual setup. The one-command install is in the [README](../REA
 - `nautilus` — file manager
 - `cliphist` + `wl-clipboard` — clipboard history (Quickshell shows the picker)
 - `awww` `hyprpicker` `hypridle` `hyprlock` — wallpaper, color picker, idle daemon, lock screen
+- `hyprshutdown` — Logout in the power menu (closes apps before Hyprland exits)
+- Iosevka Nerd Font — font and icon glyphs everywhere; not packaged, `dots.sh setup` fetches it (see below)
 - `grim` `slurp` `swappy` — screenshots
 - `tesseract` — OCR from screenshots
 - `gpu-screen-recorder` — screen recording
 - `firefox` — browser
 - `brightnessctl` `playerctl` — brightness and media control (Quickshell OSD watches `/sys` for changes)
+- `pulseaudio-utils` `bluez` — `pactl` and `bluetoothctl` for the Bluetooth audio recovery unit
+- `ImageMagick` — OCR preprocessing and lock screen album art
+- `timeshift` — pre-update snapshot in `upi` (update-all.sh stops without it)
 - `gnome-keyring` — secrets store
 - `powerprofilesctl` — power profiles
 - `python3` + `python3-pillow` — avatar generation
@@ -47,9 +52,20 @@ sudo dnf copr enable errornointernet/quickshell  # quickshell (or build from sou
 sudo dnf install hyprland hyprland-devel quickshell kitty nautilus cliphist \
   awww hyprpicker hypridle hyprlock grim slurp swappy tesseract \
   wl-clipboard firefox brightnessctl playerctl \
-  gnome-keyring jq \
+  gnome-keyring jq ImageMagick pulseaudio-utils bluez hyprshutdown timeshift \
   powerprofilesctl gpu-screen-recorder inotify-tools \
   fish fzf zoxide ranger python3 python3-pillow
+```
+
+### Font
+
+Iosevka Nerd Font is not in the Fedora repositories. `dots.sh setup` installs it; by hand:
+
+```bash
+mkdir -p ~/.local/share/fonts/IosevkaNerdFont
+curl -fsSL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Iosevka.tar.xz |
+  tar -xJ -C ~/.local/share/fonts/IosevkaNerdFont --wildcards '*.ttf'
+fc-cache -f
 ```
 
 ### Optional: Disktree (disk usage treemap)

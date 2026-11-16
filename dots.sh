@@ -883,6 +883,28 @@ install_dependencies() {
     fi
 }
 
+# Iosevka Nerd Font: the font of Hyprland, Quickshell, kitty and hyprlock, and
+# the source of every icon glyph. Not packaged for Fedora, so it is fetched
+# from the nerd-fonts release into the user font directory.
+setup_font() {
+    local dest="$HOME/.local/share/fonts/IosevkaNerdFont"
+    local url="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Iosevka.tar.xz"
+
+    if fc-list : family | grep -qi "Iosevka Nerd Font"; then
+        log_success "Iosevka Nerd Font already installed"
+        return 0
+    fi
+
+    log_info "Installing Iosevka Nerd Font..."
+    mkdir -p "$dest"
+    if curl -fsSL --retry 2 "$url" | tar -xJ -C "$dest" --wildcards '*.ttf'; then
+        fc-cache -f "$dest" >/dev/null
+        log_success "Iosevka Nerd Font installed to $dest"
+    else
+        log_warning "Font download failed (network?). Re-run: dots.sh setup"
+    fi
+}
+
 # Create symlinks via the single-source dots.sh.
 create_symlinks() {
     log_info "Creating symlinks via dots.sh..."
@@ -938,12 +960,13 @@ setup_immich_cli() {
     echo ""
     log_info "Configure Immich server connection"
     while true; do
-        read -p "  Server URL (e.g. https://immich.example.com): " immich_url
+        read -rp "  Server URL (e.g. https://immich.example.com): " immich_url
         [[ -n "$immich_url" ]] && break
         log_warning "URL cannot be empty"
     done
     while true; do
-        read -p "  API key (Immich → Account Settings → API Keys): " immich_key
+        read -rsp "  API key (Immich → Account Settings → API Keys): " immich_key
+        echo
         [[ -n "$immich_key" ]] && break
         log_warning "API key cannot be empty"
     done
@@ -1000,12 +1023,13 @@ setup_jellyfin_sync() {
     if [[ ! -f "$conf" ]]; then
         log_info "Configure Jellyfin server connection"
         while true; do
-            read -p "  Server URL (e.g. http://192.168.0.200:8096): " jf_url
+            read -rp "  Server URL (e.g. http://192.168.0.200:8096): " jf_url
             [[ -n "$jf_url" ]] && break
             log_warning "URL cannot be empty"
         done
         while true; do
-            read -p "  API key (Jellyfin → Dashboard → API Keys): " jf_key
+            read -rsp "  API key (Jellyfin → Dashboard → API Keys): " jf_key
+            echo
             [[ -n "$jf_key" ]] && break
             log_warning "API key cannot be empty"
         done
@@ -1107,8 +1131,8 @@ setup_gcode_viewer() {
     fi
 }
 
-# Session daemon user units (battery-notify, power-auto, media/fullscreen
-# inhibit). Installed and enabled; they start with the next graphical session.
+# Session daemon user units (battery-notify, power-auto, bt-audio-recover).
+# Installed and enabled; they start with the next graphical session.
 setup_user_units() {
     log_info "Installing session daemon units..."
     if bash "$DOTS_DIR/dots.sh" units; then
@@ -1230,6 +1254,9 @@ cmd_setup() {
     # Create expected directories
     create_dirs
 
+    # Font used by every surface and icon
+    setup_font
+
     # Set up scripts
     setup_scripts
 
@@ -1247,7 +1274,7 @@ cmd_setup() {
 
     # Session daemons as systemd user units
     echo ""
-    if ask "Install and enable the session daemon units (battery, power, idle inhibitors)? (Y/n)" Y; then
+    if ask "Install and enable the session daemon units (battery, power profile, Bluetooth audio)? (Y/n)" Y; then
         setup_user_units
     fi
 

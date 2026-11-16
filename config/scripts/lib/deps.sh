@@ -14,21 +14,25 @@
 
 DEPS_REQUIRED=(
     hyprland hyprctl qs kitty nautilus awww awww-daemon hyprpicker hypridle hyprlock
-    grim slurp swappy wl-copy wl-paste cliphist tesseract convert bc
+    grim slurp swappy wl-copy wl-paste cliphist tesseract convert magick bc
     firefox brightnessctl playerctl powerprofilesctl upower mpv
     gpu-screen-recorder inotifywait gnome-keyring-daemon nm-applet nmcli
-    notify-send busctl gsettings jq curl pactl wpctl python3 fish ranger
+    notify-send busctl gsettings jq curl pactl wpctl bluetoothctl python3 fish ranger
+    hyprshutdown timeshift fzf
 )
 
 DEPS_OPTIONAL=(
     wayvnc     # scripts/wayvnc-toggle.sh
     tailscale  # wayvnc binding address
     hyprsunset # scripts/night.sh
-    magick     # scripts/gallery-shots.sh, scripts/hyprlock-art.sh, thumbnailers/3mf.thumbnailer (ImageMagick 7)
     unzip      # scripts/extract.sh, thumbnailers/3mf.thumbnailer
     expect     # scripts/ledvance.sh
     immich     # scripts/immich-sync.sh
     crontab    # sync-toggle.sh (immich schedule)
+    docker     # scripts/games-browser-toggle.sh, winvm-toggle.sh, gamemode.sh
+    evtest     # quickshell/SuperWatch.qml (falls back to a timer without it)
+    zoxide     # fish/config.fish (skipped when missing)
+    disktree   # scripts/disktree.sh, fish disktree function
 )
 
 DEPS_DNF=(
@@ -37,7 +41,7 @@ DEPS_DNF=(
     swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard firefox
     brightnessctl playerctl powerprofilesctl gpu-screen-recorder
     network-manager-applet libnotify upower mpv bc curl
-    gnome-keyring jq inotify-tools
+    gnome-keyring jq inotify-tools pulseaudio-utils bluez hyprshutdown timeshift fzf
     fish ranger python3 python3-pillow python3-numpy python3-gobject unzip liberation-sans-fonts
 )
 
@@ -49,7 +53,7 @@ deps_missing_required() {
     done
 }
 
-# Exit 0 when python3 can import PyGObject (media/idle inhibitors need it).
+# Exit 0 when python3 can import PyGObject (idle inhibit helpers need it).
 deps_have_pygobject() {
     python3 -c 'import gi' >/dev/null 2>&1
 }
