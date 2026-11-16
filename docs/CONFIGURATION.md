@@ -4,13 +4,31 @@ Per-feature settings and tweaks.
 
 ## Wallpapers
 
-Put your wallpapers in `~/Pictures/wallpapers/`. They are preloaded automatically on startup — no manual config needed. The lock screen background also updates to the current wallpaper automatically.
+Put your wallpapers in `~/Pictures/wallpapers/`. `Super+W` (hold Super, tap W)
+deals them as cards; releasing Super applies the one in hand. At login the last
+wallpaper is restored (`awww restore`). The lock screen uses a random wallpaper
+from the same folder each time it locks (`config/scripts/hyprlock-art.sh`).
+The wallpaper deck reads its folder from the `wallpaper-dir` setting (below);
+`Super+Shift+N` (random wallpaper) always uses `~/Pictures/wallpapers/`.
 
 ## Idle timeout
 
 ```bash
 $EDITOR config/hypr/hypridle.conf
 ```
+
+Two ways to keep the screen on:
+
+- **Stay Awake** (the toggle in the day panel, `Super+N`): stops hypridle, so
+  nothing dims, locks or suspends. It is remembered across shell reloads
+  (`idle-stay-awake` setting). `idle-inhibit-media` and `idle-inhibit-power`
+  turn it on automatically while media plays or while on AC.
+- **`Super+Shift+I`** (`config/scripts/idle-inhibit-toggle.sh`): holds a
+  separate idle inhibitor until pressed again; hypridle keeps running, so
+  lock-before-sleep still works.
+
+Media playing, a fullscreen window or a Claude Code session at work also hold
+an inhibitor on their own while they last.
 
 ## Default apps
 
@@ -39,9 +57,10 @@ Press `Super+F1` in session to view all active keybinds.
 ## OSD
 
 Volume, brightness, and keyboard-backlight OSDs are rendered by Quickshell
-(`config/quickshell/Osd.qml`). It polls `/sys/class/backlight` and `/sys/class/leds`
-so any process changing brightness — key, `brightnessctl`, `hypridle` —
-triggers the OSD automatically. No daemon to enable.
+(`config/quickshell/Osd.qml`). It watches the brightness files under
+`/sys/class/backlight` and `/sys/class/leds`, so any process changing brightness
+— key, `brightnessctl`, `hypridle` — triggers the OSD automatically. No daemon
+to enable.
 
 ## Screen Recording
 
@@ -68,3 +87,39 @@ wayvnc is an optional VNC server for remote desktop access.
 Super+Ctrl+R and the Services panel toggle run the same script, so both start the server with the login. Viewers show a certificate warning on first connect because the certificate is self-signed.
 
 **Security:** wayvnc binds `127.0.0.1`, or the Tailscale address while Tailscale is up (only the interface is checked, so a stopped Tailscale never leaves a stale bind). There is no LAN listener unless you change `config/wayvnc/config`. Never put the password into `config/wayvnc/config`, which is tracked.
+
+## Shell settings
+
+Quickshell keeps its settings as one small file per setting in
+`~/.config/quickshell/settings/` (gitignored). Edit a file and the shell picks
+the change up at once; delete it to go back to the default. A file that does
+not parse is ignored with a warning in the shell log and left as it is. The
+full list, with defaults, is the `_schema` in `config/quickshell/Settings.qml`.
+The ones most worth knowing:
+
+| File | Default | What it does |
+|---|---|---|
+| `weather-location` | empty (weather off) | City for the day panel weather card and the lock screen corner |
+| `weather-fahrenheit` | `0` | `1` for °F and mph |
+| `wallpaper-dir` | `~/Pictures/wallpapers` | Folder the wallpaper deck deals from |
+| `accent-primary` | `orange` | Highlight colour: `orange`, `blue`, `green`, `red`, `yellow`, `purple`, `pink`, `teal`, `slate`, or `auto` (taken from the wallpaper) |
+| `idle-stay-awake` | `0` | The Stay Awake toggle (written by the day panel switch) |
+| `idle-inhibit-media`, `idle-inhibit-power` | `0` | Stay Awake while media plays / while on AC |
+| `battery-critical-pct`, `battery-critical-action` | `5`, `suspend` | At this level a 15 s countdown suspends unless you plug in; `none` or `0` turns it off |
+| `max-volume` | `100` | Volume ceiling for every volume control, in % |
+| `clock-24h`, `clock-seconds`, `clock-date-format` | `1`, `0`, `ddd, dd MMM` | Bar clock |
+| `font-family`, `font-scale` | `Iosevka Nerd Font`, `1.0` | Shell font and size multiplier |
+| `toast-position`, `toast-timeout`, `toast-max` | `center`, 10000 ms, 5 | Notification toasts |
+| `event-toasts.json` | charger and VPN on | Which system events show a toast (`charger`, `vpn`, `audio`, `layout`) |
+| `bar-placement.json`, `tray-placement.json`, `qa-placement.json` | empty | Per item `"bar"`, `"overflow"` or `"hidden"` for bar modules, tray apps and Quick Actions items |
+| `flyout-sizes.json` | empty | Per flyout `{ "w": …, "h": … }` size overrides |
+| `hidden-apps.json` | empty | Apps hidden from the launcher (managed with `Ctrl+D` there) |
+
+### Calendar feeds
+
+The day panel calendar reads ICS feed URLs from
+`~/.config/quickshell/calendar.url`, one per line (blank lines and `#` comments
+are ignored). Each feed gets its own colour by its line. Feeds are fetched every
+`calendar-fetch-interval` minutes (default 10); a feed that fails to fetch keeps
+its last events. The file is gitignored because feed URLs often carry a private
+token.
