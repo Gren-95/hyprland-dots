@@ -24,7 +24,7 @@ DEPS_OPTIONAL=(
     wayvnc     # scripts/wayvnc-toggle.sh
     tailscale  # wayvnc binding address
     hyprsunset # scripts/night.sh
-    magick     # scripts/gallery-shots.sh, thumbnailers/3mf.thumbnailer (ImageMagick 7)
+    magick     # scripts/gallery-shots.sh, scripts/hyprlock-art.sh, thumbnailers/3mf.thumbnailer (ImageMagick 7)
     unzip      # scripts/extract.sh, thumbnailers/3mf.thumbnailer
     expect     # scripts/ledvance.sh
     immich     # scripts/immich-sync.sh

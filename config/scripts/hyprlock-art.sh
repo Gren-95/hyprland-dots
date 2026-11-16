@@ -64,6 +64,11 @@ fi
 # A truncated download leaves a zero-byte file, which renders as a broken box.
 [[ -s $tmp ]] || give_up
 
+# Center-crop to a square. hyprlock sizes an image by its short side, so a
+# 16:9 video thumbnail would render wide and run into the title next to it.
+magick "$tmp" -gravity center \
+    -crop "%[fx:min(w,h)]x%[fx:min(w,h)]+0+0" +repage "jpg:$tmp" 2>/dev/null || give_up
+
 mv -f "$tmp" "$DEST" 2>/dev/null || give_up
 trap - EXIT
 publish
