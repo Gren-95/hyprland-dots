@@ -15,7 +15,4 @@ Singleton {
     function focusWorkspace(id) {
         dispatch("hl.dsp.focus({ workspace = " + Number(id) + " })");
     }
-    function execute(cmd) {
-        dispatch("hl.dsp.exec_cmd('" + String(cmd).replace(/\\/g, "\\\\").replace(/'/g, "\\'") + "')");
-    }
 }

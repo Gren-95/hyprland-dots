@@ -81,8 +81,6 @@ StatusIndicators StatusIndicators.qml
 SysGauge SysGauge.qml
 SysGraph SysGraph.qml
 SystemMonitor SystemMonitor.qml
-TabPill TabPill.qml
-TabStrip TabStrip.qml
 singleton TailscaleService TailscaleService.qml
 singleton Theme Theme.qml
 ThinScrollBar ThinScrollBar.qml

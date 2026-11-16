@@ -215,7 +215,6 @@ Scope {
         const out = [];
         for (const b of raw) {
             if (!b.key) continue;
-            if (b.keycode > 0 && !b.key) continue;
             const mods = root._formatMods(b.modmask);
             const key = root._prettyKey(b.key);
             const parts = mods.concat([key]);

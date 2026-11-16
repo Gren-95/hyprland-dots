@@ -70,7 +70,6 @@ Scope {
     property bool weekStartMonday: true
     property int windowTitleWidth: 400         // bar window-title cap; 0 = hidden
     property int osdBottomMargin: 60
-    property int mediaTitleWidth: 260          // media chip track title; 0 = icons only
     property bool sysmonShowCpu: true
     property bool sysmonShowRam: true
     property bool sysmonShowStorage: true
@@ -169,7 +168,6 @@ Scope {
         { name: "weekStartMonday",      file: "week-start-monday",      type: "bool" },
         { name: "windowTitleWidth",     file: "window-title-width",     type: "int"  },
         { name: "osdBottomMargin",      file: "osd-bottom-margin",      type: "int"  },
-        { name: "mediaTitleWidth",      file: "media-title-width",      type: "int"  },
         { name: "sysmonShowCpu",        file: "sysmon-show-cpu",        type: "bool" },
         { name: "sysmonShowRam",        file: "sysmon-show-ram",        type: "bool" },
         { name: "sysmonShowStorage",    file: "sysmon-show-storage",    type: "bool" },

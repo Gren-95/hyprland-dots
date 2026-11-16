@@ -9,14 +9,14 @@ add a new modal" or "where do I change X" — not a tutorial.
 |---|---|---|
 | **Singletons** | `Theme.qml`, `Paths.qml`, `Backlight.qml`, `Cmd.qml`, `Hypr.qml`, `TailscaleService.qml` | Design tokens (with user-tunable knobs), script directory, backlight device discovery, run-a-command-and-report-failure helper, hyprctl dispatch helper, Tailscale CLI wrapper |
 | **Root stores** | `Settings.qml` (`settingsStore`), `PopupManager.qml` (`popupManager`) | Persisted user settings + single-open flyout policy. Instantiated FIRST in shell.qml and resolved via the id scope chain — NOT singletons (see warning below) |
-| **Primitives** | `BarFlyout.qml`, `PopupCard.qml`, `TabStrip.qml`, `SproutBg.qml`, `SegmentedControl.qml` | The flyout envelope, the top-drawer envelope, the speech-bubble shape, settings controls |
+| **Primitives** | `BarFlyout.qml`, `PopupCard.qml`, `SproutBg.qml` | The flyout envelope, the top-drawer envelope, the speech-bubble shape |
 | **Bar items** | `BarIcon.qml`, `BarSep.qml`, `WorkspaceStrip.qml` | Leaf widgets that sit on the top bar |
 | **Bar modules** | `ConnectivityModule.qml`, `SoundModule.qml`, `PowerModule.qml`, `NotifBell.qml`, `QuickActions.qml` | Bar entry points that open their own flyout |
 | **Flyout modals** | `Spotlight.qml`, `Clipboard.qml`, `Keybinds.qml`, `DayPanel.qml`, `SystemMonitor.qml` | Scope-level services whose UI opens as a flyout under a bar item |
 | **Services (headless)** | `IcsCalendar.qml`, `Notifications.qml`, `WeatherService.qml`, `IdleService.qml`, `AccentService.qml`, `SuperWatch.qml` | State and system plumbing with no surface of their own; panes read them |
 | **Panes** | `CalendarPane.qml`, `NotifPane.qml`, `MediaCard.qml` | Views over a service, composed into a flyout |
 | **Drawers & overlays** | `WorkspaceOverview.qml` (top drawer strip), `PolkitPrompt.qml` (top-center drawer), `ScreenshotActions.qml` (top-right sheet), `ScreenRecorder.qml`, `Osd.qml`, `RegionSelector.qml` | Everything not anchored to a specific bar icon |
-| **Reusable widgets** | `TabPill`, `PinButton`, `BtToggle`, `VolumeSlider`, `BrightnessRow`, `ProfileSelector`, `*Row` files | Pieces composed into modules |
+| **Reusable widgets** | `PinButton`, `VolumeSlider`, `BrightnessRow`, `ProfileSelector`, `*Row` files | Pieces composed into modules |
 
 **WARNING — config singletons don't reliably instantiate on cold start.**
 A `pragma Singleton` file referenced only from component files (not from
@@ -160,20 +160,6 @@ default, `edge: "right"` for toast-like sheets. Used by `PolkitPrompt`
 (exclusive keyboard, no click-away) and `ScreenshotActions` (top-right).
 Pass content via `contentComponent: Component { … }`.
 
-### `TabStrip`
-Rounded pill container for tab navigation. Used by `ConnectivityModule`.
-
-```qml
-TabStrip {
-    activeId: mod.activeTab
-    onPicked: (id) => mod.setTab(id)
-    tabs: [
-        { glyph: "󰕾", label: "Sound", accent: Theme.accent.blue, id: "sound" },
-        { glyph: "󰐥", label: "Power", accent: Theme.accent.red,  id: "power" }
-    ]
-}
-```
-
 ### `SproutBg`
 The speech-bubble background shape (rounded rect + optional tail).
 
@@ -184,7 +170,7 @@ Pattern:
 
 - Renders an icon row centered in its bounds (`anchors.centerIn`)
 - `MouseArea anchors.fill: parent` handles clicks
-- Owns its own popup (usually `BarPopupCard`)
+- Owns its own popup (usually a `BarFlyout`)
 - Exposes `parentBar`, `popupOpen`, `pinned` properties
 - Exposes `openTab(name)` for tab-switching consumers
 
