@@ -28,7 +28,7 @@ Scope {
     // Touch the singletons only component files use, so they are created
     // with the shell instead of on first read (see the singleton warning in
     // DESIGN.md; Theme is kept alive by the Bindings below).
-    readonly property var _singletons: [Paths, Backlight, Cmd]
+    readonly property var _singletons: [Paths, Backlight, Cmd, TailscaleService]
     PopupManager { id: popupManager }
 
     // Push the appearance settings into the Theme singleton (it can't
@@ -47,6 +47,7 @@ Scope {
     AccentService { id: accentService }
     Notifications { id: notifService }
     GameModeService { id: gameMode; notifs: notifService }
+    Binding { target: TailscaleService; property: "paused"; value: gameMode.active }
     IcsCalendar { id: calService }
     DayPanel { id: dayPanel; cal: calService; notifs: notifService }
     Spotlight { id: spotlight }

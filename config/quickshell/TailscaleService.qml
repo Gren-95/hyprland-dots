@@ -10,6 +10,10 @@ Singleton {
     property string state: ""        // "Running" | "Stopped" | "NoState" | ""
     property string tailnet: ""
     readonly property bool running: state === "Running"
+    // Set from shell.qml while game mode is on: polling stops, and a refresh
+    // on the way out of game mode catches any change made meanwhile.
+    property bool paused: false
+    onPausedChanged: if (!paused) refresh()
 
     function refresh() { if (!proc.running) proc.running = true; }
 
@@ -31,5 +35,5 @@ Singleton {
             }
         }
     }
-    Timer { running: true; interval: 15000; repeat: true; triggeredOnStart: true; onTriggered: svc.refresh() }
+    Timer { running: !svc.paused; interval: 15000; repeat: true; triggeredOnStart: true; onTriggered: svc.refresh() }
 }
