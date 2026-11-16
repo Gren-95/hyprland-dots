@@ -40,3 +40,4 @@ Run only the shots affected by the change. Each shot opens a popup through its Q
 - `desktop.png`: composed scene with real windows.
 - `bar.png`: the bell badge counts every test toast, so take it with no pending notifications.
 - `wallpaper.png`: the deck only deals while Super is held.
+- `lockscreen.png`: locking needs the password to get back in. Run `bash ~/.config/scripts/hyprlock-art.sh; setsid -f hyprlock; sleep 4; grim -o eDP-1 /tmp/lock.png`, unlock, then save it with `magick /tmp/lock.png -resize 1440x -strip screenshots/gallery/lockscreen.png`. Check for personal content (now-playing title, weather location) before committing.
