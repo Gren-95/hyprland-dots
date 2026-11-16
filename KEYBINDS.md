@@ -17,7 +17,7 @@ flags rows that no longer match.
 | `Super+E` | Open file manager (default app) |
 | `Super+C` | Color picker (hyprpicker) |
 | `Super+B` | Restart all userspace services (`config/scripts/restart.sh`) |
-| `Super+Shift+E` / `Ctrl+Alt+Delete` | Power menu (Sleep / Logout / Reboot / Shutdown) |
+| `Super+Shift+E` / `Ctrl+Alt+Delete` | Power popup (battery, power profile, brightness, Sleep / Logout / Reboot / Shutdown) |
 
 ## Quickshell modals
 
@@ -30,12 +30,12 @@ flags rows that no longer match.
 | `Super+F1` | Keybinds viewer (live, searchable) |
 | `Super+M` | System monitor (CPU / RAM / temps / fans / uptime) |
 | `Super+A` | Quick actions panel |
-| `Super+S` | Audio & Power panel (Sound tab) |
+| `Super+S` | Sound popup (volume, devices, per-app mixer) |
 | `Super+W` | Wallpaper deck - hold Super, W deals the next card, release applies |
 | `Super+Enter` / `Super+Space` | Apply the card in hand (wallpaper deck) |
 | `Super+Esc` | Dismiss the wallpaper deck without applying |
 | `Super+Shift+W` | Deal the previous card (wallpaper deck) |
-| `Super+Shift+B` | Bluetooth menu (Network modal, BT tab) |
+| `Super+Shift+B` | Bluetooth flyout (paired and nearby devices) |
 | `Super+Tab` | Workspace overview (cycle next while held) |
 | `Super+Shift+Tab` | Workspace overview (cycle previous) |
 

@@ -9,6 +9,20 @@
 # Usage: docs/gen-keybinds.sh [--stdout]
 set -euo pipefail
 
+to_stdout=false
+case "${1:-}" in
+    "") ;;
+    --stdout) to_stdout=true ;;
+    -h | --help)
+        sed -n '2,9p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+        exit 0
+        ;;
+    *)
+        echo "gen-keybinds: unknown argument: $1 (see --help)" >&2
+        exit 2
+        ;;
+esac
+
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 out="$root/KEYBINDS.md"
 
@@ -54,17 +68,17 @@ QS_LABELS = {
     "notifications": (QS, "Toggle the day panel (calendar + notifications)"),
     "calendar": (QS, "Toggle the day panel (calendar + notifications)"),
     "quickactions": (QS, "Quick actions panel"),
-    "bluetooth": (QS, "Bluetooth menu (Network modal, BT tab)"),
+    "bluetooth": (QS, "Bluetooth flyout (paired and nearby devices)"),
     "keybinds": (QS, "Keybinds viewer (live, searchable)"),
     "sysmon": (QS, "System monitor (CPU / RAM / temps / fans / uptime)"),
-    "audiopower": (QS, "Audio & Power panel (Sound tab)"),
+    "audiopower": (QS, "Sound popup (volume, devices, per-app mixer)"),
     "wallpaper": (QS, "Wallpaper deck - hold Super, W deals the next card, release applies"),
     "wallpaper-back": (QS, "Deal the previous card (wallpaper deck)"),
     "wallpaper-apply": (QS, "Apply the card in hand (wallpaper deck)"),
     "wallpaper-cancel": (QS, "Dismiss the wallpaper deck without applying"),
     "overview-cycle": (QS, "Workspace overview (cycle next while held)"),
     "overview-cycle-prev": (QS, "Workspace overview (cycle previous)"),
-    "powermenu": (APP, "Power menu (Sleep / Logout / Reboot / Shutdown)"),
+    "powermenu": (APP, "Power popup (battery, power profile, brightness, Sleep / Logout / Reboot / Shutdown)"),
     "screenshot-region": (CAP, "Screenshot region → file + clipboard"),
 }
 EXEC_LABELS = [  # (substring of arg, category, label)
@@ -193,7 +207,7 @@ print("\n".join(out).rstrip("\n"))
 PY
 )
 
-if [[ "${1:-}" == "--stdout" ]]; then
+if [[ $to_stdout == true ]]; then
     printf '%s\n' "$doc"
 else
     printf '%s\n' "$doc" >"$out"
