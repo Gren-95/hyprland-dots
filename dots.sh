@@ -1393,7 +1393,7 @@ Commands:
   status    Show current symlink status
   fix       Fix inconsistent symlink paths
   prune     Remove dangling ~/.config symlinks pointing into this repo
-  units     Install and enable the session daemon user units (no sudo)
+  units     Install the user units: enable the session daemons, keep the Jellyfin timer as toggled (no sudo)
 
 Options:
   -y, --yes    Non-interactive setup: answer yes to every prompt. Steps that

@@ -77,9 +77,14 @@ After install, see [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) for wallpape
 ## Dotfiles Manager
 
 ```bash
+./dots.sh setup           # First-time install: packages, font, symlinks, units (--yes: unattended)
 ./dots.sh status          # Check all symlink states
 ./dots.sh backup          # Create symlinks (backs up existing dirs)
 ./dots.sh backup --dry-run  # Preview without making changes
 ./dots.sh fix             # Fix broken or inconsistent symlinks
 ./dots.sh undo            # Restore backups and remove symlinks
+./dots.sh prune           # Remove dangling ~/.config symlinks into this repo
+./dots.sh units           # Install the systemd user units (daemons enabled, Jellyfin timer not)
 ```
+
+`./dots.sh install` is the curl one-liner above; `./dots.sh --help` lists every option.
