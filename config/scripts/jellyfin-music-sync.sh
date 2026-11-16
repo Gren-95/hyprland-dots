@@ -97,6 +97,16 @@ get_user_id() {
     echo "$user_id"
 }
 
+# download_to <url> <file>: fetch with the auth header. Sets HTTP_CODE and
+# CURL_RC. A transfer that stalls is cut off by CURL_OPTS: curl then exits
+# non-zero while the code still reads 200, so both must be checked.
+download_to() {
+    HTTP_CODE=$(curl -s "${CURL_OPTS[@]}" -o "$2" -w "%{http_code}" \
+        -H "Authorization: MediaBrowser Client=\"jellyfin-sync\", Device=\"jellyfin-sync\", DeviceId=\"jellyfin-sync\", Version=\"1.0\", Token=\"$JELLYFIN_API_KEY\"" \
+        "$1")
+    CURL_RC=$?
+}
+
 # Sanitize a string for use as a filename (max 200 chars to stay under fs limit)
 sanitize() {
     echo "$1" | tr -d '/:*?"<>|\\' | sed 's/^ *//;s/ *$//' | cut -c1-200
@@ -181,13 +191,10 @@ sync_music() {
         # re-download (especially in --overwrite mode) can never clobber the
         # existing good local copy.
         local tmp_file="$dest_file.part"
-        local http_code
-        http_code=$(curl -s "${CURL_OPTS[@]}" -o "$tmp_file" -w "%{http_code}" \
-            -H "Authorization: MediaBrowser Client=\"jellyfin-sync\", Device=\"jellyfin-sync\", DeviceId=\"jellyfin-sync\", Version=\"1.0\", Token=\"$JELLYFIN_API_KEY\"" \
-            "$JELLYFIN_URL/Audio/$id/stream?static=true")
+        download_to "$JELLYFIN_URL/Audio/$id/stream?static=true" "$tmp_file"
 
         # Fall back: get direct stream URL from PlaybackInfo
-        if [[ "$http_code" == "404" ]]; then
+        if [[ $CURL_RC -eq 0 && "$HTTP_CODE" == "404" ]]; then
             local stream_url
             stream_url=$(curl -sf "${CURL_OPTS[@]}" \
                 -H "Authorization: MediaBrowser Client=\"jellyfin-sync\", Device=\"jellyfin-sync\", DeviceId=\"jellyfin-sync\", Version=\"1.0\", Token=\"$JELLYFIN_API_KEY\"" \
@@ -195,28 +202,28 @@ sync_music() {
                 jq -r '.MediaSources[0].DirectStreamUrl // empty')
 
             if [[ -n "$stream_url" ]]; then
-                http_code=$(curl -s "${CURL_OPTS[@]}" -o "$tmp_file" -w "%{http_code}" \
-                    -H "Authorization: MediaBrowser Client=\"jellyfin-sync\", Device=\"jellyfin-sync\", DeviceId=\"jellyfin-sync\", Version=\"1.0\", Token=\"$JELLYFIN_API_KEY\"" \
-                    "$JELLYFIN_URL$stream_url")
+                download_to "$JELLYFIN_URL$stream_url" "$tmp_file"
             fi
         fi
 
-        # 000 means curl got no HTTP reply at all: the server went away mid-sync.
-        # Stop without deleting anything; the next run picks up where this left off.
-        if [[ "$http_code" == "000" ]]; then
+        # A curl error means the transfer did not finish: no reply at all
+        # (code 000), or a reply cut off by a stall or a dropped connection.
+        # Drop the partial file and stop without deleting anything; the next
+        # run picks up where this one left off.
+        if [[ $CURL_RC -ne 0 ]]; then
             rm -f "$tmp_file"
-            print_warning "Lost connection to the server, sync stopped after $downloaded downloaded"
-            echo "$(date): connection lost, sync stopped after downloaded=$downloaded" >>"$LOG"
+            print_warning "Lost connection to the server (curl exit $CURL_RC), sync stopped after $downloaded downloaded"
+            echo "$(date): connection lost (curl exit $CURL_RC), sync stopped after downloaded=$downloaded" >>"$LOG"
             return 0
         fi
 
-        if [[ "$http_code" == "200" ]]; then
+        if [[ "$HTTP_CODE" == "200" ]]; then
             mv -f "$tmp_file" "$dest_file"
             ((downloaded++)) || true
             print_success "Downloaded: $name"
         else
             ((failed++)) || true
-            print_warning "Failed [$http_code]: $name"
+            print_warning "Failed [$HTTP_CODE]: $name"
             print_warning "  Server path: $server_path"
             rm -f "$tmp_file"
         fi
