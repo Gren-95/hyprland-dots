@@ -27,6 +27,10 @@ Scope {
         if (!q) return root.items;
         return root.items.filter(i => i.preview.toLowerCase().includes(q));
     }
+    // Only the newest rows are rendered; keyboard navigation and actions are
+    // bounded by these so the highlight never leaves the visible list.
+    readonly property int maxRows: 100
+    readonly property var shown: filtered.slice(0, maxRows)
 
     // Popup height follows the list (up to what the screen allows), so there
     // is no dead space under the last row; the footer stays pinned below it.
@@ -88,7 +92,7 @@ Scope {
         delProc.command = ["sh", "-c", "printf '%s\\n' \"$1\" | cliphist delete", "_", item.raw];
         delProc.startDetached();
         root.items = root.items.filter(x => x.id !== item.id);
-        if (root.selectedIndex >= filtered.length) root.selectedIndex = Math.max(0, filtered.length - 1);
+        if (root.selectedIndex >= shown.length) root.selectedIndex = Math.max(0, shown.length - 1);
     }
     function deleteAll() {
         wipeProc.command = ["sh", "-c", "cliphist wipe && rm -rf \"$1\"", "_", root.thumbDir];
@@ -120,7 +124,7 @@ Scope {
         cardHeight: settingsStore.flyoutSize("clipboard", "h", root.fitHeight)
         onDismissed: root.close()
         onKeyPressed: (e) => {
-            const n = root.filtered.length;
+            const n = root.shown.length;
             const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
             if (e.key === Qt.Key_Down) {
                 if (n > 0) root.selectedIndex = Math.min(n - 1, root.selectedIndex + 1);
@@ -246,7 +250,7 @@ Scope {
 
                             Repeater {
                                 id: rowsRepeater
-                                model: root.filtered.slice(0, 100)
+                                model: root.shown
                                 onItemAdded: Qt.callLater(contentCol.syncSelection)
                                 delegate: ClipItemRow {
                                     required property var modelData
