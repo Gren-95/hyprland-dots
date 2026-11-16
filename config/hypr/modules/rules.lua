@@ -14,7 +14,7 @@ hl.window_rule({
     match = {
         class = ".*",
     },
-    suppress_event = "= maximize",
+    suppress_event = "maximize",
 })
 
 -- Prevent focus on empty, floating, non-fullscreen, non-pinned XWayland windows
@@ -235,7 +235,7 @@ hl.window_rule({
 
 -- Gaming: lower input lag inside fullscreen apps. `immediate on` requires
 
--- general:allow_tearing = true (set in general.conf); tearing only happens
+-- general:allow_tearing = true (set in general.lua); tearing only happens
 
 -- inside fullscreen apps, the desktop stays vsynced.
 
