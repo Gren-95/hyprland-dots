@@ -103,7 +103,8 @@ Scope {
                     anchors.centerIn: parent
                     width: 560
                     height: Math.max(340, Math.min(win.screen ? win.screen.height - 160 : 600,
-                                                   contentCol.implicitHeight))
+                                                   // contentCol is inset by Theme.spacing.xl.
+                                                   contentCol.implicitHeight + Theme.spacing.xl * 2))
                     focus: root.open
                     scale: root.open ? 1.0 : 0.96
                     opacity: root.open ? 1.0 : 0.0

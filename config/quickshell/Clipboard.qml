@@ -36,7 +36,8 @@ Scope {
     // is no dead space under the last row; the footer stays pinned below it.
     readonly property real fitHeight: Math.max(340, Math.min(
         anchorBar && anchorBar.screen ? Math.min(anchorBar.screen.height - 160, 700) : 620,
-        contentCol.implicitHeight))
+        // contentCol is inset by Theme.spacing.xl on every side.
+        contentCol.implicitHeight + Theme.spacing.xl * 2))
 
     function _parseEntry(line) {
         const tab = line.indexOf("\t");
