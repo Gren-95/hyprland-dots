@@ -34,8 +34,13 @@ Scope {
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
-                root.wallpapers = text.trim().split("\n").filter(s => s.length > 0);
-                root._buildThumbs();
+                const list = text.trim().split("\n").filter(s => s.length > 0);
+                // The deal order indexes into wallpapers, so swapping the list
+                // under an open deck would change the card in hand. Hold a
+                // fresh listing until the deck closes.
+                if (root.open) root._pendingList = list;
+                else root.wallpapers = list;
+                root._buildThumbs(list);
             }
         }
     }
@@ -45,10 +50,13 @@ Scope {
     // finish decoding before the deck was released, and Qt cannot read WebP,
     // so those cards came up blank. A card without a thumbnail yet falls back
     // to the original file.
+    property var _pendingList: null
+    onOpenChanged: if (!open && _pendingList !== null) { wallpapers = _pendingList; _pendingList = null; }
+
     property var thumbs: ({})
-    function _buildThumbs() {
-        if (thumbProc.running || root.wallpapers.length === 0) return;
-        thumbProc.command = ["bash", Paths.scripts + "/wallpaper-thumbs.sh"].concat(root.wallpapers);
+    function _buildThumbs(list) {
+        if (thumbProc.running || list.length === 0) return;
+        thumbProc.command = ["bash", Paths.scripts + "/wallpaper-thumbs.sh"].concat(list);
         thumbProc.running = true;
     }
     function thumbFor(path) { return root.thumbs[path] || path; }
