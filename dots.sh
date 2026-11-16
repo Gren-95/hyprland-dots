@@ -285,19 +285,21 @@ backup_directory() {
         ((counter++))
     done
 
+    # Callers capture stdout as the backup path, so every log line goes to
+    # stderr and stdout carries the path alone.
     if [[ "$DRY_RUN" == true ]]; then
-        log_info "[DRY RUN] Would backup: $target -> $backup_path"
+        log_info "[DRY RUN] Would backup: $target -> $backup_path" >&2
         echo "$backup_path"
         return 0
     fi
 
-    verbose "Backing up: $target -> $backup_path"
+    verbose "Backing up: $target -> $backup_path" >&2
     mv "$target" "$backup_path" || {
-        log_error "Failed to backup $target"
+        log_error "Failed to backup $target" >&2
         return 1
     }
 
-    log_success "Backed up: $item -> $backup_name"
+    log_success "Backed up: $item -> $backup_name" >&2
     echo "$backup_path"
 }
 
@@ -551,6 +553,16 @@ cmd_undo() {
 
         verbose "Undoing: $action $item"
 
+        # Leave the symlink in place when its backup is gone: removing it
+        # would leave nothing at the target.
+        local has_backup=false
+        [[ -n "$backup_path" && "$backup_path" != "null" ]] && has_backup=true
+        if [[ "$has_backup" == true && ! -e "$backup_path" ]]; then
+            log_error "Backup not found, keeping the symlink: $backup_path"
+            ((failed++))
+            continue
+        fi
+
         # Remove symlink if it exists
         if remove_symlink "$item"; then
             ((removed++))
@@ -560,7 +572,7 @@ cmd_undo() {
         fi
 
         # Restore backup if it exists
-        if [[ -n "$backup_path" && "$backup_path" != "null" ]]; then
+        if [[ "$has_backup" == true ]]; then
             if restore_backup "$backup_path" "$item"; then
                 ((restored++))
             else
@@ -569,8 +581,8 @@ cmd_undo() {
         fi
     done < <(jq -c '.operations | reverse | .[]' "$LOG_FILE")
 
-    # Archive log file
-    if [[ "$DRY_RUN" == false ]]; then
+    # Archive the log only after a clean undo, so a failed one can be retried.
+    if [[ "$DRY_RUN" == false && $failed -eq 0 ]]; then
         local archive
         archive="${LOG_FILE}.$(get_timestamp)"
         mv "$LOG_FILE" "$archive"
