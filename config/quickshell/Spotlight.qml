@@ -149,12 +149,16 @@ Scope {
     readonly property int actionOffset: appOffset + shownApps.length
     readonly property int totalRows: actionOffset + matchedActions.length
 
+    // Opening through the shortcut always starts in plain launch mode; only
+    // startPick() and manageHiddenApps() open the special lists.
     function toggle() {
-        open = !open;
-        if (open) { query = ""; selectedIndex = 0; }
+        if (open) { close(); return; }
+        pickRole = ""; manageHidden = false;
+        open = true;
+        query = ""; selectedIndex = 0;
     }
     function openAt(idx) {
-        if (!open) { open = true; query = ""; }
+        if (!open) { pickRole = ""; manageHidden = false; open = true; query = ""; }
         selectedIndex = idx < 0 ? Math.max(0, root.totalRows - 1)
                                 : Math.min(idx, Math.max(0, root.totalRows - 1));
     }
@@ -221,7 +225,7 @@ Scope {
         open: root.open && root.anchorBar !== null
         cardWidth: settingsStore.flyoutSize("spotlight", "w", 560)
         cardHeight: settingsStore.flyoutSize("spotlight", "h", root.fitHeight)
-        onDismissed: root.open = false
+        onDismissed: root.close()
         onKeyPressed: (e) => {
             const n = root.totalRows;
             const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
