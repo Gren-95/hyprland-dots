@@ -7,16 +7,17 @@ add a new modal" or "where do I change X" — not a tutorial.
 
 | Layer | Lives in | Examples |
 |---|---|---|
-| **Singletons** | `Theme.qml`, `Paths.qml`, `Backlight.qml`, `Cmd.qml`, `Hypr.qml`, `TailscaleService.qml` | Design tokens (with user-tunable knobs), script directory, backlight device discovery, run-a-command-and-report-failure helper, hyprctl dispatch helper, Tailscale CLI wrapper |
+| **Singletons** | `Theme.qml`, `Paths.qml`, `Backlight.qml`, `Cmd.qml`, `Hypr.qml`, `TailscaleService.qml`, `AirPodsBattery.qml` | Design tokens (with user-tunable knobs), script directory, backlight device discovery, run-a-command-and-report-failure helper, hyprctl dispatch helper, Tailscale CLI wrapper, AirPods battery from librepods |
 | **Root stores** | `Settings.qml` (`settingsStore`), `PopupManager.qml` (`popupManager`) | Persisted user settings + single-open flyout policy. Instantiated FIRST in shell.qml and resolved via the id scope chain — NOT singletons (see warning below) |
 | **Primitives** | `BarFlyout.qml`, `PopupCard.qml`, `SproutBg.qml` | The flyout envelope, the top-drawer envelope, the speech-bubble shape |
-| **Bar items** | `BarIcon.qml`, `BarSep.qml`, `WorkspaceStrip.qml` | Leaf widgets that sit on the top bar |
-| **Bar modules** | `ConnectivityModule.qml`, `SoundModule.qml`, `PowerModule.qml`, `NotifBell.qml`, `QuickActions.qml` | Bar entry points that open their own flyout |
-| **Flyout modals** | `Spotlight.qml`, `Clipboard.qml`, `Keybinds.qml`, `DayPanel.qml`, `SystemMonitor.qml` | Scope-level services whose UI opens as a flyout under a bar item |
-| **Services (headless)** | `IcsCalendar.qml`, `Notifications.qml`, `WeatherService.qml`, `IdleService.qml`, `AccentService.qml`, `SuperWatch.qml` | State and system plumbing with no surface of their own; panes read them |
-| **Panes** | `CalendarPane.qml`, `NotifPane.qml`, `MediaCard.qml` | Views over a service, composed into a flyout |
-| **Drawers & overlays** | `WorkspaceOverview.qml` (top drawer strip), `PolkitPrompt.qml` (top-center drawer), `ScreenshotActions.qml` (top-right sheet), `ScreenRecorder.qml`, `Osd.qml`, `RegionSelector.qml` | Everything not anchored to a specific bar icon |
-| **Reusable widgets** | `PinButton`, `VolumeSlider`, `BrightnessRow`, `ProfileSelector`, `*Row` files | Pieces composed into modules |
+| **Bar items** | `BarIcon.qml`, `BarSep.qml`, `BarHover.qml`, `BarTooltip.qml`, `WorkspaceStrip.qml`, `StatusIndicators.qml`, `QuickActionIcon.qml`, `TrayItem.qml` | Leaf widgets that sit on the top bar (hover highlight, tooltip, activity dots, promoted Quick Actions items, tray icons) |
+| **Bar modules** | `ConnectivityModule.qml`, `SoundModule.qml`, `PowerModule.qml`, `NotifBell.qml`, `QuickActions.qml`, `ServicesModule.qml` | Bar entry points that open their own flyout |
+| **Flyout modals** | `Spotlight.qml`, `Clipboard.qml`, `Keybinds.qml`, `DayPanel.qml`, `SystemMonitor.qml`, `GameLauncher.qml` | Scope-level services whose UI opens as a centred flyout |
+| **Services (headless)** | `IcsCalendar.qml`, `Notifications.qml`, `WeatherService.qml`, `IdleService.qml`, `AccentService.qml`, `SuperWatch.qml`, `GameModeService.qml`, `RemoteSyncStatus.qml`, `EventToasts.qml` | State and system plumbing with no surface of their own; panes read them (EventToasts turns charger/VPN/audio/layout changes into toasts) |
+| **JavaScript helpers** | `IcsParse.js`, `KeybindSearch.js` | Pure logic with no QML types (ICS parsing and recurrence, keybind combo search); unit-tested under node in `tests/` |
+| **Panes** | `CalendarPane.qml`, `EventsPane.qml`, `NotifPane.qml`, `MediaCard.qml`, `WeatherCard.qml`, `BatteryCard.qml`, `AudioSection.qml`, `AudioAppsSection.qml`, `DayCard.qml`, `DayCell.qml`, `DayScroll.qml` | Views over a service, composed into a flyout |
+| **Drawers & overlays** | `WorkspaceOverview.qml` (top drawer strip), `WallpaperDeck.qml` (card fan), `PolkitPrompt.qml` (top-center drawer), `ScreenshotActions.qml` (top-right sheet), `ScreenRecorder.qml`, `Osd.qml`, `RegionSelector.qml` | Everything not anchored to a specific bar icon |
+| **Reusable widgets** | `PinButton`, `VolumeSlider`, `BrightnessRow`, `ProfileSelector`, `QaTile`, `SysGauge`, `SysGraph`, `Spinner`, `ThinScrollBar`, `LazyView`, `Launcher*` (Spotlight parts), `*Row` files | Pieces composed into modules; `LazyView` builds a modal's window only while it is open |
 
 **WARNING — config singletons don't reliably instantiate on cold start.**
 A `pragma Singleton` file referenced only from component files (not from
@@ -50,20 +51,21 @@ All design tokens. Read these instead of hard-coding values.
 
 - `Theme.fg / fgMuted / fgDim / mutedDeep / muted` — text colors, light → dark
 - `Theme.bg / bgAlt / bgDeep / bgHover` — surface colors
-- `Theme.accent.{blue,green,red,orange,yellow,purple,slate}` — semantic accents
+- `Theme.accent.{blue,green,red,orange,yellow,purple,pink,teal,slate}` — semantic accents; `blueBright`, `redSoft` (glyphs on dark surfaces) and `redDeep`, `blueDeep`, `purpleDeep` (filled controls)
 - `Theme.border / borderStrong / borderSubtle` — separator/border lines
 - `Theme.alpha(color, a)` / `Theme.scrim` — a colour at opacity `a`; `scrim` is the base for dimming layers and shadows (`Theme.alpha(Theme.scrim, 0.5)`)
 - `Theme.fontSize.{xs,sm,base,md,lg,xl,xxl,hero,huge}` — type scale
 - `Theme.spacing.{xs,sm,md,lg,xl,xxl}` — gaps and margins
 - `Theme.height.{chip,control,row,rowSm,tile,card}` — vertical sizes
-- `Theme.radius.{sm,md,lg}` — corner radii
+- `Theme.radius.{sm,md,lg,xl}` — corner radii
 - `Theme.duration.{fast=120, normal=180, slow=240}` — animation durations (ms)
 - `Theme.easing.{standard=OutCubic, emphasized=OutBack, decelerated=OutQuad}`
 - `Theme.font` — primary font family
 
 ### `Hypr.qml`
-Hyprland dispatch wrapper. `Hypr.dispatch("workspace e+1")` instead of
-spawning `hyprctl dispatch …` by hand.
+Hyprland dispatch wrapper. Takes a Lua dispatcher expression, as Hyprland's
+Lua config requires: `Hypr.dispatch("hl.dsp.focus({ workspace = 3 })")`, or
+`Hypr.focusWorkspace(3)`, instead of spawning `hyprctl dispatch …` by hand.
 
 ### `TailscaleService.qml`
 Read-only `tailscale status` poll (every 15s) behind the "VPN up/down" event
@@ -107,11 +109,11 @@ shell.qml via `Binding` elements (a singleton can't resolve settingsStore).
 selected rows, active pills, focused cards; keep semantic accents
 (red=danger, green=ok…) fixed.
 
-### Flyout anchoring override
-Modules with tabs expose `openTab(name, from)` — `from` re-anchors the
-flyout under whatever opened it (satellite icons, overflow rows) via
-`_openAnchor`; `flyoutAnchor` is the placement-aware default bound in
-shell.qml. Fallback chain: `_openAnchor ?? flyoutAnchor ?? self`.
+### Opener highlight
+`ConnectivityModule`, `SoundModule` and `PowerModule` expose
+`toggleOpen(from)`. `from` (a promoted icon, a Quick Actions tile) is kept in
+`_openAnchor` so the bar highlights whatever opened the flyout; it does not
+move the flyout, which is always centred.
 
 ## Primitives
 
@@ -170,11 +172,11 @@ Pattern:
 - `MouseArea anchors.fill: parent` handles clicks
 - Owns its own popup (usually a `BarFlyout`)
 - Exposes `parentBar`, `popupOpen`, `pinned` properties
-- Exposes `openTab(name)` for tab-switching consumers
+- Exposes `toggleOpen(from)` (records the opener for the bar highlight) and `openAt(idx)` for the Ctrl+Left/Right ring
 
 `QuickActions` is the catch-all overflow panel: stateful toggles (Microphone,
 Activity icons) + a 3-column grid of one-shots (Clipboard, Screenshot, Record,
-Color picker, Keybinds, Wallpaper). Bound to `Super+A`. Two sets of toggles
+Color picker, Keybinds). Bound to `Super+A`. Two sets of toggles
 have moved out to sit beside what they describe: Do Not Disturb and Stay Awake
 are in the day panel, and Immich/Jellyfin sync, Remote access and Windows VM
 are in `ServicesModule` — duplicating them here left two places to look and
@@ -183,10 +185,10 @@ which now concatenates `servicesMod.spotlightActions` onto the Quick Actions
 arrays.
 
 `ServicesModule` sits beside Quick Actions and is the read-out to its remote
-control: the five daemons `restart.sh` starts at login, the two scheduled
-syncs, and the two on-demand services. Quick Actions can flip four of these;
-what it cannot say is whether `dotwatch` survived the last session or when the
-Jellyfin timer next fires. One probe backs the whole panel —
+control: three session daemons (battery-notify, power-auto, dotwatch), the
+two scheduled syncs, and three on-demand services (remote access, Windows VM,
+games browser). It is the only place to flip them; it also shows whether
+`dotwatch` survived the last session and when the Jellyfin timer next fires. One probe backs the whole panel —
 `scripts/services-status.sh` prints `key=value` pairs on one line, so no shell
 pipeline lives in a QML string literal. A running daemon is not clickable
 (there is nothing to do); a dead one starts on click, detached, because a
@@ -243,18 +245,21 @@ and the keyboard map; the two panes are pure views over the `IcsCalendar` and
 ## Modals
 
 All flyouts and drawers share the same open animation: scale `0.94–0.96 → 1.0`,
-opacity `0 → 1`, `transformOrigin: Item.Top` (grow out of the bar),
+opacity `0 → 1`, `transformOrigin: Item.Center` for flyouts (`Item.Top` for drawers that drop from the bar),
 `Theme.duration.normal`, `Theme.easing.standard`.
 
-Flyout anchor map: launcher icon → Spotlight, Clipboard, Keybinds ·
-clock and bell → DayPanel (both land on the same surface) · clock cluster →
-SystemMonitor · Quick Actions chevron → QuickActions ·
-their own bar icons → ConnectivityModule, SoundModule (PowerModule has none; the battery icon in shell.qml opens it).
+What opens what from the bar: launcher icon → Spotlight · clock and bell →
+DayPanel (same surface) · Quick Actions chevron → QuickActions, whose tiles
+open Clipboard and Keybinds · own icons → ConnectivityModule, SoundModule ·
+battery icon → PowerModule. SystemMonitor has no bar opener (`Super+M` or
+Spotlight).
 
 Each modal exposes:
 - `property bool open: false`
 - `function toggle()` and `function close()`
-- An `openAt(idx)` helper that focuses a specific entry (for cross-modal nav)
+- Members of the Ctrl+Left/Right ring (Spotlight, DayPanel, QuickActions,
+  Sound, Power, Connectivity) also expose `openAt(idx)`, which opens with a
+  specific entry focused
 
 Cross-modal Ctrl+Left/Right navigation is wired in `shell.qml` via
 `navigateNext` / `navigatePrev` signals on each module.
@@ -297,8 +302,10 @@ a value change.
 ### Notable modals (post-initial-doc additions)
 
 - **`SystemMonitor`** (`Super+M`) — CPU + per-core grid, RAM, all mounted
-  filesystems, CPU/NVMe temps, fans, uptime. Backed by `scripts/sysinfo.sh`
-  emitting a single JSON line every 1.5s.
+  filesystems, CPU/NVMe temps, fans, top processes, uptime. Two probes:
+  `scripts/sysfast.sh` (counters, every tick at the interval picked in the
+  header: 0.5/1/2/5 s) and `scripts/sysinfo.sh` (processes, disks,
+  temperatures; on a slower timer).
 - **`WallpaperDeck`** (`Super+W`) — a fanned hand of wallpaper cards along
   the bottom of the focused monitor. Hold Super and tap W to turn over the
   next card, dealt from a shuffle of `~/Pictures/wallpapers`; releasing Super
@@ -376,8 +383,9 @@ close the popup.
   `Process` fired by a `Timer { running: popupOpen }`. Combine probes into
   one shell invocation where possible to keep `pgrep` cheap.
 - **Optimistic toggles**: flip the UI state in the click handler, then start
-  the backing process. Use an `inFlightTimer` to pause the periodic probe for
-  ~800ms so stale reads don't bounce the UI back. See `QuickActions.qml`.
+  the backing process. Set an `inFlight` flag with a short timer that clears
+  it, and skip the periodic probe while it is set, so stale reads don't bounce
+  the UI back. See `inFlight` / `clearInFlight` in `IdleService.qml`.
 
 ## Adding a new modal
 
@@ -393,7 +401,7 @@ close the popup.
 6. Add uppercase section headers above each visual grouping.
 7. Instantiate it once at the top of `shell.qml`: `MyModal { id: myModal }`.
 8. Wire keybind: add an entry `{ name: "mymodal", description: "...", run: () => ... }`
-   to the table in `Shortcuts.qml` (pass the modal in as a `...Ref` property), and `bind = $mainMod, X, global, quickshell:mymodal` in
+   to the table in `Shortcuts.qml` (pass the modal in as a `...Ref` property), and `hl.bind(var_mainMod .. " + X", hl.dsp.global("quickshell:mymodal"))` in
    `hypr/modules/keys.lua`.
 
 ## Adding a new bar icon
