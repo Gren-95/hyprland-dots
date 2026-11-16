@@ -21,7 +21,9 @@ RowLayout {
     }
 
     Repeater {
-        model: Hyprland.workspaces
+        // Special workspaces (scratchpad, the screen-share parking spot) have
+        // negative ids and are not places you switch to; leave them out.
+        model: Hyprland.workspaces.values.filter(w => w.id > 0)
         delegate: Item {
             id: pill
             required property var modelData
