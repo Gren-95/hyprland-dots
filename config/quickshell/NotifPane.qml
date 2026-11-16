@@ -488,6 +488,7 @@ Item {
                 Text {
                     Layout.fillWidth: true
                     text: hist.entry ? (hist.entry.summary || hist.entry.appName) : ""
+                    textFormat: Text.PlainText   // external text: never render markup
                     color: Theme.fg
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.md

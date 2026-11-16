@@ -393,6 +393,7 @@ Scope {
                     Text {
                         Layout.fillWidth: true
                         text: card.entry ? (card.entry.summary || card.entry.appName) : ""
+                        textFormat: Text.PlainText   // external text: never render markup
                         color: Theme.fg
                         font.family: Theme.font
                         font.pixelSize: Theme.fontSize.md
@@ -404,6 +405,7 @@ Scope {
                         Layout.fillWidth: true
                         visible: card.entry && card.entry.appName && card.entry.summary
                         text: card.entry ? card.entry.appName : ""
+                        textFormat: Text.PlainText   // external text: never render markup
                         color: Theme.muted
                         font.family: Theme.font
                         font.pixelSize: Theme.fontSize.sm

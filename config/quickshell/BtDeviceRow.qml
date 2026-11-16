@@ -124,6 +124,7 @@ Rectangle {
                     Text {
                         Layout.fillWidth: true
                         text: dr.device ? (dr.device.name || dr.device.deviceName || dr.device.address) : ""
+                        textFormat: Text.PlainText   // external text: never render markup
                         color: dr.isConnected ? Theme.fg : Theme.fgMuted
                         elide: Text.ElideRight
                         font.family: Theme.font

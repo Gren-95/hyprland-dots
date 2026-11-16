@@ -44,6 +44,7 @@ Rectangle {
         Text {
             Layout.fillWidth: true
             text: arow.node ? (arow.node.nickname || arow.node.description || arow.node.name || "") : ""
+            textFormat: Text.PlainText   // external text: never render markup
             color: arow.isActive ? Theme.fg : Theme.fgMuted
             elide: Text.ElideRight
             font.family: Theme.font

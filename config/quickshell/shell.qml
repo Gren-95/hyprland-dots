@@ -290,6 +290,7 @@ Scope {
                         Layout.maximumWidth: settingsStore.windowTitleWidth
                         elide: Text.ElideRight
                         text: Hyprland.activeToplevel ? Hyprland.activeToplevel.title : ""
+                        textFormat: Text.PlainText   // external text: never render markup
                         color: Theme.muted
                         font.family: Theme.font
                         font.pixelSize: Theme.fontSize.base

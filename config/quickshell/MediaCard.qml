@@ -129,6 +129,7 @@ DayCard {
             Text {
                 Layout.fillWidth: true
                 text: media.player && media.player.trackTitle ? media.player.trackTitle : "Nothing playing"
+                textFormat: Text.PlainText   // external text: never render markup
                 color: Theme.fg
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSize.md
@@ -139,6 +140,7 @@ DayCard {
                 Layout.fillWidth: true
                 visible: text !== ""
                 text: media.artistText()
+                textFormat: Text.PlainText   // external text: never render markup
                 color: Theme.muted
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSize.base

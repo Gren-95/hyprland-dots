@@ -115,6 +115,7 @@ Item {
             Text {
                 Layout.fillWidth: true
                 text: row.entry ? row.entry.preview : ""
+                textFormat: Text.PlainText   // external text: never render markup
                 color: row.highlighted ? Theme.fg : Theme.fgDim
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSize.md

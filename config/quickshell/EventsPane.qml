@@ -285,6 +285,7 @@ Item {
                         Text {
                             Layout.fillWidth: true
                             text: er.event ? (er.event.summary || "(no title)") : ""
+                            textFormat: Text.PlainText   // external text: never render markup
                             color: Theme.fg
                             wrapMode: Text.WordWrap
                             maximumLineCount: 3
@@ -310,6 +311,7 @@ Item {
                             Layout.fillWidth: true
                             visible: !!(er.event && er.event.location)
                             text: er.event && er.event.location ? "󰍎  " + er.event.location : ""
+                            textFormat: Text.PlainText   // external text: never render markup
                             color: Theme.muted
                             font.family: Theme.font
                             font.pixelSize: Theme.fontSize.base

@@ -67,6 +67,7 @@ Rectangle {
                 spacing: Theme.spacing.sm
                 Text {
                     text: row.appName
+                    textFormat: Text.PlainText   // external text: never render markup
                     color: row.muted ? Theme.mutedDeep : Theme.fg
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.base
