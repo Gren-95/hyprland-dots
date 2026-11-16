@@ -404,7 +404,7 @@ Scope {
                             return Theme.accent.yellow;
                         }
                         tooltip: {
-                            const kb = " · Super+S";
+                            const kb = " · Super+Shift+E";
                             if (charging && dev && dev.timeToFull > 0)
                                 return Math.round(dev.timeToFull / 60) + " min to full" + kb;
                             if (dev && dev.timeToEmpty > 0)
