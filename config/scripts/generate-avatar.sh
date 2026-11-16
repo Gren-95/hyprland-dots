@@ -6,9 +6,15 @@ USER_NAME=$(whoami)
 INITIAL="${USER_NAME:0:1}"
 DEST="/var/lib/AccountsService/icons/$USER_NAME"
 
-python3 <<PYEOF
+# A private temporary file, not a fixed name in the shared /tmp that another
+# user could create first.
+TMP_PNG=$(mktemp --suffix=.png)
+trap 'rm -f "$TMP_PNG"' EXIT
+
+python3 - "$TMP_PNG" <<PYEOF
 from PIL import Image, ImageDraw, ImageFont
 import os
+import sys
 
 initial = "${INITIAL}".upper()
 size = 256
@@ -36,8 +42,8 @@ bbox = draw.textbbox((0, 0), initial, font=font)
 tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
 draw.text(((size - tw) / 2 - bbox[0], (size - th) / 2 - bbox[1]), initial, font=font, fill=(245, 245, 244, 230))
 
-img.save("/tmp/avatar-generated.png", "PNG")
+img.save(sys.argv[1], "PNG")
 PYEOF
 
-sudo cp /tmp/avatar-generated.png "$DEST"
+sudo install -m 644 "$TMP_PNG" "$DEST"
 echo "Avatar installed to $DEST"
