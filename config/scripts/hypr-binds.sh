@@ -230,7 +230,7 @@ GLOBAL_TEXT = {
     "keybinds": "Show this keybind list",
     "sysmon": "Open the system monitor",
     "quickactions": "Open Quick Actions (toggles and shortcuts)",
-    "audiopower": "Open sound, battery and power profile controls",
+    "audiopower": "Open the sound popup (volume, devices, per-app mixer)",
     "calendar": "Open the calendar",
     "wallpaper": "Browse wallpapers (keep Super held, release to apply)",
     "wallpaper-apply": "Apply the wallpaper you are browsing",

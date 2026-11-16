@@ -1,6 +1,7 @@
 // Searchable keybind viewer: binds come from hypr-binds.sh, grouped by category
 // with filter chips. Esc closes, type to filter, ↑/↓ to navigate, Enter runs.
 import QtQuick
+import "KeybindSearch.js" as KeybindSearch
 import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
@@ -169,6 +170,13 @@ Scope {
         const q = root.query.toLowerCase();
         const pool = root.category ? root.entries.filter(e => e.category === root.category) : root.entries;
         if (!q) return pool;
+        // "super s" or "super+shift+s": find the bind on that key combo,
+        // exact matches first. Falls back to text search when nothing has it.
+        const combo = KeybindSearch.parseComboQuery(q);
+        if (combo) {
+            const hits = KeybindSearch.filterByCombo(pool, combo);
+            if (hits.length > 0) return hits;
+        }
         return pool.filter(e =>
             e.combo.toLowerCase().includes(q) ||
             e.action.toLowerCase().includes(q) ||
@@ -217,6 +225,9 @@ Scope {
             const cat = root._classify(b.dispatcher, b.arg);
             out.push({
                 parts: parts,
+                mods: mods,
+                key: key,
+                rawKey: b.key,
                 combo: parts.join("+"),
                 action: action,
                 raw: (b.dispatcher === "exec" ? b.arg : action),
@@ -331,7 +342,7 @@ Scope {
                         }
                         Text {
                             Layout.fillWidth: true
-                            text: root.query || "Type to search keybinds"
+                            text: root.query || "Search keybinds, or a combo like super s"
                             color: root.query ? Theme.fg : Theme.mutedDeep
                             font.family: Theme.font
                             font.pixelSize: Theme.fontSize.lg
