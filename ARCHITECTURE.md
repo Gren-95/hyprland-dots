@@ -34,10 +34,11 @@ Bird's-eye view of how the pieces fit together. For widget-level detail see
 3. `autostart.lua` fires `config/scripts/restart.sh`, which orchestrates every
    userspace service.
 4. `restart.sh` starts in sequence: xdg-desktop-portal, gnome-keyring,
-   Quickshell, awww-daemon, hypridle, battery-notify, power-auto,
-   cliphist, dotwatch, and the tray app `nm-applet --indicator` (Wi-Fi/wired, Wi-Fi
-   password prompts, and Tailscale via the NetworkManager Tailscale VPN
-   plugin). Logs OK/FAILED per step.
+   Quickshell, awww-daemon, hypridle, cliphist, dotwatch, and the tray app
+   `nm-applet --indicator` (Wi-Fi/wired, Wi-Fi password prompts, and Tailscale
+   via the NetworkManager Tailscale VPN plugin). It restarts the session daemons
+   that run as systemd user units (battery-notify, power-auto,
+   bt-audio-recover, and librepods when installed). Logs OK/FAILED per step.
 5. Quickshell loads `~/.config/quickshell/shell.qml` (a symlink into the dots
    repo) and renders the bar + every modal as hidden overlays.
 
@@ -46,21 +47,22 @@ Bird's-eye view of how the pieces fit together. For widget-level detail see
 | Layer | What it owns |
 |---|---|
 | **Hyprland compositor** | Window layout, workspaces, keyboard input, layer-shell protocol. |
-| **`config/scripts/`** | Long-running background daemons (battery/power-auto/dotwatch) + one-shot actions (screenshot/record/wallpaper). All notifications go through `config/scripts/lib/notify.sh`. |
+| **`config/scripts/`** | Long-running background daemons (battery-notify, power-auto, bt-audio-recover as systemd user units; dotwatch) + one-shot actions (screenshot/record/wallpaper/music). All notifications go through `config/scripts/lib/notify.sh`. |
 | **Quickshell** | Bar, popups, OSDs, notification daemon (replaces swaync), launcher (replaces rofi), polkit agent (replaces hyprpolkitagent). State for the bar's interactive bits (audio, brightness, BT) comes from `Quickshell.Services.*` modules talking directly to PipeWire / BlueZ / UPower / etc. Wi-Fi, wired and Tailscale are left to the nm-applet tray app (Tailscale through the NetworkManager Tailscale VPN plugin). |
-| **`cron`** | Periodic Immich and Jellyfin syncs. Managed by `config/scripts/sync-toggle.sh` (Quick Actions toggle UI). No persistent daemon; cron just fires the script on schedule. |
+| **`cron` / systemd timer** | Immich syncs hourly from cron; Jellyfin syncs daily from the `jellyfin-sync.timer` user timer (Persistent, so a missed run happens on the next boot). Both are switched on and off by `config/scripts/sync-toggle.sh` from the Services panel. |
 
 ## Dotfiles plumbing
 
-`~/.config/<dir>` is a symlink into this repo for every managed directory
-(hypr, kitty, quickshell, swappy, scripts, wayvnc, fish, ranger, btop,
-gtk-3.0, gtk-4.0, immich, jellyfin), plus the `~/.config/kdeglobals` file. One entry point, `dots.sh`:
+`~/.config/<item>` is a symlink into this repo for every entry in
+`CONFIG_ITEMS` (hypr, kitty, quickshell, swappy, scripts, wayvnc, fish, ranger,
+btop, mpv, fastfetch, gtk-3.0, gtk-4.0, kdeglobals, immich, jellyfin). One
+entry point, `dots.sh`:
 
 - `dots.sh install` — curl bootstrap on a fresh machine: clones the repo to
   `~/dotfiles`, then runs `setup`.
 - `dots.sh setup` — first-time install. Installs Fedora packages, creates
-  symlinks, prompts for Immich/Jellyfin credentials and cron schedule.
-- `dots.sh backup` / `undo` / `status` / `fix` / `prune` / `system` / `units`
+  symlinks, prompts for Immich/Jellyfin credentials and the Immich schedule.
+- `dots.sh backup` / `undo` / `status` / `fix` / `prune` / `units`
   — symlink and unit management. `CONFIG_ITEMS` in `dots.sh` is the single
   source of truth for which configs get symlinked.
 
@@ -85,8 +87,8 @@ watcher missed an atomic write).
 | Scripts | User | `lib/notify.sh notify` → notify-send → notification daemon (Quickshell) |
 | Quickshell | Scripts | `Process { command: ["bash", "~/.config/scripts/<x>.sh"] }` + `startDetached()` |
 | Quickshell | Hyprland | `Hypr.dispatch("<cmd>")` singleton (wraps `hyprctl dispatch`) |
-| Cron | Sync | Hourly `bash ~/.config/scripts/immich-sync.sh` / 2-hourly jellyfin |
-| Quickshell ↔ cron state | — | `sync-toggle.sh status all` polled by `daemonCheckProc` in QuickActions |
+| Cron / user timer | Sync | Hourly `bash ~/.config/scripts/immich-sync.sh` from cron; daily `jellyfin-sync.timer` |
+| Quickshell ↔ sync state | — | `services-status.sh` polled by `ServicesModule.qml`; toggles call `sync-toggle.sh` |
 
 ## See also
 
