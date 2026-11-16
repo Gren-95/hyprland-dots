@@ -13,6 +13,20 @@ Scope {
     property var icsUrls: []         // ICS feed URLs, one per line in calendar.url
     property var events: []          // array of {start: Date, end: Date, summary, location, allDay: bool, calIndex: int}
     property date selectedDate: new Date()
+    // Today's date, refreshed when the day changes. Bindings that read this
+    // move their "today" marker at midnight; new Date() inside a binding
+    // would never re-evaluate. A once-a-minute check also survives suspend,
+    // where a timer aimed at midnight would fire late.
+    property date todayDate: new Date()
+    Timer {
+        interval: 60000
+        repeat: true
+        running: true
+        onTriggered: {
+            const n = new Date();
+            if (n.toDateString() !== root.todayDate.toDateString()) root.todayDate = n;
+        }
+    }
 
     // Per-feed accent colors, indexed by the feed's position in calendar.url,
     // so each subscription reads as its own color in the grid and event rows.

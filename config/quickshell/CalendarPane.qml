@@ -118,7 +118,7 @@ Item {
                             isWeekend: settingsStore.weekStartMonday
                                 ? index % 7 >= 5 : (index % 7 === 0 || index % 7 === 6)
                             isToday: {
-                                const t = new Date();
+                                const t = pane.cal ? pane.cal.todayDate : new Date();
                                 return cellDate.getFullYear() === t.getFullYear() &&
                                     cellDate.getMonth() === t.getMonth() &&
                                     cellDate.getDate() === t.getDate();
