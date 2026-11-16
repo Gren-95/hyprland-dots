@@ -1,0 +1,133 @@
+diff --git a/linux-rust/src/devices/airpods.rs b/linux-rust/src/devices/airpods.rs
+index 76ecce2..37ccbef 100644
+--- a/linux-rust/src/devices/airpods.rs
++++ b/linux-rust/src/devices/airpods.rs
+@@ -142,6 +142,8 @@ impl AirPodsDevice {
+             }
+         });
+ 
++        spawn_control_socket(command_tx.clone());
++
+         let mc_listener = media_controller.lock().await;
+         let aacp_manager_clone_listener = aacp_manager.clone();
+         mc_listener
+@@ -166,6 +168,9 @@ impl AirPodsDevice {
+                         })
+                         .await;
+                 }
++                if !value.is_empty() {
++                    write_control_state("listening_mode", serde_json::json!(value[0]));
++                }
+             }
+         });
+ 
+@@ -183,6 +188,9 @@ impl AirPodsDevice {
+                         })
+                         .await;
+                 }
++                if !value.is_empty() {
++                    write_control_state("allow_off", serde_json::json!(value[0] == 0x01));
++                }
+             }
+         });
+ 
+@@ -204,6 +212,9 @@ impl AirPodsDevice {
+                         })
+                         .await;
+                 }
++                if !value.is_empty() {
++                    write_control_state("conversation_detect", serde_json::json!(value[0] == 0x01));
++                }
+             }
+         });
+ 
+@@ -438,3 +449,73 @@ fn write_battery_state(mac: &str, battery_info: &[crate::bluetooth::aacp::Batter
+         let _ = std::fs::rename(&tmp_path, &path);
+     }
+ }
++
++// Settings the daemon has seen, mirrored to $XDG_RUNTIME_DIR/librepods-controls.json
++// for the Quickshell Bluetooth flyout (written atomically, merged per key).
++fn write_control_state(key: &str, value: serde_json::Value) {
++    static STATE: std::sync::Mutex<Option<serde_json::Map<String, serde_json::Value>>> =
++        std::sync::Mutex::new(None);
++    let Ok(runtime_dir) = std::env::var("XDG_RUNTIME_DIR") else {
++        return;
++    };
++    let mut guard = match STATE.lock() {
++        Ok(g) => g,
++        Err(_) => return,
++    };
++    let map = guard.get_or_insert_with(serde_json::Map::new);
++    map.insert(key.to_string(), value);
++    let path = std::path::Path::new(&runtime_dir).join("librepods-controls.json");
++    let tmp_path = path.with_extension("json.tmp");
++    if std::fs::write(&tmp_path, serde_json::Value::Object(map.clone()).to_string()).is_ok() {
++        let _ = std::fs::rename(&tmp_path, &path);
++    }
++}
++
++// Commands from the Quickshell Bluetooth flyout, one per line on
++// $XDG_RUNTIME_DIR/librepods.sock (the runtime dir is private to the user):
++//   listening-mode <1 off | 2 noise cancellation | 3 transparency | 4 adaptive>
++//   conversation-detect <on|off>
++fn spawn_control_socket(
++    command_tx: tokio::sync::mpsc::UnboundedSender<(ControlCommandIdentifiers, Vec<u8>)>,
++) {
++    let Ok(runtime_dir) = std::env::var("XDG_RUNTIME_DIR") else {
++        return;
++    };
++    let path = std::path::Path::new(&runtime_dir).join("librepods.sock");
++    let _ = std::fs::remove_file(&path);
++    let listener = match tokio::net::UnixListener::bind(&path) {
++        Ok(l) => l,
++        Err(e) => {
++            log::error!("control socket: {}", e);
++            return;
++        }
++    };
++    tokio::spawn(async move {
++        use tokio::io::AsyncBufReadExt;
++        while let Ok((stream, _)) = listener.accept().await {
++            let tx = command_tx.clone();
++            tokio::spawn(async move {
++                let mut lines = tokio::io::BufReader::new(stream).lines();
++                while let Ok(Some(line)) = lines.next_line().await {
++                    let mut parts = line.split_whitespace();
++                    match (parts.next(), parts.next()) {
++                        (Some("listening-mode"), Some(v)) => {
++                            if let Ok(mode @ 1..=4) = v.parse::<u8>() {
++                                let _ = tx.send((ControlCommandIdentifiers::ListeningMode, vec![mode]));
++                            }
++                        }
++                        (Some("conversation-detect"), Some(v)) => {
++                            let on = v == "on";
++                            let _ = tx.send((
++                                ControlCommandIdentifiers::ConversationDetectConfig,
++                                vec![if on { 0x01 } else { 0x02 }],
++                            ));
++                            write_control_state("conversation_detect", serde_json::json!(on));
++                        }
++                        _ => log::warn!("control socket: unknown command {:?}", line),
++                    }
++                }
++            });
++        }
++    });
++}
+diff --git a/linux-rust/src/media_controller.rs b/linux-rust/src/media_controller.rs
+index 5bd68b1..8b40ffd 100644
+--- a/linux-rust/src/media_controller.rs
++++ b/linux-rust/src/media_controller.rs
+@@ -564,7 +564,10 @@ impl MediaController {
+             return cached_profile;
+         }
+ 
+-        for profile in ["a2dp-sink-sbc_xq", "a2dp-sink-sbc", "a2dp-sink"] {
++        // AAC first: it is the AirPods' native codec ("a2dp-sink" is AAC when
++        // PipeWire offers it). SBC-XQ's high bitrate can starve the link one
++        // bud uses to relay audio to the other, leaving that bud silent.
++        for profile in ["a2dp-sink", "a2dp-sink-sbc_xq", "a2dp-sink-sbc"] {
+             if self.is_profile_available(index, profile).await {
+                 info!("Selected best available A2DP profile: {}", profile);
+                 self.state.lock().await.cached_a2dp_profile = profile.to_string();

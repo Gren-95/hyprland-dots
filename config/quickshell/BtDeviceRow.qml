@@ -15,6 +15,7 @@ Rectangle {
     signal expandToggled()
 
     readonly property bool isConnected: !!device && device.connected
+    readonly property bool isAirPods: !!device && /airpods/i.test(device.name || device.deviceName || "")
     readonly property bool isPairing: !!device && device.pairing
     // BlueZ reports no battery for AirPods; AirPodsBattery fills that gap.
     readonly property real airPodsLevel: device ? AirPodsBattery.levelFor(device.address) : -1
@@ -287,6 +288,14 @@ Rectangle {
                         text: dr.device && dr.device.trusted ? "yes" : "no"
                         color: Theme.fgMuted; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm
                     }
+                }
+                // AirPods get battery per bud, noise control, codec and a
+                // "Fix audio" action (AirPodsControls.qml).
+                AirPodsControls {
+                    Layout.fillWidth: true
+                    Layout.topMargin: Theme.spacing.xs
+                    visible: dr.isAirPods && dr.isConnected
+                    device: dr.device
                 }
                 RowLayout {
                     Layout.fillWidth: true

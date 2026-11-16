@@ -17,7 +17,7 @@ add a new modal" or "where do I change X" — not a tutorial.
 | **JavaScript helpers** | `IcsParse.js`, `KeybindSearch.js` | Pure logic with no QML types (ICS parsing and recurrence, keybind combo search); unit-tested under node in `tests/` |
 | **Panes** | `CalendarPane.qml`, `EventsPane.qml`, `NotifPane.qml`, `MediaCard.qml`, `WeatherCard.qml`, `BatteryCard.qml`, `AudioSection.qml`, `AudioAppsSection.qml`, `DayCard.qml`, `DayCell.qml`, `DayScroll.qml` | Views over a service, composed into a flyout |
 | **Drawers & overlays** | `WorkspaceOverview.qml` (top drawer strip), `WallpaperDeck.qml` (card fan), `PolkitPrompt.qml` (top-center drawer), `ScreenshotActions.qml` (top-right sheet), `ScreenRecorder.qml`, `Osd.qml`, `RegionSelector.qml` | Everything not anchored to a specific bar icon |
-| **Reusable widgets** | `PinButton`, `VolumeSlider`, `BrightnessRow`, `ProfileSelector`, `QaTile`, `SysGauge`, `SysGraph`, `Spinner`, `ThinScrollBar`, `LazyView`, `Launcher*` (Spotlight parts), `*Row` files | Pieces composed into modules; `LazyView` builds a modal's window only while it is open |
+| **Reusable widgets** | `AirPodsControls` (AirPods section of a Bluetooth row), `PinButton`, `VolumeSlider`, `BrightnessRow`, `ProfileSelector`, `QaTile`, `SysGauge`, `SysGraph`, `Spinner`, `ThinScrollBar`, `LazyView`, `Launcher*` (Spotlight parts), `*Row` files | Pieces composed into modules; `LazyView` builds a modal's window only while it is open |
 
 **WARNING — config singletons don't reliably instantiate on cold start.**
 A `pragma Singleton` file referenced only from component files (not from
