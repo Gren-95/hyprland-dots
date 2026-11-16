@@ -14,9 +14,17 @@ load_util_env
 : "${LEDVANCE_PASSWORD:?missing in util.env}"
 : "${LEDVANCE_PATH:?missing in util.env}"
 
-expect -c "spawn python $LEDVANCE_PATH;\
-expect \"Please put your Tuya/Ledvance username:\";\
-send \"$LEDVANCE_USER\r\";\
-expect \"Please put your Tuya/Ledvance password:\";\
-send \"$LEDVANCE_PASSWORD\r\";\
-interact"
+# The values reach Tcl through the environment, never through the script text:
+# the command line is readable by every local user (ps, /proc/*/cmdline),
+# while /proc/<pid>/environ is only readable by this user. It also keeps
+# characters such as [ " $ in the password from being run as Tcl.
+export LEDVANCE_USER LEDVANCE_PASSWORD LEDVANCE_PATH
+# shellcheck disable=SC2016  # $env(...) is Tcl, expanded by expect
+expect -c '
+    spawn python $env(LEDVANCE_PATH)
+    expect "Please put your Tuya/Ledvance username:"
+    send -- "$env(LEDVANCE_USER)\r"
+    expect "Please put your Tuya/Ledvance password:"
+    send -- "$env(LEDVANCE_PASSWORD)\r"
+    interact
+'
