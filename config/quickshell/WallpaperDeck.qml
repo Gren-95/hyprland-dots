@@ -27,14 +27,17 @@ Scope {
 
     Process {
         id: listProc
-        command: ["sh", "-c",
-            "find " + settingsStore.wallpaperDir + " -type f \\( " +
-            "-iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' " +
-            "-o -iname '*.webp' -o -iname '*.gif' \\) | sort"]
+        // An argument list, not a shell string: the folder comes from a
+        // settings file, and a space or shell character in it must stay part
+        // of the path. A leading ~ is expanded here since no shell does it.
+        command: ["find", settingsStore.wallpaperDir.replace(/^~(?=\/|$)/, Quickshell.env("HOME")),
+            "-type", "f", "(",
+            "-iname", "*.jpg", "-o", "-iname", "*.jpeg", "-o", "-iname", "*.png",
+            "-o", "-iname", "*.webp", "-o", "-iname", "*.gif", ")"]
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
-                const list = text.trim().split("\n").filter(s => s.length > 0);
+                const list = text.trim().split("\n").filter(s => s.length > 0).sort();
                 // The deal order indexes into wallpapers, so swapping the list
                 // under an open deck would change the card in hand. Hold a
                 // fresh listing until the deck closes.
