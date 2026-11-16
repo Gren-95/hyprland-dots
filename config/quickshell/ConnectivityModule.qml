@@ -105,6 +105,7 @@ Item {
     }
 
     onPopupOpenChanged: {
+        confirmForget = "";
         lockedHeight = 0;
         if (popupOpen) {
             tabIndex = 0;
@@ -137,9 +138,17 @@ Item {
     }
     function togglePrimary() { if (adapter) adapter.enabled = !adapter.enabled; }
     function toggleSecondary() { if (adapter) adapter.discovering = !adapter.discovering; }
+    // Forgetting unpairs the device, so the keyboard path needs two presses:
+    // the first marks the row, the second (on the same row) forgets it.
+    // Moving the selection or closing the flyout cancels.
+    property string confirmForget: ""
+    onTabIndexChanged: confirmForget = ""
     function forgetSelected() {
         const d = selectedDevice;
-        if (d && (d.paired || d.connected)) d.forget();
+        if (!d || !(d.paired || d.connected)) return;
+        if (confirmForget !== d.address) { confirmForget = d.address; return; }
+        confirmForget = "";
+        d.forget();
     }
 
     Layout.fillHeight: true
@@ -488,6 +497,7 @@ Item {
                                         required property int index
                                         device: modelData
                                         highlighted: bt.selectedIndex === index
+                                        confirmingForget: bt.confirmForget === modelData.address
                                         expanded: bt.expandedAddress === modelData.address
                                         onHovered: bt.tabIndex = index + 2
                                         onExpandToggled: bt.toggleExpand(modelData)

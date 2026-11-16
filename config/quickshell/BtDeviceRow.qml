@@ -31,11 +31,15 @@ Rectangle {
         if (n.indexOf("gaming") >= 0 || n.indexOf("joystick") >= 0) return "󰖺";
         return isConnected ? "󰂱" : "󰂯";
     }
-    readonly property string stateText: isPairing ? "Pairing…"
+    // Set while a keyboard forget waits for its second press.
+    property bool confirmingForget: false
+    readonly property string stateText: confirmingForget ? "Press Delete again to forget"
+        : isPairing ? "Pairing…"
         : isConnected ? "Connected"
         : available ? "Click to pair"
         : "Paired"
-    readonly property color stateColor: isPairing ? Theme.accent.yellow
+    readonly property color stateColor: confirmingForget ? Theme.accent.red
+        : isPairing ? Theme.accent.yellow
         : isConnected ? Theme.accent.green
         : Theme.muted
 
