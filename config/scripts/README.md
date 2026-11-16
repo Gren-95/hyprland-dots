@@ -12,8 +12,9 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | File | Purpose |
 |---|---|
 | `lib/notify.sh` | `notify <urgency> <key> <icon> <title> <body> [timeout]` wrapper around `notify-send`. Always sets `-a hyprland-dots` and `-h x-canonical-private-synchronous:<key>` so repeat notifications replace instead of stacking. |
-| `lib/shell-ipc.sh` | `shell_ipc <target> <function> [args]`: best-effort `qs ipc call` into Quickshell (silent no-op when it is not running). Used by `screenrecord.sh`, `wayvnc-toggle.sh` and `sync-toggle.sh` to report state changes, so the shell never polls for them. |
-| `lib/inhibit.sh` | `inhibit_start <app> <reason>` / `inhibit_stop`: holds an `org.freedesktop.ScreenSaver` inhibitor on a long-lived D-Bus connection. Used by `idle-inhibit-hold.sh` and `idle-inhibit-toggle.sh`. |
+| `lib/shell-ipc.sh` | `shell_ipc <target> <function> [args]`: best-effort `qs ipc call` into Quickshell (silent no-op when it is not running). Used by `screenrecord.sh`, `wayvnc-toggle.sh`, `sync-toggle.sh` and `claude-activity.sh` to report state changes, so the shell never polls for them. |
+| `lib/inhibit.sh` | `inhibit_start <app> <reason>` / `inhibit_stop`: holds an `org.freedesktop.ScreenSaver` inhibitor on a long-lived D-Bus connection. Used by `idle-inhibit-hold.sh`, `idle-inhibit-toggle.sh`, `gamemode.sh` and `update-all.sh`. |
+| `lib/server.sh` | `server_reachable <url>`: succeeds when the server answers at all (any HTTP status), fails on refused, DNS or timeout. Used by `immich-sync.sh` and `jellyfin-music-sync.sh` to skip quietly away from home. |
 | `lib/env.sh` | `load_util_env` loads `util.env` (`KEY=VALUE`) into the environment. |
 | `lib/screenshot.sh` | `capture_region "X,Y WxH"`: grim, wl-copy, notify, print path. Shared by both screenshot scripts. |
 | `lib/deps.sh` | Required/optional command lists and the dnf package list, shared by `dots.sh setup` and `doctor.sh`. |
@@ -31,8 +32,9 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 ## Daemons (autostart / restart.sh)
 
 `battery-notify`, `power-auto` and `bt-audio-recover` run as systemd user units
-(`systemd/user/*.service`, installed by `dots.sh units`); `restart.sh` restarts them with
-`systemctl --user restart`.
+(`systemd/user/*.service`, installed and enabled by `dots.sh units`); `restart.sh` restarts them with
+`systemctl --user restart`. `dots.sh units` also installs `jellyfin-sync.service` and
+`.timer` without enabling them; the Services panel toggle (`sync-toggle.sh`) does that.
 
 | File | Spawned by | What it does |
 |---|---|---|
@@ -42,7 +44,7 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 | `build-librepods.sh` | manual | Builds LibrePods at a pinned commit with `librepods/battery-export.patch` (writes `$XDG_RUNTIME_DIR/librepods-battery.json` for `AirPodsBattery.qml`) and installs it to `~/.local/bin/librepods`. |
 | `build-hyprexpo.sh` | dnf5 action (`--install-hook`) | Rebuilds the local hyprexpo plugin from `~/.local/src/hyprexpo` when the installed one does not embed the current Hyprland commit hash, and installs it to `~/.local/lib/hyprland/plugins/` with an atomic rename. Sends a notification and logs to `~/.cache/hyprexpo-build.log`. `--install-hook` (sudo, once) writes `/etc/dnf/libdnf5-plugins/actions.d/hyprexpo.actions`, which runs the script after every dnf transaction that updates `hyprland-devel`. The new build loads at the next Hyprland start. |
 | `dotwatch.sh` | `restart.sh` | `inotifywait` on the dots repo. Reloads Hyprland / hypridle config in-place when their files change. Hot-reloads `gtk-3.0/gtk.css` notify and hyprlock config notify. |
-| `immich-sync.sh` | cron (via `sync-toggle.sh`) | Runs once by default. `--daemon` flag for legacy loop mode (unused by current setup). Uses the `immich` CLI to upload `$PICTURES_DIR` (excluding `**/ocr/**`). |
+| `immich-sync.sh` | cron (via `sync-toggle.sh`) | Runs once by default. `--daemon` flag for legacy loop mode (unused by current setup). Uses the `immich` CLI to upload `$PICTURES_DIR` (excluding `**/{ocr,Screenshots}/**`). |
 | `jellyfin-music-sync.sh` | `jellyfin-sync.timer` user timer (daily; switched by `sync-toggle.sh`) | Same shape — single run by default, `--daemon` for the loop. Mirrors Jellyfin music library to `$MUSIC_DIR`, deleting local files no longer on the server. |
 
 ## Toggles (Hyprland keybind / Quickshell UI)
@@ -62,7 +64,7 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 |---|---|
 | `doctor.sh` | Read-only health check: required commands, user units, executable bits, dots.sh symlinks. Exit 1 on failure. |
 | `screenshot-window.sh` | Screenshot of the active window (`hyprctl activewindow -j`), same save/copy/notify as `screenshot.sh`. |
-| `gallery-shots.sh` | Retakes the README gallery pictures: switches to an empty workspace, opens each popup via its Quickshell global shortcut (and fires a test notification for the toast), then crops to the area that differs from a baseline capture. `gallery-shots.sh [name...]` retakes only named shots, `--list` prints them. Restores your workspace. Swaps the clipboard history for demo entries and strips the owner prefix from Bluetooth names while shooting, then restores both. Skips `desktop.png`, `bar.png` and `wallpaper.png`. |
+| `gallery-shots.sh` | Retakes the README gallery pictures: switches to an empty workspace, opens each popup via its Quickshell global shortcut (and fires a test notification for the toast), then crops to the area that differs from a baseline capture. `gallery-shots.sh [name...]` retakes only named shots, `--list` prints them. Restores your workspace. Swaps the clipboard history for demo entries and strips the owner prefix from Bluetooth names while shooting, then restores both. Skips `desktop.png`, `bar.png`, `wallpaper.png` and `lockscreen.png` (taken by hand). |
 | `night.sh` | `toggle\|on\|off\|status` night light via `hyprsunset`; `NIGHT_TEMPERATURE` in `util.env`. |
 | `scratchpad.sh` | Toggle a drop-down kitty on the `special:scratchpad` workspace. |
 | `music.sh` | `start\|stop\|toggle`: shuffle-plays every audio file under `~/Music` in a background mpv (`Super+Shift+M`, `Super+Shift+K`, `music` fish function). The player is recognised by its IPC socket in `$XDG_RUNTIME_DIR`, so stop leaves other mpv windows alone and start never runs a second copy. |
