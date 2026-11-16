@@ -78,10 +78,13 @@ To add a setting: declare a typed property with its default + one `_schema`
 row (`{ name, file, type }`, type ∈ bool/int/real/string/json). External
 edits load into the property; property writes persist. Absent file = QML
 default. Maps (`json` type) must be REASSIGNED, never mutated.
-Also owns the bar-placement API: `placement(id)` / `setPlacement(id, p)` /
-`trayPlacementOf(tid)` / `setTrayPlacement(tid, p)` with p ∈
-`"bar" | "overflow" | "hidden"`, and `flyoutSize(id, dim, def)` /
-`setFlyoutSize(id, dim, v)` for per-flyout geometry.
+Also owns read-only lookups over the JSON settings: `placement(id)`,
+`trayPlacementOf(tid)` and `qaPlacementOf(key)` with results in
+`"bar" | "overflow" | "hidden"`, `flyoutSize(id, dim, def)` for per-flyout
+geometry, and `isAppHidden(id)` / `setAppHidden(id, hidden)` for the launcher.
+There is no settings UI for placements or flyout sizes: change them by
+editing `bar-placement.json`, `tray-placement.json`, `qa-placement.json` or
+`flyout-sizes.json` in the settings folder (the shell reloads them).
 Do NOT use `required property var modelData` in its Instantiator delegate —
 it silently aborts construction (context `modelData` only).
 

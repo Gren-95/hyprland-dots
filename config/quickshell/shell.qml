@@ -324,8 +324,8 @@ Scope {
                         }
                     }
 
-                    // Quick Actions items promoted to the bar ("Bar" in the
-                    // Settings Bar tab), rendered as first-class bar icons.
+                    // Quick Actions items promoted to the bar ("bar" in
+                    // qa-placement.json), rendered as first-class bar icons.
                     Repeater {
                         model: quickMod.promotedItems
                         delegate: QuickActionIcon {

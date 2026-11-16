@@ -1,4 +1,4 @@
-// A Quick Actions item promoted to the bar ("Bar" in the Settings Bar tab).
+// A Quick Actions item promoted to the bar ("bar" in qa-placement.json).
 // First-class bar icon:
 //  - toggles render live state: accent-tinted glyph + a dot underneath
 //    while on, off-glyph in muted grey while off

@@ -2,7 +2,7 @@
 // `settingsStore` (first child, so it exists before any consumer) — any
 // component resolves it via the id scope chain and changes propagate
 // everywhere. Values are stored as one tiny file per setting under
-// ~/.cache/quickshell.
+// ~/.config/quickshell/settings/ (gitignored).
 //
 // NOT a `pragma Singleton`: config singletons don't reliably instantiate
 // on cold start (consumer binding reads return undefined until a change

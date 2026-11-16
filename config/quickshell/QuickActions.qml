@@ -37,7 +37,7 @@ Item {
     // ============ One-shot actions ============
     // The cmd-only entries also carry an `action` key: it matches no branch
     // in activate() so they fall through to the cmd runner, and it doubles
-    // as the visibility key for the Settings Bar tab.
+    // as the key in qa-placement.json.
     readonly property var allOneShots: [
         { glyph: "󰅍", label: "Clipboard",    accent: Theme.accent.slate, action: "clipboard" },
         { glyph: "󰹑", label: "Screenshot",   accent: Theme.accent.blueBright, action: "screenshot", cmd: ["bash", Paths.scripts + "/screenshot.sh"] },
