@@ -149,19 +149,19 @@ hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl s 5%-"), {
     repeating = true,
     locked = true,
 })
-hl.bind("XF86KbdBrightnessUp", hl.dsp.exec_cmd("brightnessctl -d dell::kbd_backlight s +1"), {
+hl.bind("XF86KbdBrightnessUp", hl.dsp.exec_cmd("brightnessctl -d '*::kbd_backlight' s +1"), {
     repeating = true,
     locked = true,
 })
-hl.bind("XF86KbdBrightnessDown", hl.dsp.exec_cmd("brightnessctl -d dell::kbd_backlight s 1-"), {
+hl.bind("XF86KbdBrightnessDown", hl.dsp.exec_cmd("brightnessctl -d '*::kbd_backlight' s 1-"), {
     repeating = true,
     locked = true,
 })
-hl.bind("XF86KbdLightOnOff", hl.dsp.exec_cmd("brightnessctl -d dell::kbd_backlight s +1"), {
+hl.bind("XF86KbdLightOnOff", hl.dsp.exec_cmd("brightnessctl -d '*::kbd_backlight' s +1"), {
     repeating = true,
     locked = true,
 })
-hl.bind(var_mainMod .. " + CTRL + K", hl.dsp.exec_cmd("sh -c 'cur=$(brightnessctl -d dell::kbd_backlight g); max=$(brightnessctl -d dell::kbd_backlight m); next=$(( cur + 1 > max ? 0 : cur + 1 )); brightnessctl -d dell::kbd_backlight s \"$next\"'"), {
+hl.bind(var_mainMod .. " + CTRL + K", hl.dsp.exec_cmd("sh -c 'cur=$(brightnessctl -d \"*::kbd_backlight\" g); max=$(brightnessctl -d \"*::kbd_backlight\" m); next=$(( cur + 1 > max ? 0 : cur + 1 )); brightnessctl -d \"*::kbd_backlight\" s \"$next\"'"), {
     repeating = true,
     locked = true,
 })

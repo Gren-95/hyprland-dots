@@ -90,8 +90,8 @@ EXEC_LABELS = [  # (substring of arg, category, label)
     ("window-tools.sh tiled-fullscreen", WIN, "Tiled fullscreen (the app goes fullscreen, the window stays tiled)"),
     ("window-tools.sh width save", WIN, "Remember the window's width"),
     ("window-tools.sh width restore", WIN, "Restore the remembered window width"),
-    ("kbd_backlight s +1", HW, "Keyboard backlight +1 step (does not wrap)"),
-    ("kbd_backlight s 1-", HW, "Keyboard backlight -1 step"),
+    ("kbd_backlight' s +1", HW, "Keyboard backlight +1 step (does not wrap)"),
+    ("kbd_backlight' s 1-", HW, "Keyboard backlight -1 step"),
     ("kbd_backlight", HW, "Cycle keyboard backlight (off / half / full)"),
     ("systemctl suspend", HW, "Suspend"),
 ]
