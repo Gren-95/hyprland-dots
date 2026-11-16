@@ -105,8 +105,8 @@ flags rows that no longer match.
 
 | Key | Action |
 |---|---|
-| `Super+Shift+M` | mpv shuffle `~/Music` |
-| `Super+Shift+K` | Stop mpv |
+| `Super+Shift+M` | Shuffle-play `~/Music` (once; a second press does nothing) |
+| `Super+Shift+K` | Stop the music player (other mpv windows keep playing) |
 
 ## Other
 
