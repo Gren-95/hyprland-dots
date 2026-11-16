@@ -268,8 +268,8 @@ check_symlink() {
     fi
 }
 
-# Backup a directory
-backup_directory() {
+# Move an existing directory or file aside so a symlink can take its place.
+backup_item() {
     local item="$1"
     local target="$CONFIG_DIR/$item"
     local timestamp
@@ -441,9 +441,9 @@ cmd_backup() {
                 fi
                 ;;
 
-            DIRECTORY)
-                log_info "Backing up directory: $item"
-                backup_path=$(backup_directory "$item")
+            DIRECTORY | FILE)
+                log_info "Backing up: $item"
+                backup_path=$(backup_item "$item")
                 if [[ $? -eq 0 ]]; then
                     if create_symlink "$item"; then
                         log_operation "$item" "backup_and_symlink" "$backup_path"
@@ -460,11 +460,6 @@ cmd_backup() {
                 else
                     ((failed++))
                 fi
-                ;;
-
-            FILE)
-                log_error "Target is a file (manual intervention required): $target"
-                ((failed++))
                 ;;
 
             MISSING)
