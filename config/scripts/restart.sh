@@ -146,6 +146,8 @@ report "hypridle" "hypridle" -x
 report "power-auto" "power-auto.sh"
 report "battery-notify" "battery-notify.sh"
 report "bt-audio-recover" "bt-audio-recover.sh"
+# Only once build-librepods.sh has installed it; it is optional.
+[[ -x "$HOME/.local/bin/librepods" ]] && report "librepods" "librepods" -x
 report "cliphist" "wl-paste.*cliphist"
 report "dotwatch" "dotwatch.sh"
 report "nm-applet" "nm-applet" -x
