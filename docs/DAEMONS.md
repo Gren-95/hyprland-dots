@@ -1,19 +1,24 @@
 # Background Daemons
 
-Long-running scripts started by `restart.sh`.
+Long-running scripts that run for the whole session.
 
+battery-notify, power-auto and bt-audio-recover are systemd user units
+(`systemd/user/*.service`, installed and enabled by `dots.sh units`); they start
+with the graphical session, and `restart.sh` (`Super+B`) restarts them.
+librepods is a user unit too, installed by `build-librepods.sh` when you build
+it. dotwatch is started by `restart.sh` itself.
 
-These run automatically on login via `restart.sh` and restart cleanly on each
-session. The sync icon beside Quick Actions in the bar shows all of them at a
-glance — plus the scheduled syncs and the on-demand services — and starts any
-daemon that has died.
+The Services panel (the sync icon beside Quick Actions in the bar) shows
+battery-notify, power-auto and dotwatch, starts any of those three that has
+died, and lists the scheduled syncs and the on-demand services.
 
 | Script | Purpose |
 |---|---|
-| `battery-notify.sh` | Notifies at 20% and 10% battery; dismisses the alert when plugged in |
+| `battery-notify.sh` | Notifies at 20% and 10% battery, once per discharge; re-arms whenever the battery is not discharging. The shell dismisses the alerts when power comes back (`Notifications.qml`) |
 | `bt-audio-recover.sh` | Switches a connected Bluetooth headset from the `off` card profile to A2DP when WirePlumber leaves it there (connected in `bluetoothctl`, but no audio output). Waits 5 s after each card event, notifies when it acts |
 | `power-auto.sh` | Sets the power profile from AC state and battery level (`performance` on AC, `balanced` ≥30%, `power-saver` below) |
 | `dotwatch.sh` | Watches dotfiles for changes and hot-reloads affected services |
+| `librepods` (optional) | AirPods daemon built by `build-librepods.sh`; writes the AirPods battery level the bar shows (`$XDG_RUNTIME_DIR/librepods-battery.json`) |
 
 ## dotwatch — hot-reload
 
@@ -44,4 +49,5 @@ which are not part of this repo. Add them alongside any existing hooks:
 ```
 
 Open `/hooks` once (or restart Claude Code) after editing so the hooks load. The
-bar's Stay Awake reason reads "Claude working" while a session is active.
+Stay Awake switch in the day panel (`Super+N`) notes "Claude working" while a
+session is active.
