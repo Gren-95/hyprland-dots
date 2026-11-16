@@ -33,7 +33,7 @@ Bird's-eye view of how the pieces fit together. For widget-level detail see
 2. Hyprland loads `hyprland.lua`, which requires the `modules/*.lua` files (and `hyprland-gui.lua` last for HyprMod overrides).
 3. `autostart.lua` fires `config/scripts/restart.sh`, which orchestrates every
    userspace service.
-4. `restart.sh` starts in sequence: xdg-desktop-portal, gnome-keyring,
+4. `restart.sh` starts in sequence: gnome-keyring, xdg-desktop-portal,
    Quickshell, awww-daemon, hypridle, cliphist, dotwatch, and the tray app
    `nm-applet --indicator` (Wi-Fi/wired, Wi-Fi password prompts, and Tailscale
    via the NetworkManager Tailscale VPN plugin). It restarts the session daemons
@@ -83,9 +83,9 @@ watcher missed an atomic write).
 
 | From | To | Mechanism |
 |---|---|---|
-| Hyprland keybind | Quickshell modal | `global, quickshell:<name>` dispatcher → `GlobalShortcut { name: "<name>" }` in shell.qml |
+| Hyprland keybind | Quickshell modal | `hl.dsp.global("quickshell:<name>")` in keys.lua → `GlobalShortcut { name: "<name>" }` (Shortcuts.qml) |
 | Scripts | User | `lib/notify.sh notify` → notify-send → notification daemon (Quickshell) |
-| Quickshell | Scripts | `Process { command: ["bash", "~/.config/scripts/<x>.sh"] }` + `startDetached()` |
+| Quickshell | Scripts | `Process { command: ["bash", Paths.scripts + "/<x>.sh"] }` + `startDetached()` (Process does not expand `~`) |
 | Quickshell | Hyprland | `Hypr.dispatch("<cmd>")` singleton (wraps `hyprctl dispatch`) |
 | Cron / user timer | Sync | Hourly `bash ~/.config/scripts/immich-sync.sh` from cron; daily `jellyfin-sync.timer` |
 | Quickshell ↔ sync state | — | `services-status.sh` polled by `ServicesModule.qml`; toggles call `sync-toggle.sh` |
