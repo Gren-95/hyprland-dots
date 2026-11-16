@@ -136,6 +136,15 @@ Scope {
         function onWeatherLocationChanged() { svc.checkLocation() }
     }
     Component.onCompleted: checkLocation()
+    // Geocoding fails while the network is down (common right after login or
+    // resume). Keep retrying every minute until the location is known; the
+    // regular refresh only runs once it is.
+    Timer {
+        interval: 60000
+        repeat: true
+        running: !svc.located && svc._lastLocation !== ""
+        onTriggered: if (!geoProc.running) geoProc.running = true
+    }
 
     Process {
         id: geoProc
