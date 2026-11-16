@@ -5,6 +5,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "IcsParse.js" as Ics
 
 Scope {
     id: root
@@ -87,74 +88,10 @@ Scope {
         const chunks = text.split(new RegExp("\\r?\\n" + root.feedBoundary + "\\r?\\n"));
         let all = [];
         for (let i = 0; i < chunks.length; i++)
-            all = all.concat(_parseFeed(chunks[i], i));
+            all = all.concat(Ics.parseFeed(chunks[i], i));
         // Sort by start ascending
         all.sort((a, b) => a.start - b.start);
         root.events = all;
-    }
-
-    // Parses one feed's body; calIndex is its line number in calendar.url.
-    function _parseFeed(text, calIndex) {
-        if (!text) return [];
-        // Unfold continuation lines (lines starting with space or tab)
-        const unfolded = text.replace(/\r?\n[ \t]/g, "");
-        const lines = unfolded.split(/\r?\n/);
-        const out = [];
-        let cur = null;
-        for (const line of lines) {
-            if (line === "BEGIN:VEVENT") { cur = { calIndex: calIndex }; continue; }
-            if (line === "END:VEVENT") {
-                if (cur && cur.start) out.push(cur);
-                cur = null;
-                continue;
-            }
-            if (!cur) continue;
-            const idx = line.indexOf(":");
-            if (idx < 0) continue;
-            const keyPart = line.slice(0, idx);
-            const value = line.slice(idx + 1);
-            const key = keyPart.split(";")[0];
-            const params = keyPart.split(";").slice(1).join(";");
-            if (key === "SUMMARY") cur.summary = _unescape(value);
-            else if (key === "LOCATION") cur.location = _unescape(value);
-            else if (key === "DESCRIPTION") cur.description = _unescape(value);
-            else if (key === "DTSTART") {
-                const d = _parseIcsDate(value);
-                cur.start = d.date;
-                cur.allDay = d.allDay || params.indexOf("VALUE=DATE") >= 0;
-            } else if (key === "DTEND") {
-                const d = _parseIcsDate(value);
-                cur.end = d.date;
-            }
-        }
-        return out;
-    }
-
-    function _unescape(s) {
-        return s.replace(/\\n/g, "\n").replace(/\\,/g, ",").replace(/\\;/g, ";").replace(/\\\\/g, "\\");
-    }
-
-    function _parseIcsDate(v) {
-        // Date-only: YYYYMMDD
-        // Datetime UTC: YYYYMMDDTHHMMSSZ
-        // Datetime local: YYYYMMDDTHHMMSS
-        if (v.length === 8) {
-            const y = parseInt(v.slice(0, 4));
-            const m = parseInt(v.slice(4, 6)) - 1;
-            const d = parseInt(v.slice(6, 8));
-            return { date: new Date(y, m, d), allDay: true };
-        }
-        if (v.length >= 15) {
-            const y = parseInt(v.slice(0, 4));
-            const m = parseInt(v.slice(4, 6)) - 1;
-            const d = parseInt(v.slice(6, 8));
-            const hh = parseInt(v.slice(9, 11));
-            const mm = parseInt(v.slice(11, 13));
-            const ss = parseInt(v.slice(13, 15));
-            if (v.endsWith("Z")) return { date: new Date(Date.UTC(y, m, d, hh, mm, ss)), allDay: false };
-            return { date: new Date(y, m, d, hh, mm, ss), allDay: false };
-        }
-        return { date: new Date(NaN), allDay: false };
     }
 
     // ====== Public API ======
