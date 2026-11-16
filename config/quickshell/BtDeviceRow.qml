@@ -293,12 +293,17 @@ Rectangle {
                 // "Fix audio" action (AirPodsControls.qml).
                 AirPodsControls {
                     Layout.fillWidth: true
-                    Layout.topMargin: Theme.spacing.xs
+                    Layout.topMargin: Theme.spacing.sm
+                    Layout.bottomMargin: Theme.spacing.xs
+                    // Use the row's full width, not the indented detail column.
+                    Layout.leftMargin: -(42 + Theme.spacing.lg)
                     visible: dr.isAirPods && dr.isConnected
                     device: dr.device
                 }
                 RowLayout {
                     Layout.fillWidth: true
+                    // Full width under the AirPods section, aligned with it.
+                    Layout.leftMargin: dr.isAirPods && dr.isConnected ? -(42 + Theme.spacing.lg) : 0
                     spacing: Theme.spacing.md
                     Rectangle {
                         Layout.fillWidth: true
