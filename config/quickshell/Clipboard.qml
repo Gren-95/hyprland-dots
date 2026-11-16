@@ -20,7 +20,9 @@ Scope {
     property var anchorItem: null
     property Item _openAnchor: null
 
-    readonly property string thumbDir: "/tmp/cliphist-thumbs"
+    // Decoded image previews: private to this user (the runtime dir is 0700
+    // and removed at logout), unlike a fixed path under the shared /tmp.
+    readonly property string thumbDir: Quickshell.env("XDG_RUNTIME_DIR") + "/cliphist-thumbs"
 
     readonly property var filtered: {
         const q = root.query.toLowerCase();

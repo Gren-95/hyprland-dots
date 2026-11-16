@@ -9,15 +9,24 @@ Item {
     id: row
     property var entry
     property bool highlighted: false
-    property string thumbDir: "/tmp/cliphist-thumbs"
+    property string thumbDir: ""
     signal picked()
     signal hovered()
     signal removed()
 
     readonly property bool showThumb: !!(row.entry && row.entry.isImage && settingsStore.clipboardThumbs)
-    readonly property string thumbPath: row.entry && row.entry.isImage
-        ? row.thumbDir + "/" + row.entry.id + "." + row.entry.ext
+    // Keyed by id and a hash of the entry line, not the id alone: cliphist
+    // ids can be reused after a wipe done outside this panel, and an id-only
+    // name would show the old image for the new entry.
+    function _hash(str) {
+        let h = 5381;
+        for (let i = 0; i < str.length; i++) h = ((h * 33) ^ str.charCodeAt(i)) >>> 0;
+        return h.toString(16);
+    }
+    readonly property string thumbName: row.entry && row.entry.isImage
+        ? row.entry.id + "-" + _hash(row.entry.raw) + "." + row.entry.ext
         : ""
+    readonly property string thumbPath: thumbName !== "" ? row.thumbDir + "/" + thumbName : ""
     property bool thumbReady: false
 
     implicitHeight: row.showThumb ? 84 : 56
@@ -29,8 +38,8 @@ Item {
         running: false
         command: row.entry && row.entry.isImage
             ? ["sh", "-c",
-               "mkdir -p \"$1\" && if [ ! -s \"$1/$2.$3\" ]; then printf '%s\\n' \"$4\" | cliphist decode > \"$1/$2.$3\"; fi",
-               "_", row.thumbDir, row.entry.id, row.entry.ext, row.entry.raw]
+               "mkdir -p -m 700 \"$1\" && if [ ! -s \"$1/$2\" ]; then printf '%s\\n' \"$3\" | cliphist decode > \"$1/$2\"; fi",
+               "_", row.thumbDir, row.thumbName, row.entry.raw]
             : []
         onExited: row.thumbReady = true
     }
