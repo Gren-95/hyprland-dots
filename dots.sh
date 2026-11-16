@@ -1231,11 +1231,25 @@ setup_avatar() {
         log_warning "Avatar generation failed"
 }
 
+# Run one setup step; a failure is reported and setup carries on. Each step is
+# independent (a failed npm install must not cost the avatar, the units and the
+# summary), and every step can be repeated by running setup again.
+# Called in an `if`, so set -e does not stop the step at its first error.
+setup_step() {
+    local name=$1
+    shift
+    if ! "$@"; then
+        log_warning "$name did not complete. Fix the error above and re-run: dots.sh setup"
+        SETUP_FAILED+=("$name")
+    fi
+}
+
 # Full first-time setup. Safe to re-run: symlinks, units, directories and
 # permissions are re-applied idempotently. Credential-driven steps (Immich,
 # Jellyfin) are skipped with --yes.
 cmd_setup() {
     set -e
+    SETUP_FAILED=()
 
     # Shared dependency list (also used by scripts/doctor.sh).
     source "$DOTS_DIR/config/scripts/lib/deps.sh"
@@ -1260,43 +1274,43 @@ cmd_setup() {
     # Confirm before creating symlinks
     echo ""
     if ask "Create symlinks for config directories? (Y/n)" Y; then
-        create_symlinks
+        setup_step "Symlinks" create_symlinks
     fi
 
     # Check optional dependencies
     check_optional_deps
 
     # Create expected directories
-    create_dirs
+    setup_step "Directories" create_dirs
 
     # Font used by every surface and icon
-    setup_font
+    setup_step "Font" setup_font
 
     # Set up scripts
-    setup_scripts
+    setup_step "Script permissions" setup_scripts
 
     # Enable the tracked git hooks
-    setup_git_hooks
+    setup_step "Git hooks" setup_git_hooks
 
     # Nautilus thumbnailers
-    setup_thumbnailers
+    setup_step "Thumbnailers" setup_thumbnailers
 
     # STL thumbnails need a root-owned copy of the renderer
     echo ""
     if ask "Install the STL thumbnailer for Nautilus (needs sudo)? (Y/n)" Y; then
-        setup_stl_thumbnailer
+        setup_step "STL thumbnailer" setup_stl_thumbnailer
     fi
 
     # Session daemons as systemd user units
     echo ""
     if ask "Install and enable the session daemon units (battery, power profile, Bluetooth audio)? (Y/n)" Y; then
-        setup_user_units
+        setup_step "User units" setup_user_units
     fi
 
     # System setup
     echo ""
     if ask "Run initial system setup (GTK theme)? (Y/n)" Y; then
-        system_setup
+        setup_step "System setup" system_setup
     fi
 
     # Credential-driven steps need typed input, so --yes skips them.
@@ -1305,28 +1319,32 @@ cmd_setup() {
         log_info "--yes: skipping Immich/Jellyfin and Gcode Viewer (credentials or a long build); run dots.sh setup interactively for those"
     else
         if ask "Install and configure Immich CLI? (y/N)" N; then
-            setup_immich_cli
+            setup_step "Immich CLI" setup_immich_cli
         fi
 
         echo ""
         if ask "Set up Jellyfin music sync? (y/N)" N; then
-            setup_jellyfin_sync
+            setup_step "Jellyfin sync" setup_jellyfin_sync
         fi
 
         echo ""
         if ask "Install Gcode Viewer as the .gcode opener and thumbnailer (builds from source, needs sudo)? (y/N)" N; then
-            setup_gcode_viewer
+            setup_step "Gcode Viewer" setup_gcode_viewer
         fi
     fi
 
     # Generate avatar
     echo ""
     if ask "Generate initials avatar for lockscreen? (Y/n)" Y; then
-        setup_avatar
+        setup_step "Avatar" setup_avatar
     fi
 
     # Show summary
     show_summary
+    if ((${#SETUP_FAILED[@]} > 0)); then
+        log_warning "Steps that did not complete: ${SETUP_FAILED[*]}"
+        return 1
+    fi
 }
 
 ################################################################################
