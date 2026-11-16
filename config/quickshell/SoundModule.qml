@@ -186,7 +186,7 @@ Item {
         }
         onWheel: (e) => {
             if (!ap.sink || !ap.sink.audio) return;
-            ap.sink.audio.volume = Math.max(0, Math.min(1,
+            ap.sink.audio.volume = Math.max(0, Math.min(settingsStore.maxVolume / 100,
                 ap.sink.audio.volume + (e.angleDelta.y > 0 ? 1 : -1) * settingsStore.volumeStep / 100));
         }
     }
