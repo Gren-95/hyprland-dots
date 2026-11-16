@@ -197,14 +197,23 @@ Scope {
     // the dotfiles repo, like calendar.url.
     readonly property string _dir: Quickshell.env("HOME") + "/.config/quickshell/settings/"
 
+    // Returns undefined when the text is not a valid value of the type.
     function _parse(type, text) {
         switch (type) {
         case "bool":   return text.trim() === "1";
-        case "int":    return parseInt(text.trim(), 10);
-        case "real":   return parseFloat(text.trim());
-        case "json":   try { return JSON.parse(text); } catch (e) { return ({}); }
+        case "int":  { const n = parseInt(text.trim(), 10); return isFinite(n) ? n : undefined; }
+        case "real": { const n = parseFloat(text.trim()); return isFinite(n) ? n : undefined; }
+        case "json":   try { return JSON.parse(text); } catch (e) { return undefined; }
         default:       return text.endsWith("\n") ? text.slice(0, -1) : text;
         }
+    }
+    // A loaded JSON value must have the shape of the current one: an array
+    // stays an array, an object stays an object.
+    function _sameShape(current, value) {
+        if (Array.isArray(current)) return Array.isArray(value);
+        if (current !== null && typeof current === "object")
+            return value !== null && typeof value === "object" && !Array.isArray(value);
+        return true;
     }
     function _serialize(type, val) {
         switch (type) {
@@ -239,7 +248,13 @@ Scope {
             onLoaded: {
                 const t = text();
                 lastText = t;
-                settings[modelData.name] = settings._parse(modelData.type, t);
+                const value = settings._parse(modelData.type, t);
+                // An invalid file keeps the current value and is left on disk
+                // untouched, so a typo in a hand edit does not wipe it.
+                if (value === undefined || !settings._sameShape(settings[modelData.name], value))
+                    console.warn("[Settings] ignoring invalid " + modelData.file);
+                else
+                    settings[modelData.name] = value;
                 ready = true;
                 if (dirty) { dirty = false; persist(); }
             }

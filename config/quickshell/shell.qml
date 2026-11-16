@@ -426,7 +426,8 @@ Scope {
                         onChargingChanged: if (charging) { _warnedLevels = []; criticalTimer.stop(); }
                         function batteryLogic() {
                             if (charging || plugged || pct <= 0) return;
-                            const levels = settingsStore.batteryWarnLevels || [];
+                            const levels = Array.isArray(settingsStore.batteryWarnLevels)
+                                ? settingsStore.batteryWarnLevels : [];
                             for (const l of levels) {
                                 if (pct <= l && _warnedLevels.indexOf(l) < 0) {
                                     _warnedLevels = _warnedLevels.concat([l]);
