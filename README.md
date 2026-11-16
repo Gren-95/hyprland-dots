@@ -43,9 +43,9 @@ The lock screen (<kbd>Super</kbd>+<kbd>L</kbd>): clock, now playing, weather, ba
 > Use `dots.sh setup` for automated installation, or the other `dots.sh` commands for managing symlinks.
 
 > [!NOTE]
-> Built on Nobara 44 with Hyprland 0.56.2 and Quickshell 0.3.1. The Hyprland
-> config is Lua, which needs Hyprland 0.55+. Some commands are Fedora/Nobara
-> specific.
+> Built on Nobara 44 with Hyprland 0.57.2 and Quickshell 0.3.2. The Hyprland
+> config is Lua and uses the `layers` category added in 0.57, so it needs
+> Hyprland 0.57+. Some commands are Fedora/Nobara specific.
 
 ## Documentation
 

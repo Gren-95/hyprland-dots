@@ -1,6 +1,6 @@
 # Hyprland modules
 
-`hyprland.lua` requires each file in `modules/` (Lua config, Hyprland 0.55+),
+`hyprland.lua` requires each file in `modules/` (Lua config, Hyprland 0.57+),
 then `hyprland-gui.lua` last — HyprMod saves there, so its settings override
 the modules. Split for readability — every module is small and self-contained.
 
