@@ -83,12 +83,28 @@ Scope {
             .filter(l => l !== "" && l.indexOf("#") !== 0);
     }
 
+    // Last good parse of each feed, by URL. A feed whose fetch fails (offline
+    // at resume, server down) keeps showing these instead of going blank.
+    property var _feedCache: ({})
+
     function _parseIcs(text) {
         if (!text) return;
         const chunks = text.split(new RegExp("\\r?\\n" + root.feedBoundary + "\\r?\\n"));
+        const cache = {};
         let all = [];
-        for (let i = 0; i < chunks.length; i++)
-            all = all.concat(Ics.parseFeed(chunks[i], i));
+        for (let i = 0; i < root.icsUrls.length; i++) {
+            const url = root.icsUrls[i];
+            const chunk = chunks[i] || "";
+            // curl -f writes nothing for a failed transfer, so a chunk without
+            // a calendar in it means "no new data", not "no events".
+            const parsed = chunk.indexOf("BEGIN:VCALENDAR") >= 0
+                ? Ics.parseFeed(chunk, i)
+                : (root._feedCache[url] || []);
+            cache[url] = parsed;
+            // Feeds can be reordered in calendar.url; colour by current line.
+            all = all.concat(parsed.map(e => Object.assign({}, e, { calIndex: i })));
+        }
+        root._feedCache = cache;
         // Recurring events become their occurrences within a year either side
         // of today; the calendar never shows further than that.
         const now = Date.now(), year = 366 * 86400000;
