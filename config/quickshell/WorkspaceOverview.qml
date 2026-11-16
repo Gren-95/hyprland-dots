@@ -20,7 +20,9 @@ Scope {
     property real monH: 1200
     property var visibleWsIds: []
     property int snapshotToken: 0
-    readonly property string thumbDir: "/tmp/qsthumbs"
+    // Window screenshots: private to this user (the runtime dir is 0700 and
+    // removed at logout), unlike a fixed path under the shared /tmp.
+    readonly property string thumbDir: Quickshell.env("XDG_RUNTIME_DIR") + "/qsthumbs"
     readonly property real cardWidth: 320
 
     // Super+Tab cycling: opens overlay on first press, cycles on each subsequent
@@ -131,7 +133,7 @@ Scope {
         }
     }
     function _snapScript() {
-        let s = "mkdir -p " + root.thumbDir + "; ";
+        let s = "mkdir -p -m 700 '" + root.thumbDir + "'; ";
         for (const ws of root.workspaces) {
             if (!ws.isVisible) continue;
             for (const w of ws.windows) {
