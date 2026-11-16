@@ -17,6 +17,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib/inhibit.sh"
 
 failed=()
 skipped=()
+absent=() # optional tools that are not installed
 
 # Refuse to start with less free space than this on /.
 readonly MIN_FREE_GIB=10
@@ -231,6 +232,19 @@ _step() {
     esac
 }
 
+# _step for a tool that is optional: when the command is not installed the
+# step is noted and passed over, not counted as a failure.
+_optional_step() {
+    local name=$1 tool=$2
+    shift 2
+    if ! command -v "$tool" >/dev/null 2>&1; then
+        printf '\n\e[2m-- %s skipped (%s not installed)\e[0m\n' "$name" "$tool"
+        absent+=("$name")
+        return 0
+    fi
+    _step "$name" "$@"
+}
+
 # Animate a spinner with an elapsed-seconds counter until killed. It also exits
 # when the script dies, so an interrupted run cannot leave it printing.
 _spinner() {
@@ -298,13 +312,13 @@ _step "dnf makecache" sudo dnf5 makecache --refresh
 _step "dnf update" sudo dnf update
 _step "dnf autoremove" sudo dnf autoremove
 _step "firmware (fwupd)" update_firmware
-_step "flatpak update" flatpak update
-_step "flatpak cleanup" flatpak remove --unused
+_optional_step "flatpak update" flatpak flatpak update
+_optional_step "flatpak cleanup" flatpak flatpak remove --unused
 _step "appimage updates (gear lever)" update_appimages
-_step "npm globals" npm update -g
-_step "uv tools" uv tool upgrade --all
-_step "bun" update_bun
-_step "fisher plugins" update_fisher_plugins
+_optional_step "npm globals" npm npm update -g
+_optional_step "uv tools" uv uv tool upgrade --all
+_optional_step "bun" bun update_bun
+_optional_step "fisher plugins" fish update_fisher_plugins
 
 printf '\n\e[1;34m==> Summary\e[0m\n'
 if ((${#failed[@]} == 0 && ${#skipped[@]} == 0)); then
@@ -315,6 +329,9 @@ if ((${#failed[@]} > 0)); then
 fi
 if ((${#skipped[@]} > 0)); then
     printf '\e[1;33mSkipped (GitHub rate limit, run again after the reset): %s\e[0m\n' "${skipped[@]}"
+fi
+if ((${#absent[@]} > 0)); then
+    printf '\e[2mNot installed: %s\e[0m\n' "${absent[*]}"
 fi
 
 # Exit code 1 means a reboot is needed (kernel, glibc, systemd, ...).
