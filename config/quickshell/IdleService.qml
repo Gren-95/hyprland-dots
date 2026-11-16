@@ -17,7 +17,9 @@ import Quickshell.Services.UPower
 Scope {
     id: svc
 
-    property bool manual: false          // the user's Stay Awake toggle
+    // The user's Stay Awake toggle. Persisted, so a config reload does not
+    // forget it while hypridle is stopped.
+    readonly property bool manual: settingsStore.idleStayAwake
     property bool daemonRunning: true    // set by apply(); pgrep re-checks slowly
     property bool inFlight: false        // skip reconcile while toggling
 
@@ -53,7 +55,7 @@ Scope {
         : ""
 
     function toggleManual() {
-        manual = !manual;
+        settingsStore.idleStayAwake = !manual;
         apply();   // user intent applies immediately, no debounce
     }
 
@@ -125,7 +127,13 @@ Scope {
         command: ["sh", "-c", "pgrep -x hypridle >/dev/null && echo 1 || echo 0"]
         running: false
         stdout: StdioCollector {
-            onStreamFinished: svc.daemonRunning = text.trim() === "1"
+            onStreamFinished: {
+                svc.daemonRunning = text.trim() === "1";
+                // Bring hypridle in line with what is wanted. apply() alone
+                // only runs when wantInhibit changes, so without this a
+                // reload or an outside kill could leave it stopped for good.
+                if (!svc.inFlight && svc.wantInhibit === svc.daemonRunning) svc.apply();
+            }
         }
     }
     Timer {

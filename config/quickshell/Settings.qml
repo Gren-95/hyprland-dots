@@ -86,6 +86,7 @@ Scope {
     property int maxVolume: 100                // % ceiling for all volume paths
     property bool idleInhibitOnMedia: false    // Stay Awake while media plays
     property bool idleInhibitOnPower: false    // Stay Awake while on AC
+    property bool idleStayAwake: false         // the manual Stay Awake toggle
     property var eventToasts: ({ charger: true, vpn: true, audio: false, layout: false })
     property string weatherLocation: ""        // city name; empty = weather off
     property bool weatherFahrenheit: false
@@ -185,6 +186,7 @@ Scope {
         { name: "maxVolume",            file: "max-volume",             type: "int"  },
         { name: "idleInhibitOnMedia",   file: "idle-inhibit-media",     type: "bool" },
         { name: "idleInhibitOnPower",   file: "idle-inhibit-power",     type: "bool" },
+        { name: "idleStayAwake",        file: "idle-stay-awake",        type: "bool" },
         { name: "eventToasts",          file: "event-toasts.json",      type: "json" },
         { name: "weatherLocation",      file: "weather-location",       type: "string" },
         { name: "weatherFahrenheit",    file: "weather-fahrenheit",     type: "bool" },
