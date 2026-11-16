@@ -133,12 +133,13 @@ hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO
     repeating = true,
     locked = true,
 })
+-- Toggles and the power key fire once per press: held down they would flip
+-- back and forth, or send suspend again on every repeat. Only the step keys
+-- (volume, brightness) repeat.
 hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), {
-    repeating = true,
     locked = true,
 })
 hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"), {
-    repeating = true,
     locked = true,
 })
 hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl s 5%+"), {
@@ -158,11 +159,9 @@ hl.bind("XF86KbdBrightnessDown", hl.dsp.exec_cmd("brightnessctl -d '*::kbd_backl
     locked = true,
 })
 hl.bind("XF86KbdLightOnOff", hl.dsp.exec_cmd("brightnessctl -d '*::kbd_backlight' s +1"), {
-    repeating = true,
     locked = true,
 })
 hl.bind(var_mainMod .. " + CTRL + K", hl.dsp.exec_cmd("sh -c 'cur=$(brightnessctl -d \"*::kbd_backlight\" g); max=$(brightnessctl -d \"*::kbd_backlight\" m); next=$(( cur + 1 > max ? 0 : cur + 1 )); brightnessctl -d \"*::kbd_backlight\" s \"$next\"'"), {
-    repeating = true,
     locked = true,
 })
 hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"), {
@@ -178,7 +177,6 @@ hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), {
     locked = true,
 })
 hl.bind("XF86PowerOff", hl.dsp.exec_cmd("systemctl suspend"), {
-    repeating = true,
     locked = true,
 })
 
