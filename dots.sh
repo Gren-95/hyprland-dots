@@ -14,7 +14,8 @@ DOTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_SRC_DIR="$DOTS_DIR/config"
 CONFIG_DIR="$HOME/.config"
 LOG_FILE="$CONFIG_DIR/.dotfiles_symlink.log"
-LOCK_FILE="/tmp/dots.lock"
+# Per user: the runtime dir is private, unlike a fixed name in the shared /tmp.
+LOCK_FILE="${XDG_RUNTIME_DIR:-/tmp}/dots.lock"
 
 # Config items to manage
 CONFIG_ITEMS=(
@@ -106,29 +107,18 @@ verbose() {
     fi
 }
 
-# Create lock file to prevent concurrent execution
+# One run at a time. flock holds the lock on an open descriptor: it is atomic,
+# only this process owns it, and it goes away with the process however it
+# ends, so there is no lock file to clean up (or to delete from under
+# another run) and Ctrl-C simply stops the run.
 acquire_lock() {
-    if [[ -e "$LOCK_FILE" ]]; then
-        log_error "Another instance is running (lock file exists: $LOCK_FILE)"
+    exec 9>"$LOCK_FILE"
+    if ! flock -n 9; then
+        log_error "Another instance is running (lock held on $LOCK_FILE)"
         exit 1
     fi
-    echo $$ >"$LOCK_FILE"
-    verbose "Lock file created: $LOCK_FILE"
+    verbose "Lock acquired: $LOCK_FILE"
 }
-
-# Remove lock file
-release_lock() {
-    rm -f "$LOCK_FILE"
-    verbose "Lock file removed: $LOCK_FILE"
-}
-
-# Cleanup on exit
-cleanup() {
-    release_lock
-}
-
-# Trap signals for cleanup
-trap cleanup EXIT INT TERM
 
 # Check if required tools are available
 check_manager_tools() {
