@@ -301,6 +301,10 @@ Item {
                                         implicitWidth: 44
                                         implicitHeight: 44
                                         onMenuOpenChanged: actions.menusOpen += menuOpen ? 1 : -1
+                                        // The model is rebuilt on every tray change, so a
+                                        // delegate can go away with its menu still open.
+                                        // Give its count back, or the flyout stays pinned.
+                                        Component.onDestruction: if (menuOpen) actions.menusOpen = Math.max(0, actions.menusOpen - 1)
                                     }
                                 }
                             }
