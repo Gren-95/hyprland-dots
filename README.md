@@ -35,6 +35,10 @@ Modals reachable from keybindings or the bar:
   </tr>
 </table>
 
+The lock screen (<kbd>Super</kbd>+<kbd>L</kbd>): clock, now playing, weather, battery and power buttons over the blurred wallpaper:
+
+![Lock screen](screenshots/gallery/lockscreen.png)
+
 > [!TIP]
 > Use `dots.sh setup` for automated installation, or the other `dots.sh` commands for managing symlinks.
 
