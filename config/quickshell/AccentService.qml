@@ -10,10 +10,17 @@ import Quickshell.Io
 Scope {
     id: svc
 
+    // Only the "auto" accent uses the result; with a fixed accent there is
+    // no reason to run ImageMagick on every wallpaper change.
+    readonly property bool wanted: settingsStore.accentPrimaryName === "auto"
     function refresh() {
+        if (!svc.wanted) return;
         extractProc.running = false;
         extractProc.running = true;
     }
+    // Switching to auto (or the setting loading as auto after startup)
+    // extracts once for the current wallpaper.
+    onWantedChanged: if (wanted) refresh()
     // Wallpaper swaps take a moment (awww transition); let the
     // new image land before asking awww what's active.
     function refreshSoon() { soonTimer.restart() }
