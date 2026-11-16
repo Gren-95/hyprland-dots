@@ -25,6 +25,11 @@ Scope {
         actProc.startDetached();
         close();
     }
+    // The actions live here, not on the buttons: the buttons sit inside the
+    // card's Loader component, out of reach of the key handler.
+    function edit()   { runAction(["swappy", "-f", root.path]); }
+    function ocr()    { runAction(["bash", Paths.scripts + "/screenshot-ocr.sh", root.path]); }
+    function reveal() { runAction(["nautilus", root.path]); }
 
     PopupCard {
         open: root.open
@@ -37,11 +42,11 @@ Scope {
         onClosed: root.close()
         onKeyPressed: (e) => {
             if (e.key === Qt.Key_Escape) { root.close(); e.accepted = true; }
-            else if (e.key === Qt.Key_E) { editBtn.activate(); e.accepted = true; }
-            else if (e.key === Qt.Key_O) { ocrBtn.activate();  e.accepted = true; }
-            else if (e.key === Qt.Key_R) { revealBtn.activate(); e.accepted = true; }
+            else if (e.key === Qt.Key_E) { root.edit(); e.accepted = true; }
+            else if (e.key === Qt.Key_O) { root.ocr(); e.accepted = true; }
+            else if (e.key === Qt.Key_R) { root.reveal(); e.accepted = true; }
             else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
-                editBtn.activate(); e.accepted = true;
+                root.edit(); e.accepted = true;
             }
         }
         contentComponent: Component {
@@ -101,24 +106,19 @@ Scope {
                         Layout.topMargin: Theme.spacing.sm
                         spacing: Theme.spacing.sm
                         ActionBtn {
-                            id: editBtn
                             glyph: "󰏘"; label: "Edit"
                             accent: Theme.accent.blue
-                            onActivated: root.runAction(["swappy", "-f", root.path])
+                            onActivated: root.edit()
                         }
                         ActionBtn {
-                            id: ocrBtn
                             glyph: "󰗋"; label: "OCR"
                             accent: Theme.accent.purple
-                            onActivated: root.runAction(["bash",
-                                Paths.scripts + "/screenshot-ocr.sh",
-                                root.path])
+                            onActivated: root.ocr()
                         }
                         ActionBtn {
-                            id: revealBtn
                             glyph: "󰉋"; label: "Reveal"
                             accent: Theme.accent.yellow
-                            onActivated: root.runAction(["nautilus", root.path])
+                            onActivated: root.reveal()
                         }
                         ActionBtn {
                             glyph: "󰅖"; label: "Done"
