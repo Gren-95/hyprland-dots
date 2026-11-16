@@ -4,11 +4,14 @@ import QtQuick.Layouts
 Rectangle {
     id: arow
     property var node
+    property string glyph: "󰓃"
+    property string kind: ""
+    property color accent: Theme.accentPrimary
     property bool isActive: false
     property bool highlighted: false
     signal picked()
     signal hovered()
-    implicitHeight: 36
+    implicitHeight: 44
     radius: Theme.radius.sm
     color: arow.highlighted ? Theme.bgActive
          : arow.isActive ? Theme.bgHover
@@ -24,7 +27,7 @@ Rectangle {
         width: 3
         height: parent.height - 10
         radius: 1.5 * Theme.radiusScale
-        color: Theme.accent.blueBright
+        color: arow.accent
         opacity: arow.isActive ? 1.0 : (arow.highlighted ? 0.7 : (rowMa.containsMouse ? 0.35 : 0.0))
         Behavior on opacity { NumberAnimation { duration: Theme.duration.fast } }
     }
@@ -35,21 +38,38 @@ Rectangle {
         anchors.rightMargin: 8
         spacing: Theme.spacing.sm
         Text {
-            text: arow.isActive ? "●" : "○"
-            color: arow.isActive ? Theme.accent.blueBright : Theme.mutedDeep
+            text: arow.glyph
+            color: arow.isActive ? arow.accent : Theme.mutedDeep
             font.family: Theme.font
-            font.pixelSize: Theme.fontSize.base
+            font.pixelSize: Theme.fontSize.lg
             Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
         }
-        Text {
+        ColumnLayout {
             Layout.fillWidth: true
-            text: arow.node ? (arow.node.nickname || arow.node.description || arow.node.name || "") : ""
-            textFormat: Text.PlainText   // external text: never render markup
-            color: arow.isActive ? Theme.fg : Theme.fgMuted
-            elide: Text.ElideRight
+            spacing: 0
+            Text {
+                Layout.fillWidth: true
+                text: arow.node ? (arow.node.nickname || arow.node.description || arow.node.name || "") : ""
+                textFormat: Text.PlainText   // external text: never render markup
+                color: arow.isActive ? Theme.fg : Theme.fgMuted
+                elide: Text.ElideRight
+                font.family: Theme.font
+                font.pixelSize: Theme.fontSize.base
+                font.bold: arow.isActive
+            }
+            Text {
+                text: arow.kind
+                color: Theme.mutedDeep
+                font.family: Theme.font
+                font.pixelSize: Theme.fontSize.xs
+            }
+        }
+        Text {
+            text: "󰄬"
+            visible: arow.isActive
+            color: arow.accent
             font.family: Theme.font
-            font.pixelSize: Theme.fontSize.base
-            font.bold: arow.isActive
+            font.pixelSize: Theme.fontSize.md
         }
     }
 

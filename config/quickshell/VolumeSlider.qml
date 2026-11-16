@@ -6,6 +6,10 @@ Rectangle {
     // Force the thumb + accent to show even without a pointer — used to mark
     // the slider as the active keyboard target.
     property bool showThumb: false
+    // Fill colour; a muted slider draws its fill grey instead.
+    property color accent: Theme.accentPrimary
+    property bool muted: false
+    readonly property color _fill: vs.muted ? Theme.disabled : vs.accent
     signal moved()
     implicitHeight: 18
     radius: height / 2
@@ -22,7 +26,8 @@ Rectangle {
         anchors.margins: 2
         width: Math.max(0, Math.min(parent.width - 4, (parent.width - 4) * vs.value))
         radius: height / 2
-        color: Theme.accentPrimary
+        color: vs._fill
+        Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
         // Glide for external changes (keys/OSD); stay 1:1 with the finger
         // while dragging so the fill never lags the cursor.
         Behavior on width {
@@ -36,7 +41,7 @@ Rectangle {
         width: 22; height: 22
         radius: 11 * Theme.radiusScale
         color: Theme.fg
-        border.color: Theme.accentPrimary
+        border.color: vs._fill
         border.width: 2
         anchors.verticalCenter: parent.verticalCenter
         x: Math.max(-width / 2 + 1,

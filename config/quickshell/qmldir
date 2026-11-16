@@ -11,9 +11,7 @@ AccentService AccentService.qml
 singleton AirPodsBattery AirPodsBattery.qml
 AirPodsControls AirPodsControls.qml
 AudioAppRow AudioAppRow.qml
-AudioAppsSection AudioAppsSection.qml
 AudioDeviceRow AudioDeviceRow.qml
-AudioSection AudioSection.qml
 BarFlyout BarFlyout.qml
 BarHover BarHover.qml
 BarIcon BarIcon.qml
@@ -86,6 +84,7 @@ singleton TailscaleService TailscaleService.qml
 singleton Theme Theme.qml
 ThinScrollBar ThinScrollBar.qml
 TrayItem TrayItem.qml
+VolumeLine VolumeLine.qml
 VolumeSlider VolumeSlider.qml
 WallpaperDeck WallpaperDeck.qml
 WeatherCard WeatherCard.qml

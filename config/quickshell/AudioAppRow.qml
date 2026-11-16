@@ -1,108 +1,44 @@
-// One playback stream (an app) in the Sound popup: a mute button, the app name
-// with the stream's title, and a volume slider.
+// One playback stream (an app) in the Sound popup, drawn as a VolumeLine:
+// the app's icon (click to mute), its name and what it is playing, a slider.
 import QtQuick
-import QtQuick.Layouts
+import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Pipewire
 
-Rectangle {
+VolumeLine {
     id: row
     property var node
+    // Read through `ready`: the properties fill in only once the tracker has
+    // bound the node, and the binding has to see that change to update.
+    readonly property var props: node && node.ready && node.properties ? node.properties : ({})
+    readonly property string appName: props["application.name"] || (node ? node.nickname || node.name : "") || "Unknown"
+    readonly property string binary: String(props["application.process.binary"] || "")
 
-    readonly property bool muted: !!(node && node.audio && node.audio.muted)
-    readonly property real volume: node && node.audio ? node.audio.volume : 0
-    readonly property var props: node && node.properties ? node.properties : ({})
-    readonly property string appName: props["application.name"] || node.nickname || node.name || "Unknown"
-    // The title of what is playing (a tab, a track), when it differs from the app.
-    readonly property string streamTitle: {
+    // Icon name: what the stream names, else the app's desktop entry icon,
+    // else its binary. scripts/icon-path.sh turns it into a file in the icon
+    // theme; the glyph shows when there is none.
+    readonly property string iconName: {
+        const entry = DesktopEntries.heuristicLookup(binary || appName);
+        return String(props["application.icon_name"] || (entry && entry.icon) || binary || "");
+    }
+    property string iconFile: ""
+    onIconNameChanged: if (iconName !== "") { iconProc.running = false; iconProc.running = true; }
+    Process {
+        id: iconProc
+        command: ["bash", Paths.scripts + "/icon-path.sh", row.iconName]
+        stdout: StdioCollector { onStreamFinished: row.iconFile = text.trim() }
+    }
+    iconSource: iconFile !== "" ? "file://" + iconFile : ""
+
+    label: appName
+    sublabel: {
         const t = props["media.name"] || "";
         return t === appName ? "" : t;
     }
-    readonly property string glyph: {
-        if (muted) return "󰖁";
-        return volume < 0.34 ? "󰕿" : volume < 0.67 ? "󰖀" : "󰕾";
-    }
-
-    implicitHeight: 62
-    radius: Theme.radius.sm
-    color: "transparent"
-
-    RowLayout {
-        anchors.fill: parent
-        anchors.leftMargin: 4
-        anchors.rightMargin: 4
-        spacing: Theme.spacing.md
-
-        Rectangle {
-            implicitWidth: 40
-            implicitHeight: 40
-            radius: 10 * Theme.radiusScale
-            color: muteMa.containsMouse ? Theme.bgActive : Theme.bgInset
-            border.color: row.muted ? Theme.accent.red : Theme.borderStrong
-            border.width: 1
-            scale: muteMa.pressed ? 0.9 : 1.0
-            Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
-            Behavior on border.color { ColorAnimation { duration: Theme.duration.fast } }
-            Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
-            Text {
-                anchors.centerIn: parent
-                text: row.glyph
-                color: row.muted ? Theme.accent.red : Theme.fg
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.xl
-            }
-            MouseArea {
-                id: muteMa
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: if (row.node && row.node.audio) row.node.audio.muted = !row.node.audio.muted
-            }
-        }
-
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 2
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Theme.spacing.sm
-                Text {
-                    text: row.appName
-                    textFormat: Text.PlainText   // external text: never render markup
-                    color: row.muted ? Theme.mutedDeep : Theme.fg
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.base
-                    font.bold: true
-                    elide: Text.ElideRight
-                    Layout.maximumWidth: row.width * 0.3
-                }
-                Text {
-                    Layout.fillWidth: true
-                    visible: row.streamTitle !== ""
-                    text: row.streamTitle
-                    color: Theme.mutedDeep
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.xs
-                    elide: Text.ElideRight
-                }
-            }
-            VolumeSlider {
-                Layout.fillWidth: true
-                implicitHeight: 20
-                value: row.volume
-                opacity: row.muted ? 0.45 : 1.0
-                Behavior on opacity { NumberAnimation { duration: Theme.duration.fast } }
-                onMoved: if (row.node && row.node.audio) row.node.audio.volume = value
-            }
-        }
-
-        Text {
-            text: Math.round(row.volume * 100) + "%"
-            color: row.muted ? Theme.mutedDeep : Theme.fg
-            font.family: Theme.font
-            font.pixelSize: Theme.fontSize.md
-            font.bold: true
-            Layout.preferredWidth: 50
-            horizontalAlignment: Text.AlignRight
-        }
-    }
+    glyph: "󰎆"
+    volume: node && node.audio ? node.audio.volume : 0
+    muted: !!(node && node.audio && node.audio.muted)
+    accent: Theme.accent.purple
+    onMoved: (value) => { if (row.node && row.node.audio) row.node.audio.volume = value; }
+    onMuteToggled: { if (row.node && row.node.audio) row.node.audio.muted = !row.node.audio.muted; }
 }

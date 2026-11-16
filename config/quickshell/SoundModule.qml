@@ -30,6 +30,39 @@ Item {
         if (!Pipewire.nodes) return [];
         return (Pipewire.nodes.values || []).filter(n => !n.isSink && !n.isStream && n.audio);
     }
+    // App playback streams (devices are not streams; capture streams are not
+    // sinks). Their volume and mute state are only bound while tracked.
+    readonly property var appStreams: {
+        if (!Pipewire.nodes) return [];
+        return (Pipewire.nodes.values || []).filter(n => n.isStream && n.isSink && n.audio);
+    }
+    PwObjectTracker { objects: ap.appStreams }
+
+    // What kind of device a node is, from its PipeWire name: icon and label.
+    function kindOf(n) {
+        const id = n ? String(n.name || "") : "";
+        if (id.indexOf("bluez") >= 0) return "bluetooth";
+        if (/hdmi|displayport/i.test(id)) return "hdmi";
+        if (id.indexOf("usb") >= 0) return "usb";
+        return "builtin";
+    }
+    function kindGlyph(n, isSink) {
+        switch (kindOf(n)) {
+        case "bluetooth": return isSink ? "󰋋" : "󰋎";
+        case "hdmi":      return "󰍹";
+        default:          return isSink ? "󰓃" : "󰍬";
+        }
+    }
+    function kindLabel(n) {
+        switch (kindOf(n)) {
+        case "bluetooth": return "Bluetooth";
+        case "hdmi":      return "HDMI / DisplayPort";
+        case "usb":       return "USB";
+        default:          return "Built-in";
+        }
+    }
+    function nodeName(n) { return n ? (n.nickname || n.description || n.name || "") : "No device"; }
+
     readonly property int outCount: outputDevices.length
     readonly property int inCount: inputDevices.length
     // Sound-tab navigation index (matches old SoundModule).
@@ -70,35 +103,20 @@ Item {
             activateInput(sndIndex - outCount - 2);
         }
     }
-    // Device lists only exist on screen while their dropdown is open, so
-    // the keyboard cursor skips them while closed.
-    property bool outExpanded: false
-    property bool inExpanded: false
+    // Keyboard stops, top to bottom in the order they appear: output volume
+    // (0), output devices, input volume (outCount + 1), input devices. Both
+    // device lists are always on screen, so every index is a stop.
     readonly property var sndStops: {
-        const s = [0];
-        if (outExpanded) for (let i = 1; i <= outCount; i++) s.push(i);
-        s.push(outCount + 1);
-        if (inExpanded) for (let i = 0; i < inCount; i++) s.push(outCount + 2 + i);
+        const s = [];
+        for (let i = 0; i < outCount + inCount + 2; i++) s.push(i);
         return s;
     }
-    // Up/Down move the cursor through the visible stops, wrapping around.
+    // Up/Down move the cursor through the stops, wrapping around.
     function moveSound(delta) {
         const stops = sndStops;
         const at = Math.max(0, stops.indexOf(sndIndex));
         sndIndex = stops[(at + delta + stops.length) % stops.length];
     }
-    // Open or close the device dropdown of the section holding the cursor.
-    function toggleExpand() {
-        if (sndIndex <= outCount) {
-            outExpanded = !outExpanded;
-            if (!outExpanded && sndIndex > 0) sndIndex = 0;
-        } else {
-            inExpanded = !inExpanded;
-            if (!inExpanded && sndIndex > outCount + 1) sndIndex = outCount + 1;
-        }
-    }
-
-
 
     // Popup height follows the content (up to what the screen allows), so
     // there is never empty space under the last control.
@@ -129,8 +147,6 @@ Item {
     onPopupOpenChanged: {
         lockedHeight = 0;
         if (popupOpen) {
-            outExpanded = false;
-            inExpanded = false;
             sndIndex = 0;
             lockTimer.restart();
         }
@@ -192,6 +208,16 @@ Item {
     }
 
 
+    component SectionLabel: Text {
+        Layout.leftMargin: Theme.spacing.sm
+        Layout.bottomMargin: 2
+        color: Theme.mutedDeep
+        font.family: Theme.font
+        font.pixelSize: Theme.fontSize.xs
+        font.letterSpacing: 1
+        font.bold: true
+    }
+
     // ===== Popup =====
     HoverHandler { id: apHover }
     BarTooltip {
@@ -205,7 +231,7 @@ Item {
         id: apPopup
         parentBar: ap.parentBar
         open: ap.popupOpen
-        cardWidth: settingsStore.flyoutSize("audiopower", "w", 460)
+        cardWidth: settingsStore.flyoutSize("audiopower", "w", 720)
         cardHeight: settingsStore.flyoutSize("audiopower", "h", ap.lockedHeight > 0 ? ap.lockedHeight : ap.fitHeight)
         pinned: ap.pinned
         onDismissed: ap.popupOpen = false
@@ -219,8 +245,6 @@ Item {
                 ap.moveSound(1); e.accepted = true;
             } else if (e.key === Qt.Key_Up || e.key === Qt.Key_K) {
                 ap.moveSound(-1); e.accepted = true;
-            } else if (e.key === Qt.Key_D || e.key === Qt.Key_Space) {
-                ap.toggleExpand(); e.accepted = true;
             } else if (e.key === Qt.Key_Right || e.key === Qt.Key_L
                     || e.key === Qt.Key_Plus || e.key === Qt.Key_Equal) {
                 ap.adjustVolume(settingsStore.volumeStep / 100); e.accepted = true;
@@ -273,47 +297,122 @@ Item {
                     policy: flick.contentHeight > flick.height + 2 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
                 }
 
-                ColumnLayout {
+                RowLayout {
                     id: col
                     width: flick.width - Theme.spacing.md
                     spacing: Theme.spacing.lg
 
-                    AudioSection {
-                        Layout.fillWidth: true
-                        title: "OUTPUT"
-                        node: ap.sink
-                        isSink: true
-                        expanded: ap.outExpanded
-                        selectedIndex: ap.outSelectedIndex
-                        toggleHighlighted: ap.sndIndex === 0
-                        sliderActive: ap.sndIndex <= ap.outCount
-                        onExpandToggled: ap.outExpanded = !ap.outExpanded
-                        onDeviceHovered: (idx) => ap.sndIndex = idx + 1
-                        onToggleHovered: ap.sndIndex = 0
+                    // ===== Left: devices, always listed =====
+                    ColumnLayout {
+                        Layout.preferredWidth: 236
+                        Layout.maximumWidth: 236
+                        Layout.alignment: Qt.AlignTop
+                        spacing: 2
+
+                        SectionLabel { text: "OUTPUT" }
+                        Repeater {
+                            model: ap.outputDevices
+                            delegate: AudioDeviceRow {
+                                required property var modelData
+                                required property int index
+                                Layout.fillWidth: true
+                                node: modelData
+                                glyph: ap.kindGlyph(modelData, true)
+                                kind: ap.kindLabel(modelData)
+                                accent: Theme.accentPrimary
+                                isActive: ap.sink === modelData
+                                highlighted: ap.sndIndex === index + 1
+                                onPicked: ap.activateOutput(index)
+                                onHovered: ap.sndIndex = index + 1
+                            }
+                        }
+                        SectionLabel { text: "INPUT"; Layout.topMargin: Theme.spacing.md }
+                        Repeater {
+                            model: ap.inputDevices
+                            delegate: AudioDeviceRow {
+                                required property var modelData
+                                required property int index
+                                Layout.fillWidth: true
+                                node: modelData
+                                glyph: ap.kindGlyph(modelData, false)
+                                kind: ap.kindLabel(modelData)
+                                accent: Theme.accent.teal
+                                isActive: ap.source === modelData
+                                highlighted: ap.sndIndex === ap.outCount + 2 + index
+                                onPicked: ap.activateInput(index)
+                                onHovered: ap.sndIndex = ap.outCount + 2 + index
+                            }
+                        }
                     }
-                    AudioSection {
-                        Layout.fillWidth: true
-                        title: "INPUT"
-                        node: ap.source
-                        isSink: false
-                        expanded: ap.inExpanded
-                        selectedIndex: ap.inSelectedIndex
-                        toggleHighlighted: ap.sndIndex === ap.outCount + 1
-                        sliderActive: ap.sndIndex >= ap.outCount + 1
-                        onExpandToggled: ap.inExpanded = !ap.inExpanded
-                        onDeviceHovered: (idx) => ap.sndIndex = ap.outCount + 2 + idx
-                        onToggleHovered: ap.sndIndex = ap.outCount + 1
+
+                    Rectangle {
+                        Layout.fillHeight: true
+                        implicitWidth: 1
+                        color: Theme.borderSubtle
                     }
-                    // Per-app volumes; mouse only, not part of the keyboard cursor.
-                    AudioAppsSection {
+
+                    // ===== Right: volumes =====
+                    ColumnLayout {
                         Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignTop
+                        spacing: 2
+
+                        SectionLabel { text: "VOLUME" }
+                        VolumeLine {
+                            Layout.fillWidth: true
+                            label: "Output"
+                            sublabel: ap.nodeName(ap.sink)
+                            glyph: {
+                                const v = ap.sink && ap.sink.audio ? ap.sink.audio.volume : 0;
+                                return v < 0.34 ? "󰕿" : v < 0.67 ? "󰖀" : "󰕾";
+                            }
+                            volume: ap.sink && ap.sink.audio ? ap.sink.audio.volume : 0
+                            muted: !!(ap.sink && ap.sink.audio && ap.sink.audio.muted)
+                            accent: Theme.accentPrimary
+                            highlighted: ap.sndIndex === 0
+                            onMoved: (value) => { if (ap.sink && ap.sink.audio) ap.sink.audio.volume = value; }
+                            onMuteToggled: { if (ap.sink && ap.sink.audio) ap.sink.audio.muted = !ap.sink.audio.muted; }
+                            onHovered: ap.sndIndex = 0
+                        }
+                        VolumeLine {
+                            Layout.fillWidth: true
+                            label: "Input"
+                            sublabel: ap.nodeName(ap.source)
+                            glyph: "󰍬"
+                            volume: ap.source && ap.source.audio ? ap.source.audio.volume : 0
+                            muted: !!(ap.source && ap.source.audio && ap.source.audio.muted)
+                            accent: Theme.accent.teal
+                            highlighted: ap.sndIndex === ap.outCount + 1
+                            onMoved: (value) => { if (ap.source && ap.source.audio) ap.source.audio.volume = value; }
+                            onMuteToggled: { if (ap.source && ap.source.audio) ap.source.audio.muted = !ap.source.audio.muted; }
+                            onHovered: ap.sndIndex = ap.outCount + 1
+                        }
+
+                        SectionLabel { text: "APPS"; Layout.topMargin: Theme.spacing.md }
+                        // Per-app volumes; mouse only, not part of the keyboard cursor.
+                        Repeater {
+                            model: ap.appStreams
+                            delegate: AudioAppRow {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                node: modelData
+                            }
+                        }
+                        Text {
+                            visible: ap.appStreams.length === 0
+                            Layout.leftMargin: Theme.spacing.sm
+                            text: "Nothing is playing"
+                            color: Theme.mutedDeep
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize.sm
+                        }
                     }
                 }
             }
 
             Text {
                 Layout.fillWidth: true
-                text: "↑↓ move · ←→ adjust · D devices · M mute · ↵ select"
+                text: "↑↓ move · ←→ adjust · M mute · ↵ select device"
                 color: Theme.mutedDeep
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSize.xs
