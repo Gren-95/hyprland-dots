@@ -35,6 +35,36 @@ Scope {
         stdout: StdioCollector {
             onStreamFinished: {
                 root.wallpapers = text.trim().split("\n").filter(s => s.length > 0);
+                root._buildThumbs();
+            }
+        }
+    }
+
+    // Wallpaper path -> small JPEG card thumbnail (scripts/wallpaper-thumbs.sh).
+    // Cards decode these instead of the originals: a full-size PNG did not
+    // finish decoding before the deck was released, and Qt cannot read WebP,
+    // so those cards came up blank. A card without a thumbnail yet falls back
+    // to the original file.
+    property var thumbs: ({})
+    function _buildThumbs() {
+        if (thumbProc.running || root.wallpapers.length === 0) return;
+        thumbProc.command = ["bash", Paths.scripts + "/wallpaper-thumbs.sh"].concat(root.wallpapers);
+        thumbProc.running = true;
+    }
+    function thumbFor(path) { return root.thumbs[path] || path; }
+
+    Process {
+        id: thumbProc
+        command: []
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const map = {};
+                for (const line of text.split("\n")) {
+                    const tab = line.indexOf("\t");
+                    if (tab > 0) map[line.slice(0, tab)] = line.slice(tab + 1);
+                }
+                root.thumbs = map;
             }
         }
     }
@@ -295,7 +325,8 @@ Scope {
         Image {
             anchors.fill: parent
             anchors.margins: 7
-            source: dc.file !== "" ? "file://" + dc.file : ""
+            id: cardImage
+            source: dc.file !== "" ? "file://" + root.thumbFor(dc.file) : ""
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
             cache: true
@@ -303,6 +334,36 @@ Scope {
             // sampled tall rather than squashed.
             sourceSize.width: 520
             sourceSize.height: 728
+        }
+
+        // Shown until the image is ready, or when it cannot be read at all,
+        // so a card is never just an empty white face.
+        Rectangle {
+            anchors.fill: cardImage
+            visible: cardImage.status !== Image.Ready
+            radius: 6
+            color: Theme.bgDeep
+            Column {
+                anchors.centerIn: parent
+                width: parent.width - 24
+                spacing: Theme.spacing.sm
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: cardImage.status === Image.Error ? "󰋩" : "󰔟"
+                    color: Theme.mutedDeep
+                    font.family: Theme.font
+                    font.pixelSize: 40
+                }
+                Text {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    text: dc.file.split("/").pop()
+                    color: Theme.muted
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.sm
+                    elide: Text.ElideMiddle
+                }
+            }
         }
 
     }

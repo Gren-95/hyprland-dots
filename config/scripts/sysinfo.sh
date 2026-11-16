@@ -35,7 +35,12 @@ sample_procs() {
         while (substr($0, rp, 1) != ")") rp--
         split(substr($0, rp + 2), f, " ")
         print substr($0, 1, lp - 2) "\t" f[12] + f[13] "\t" f[22] "\t" substr($0, lp + 1, rp - lp - 1)
-    }' /proc/[0-9]*/stat 2>/dev/null
+    }' /proc/[0-9]*/stat 2>/dev/null || true
+    # A process that exits between the glob and the read leaves a stat file
+    # awk cannot open. awk skips it and reads the rest, but exits 2, and under
+    # `set -e` that killed the whole probe (the monitor's process list stayed
+    # empty whenever anything was spawning processes). The output is complete
+    # for every process still alive, so the exit code is ignored.
 }
 
 sample_procs >"$samples_dir/first"
