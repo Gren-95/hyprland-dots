@@ -21,6 +21,7 @@ set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/shell-ipc.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 
 # jellyfin runs off a Persistent systemd user timer (catches up missed runs on a
 # laptop); immich stays on cron. uses_timer routes the two backends. Everything
@@ -57,6 +58,15 @@ schedule_for() {
 
 marker_for() { echo "# QSSYNC:$1"; }
 
+# The immich schedule lives in cron, which is an optional dependency. Without
+# it immich sync is simply off; changing it explains why instead of failing.
+have_cron() { command -v crontab >/dev/null 2>&1; }
+cron_missing() {
+    echo "sync-toggle: crontab is not installed, so $1 sync cannot be scheduled" >&2
+    notify normal sync-toggle dialog-warning "Sync unavailable" "Install cronie to schedule $1 sync."
+    return 1
+}
+
 # Read the current crontab (empty string if user has none).
 read_cron() { crontab -l 2>/dev/null || true; }
 
@@ -83,6 +93,10 @@ status_one() {
         systemctl --user is-enabled "$JELLYFIN_TIMER" >/dev/null 2>&1 && echo 1 || echo 0
         return
     fi
+    if ! have_cron; then
+        echo 0
+        return
+    fi
     ensure_installed "$kind"
     local marker line
     marker=$(marker_for "$kind")
@@ -101,6 +115,7 @@ flip_one() {
         fi
         return
     fi
+    have_cron || cron_missing "$kind" || return 0
     ensure_installed "$kind"
     local marker
     marker=$(marker_for "$kind")
@@ -125,6 +140,7 @@ set_one() {
         fi
         return
     fi
+    have_cron || cron_missing "$kind" || return 0
     local cur
     cur=$(status_one "$kind")
     [[ "$cur" == "$desired" ]] && return 0
@@ -146,6 +162,7 @@ schedule_set() {
         fi
         return
     fi
+    have_cron || cron_missing "$kind" || return 0
     ensure_installed "$kind"
     local marker inv cur prefix newline
     marker=$(marker_for "$kind")
