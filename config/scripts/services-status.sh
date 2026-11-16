@@ -18,6 +18,7 @@ done
 
 if pgrep -x wayvnc >/dev/null 2>&1; then printf 'wayvnc=1 '; else printf 'wayvnc=0 '; fi
 printf 'winvm=%s ' "$(bash "$SCRIPTS_DIR/winvm-toggle.sh" status 2>/dev/null || echo 0)"
+printf 'games-browser=%s ' "$(bash "$SCRIPTS_DIR/games-browser-toggle.sh" status 2>/dev/null || echo 0)"
 
 # immich=0|1 jellyfin=0|1
 printf '%s ' "$(bash "$SCRIPTS_DIR/sync-toggle.sh" status all 2>/dev/null)"

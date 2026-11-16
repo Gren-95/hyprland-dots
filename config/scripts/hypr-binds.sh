@@ -126,8 +126,6 @@ def to_dispatcher(path, args, vars_):
         return "movecurrentworkspacetomonitor", kv.get("monitor", "")
     if path == "layout":
         return (bare or "layoutmsg"), ""
-    if path == "dpms":
-        return "dpms", bare
     if path == "focus":
         if "monitor" in kv:
             return "focusmonitor", kv["monitor"]
@@ -202,6 +200,9 @@ EXEC_TEXT = [
     (r"night\.sh toggle", "Turn the night light on or off"),
     (r"idle-inhibit-toggle\.sh", "Stay Awake: block screen lock and sleep until toggled off"),
     (r"gamemode\.sh toggle", "Turn game mode on or off"),
+    (r"window-tools\.sh tiled-fullscreen", "Toggle tiled fullscreen: the app goes fullscreen, the window stays tiled"),
+    (r"window-tools\.sh width save", "Remember this window's width"),
+    (r"window-tools\.sh width restore", "Resize this window back to its remembered width"),
     (r"set-volume .*5%\+", "Raise the volume"),
     (r"set-volume .*5%-", "Lower the volume"),
     (r"set-mute @DEFAULT_AUDIO_SINK@", "Mute or unmute the speakers"),
@@ -215,7 +216,8 @@ EXEC_TEXT = [
     (r"playerctl previous", "Previous track"),
     (r"playerctl play-pause", "Play or pause the music"),
     (r"systemctl suspend", "Suspend the computer"),
-    (r"dpms.*\bon\b", "Lid opened: wake the display and restore brightness"),
+    (r"lid\.sh close", "Lid closed: lock the screen (unless docked) and turn the built-in display off"),
+    (r"lid\.sh open", "Lid opened: wake the display and restore brightness"),
 ]
 
 GLOBAL_TEXT = {
@@ -287,8 +289,6 @@ def describe(b):
         return "Focus the next monitor"
     if d == "movecurrentworkspacetomonitor":
         return "Send this workspace to the next monitor"
-    if d == "dpms":
-        return "Lid closed: turn the built-in display off"
     return ""
 
 

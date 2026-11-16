@@ -69,7 +69,7 @@ Scope {
         root.open = true;
     }
     function toggleHidden(i) {
-        const item = root.filtered[i - root.appOffset];
+        const item = root.shownApps[i - root.appOffset];
         if (!item || !item.id) return;
         settingsStore.setAppHidden(item.id, !settingsStore.isAppHidden(item.id));
         // The row under the cursor just left the list; keep the index in range.
@@ -139,9 +139,15 @@ Scope {
             });
     }
 
+    // Rows only exist for the apps shown, so the indices below count those,
+    // not everything that matched.
+    readonly property var shownApps: filtered.slice(0, settingsStore.spotlightCap)
+
+    // Row order: calculator result, apps, then shell actions.
     readonly property int calcOffset: hasCalc ? 1 : 0
-    readonly property int appOffset: calcOffset + matchedActions.length
-    readonly property int totalRows: appOffset + filtered.length
+    readonly property int appOffset: calcOffset
+    readonly property int actionOffset: appOffset + shownApps.length
+    readonly property int totalRows: actionOffset + matchedActions.length
 
     function toggle() {
         open = !open;
@@ -155,7 +161,7 @@ Scope {
     function close() { open = false; pickRole = ""; manageHidden = false; }
     // The highlighted shell-toggle action, if any (drives Space-to-toggle).
     function highlightedToggle() {
-        const ai = selectedIndex - calcOffset;
+        const ai = selectedIndex - actionOffset;
         const a = ai >= 0 && ai < matchedActions.length ? matchedActions[ai] : null;
         return a && a.isToggle ? a : null;
     }
@@ -166,7 +172,7 @@ Scope {
             close();
             return;
         }
-        const ai = i - calcOffset;
+        const ai = i - actionOffset;
         if (ai >= 0 && ai < matchedActions.length) {
             const a = matchedActions[ai];
             a.run();
@@ -175,7 +181,7 @@ Scope {
             if (!a.isToggle && root.pickRole === "" && !root.manageHidden) close();
             return;
         }
-        const item = filtered[i - appOffset];
+        const item = shownApps[i - appOffset];
         if (item && root.manageHidden) {
             settingsStore.setAppHidden(item.id, false);
             root.selectedIndex = Math.max(0, Math.min(root.selectedIndex, root.totalRows - 1));
@@ -365,6 +371,30 @@ Scope {
                                 Layout.leftMargin: Theme.spacing.md
                                 Layout.rightMargin: Theme.spacing.md
                                 Layout.topMargin: Theme.spacing.xs
+                                visible: root.filtered.length > 0
+                                title: root.manageHidden ? "HIDDEN APPS" : "APPLICATIONS"
+                                count: root.filtered.length
+                            }
+                            Repeater {
+                                id: appsRepeater
+                                model: root.shownApps
+                                onItemAdded: Qt.callLater(contentCol.syncSelection)
+                                delegate: SpotlightAppRow {
+                                    required property var modelData
+                                    required property int index
+                                    entry: modelData
+                                    highlighted: root.selectedIndex === (index + root.appOffset)
+                                    Layout.fillWidth: true
+                                    onPicked: root.activate(index + root.appOffset)
+                                    onHovered: root.selectedIndex = index + root.appOffset
+                                }
+                            }
+
+                            LauncherSectionHeader {
+                                Layout.fillWidth: true
+                                Layout.leftMargin: Theme.spacing.md
+                                Layout.rightMargin: Theme.spacing.md
+                                Layout.topMargin: Theme.spacing.xs
                                 visible: root.matchedActions.length > 0
                                 title: "SHELL"
                                 count: root.matchedActions.length
@@ -377,34 +407,10 @@ Scope {
                                     required property var modelData
                                     required property int index
                                     action: modelData
-                                    highlighted: root.selectedIndex === (index + root.calcOffset)
+                                    highlighted: root.selectedIndex === (index + root.actionOffset)
                                     Layout.fillWidth: true
-                                    onPicked: root.activate(index + root.calcOffset)
-                                    onHovered: root.selectedIndex = index + root.calcOffset
-                                }
-                            }
-
-                            LauncherSectionHeader {
-                                Layout.fillWidth: true
-                                Layout.leftMargin: Theme.spacing.md
-                                Layout.rightMargin: Theme.spacing.md
-                                Layout.topMargin: Theme.spacing.xs
-                                visible: root.filtered.length > 0
-                                title: root.manageHidden ? "HIDDEN APPS" : "APPLICATIONS"
-                                count: root.filtered.length
-                            }
-                            Repeater {
-                                id: appsRepeater
-                                model: root.filtered.slice(0, settingsStore.spotlightCap)
-                                onItemAdded: Qt.callLater(contentCol.syncSelection)
-                                delegate: SpotlightAppRow {
-                                    required property var modelData
-                                    required property int index
-                                    entry: modelData
-                                    highlighted: root.selectedIndex === (index + root.appOffset)
-                                    Layout.fillWidth: true
-                                    onPicked: root.activate(index + root.appOffset)
-                                    onHovered: root.selectedIndex = index + root.appOffset
+                                    onPicked: root.activate(index + root.actionOffset)
+                                    onHovered: root.selectedIndex = index + root.actionOffset
                                 }
                             }
                         }
@@ -439,7 +445,7 @@ Scope {
             // row inside the viewport.
             function syncSelection() {
                 const idx = root.selectedIndex;
-                const ai = idx - root.calcOffset;
+                const ai = idx - root.actionOffset;
                 let item = null;
                 if (root.hasCalc && idx === 0) item = calcRow;
                 else if (ai >= 0 && ai < root.matchedActions.length) item = actionsRepeater.itemAt(ai);
@@ -454,7 +460,7 @@ Scope {
                 const maxY = Math.max(0, results.contentHeight - results.height);
                 let to = viewTop;
                 if (root.hasCalc && idx === 0) to = 0;
-                else if (top < viewTop + pad) to = Math.max(0, top - pad - (ai === 0 || idx === root.appOffset ? 32 : 0));
+                else if (top < viewTop + pad) to = Math.max(0, top - pad - (idx === root.actionOffset || idx === root.appOffset ? 32 : 0));
                 else if (bot > viewBot - pad) to = Math.min(maxY, bot - results.height + pad);
                 if (to === viewTop) return;
                 scrollAnim.stop();

@@ -64,7 +64,7 @@ QS_LABELS = {
     "wallpaper-cancel": (QS, "Dismiss the wallpaper deck without applying"),
     "overview-cycle": (QS, "Workspace overview (cycle next while held)"),
     "overview-cycle-prev": (QS, "Workspace overview (cycle previous)"),
-    "powermenu": (APP, "Power menu (Lock / Suspend / Logout / Reboot / Shutdown)"),
+    "powermenu": (APP, "Power menu (Sleep / Logout / Reboot / Shutdown)"),
     "screenshot-region": (CAP, "Screenshot region → file + clipboard"),
 }
 EXEC_LABELS = [  # (substring of arg, category, label)
@@ -87,6 +87,9 @@ EXEC_LABELS = [  # (substring of arg, category, label)
     ("playerctl next", HW, "Next track (playerctl)"),
     ("playerctl previous", HW, "Previous track (playerctl)"),
     ("brightnessctl s 5%", HW, "Screen brightness ±5%"),
+    ("window-tools.sh tiled-fullscreen", WIN, "Tiled fullscreen (the app goes fullscreen, the window stays tiled)"),
+    ("window-tools.sh width save", WIN, "Remember the window's width"),
+    ("window-tools.sh width restore", WIN, "Restore the remembered window width"),
     ("kbd_backlight s +1", HW, "Keyboard backlight +1 step (does not wrap)"),
     ("kbd_backlight s 1-", HW, "Keyboard backlight -1 step"),
     ("kbd_backlight", HW, "Cycle keyboard backlight (off / half / full)"),
@@ -112,7 +115,7 @@ def classify(b):
     d, arg, key = b["dispatcher"], b["arg"].strip(), b["key"]
     collapse = None
     if key.startswith("switch:"):
-        return HW, ("Lid closed → screen off" if ":on:" in key else "Lid opened → screen on"), None
+        return HW, ("Lid closed → lock (unless an external monitor is connected), screen off" if ":on:" in key else "Lid opened → screen on"), None
     if d == "global" and arg.startswith("quickshell:"):
         name = arg.split(":", 1)[1]
         if name in QS_LABELS:

@@ -52,6 +52,34 @@ sudo dnf install hyprland hyprland-devel quickshell kitty nautilus cliphist \
   fish fzf zoxide ranger python3 python3-pillow
 ```
 
+### Optional: Disktree (disk usage treemap)
+
+[Disktree](https://github.com/tobi/disktree) draws a treemap of what fills a disk and lets you mark
+and review what to remove before anything is deleted. It is not in the Fedora repositories, so
+install the prebuilt release into `~/.local` (no root; needs a Vulkan-capable GPU). It then shows up
+in the launcher, and `disktree --disk` scans the whole disk.
+
+```bash
+v=0.11.0   # newest: https://github.com/tobi/disktree/releases/latest
+cd "$(mktemp -d)"
+curl -fsSLO "https://github.com/tobi/disktree/releases/download/v$v/disktree-$v-x86_64-linux.tar.gz"{,.sha256}
+sha256sum -c "disktree-$v-x86_64-linux.tar.gz.sha256"
+tar -xzf "disktree-$v-x86_64-linux.tar.gz" && "./disktree-$v-x86_64-linux/install.sh"
+bash ~/.config/scripts/disktree-theme.sh   # match the shell palette
+# Launch it through disktree.sh, which scans /mnt/DATA by default:
+sed -i "s|^Exec=.*disktree %f|Exec=bash $HOME/.config/scripts/disktree.sh %f|" ~/.local/share/applications/disktree.desktop
+```
+
+Disktree scans the home directory by default and neither crosses filesystems nor follows symlinks, so
+a second disk such as `/mnt/DATA` (where `~/Documents` points) is invisible. `scripts/disktree.sh`
+(and the `disktree` fish function) scan `$DATA_DIR` from `scripts/paths.sh` unless given a path or
+option. The `sed` line points the launcher entry at it; run it again after upgrading Disktree, whose
+installer rewrites the entry.
+
+`disktree-theme.sh` writes `~/.local/state/omarchy/current/theme/colors.toml` from
+`config/quickshell/Theme.qml`, the file Disktree reads its colours from. Run it again after
+changing the palette; a running Disktree picks the change up.
+
 ## Manual Setup
 
 ```bash

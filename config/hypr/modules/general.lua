@@ -36,10 +36,20 @@ hl.config({
         mouse_move_enables_dpms = true,
         key_press_enables_dpms = true,
         always_follow_on_dnd = true,
-        layers_hog_keyboard_focus = true,
         animate_manual_resizes = false,
         disable_splash_rendering = true,
         focus_on_activate = false,
+        -- A crashed hyprlock leaves the session locked: let a new lock client
+        -- take it over instead of stranding the red screen.
+        allow_session_lock_restore = true,
+        -- No chime on every terminal BEL (tab-completion misses, TUI alerts).
+        bell_sound = "none",
+        -- Offer to kill an unresponsive app after 3 missed pings, not 5.
+        anr_missed_pings = 3,
+    },
+    layers = {
+        -- Moved out of misc in Hyprland 0.57 (was misc:layers_hog_keyboard_focus).
+        layers_hog_keyboard_focus = true,
     },
 })
 
@@ -56,6 +66,9 @@ hl.config({
     },
     cursor = {
         no_hardware_cursors = false,
+        hide_on_key_press = true,
+        -- Put the cursor on the window you land on after a workspace switch.
+        warp_on_change_workspace = 1,
     },
     dwindle = {
         preserve_split = true,
@@ -63,5 +76,7 @@ hl.config({
     binds = {
         workspace_back_and_forth = true,
         allow_workspace_cycles = true,
+        -- Switching workspace closes the open scratchpad (scripts/scratchpad.sh).
+        hide_special_on_workspace_change = true,
     },
 })

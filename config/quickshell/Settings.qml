@@ -51,6 +51,7 @@ Scope {
     property var trayPlacement: ({})           // tray app id -> same
     property var qaPlacement: ({})             // quick-action key -> "bar"|"overflow"|"hidden"
     property var hiddenApps: ({})              // desktop id -> true; dropped from the launcher
+    property var btLastConnected: ({})         // Bluetooth address -> epoch ms of its last connection
     property bool clock24h: true
     property bool clockShowSeconds: false
     property string clockDateFormat: "ddd, dd MMM"
@@ -149,6 +150,7 @@ Scope {
         { name: "trayPlacement",        file: "tray-placement.json",    type: "json" },
         { name: "qaPlacement",          file: "qa-placement.json",      type: "json" },
         { name: "hiddenApps",           file: "hidden-apps.json",       type: "json" },
+        { name: "btLastConnected",      file: "bt-last-connected.json", type: "json" },
         { name: "clock24h",             file: "clock-24h",              type: "bool" },
         { name: "clockShowSeconds",     file: "clock-seconds",          type: "bool" },
         { name: "clockDateFormat",      file: "clock-date-format",      type: "string" },

@@ -14,6 +14,8 @@ SCREENSHOTS_DIR="$HOME/Pictures/Screenshots"
 OCR_DIR="$HOME/Pictures/Screenshots/ocr"
 RECORDINGS_DIR="$HOME/Videos/Recordings"
 MUSIC_DIR="$HOME/Music"
+# Second disk (ext4): ~/Documents is a symlink into it.
+DATA_DIR="/mnt/DATA"
 
 # Config directories
 CONFIG_DIR="$HOME/.config"

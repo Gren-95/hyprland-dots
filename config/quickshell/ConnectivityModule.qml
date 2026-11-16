@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
+import QtQml.Models   // Instantiator (not provided by QtQuick in Qt 6)
 import Quickshell.Bluetooth
 
 // Bluetooth flyout. Wi-Fi, wired and Tailscale are handled by the nm-applet
@@ -14,8 +15,8 @@ Item {
     // per-open override set by toggleOpen(from). Fallback: own icon.
     property Item flyoutAnchor: null
     property Item _openAnchor: null
-    // tabIndex: 0 = power, 1 = scan, then paired devices, then discovered
-    // (unpaired) devices.
+    // tabIndex: 0 = power, 1 = scan, then paired devices (connected, then most
+    // recently connected first), then discovered (unpaired) devices.
     property int tabIndex: 0
     // Address of the device whose details are revealed ("" = none).
     property string expandedAddress: ""
@@ -34,12 +35,36 @@ Item {
         }
         return list;
     }
+    // Paired devices: connected ones first, then the most recently connected,
+    // then devices never seen connected by name. BlueZ keeps no connection
+    // time, so btLastConnected (settings store) records it.
     readonly property var visibleDevices: {
         const all = (Bluetooth.devices ? Bluetooth.devices.values : []) || [];
+        const seen = settingsStore.btLastConnected;
         return all.filter(d => d.paired || d.connected).sort((a, b) => {
             if (a.connected !== b.connected) return a.connected ? -1 : 1;
+            const ta = seen[a.address] || 0, tb = seen[b.address] || 0;
+            if (ta !== tb) return tb - ta;
             return (a.name || "").localeCompare(b.name || "");
         });
+    }
+    // Stamp a device as connected now. `onlyIfMissing` seeds devices that were
+    // already connected before this shell started without bumping known ones.
+    // The map is cloned and reassigned: the settings store ignores in-place edits.
+    function noteConnected(address, onlyIfMissing) {
+        if (!address) return;
+        if (onlyIfMissing && settingsStore.btLastConnected[address]) return;
+        const next = Object.assign({}, settingsStore.btLastConnected);
+        next[address] = Date.now();
+        settingsStore.btLastConnected = next;
+    }
+    Instantiator {
+        model: Bluetooth.devices ? Bluetooth.devices.values : []
+        delegate: Connections {
+            target: modelData
+            function onConnectedChanged() { if (modelData.connected) bt.noteConnected(modelData.address, false); }
+        }
+        onObjectAdded: (index, object) => { if (object.target.connected) bt.noteConnected(object.target.address, true); }
     }
     // Discovered but not paired. Unnamed ones (bare MAC addresses) are noise.
     readonly property var availableDevices: {

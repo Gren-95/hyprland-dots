@@ -37,10 +37,13 @@ hl.monitor({
 -- coincided with a resume, helping wedge the page-flip. Resume recovery (the
 
 -- VT-switch modeset) lives in after_sleep_cmd, not here.
-hl.bind("switch:on:Lid Switch", hl.dsp.dpms("off eDP-1"), {
+
+-- scripts/lid.sh does the work: closing the lid also locks the session unless
+-- an external monitor is connected (clamshell mode keeps working there).
+hl.bind("switch:on:Lid Switch", hl.dsp.exec_cmd("bash ~/.config/scripts/lid.sh close"), {
     locked = true,
 })
-hl.bind("switch:off:Lid Switch", hl.dsp.exec_cmd("hyprctl dispatch 'hl.dsp.dpms(\"on eDP-1\")' && brightnessctl -r"), {
+hl.bind("switch:off:Lid Switch", hl.dsp.exec_cmd("bash ~/.config/scripts/lid.sh open"), {
     locked = true,
 })
 

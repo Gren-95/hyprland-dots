@@ -24,6 +24,7 @@ hl.bind(var_mainMod .. " + CTRL + SHIFT + S", hl.dsp.exec_cmd(var_screenshotocr)
 hl.bind(var_mainMod .. " + CTRL + R", hl.dsp.exec_cmd("bash ~/.config/scripts/wayvnc-toggle.sh"))
 hl.bind(var_mainMod .. " + B", hl.dsp.exec_cmd(var_externalscript1))
 hl.bind(var_mainMod .. " + SHIFT + E", hl.dsp.global("quickshell:powermenu"))
+hl.bind("CTRL + ALT + Delete", hl.dsp.global("quickshell:powermenu"))
 hl.bind(var_mainMod .. " + F1", hl.dsp.global("quickshell:keybinds"))
 hl.bind(var_mainMod .. " + M", hl.dsp.global("quickshell:sysmon"))
 hl.bind(var_mainMod .. " + A", hl.dsp.global("quickshell:quickactions"))
@@ -199,3 +200,10 @@ hl.bind(var_mainMod .. " + SHIFT + up", hl.dsp.window.resize({ x = 0, y = -20, r
 
 -- Maximize (moved off Super+Shift+Up, clashed with resizeactive above)
 hl.bind(var_mainMod .. " + F", hl.dsp.window.fullscreen_state({ internal = 1, client = -1 }))
+
+-- Tiled fullscreen: the app believes it is fullscreen, the compositor keeps it tiled.
+hl.bind(var_mainMod .. " + CTRL + F", hl.dsp.exec_cmd("bash ~/.config/scripts/window-tools.sh tiled-fullscreen"))
+
+-- Remember a window's width (per app and workspace) and snap back to it later.
+hl.bind(var_mainMod .. " + ALT + Home", hl.dsp.exec_cmd("bash ~/.config/scripts/window-tools.sh width save"))
+hl.bind(var_mainMod .. " + Home", hl.dsp.exec_cmd("bash ~/.config/scripts/window-tools.sh width restore"))

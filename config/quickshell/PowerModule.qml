@@ -23,15 +23,19 @@ Item {
 
     // ===== Power state =====
     readonly property var profiles: [PowerProfile.Performance, PowerProfile.Balanced, PowerProfile.PowerSaver]
-    // Session actions (Sleep / Reboot / Shutdown). This is the shell's power
-    // menu — the `powermenu` global shortcut opens this tab.
+    // Session actions (Sleep / Logout / Reboot / Shutdown). This is the shell's
+    // power menu — the `powermenu` global shortcut opens this tab. Logout goes
+    // through hyprshutdown, which asks every app to close before Hyprland exits.
     readonly property var sessionActions: [
         { glyph: "󰒲", label: "Sleep",    accent: Theme.accent.purple, cmd: ["systemctl", "suspend"] },
+        { glyph: "󰍃", label: "Logout",   accent: Theme.accent.blue,   cmd: ["hyprshutdown"] },
         { glyph: "󰜉", label: "Reboot",   accent: Theme.accent.orange, cmd: ["systemctl", "reboot"] },
         { glyph: "󰐥", label: "Shutdown", accent: Theme.accent.red,    cmd: ["systemctl", "poweroff"] },
     ]
     // pwrIndex stops: 0..2 profiles, 3 = screen slider, 4 = kb slider,
-    // 5..7 session actions (Sleep / Reboot / Shutdown).
+    // 5.. session actions (see sessionActions).
+    readonly property int sessionFirstStop: 5
+    readonly property int stopCount: sessionFirstStop + sessionActions.length
     property int pwrIndex: 0
     property real screenLevel: 0.5
     property real kbLevel: 0
@@ -72,13 +76,13 @@ Item {
     // Up/Down step through the stops, skipping the keyboard slider when this
     // machine has no keyboard backlight.
     function cyclePwr(delta) {
-        let next = (pwrIndex + delta + 8) % 8;
-        if (next === 4 && Backlight.kbDev === "") next = (next + delta + 8) % 8;
+        let next = (pwrIndex + delta + stopCount) % stopCount;
+        if (next === 4 && Backlight.kbDev === "") next = (next + delta + stopCount) % stopCount;
         pwrIndex = next;
     }
     function activatePwr() {
         if (pwrIndex <= 2) activateProfile(pwrIndex);
-        else if (pwrIndex >= 5) runSession(pwrIndex - 5);
+        else if (pwrIndex >= sessionFirstStop) runSession(pwrIndex - sessionFirstStop);
     }
 
 
@@ -306,7 +310,7 @@ Item {
                             delegate: Rectangle {
                                 required property var modelData
                                 required property int index
-                                readonly property bool hl: ap.pwrIndex === 5 + index
+                                readonly property bool hl: ap.pwrIndex === ap.sessionFirstStop + index
                                 readonly property bool danger: modelData.label === "Shutdown"
                                 Layout.fillWidth: true
                                 implicitHeight: 78
@@ -344,7 +348,7 @@ Item {
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: ap.runSession(index)
-                                    onContainsMouseChanged: if (containsMouse) ap.pwrIndex = 5 + index
+                                    onContainsMouseChanged: if (containsMouse) ap.pwrIndex = ap.sessionFirstStop + index
                                 }
                             }
                         }

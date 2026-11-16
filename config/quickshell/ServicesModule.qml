@@ -42,7 +42,8 @@ Item {
     ]
     readonly property var onDemand: [
         { key: "wayvnc", glyph: "󰢹", label: "Remote access", accent: Theme.accent.orange, detail: "VNC on :5900" },
-        { key: "winvm",  glyph: "󰖳", label: "Windows VM",    accent: Theme.accent.blue,   detail: "WinApps container" }
+        { key: "winvm",  glyph: "󰖳", label: "Windows VM",    accent: Theme.accent.blue,   detail: "WinApps container" },
+        { key: "games-browser", glyph: "󰺵", label: "Games browser", accent: Theme.accent.green, detail: "web UI on :8080 · middle/right-click to open", url: "http://127.0.0.1:8080/" }
     ]
 
     // The four services that used to be Quick Actions toggles stay reachable
@@ -159,6 +160,8 @@ Item {
             runProc.command = ["bash", Paths.scripts + "/wayvnc-toggle.sh"];
         else if (key === "winvm")
             runProc.command = ["bash", Paths.scripts + "/winvm-toggle.sh", "toggle"];
+        else if (key === "games-browser")
+            runProc.command = ["bash", Paths.scripts + "/games-browser-toggle.sh", "toggle"];
         else return;
         runProc.startDetached();
         mod.busyKey = key;
@@ -360,7 +363,9 @@ Item {
                                     accent: modelData.accent
                                     stateOn: "on"
                                     stateOff: "off"
+                                    url: modelData.url ?? ""
                                     onActivated: mod.toggle(modelData.key)
+                                    onSecondaryActivated: Qt.openUrlExternally(modelData.url)
                                 }
                             }
                         }

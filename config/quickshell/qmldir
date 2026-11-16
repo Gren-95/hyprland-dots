@@ -9,6 +9,8 @@
 
 AccentService AccentService.qml
 singleton AirPodsBattery AirPodsBattery.qml
+AudioAppRow AudioAppRow.qml
+AudioAppsSection AudioAppsSection.qml
 AudioDeviceRow AudioDeviceRow.qml
 AudioSection AudioSection.qml
 BarFlyout BarFlyout.qml

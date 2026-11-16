@@ -31,8 +31,9 @@ hl.window_rule({
 -- overlay.)
 
 -- Picture-in-Picture (Firefox "Picture-in-Picture", Brave "Picture in picture"):
--- float, pin to all workspaces, don't steal focus, default 16:9 480x270, no
--- blur. Position is left to the browser / the user.
+-- float, pin to all workspaces, don't steal focus, default 16:9 480x270 that
+-- keeps its ratio when resized, no border or blur, parked near the top-right
+-- corner when it opens (drag it elsewhere afterwards).
 hl.window_rule({
     match = {
         title = "^(Picture-in-Picture|Picture in picture|PiP)$",
@@ -41,7 +42,19 @@ hl.window_rule({
     pin = true,
     no_initial_focus = true,
     size = "480 270",
+    keep_aspect_ratio = true,
+    border_size = 0,
+    move = "(monitor_w-window_w-40) (monitor_h*0.04)",
     no_blur = true,
+})
+
+-- Browsers open a small "... is sharing your screen" control window during a
+-- screen share. Park it on the special workspace instead of tiling it.
+hl.window_rule({
+    match = {
+        title = ".*is sharing.*",
+    },
+    workspace = "special silent",
 })
 
 -- XWayland video bridge
@@ -142,12 +155,15 @@ hl.window_rule({
 -- names AND the full-desktop "Microsoft Windows" session. Tiling is safe;
 -- NEVER fullscreen a WinApps/sdl-freerdp window: SDL grabs the keyboard in
 -- fullscreen and locks the Hyprland session (no keyboard grab while tiled).
+-- suppress_event = fullscreen ignores the app's own fullscreen requests so
+-- the RDP window can't put itself into the session-locking state.
 hl.window_rule({
     match = {
         class = "^Microsoft (Word|Excel|PowerPoint|Outlook|OneNote|Publisher|Access|Windows)$",
     },
     workspace = "9",
     tile = true,
+    suppress_event = "fullscreen",
 })
 
 -- Proton/Wine desktop tools (MO2, BodySlide, xEdit/SSEEdit, Creation Kit, etc.)

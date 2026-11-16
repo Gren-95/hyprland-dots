@@ -1,0 +1,14 @@
+[Unit]
+Description=Move a connected Bluetooth headset off the Off audio profile
+# Started from the graphical session. restart.sh (Super+B) restarts it with
+# `systemctl --user restart bt-audio-recover`.
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=/bin/bash %h/.config/scripts/bt-audio-recover.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

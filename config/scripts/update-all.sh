@@ -5,12 +5,21 @@
 # Every later step runs regardless of earlier failures; a summary at the end
 # lists what failed.
 #
+# Only one run at a time, and not on a nearly full disk. The machine is kept
+# awake for the whole run: hypridle would otherwise suspend it after 15 minutes
+# without input, in the middle of a package transaction.
+#
 # Usage:
 #   update-all.sh
 set -uo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/inhibit.sh"
 
 failed=()
 skipped=()
+
+# Refuse to start with less free space than this on /.
+readonly MIN_FREE_GIB=10
 
 # Exit status that marks a step as skipped because of the GitHub rate limit.
 readonly RATE_LIMITED=75
@@ -187,6 +196,22 @@ update_fisher_plugins() {
     return 0
 }
 
+# Check LVFS for firmware updates. fwupdmgr exits 2 when there is nothing to do.
+update_firmware() {
+    local rc
+    if ! command -v fwupdmgr >/dev/null 2>&1; then
+        echo "fwupd not installed, skipping."
+        return 0
+    fi
+    sudo fwupdmgr refresh
+    rc=$?
+    ((rc == 0 || rc == 2)) || return "$rc"
+    sudo fwupdmgr update
+    rc=$?
+    ((rc == 2)) && rc=0
+    return "$rc"
+}
+
 _step() {
     local name=$1 rc
     shift
@@ -246,6 +271,22 @@ create_snapshot() {
     printf '\e[1;32m✔\e[0m Snapshot%s created in %ds\n' "${name:+ $name}" "$((SECONDS - start))"
 }
 
+exec 9>"$RUNTIME_DIR/update-all.lock"
+if ! flock -n 9; then
+    printf '\e[1;31m!! Another update-all is already running\e[0m\n'
+    exit 1
+fi
+
+read -r free_bytes < <(df --output=avail --block-size=1 / | tail -n 1)
+if ((free_bytes < MIN_FREE_GIB * 1024 ** 3)); then
+    printf '\e[1;31m!! Only %d GiB free on /, need at least %d GiB\e[0m\n' \
+        "$((free_bytes / 1024 ** 3))" "$MIN_FREE_GIB"
+    exit 1
+fi
+
+inhibit_start update-all "System update"
+trap inhibit_stop EXIT
+
 printf '\e[1;34m==> Timeshift snapshot\e[0m\n'
 if ! create_snapshot; then
     printf '\e[1;31m!! Snapshot failed, aborting before any updates\e[0m\n'
@@ -256,6 +297,7 @@ _step "dnf clean metadata" sudo dnf5 clean metadata
 _step "dnf makecache" sudo dnf5 makecache --refresh
 _step "dnf update" sudo dnf update
 _step "dnf autoremove" sudo dnf autoremove
+_step "firmware (fwupd)" update_firmware
 _step "flatpak update" flatpak update
 _step "flatpak cleanup" flatpak remove --unused
 _step "appimage updates (gear lever)" update_appimages

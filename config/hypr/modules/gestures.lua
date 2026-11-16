@@ -46,6 +46,24 @@ hl.gesture({
     mode = "live",
 })
 
+-- 4-finger left/right carries the focused window to the neighbouring workspace
+-- on this monitor, in the same direction the 3-finger swipe moves you (the
+-- window follows, like Super+Shift+[ / ]). If it feels reversed, swap m+1 and m-1.
+hl.gesture({
+    fingers = 4,
+    direction = "left",
+    action = function()
+        hl.dispatch(hl.dsp.window.move({ workspace = "m+1" }))
+    end,
+})
+hl.gesture({
+    fingers = 4,
+    direction = "right",
+    action = function()
+        hl.dispatch(hl.dsp.window.move({ workspace = "m-1" }))
+    end,
+})
+
 -- gesture = 3, up, close
 
 -- 4-finger up = hyprexpo overview, 4-finger down = cancel. Plugin is a local

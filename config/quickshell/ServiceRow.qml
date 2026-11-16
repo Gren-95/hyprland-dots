@@ -16,7 +16,10 @@ Rectangle {
     property string stateOn: "running"
     property string stateOff: "stopped"
     property bool actionable: true
+    // When set, a middle or right click opens this URL instead of toggling.
+    property string url: ""
     signal activated()
+    signal secondaryActivated()
 
     implicitHeight: 52
     radius: Theme.radius.md
@@ -104,10 +107,16 @@ Rectangle {
         }
     }
 
-    HoverHandler { id: hh; enabled: row.actionable }
+    HoverHandler { id: hh; enabled: row.actionable || row.url !== "" }
     TapHandler {
         id: tap
         enabled: row.actionable
+        acceptedButtons: Qt.LeftButton
         onTapped: row.activated()
+    }
+    TapHandler {
+        enabled: row.url !== ""
+        acceptedButtons: Qt.MiddleButton | Qt.RightButton
+        onTapped: row.secondaryActivated()
     }
 }

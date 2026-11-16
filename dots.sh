@@ -43,6 +43,7 @@ CONFIG_ITEMS=(
 USER_UNITS=(
     "systemd/user/battery-notify.service"
     "systemd/user/power-auto.service"
+    "systemd/user/bt-audio-recover.service"
 )
 # Units that no longer exist; `dots.sh units` stops, disables and removes them.
 RETIRED_USER_UNITS=(

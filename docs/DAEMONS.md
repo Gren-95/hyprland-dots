@@ -11,6 +11,7 @@ daemon that has died.
 | Script | Purpose |
 |---|---|
 | `battery-notify.sh` | Notifies at 20% and 10% battery; dismisses the alert when plugged in |
+| `bt-audio-recover.sh` | Switches a connected Bluetooth headset from the `off` card profile to A2DP when WirePlumber leaves it there (connected in `bluetoothctl`, but no audio output). Waits 5 s after each card event, notifies when it acts |
 | `power-auto.sh` | Sets the power profile from AC state and battery level (`performance` on AC, `balanced` ≥30%, `power-saver` below) |
 | `dotwatch.sh` | Watches dotfiles for changes and hot-reloads affected services |
 

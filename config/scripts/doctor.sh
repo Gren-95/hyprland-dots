@@ -15,7 +15,7 @@ DOTS_DIR="$(dirname "$(dirname "$SCRIPTS_SRC")")"
 source "$SCRIPTS_SRC/lib/deps.sh"
 
 # User services that must be running in a graphical session.
-DAEMON_UNITS=(battery-notify power-auto)
+DAEMON_UNITS=(battery-notify power-auto bt-audio-recover)
 
 if [[ -t 1 ]]; then
     C_PASS=$'\033[0;32m'

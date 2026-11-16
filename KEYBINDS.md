@@ -17,7 +17,7 @@ flags rows that no longer match.
 | `Super+E` | Open file manager (default app) |
 | `Super+C` | Color picker (hyprpicker) |
 | `Super+B` | Restart all userspace services (`config/scripts/restart.sh`) |
-| `Super+Shift+E` | Power menu (Lock / Suspend / Logout / Reboot / Shutdown) |
+| `Super+Shift+E` / `Ctrl+Alt+Delete` | Power menu (Sleep / Logout / Reboot / Shutdown) |
 
 ## Quickshell modals
 
@@ -66,6 +66,9 @@ flags rows that no longer match.
 | `Super+KP_Add` / `Super+KP_Subtract` | Grow / shrink active window |
 | `Super+Shift+arrow` | Resize active window |
 | `Super+F` | Maximize (fullscreen state 1: keeps bar and gaps) |
+| `Super+Ctrl+F` | Tiled fullscreen (the app goes fullscreen, the window stays tiled) |
+| `Super+Alt+Home` | Remember the window's width |
+| `Super+Home` | Restore the remembered window width |
 
 ## Workspaces
 
@@ -84,7 +87,7 @@ flags rows that no longer match.
 
 | Key | Action |
 |---|---|
-| `Lid close` | Lid closed → screen off |
+| `Lid close` | Lid closed → lock (unless an external monitor is connected), screen off |
 | `Lid open` | Lid opened → screen on |
 | `XF86AudioRaiseVolume` / `XF86AudioLowerVolume` | Sink volume ±5% |
 | `XF86AudioMute` | Toggle sink mute |

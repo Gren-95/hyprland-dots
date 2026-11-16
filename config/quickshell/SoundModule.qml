@@ -1,6 +1,7 @@
 // Sound popup: an output card and an input card, each with a mute button, a
-// volume slider and a device list that only reveals from a dropdown. Owns the
-// bar speaker icon. Power lives in PowerModule.
+// volume slider and a device list that only reveals from a dropdown, plus a
+// per-app mixer card while anything is playing. Owns the bar speaker icon.
+// Power lives in PowerModule.
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
@@ -303,6 +304,10 @@ Item {
                         onExpandToggled: ap.inExpanded = !ap.inExpanded
                         onDeviceHovered: (idx) => ap.sndIndex = ap.outCount + 2 + idx
                         onToggleHovered: ap.sndIndex = ap.outCount + 1
+                    }
+                    // Per-app volumes; mouse only, not part of the keyboard cursor.
+                    AudioAppsSection {
+                        Layout.fillWidth: true
                     }
                 }
             }
