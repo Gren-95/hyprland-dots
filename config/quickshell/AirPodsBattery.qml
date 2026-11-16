@@ -16,15 +16,25 @@ Singleton {
         path: Quickshell.env("XDG_RUNTIME_DIR") + "/librepods-battery.json"
         watchChanges: true
         onLoaded: svc.apply(text())
+        // The daemon removes the file when the AirPods disconnect.
+        onLoadFailed: svc.clear()
         onFileChanged: reload()
     }
 
+    function clear() {
+        svc.address = "";
+        svc.level = -1;
+    }
+    // Anything unreadable or incomplete hides the indicator rather than
+    // keeping the last level.
     function apply(raw) {
-        let state;
-        try { state = JSON.parse(raw); } catch (e) { return; }
+        let state = null;
+        try { state = JSON.parse(raw); } catch (e) { /* handled below */ }
+        const components = state && state.components;
+        if (!components || !state.mac) { clear(); return; }
         const buds = ["left", "right"]
-            .map(name => state.components[name])
-            .filter(bud => bud && bud.connected)
+            .map(name => components[name])
+            .filter(bud => bud && bud.connected && typeof bud.level === "number")
             .map(bud => bud.level / 100);
         svc.address = String(state.mac).toUpperCase();
         svc.level = buds.length > 0 ? Math.min(...buds) : -1;
