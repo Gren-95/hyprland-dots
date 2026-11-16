@@ -89,6 +89,10 @@ Scope {
         let all = [];
         for (let i = 0; i < chunks.length; i++)
             all = all.concat(Ics.parseFeed(chunks[i], i));
+        // Recurring events become their occurrences within a year either side
+        // of today; the calendar never shows further than that.
+        const now = Date.now(), year = 366 * 86400000;
+        all = Ics.expandRecurrences(all, now - year, now + year);
         // Sort by start ascending
         all.sort((a, b) => a.start - b.start);
         root.events = all;
@@ -101,11 +105,8 @@ Scope {
         return root.feedColors[calIndex % root.feedColors.length];
     }
     function eventsOnDay(day) {
-        const y = day.getFullYear(), m = day.getMonth(), d = day.getDate();
-        return root.events.filter(e => {
-            const es = e.start;
-            return es.getFullYear() === y && es.getMonth() === m && es.getDate() === d;
-        });
+        // Every day an event covers, not only its first one.
+        return root.events.filter(e => Ics.occursOn(e, day));
     }
     function hasEvents(day) {
         return eventsOnDay(day).length > 0;

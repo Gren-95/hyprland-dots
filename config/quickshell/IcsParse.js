@@ -33,7 +33,12 @@ function parseFeed(text, calIndex) {
         const value = line.slice(idx + 1);
         const key = keyPart.split(";")[0];
         const params = keyPart.split(";").slice(1).join(";");
-        if (key === "SUMMARY") cur.summary = unescapeText(value);
+        if (key === "UID") cur.uid = value;
+        else if (key === "RRULE") cur.rrule = parseRrule(value);
+        else if (key === "EXDATE") {
+            cur.exdates = (cur.exdates || []).concat(value.split(",").map(v => parseDate(v).date.getTime()));
+        } else if (key === "RECURRENCE-ID") cur.recurrenceId = parseDate(value).date.getTime();
+        else if (key === "SUMMARY") cur.summary = unescapeText(value);
         else if (key === "LOCATION") cur.location = unescapeText(value);
         else if (key === "DESCRIPTION") cur.description = unescapeText(value);
         else if (key === "DTSTART") {
@@ -65,4 +70,155 @@ function parseDate(v) {
         return { date: new Date(y, m, d, hh, mm, ss), allDay: false };
     }
     return { date: new Date(NaN), allDay: false };
+}
+
+// ====== Recurrence ======
+
+const WEEKDAYS = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 };
+const DAY_MS = 86400000;
+// Upper bound on generated occurrences per event, so a malformed rule can
+// never loop for long.
+const MAX_STEPS = 5000;
+
+// "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE;UNTIL=20270101T000000Z" -> object.
+// BYDAY entries keep an optional ordinal: "-1SU" -> {n: -1, day: 0}.
+function parseRrule(value) {
+    const r = { freq: "", interval: 1, count: 0, until: null, byDay: [], byMonthDay: [], byMonth: [] };
+    for (const part of value.split(";")) {
+        const eq = part.indexOf("=");
+        if (eq < 0) continue;
+        const k = part.slice(0, eq), v = part.slice(eq + 1);
+        if (k === "FREQ") r.freq = v;
+        else if (k === "INTERVAL") r.interval = Math.max(1, parseInt(v, 10) || 1);
+        else if (k === "COUNT") r.count = parseInt(v, 10) || 0;
+        else if (k === "UNTIL") r.until = parseDate(v).date.getTime();
+        else if (k === "BYDAY") r.byDay = v.split(",").map(d => {
+            const m = /^([+-]?\d+)?([A-Z]{2})$/.exec(d);
+            return m ? { n: m[1] ? parseInt(m[1], 10) : 0, day: WEEKDAYS[m[2]] } : null;
+        }).filter(d => d && d.day !== undefined);
+        else if (k === "BYMONTHDAY") r.byMonthDay = v.split(",").map(x => parseInt(x, 10)).filter(isFinite);
+        else if (k === "BYMONTH") r.byMonth = v.split(",").map(x => parseInt(x, 10) - 1).filter(isFinite);
+    }
+    return r;
+}
+
+// Same wall-clock time as `base` on the given calendar day, so DST changes do
+// not shift recurring events by an hour.
+function atDay(base, y, m, d) {
+    return new Date(y, m, d, base.getHours(), base.getMinutes(), base.getSeconds());
+}
+
+// Days in a month matching BYDAY entries, honouring ordinals (2MO, -1FR).
+function monthDaysForByDay(y, m, byDay) {
+    const last = new Date(y, m + 1, 0).getDate();
+    const days = [];
+    for (const bd of byDay) {
+        const matches = [];
+        for (let d = 1; d <= last; d++) if (new Date(y, m, d).getDay() === bd.day) matches.push(d);
+        if (bd.n === 0) days.push(...matches);
+        else {
+            const pick = bd.n > 0 ? matches[bd.n - 1] : matches[matches.length + bd.n];
+            if (pick) days.push(pick);
+        }
+    }
+    return days;
+}
+
+// Candidate start dates of one period (a day, week, month or year), in order.
+function periodCandidates(start, r, step) {
+    const y = start.getFullYear(), m = start.getMonth(), d = start.getDate();
+    switch (r.freq) {
+    case "DAILY":
+        return [atDay(start, y, m, d + step * r.interval)];
+    case "WEEKLY": {
+        const weekStart = new Date(y, m, d - start.getDay() + 7 * step * r.interval);
+        const days = r.byDay.length ? r.byDay.map(b => b.day) : [start.getDay()];
+        return days.slice().sort((a, b) => a - b).map(wd =>
+            atDay(start, weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + wd));
+    }
+    case "MONTHLY": {
+        const first = new Date(y, m + step * r.interval, 1);
+        const yy = first.getFullYear(), mm = first.getMonth();
+        const last = new Date(yy, mm + 1, 0).getDate();
+        let days = r.byDay.length ? monthDaysForByDay(yy, mm, r.byDay)
+            : r.byMonthDay.length ? r.byMonthDay.map(x => x < 0 ? last + 1 + x : x)
+            : [d];
+        days = days.filter(x => x >= 1 && x <= last).sort((a, b) => a - b);
+        return days.map(x => atDay(start, yy, mm, x));
+    }
+    case "YEARLY": {
+        const yy = y + step * r.interval;
+        const months = r.byMonth.length ? r.byMonth : [m];
+        const out = [];
+        for (const mm of months.slice().sort((a, b) => a - b)) {
+            const last = new Date(yy, mm + 1, 0).getDate();
+            const days = r.byDay.length ? monthDaysForByDay(yy, mm, r.byDay)
+                : r.byMonthDay.length ? r.byMonthDay.map(x => x < 0 ? last + 1 + x : x)
+                : [d];
+            for (const x of days.filter(x => x >= 1 && x <= last).sort((a, b) => a - b))
+                out.push(atDay(start, yy, mm, x));
+        }
+        return out;
+    }
+    }
+    return [];
+}
+
+// Start times of every occurrence of a recurring event up to `to` (ms),
+// honouring COUNT, UNTIL and EXDATE.
+function occurrenceStarts(ev, to) {
+    const r = ev.rrule, startMs = ev.start.getTime();
+    const excluded = new Set(ev.exdates || []);
+    const out = [];
+    let produced = 0;
+    for (let step = 0; step < MAX_STEPS; step++) {
+        const candidates = periodCandidates(ev.start, r, step);
+        if (candidates.length === 0) break;
+        for (const c of candidates) {
+            const t = c.getTime();
+            if (t < startMs) continue;
+            if (r.until !== null && t > r.until) return out;
+            if (t > to) return out;
+            produced++;
+            if (r.count && produced > r.count) return out;
+            if (!excluded.has(t)) out.push(t);
+        }
+    }
+    return out;
+}
+
+// Replaces recurring events with their occurrences that fall inside
+// [from, to] (ms). An instance moved with RECURRENCE-ID replaces the
+// occurrence it was moved from. Events without a rule pass through unchanged.
+function expandRecurrences(events, from, to) {
+    const moved = new Set();
+    for (const e of events)
+        if (e.recurrenceId !== undefined && e.uid) moved.add(e.uid + "@" + e.recurrenceId);
+    const out = [];
+    for (const e of events) {
+        if (!e.rrule || !e.rrule.freq) { out.push(e); continue; }
+        const duration = e.end ? e.end.getTime() - e.start.getTime() : null;
+        for (const t of occurrenceStarts(e, to)) {
+            if (moved.has(e.uid + "@" + t)) continue;
+            const s = new Date(t);
+            const endMs = duration === null ? null : t + duration;
+            if ((endMs === null ? t : endMs) < from) continue;
+            const occ = Object.assign({}, e, { start: s, end: endMs === null ? undefined : new Date(endMs) });
+            delete occ.rrule;
+            out.push(occ);
+        }
+    }
+    return out;
+}
+
+// True when the event covers any part of the local calendar day. End is
+// exclusive; an all-day event without DTEND lasts one day, a timed one
+// without DTEND is a point in time.
+function occursOn(e, day) {
+    const dayStart = new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime();
+    const dayEnd = dayStart + DAY_MS;
+    const s = e.start.getTime();
+    let end = e.end ? e.end.getTime() : (e.allDay ? s + DAY_MS : s);
+    if (end <= s) return s >= dayStart && s < dayEnd;
+    return s < dayEnd && end > dayStart;
 }
