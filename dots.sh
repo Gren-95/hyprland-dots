@@ -28,6 +28,7 @@ CONFIG_ITEMS=(
     "ranger"
     "btop"
     "mpv"
+    "fastfetch"
     "gtk-3.0"
     "gtk-4.0"
     "kdeglobals"
