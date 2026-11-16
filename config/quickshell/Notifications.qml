@@ -140,9 +140,9 @@ Scope {
         historyList = historyList.filter(e => !pred(e));
         if (unreadCount > historyList.length) unreadCount = historyList.length;
     }
-    // battery-notify.sh fires "Battery Low" / "Battery Critical"; the bar's
-    // own warnings in shell.qml use the same wording. All of them are stale
-    // the moment power comes back.
+    // battery-notify.sh fires "Battery Low" / "Battery Critical", and the
+    // bar's critical-suspend countdown uses the same wording. All of them are
+    // stale the moment power comes back.
     function _isBatteryWarning(e) {
         return /^battery (low|critical)/i.test(e.summary || "");
     }

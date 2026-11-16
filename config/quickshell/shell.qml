@@ -417,25 +417,16 @@ Scope {
                         }
                         Process { id: brightProc; command: [] }
 
-                        // Multi-level low-battery warnings + critical action.
-                        // Each level toasts once per discharge cycle; at the
-                        // critical level a cancelable 15s countdown fires the
-                        // configured action. Everything re-arms on charging.
-                        property var _warnedLevels: []
+                        // Critical action. The low-battery warnings come from
+                        // the battery-notify daemon (scripts/battery-notify.sh,
+                        // with its own Services toggle); warning here as well
+                        // sent every one twice. At the critical level a
+                        // cancelable 15 s countdown fires the configured
+                        // action; charging cancels it.
                         onPctChanged: batteryLogic()
-                        onChargingChanged: if (charging) { _warnedLevels = []; criticalTimer.stop(); }
+                        onChargingChanged: if (charging) criticalTimer.stop();
                         function batteryLogic() {
                             if (charging || plugged || pct <= 0) return;
-                            const levels = Array.isArray(settingsStore.batteryWarnLevels)
-                                ? settingsStore.batteryWarnLevels : [];
-                            for (const l of levels) {
-                                if (pct <= l && _warnedLevels.indexOf(l) < 0) {
-                                    _warnedLevels = _warnedLevels.concat([l]);
-                                    battWarnProc.command = ["notify-send", "-u", "critical",
-                                        "Battery low", pct + "% remaining"];
-                                    battWarnProc.startDetached();
-                                }
-                            }
                             const crit = settingsStore.batteryCriticalPct;
                             if (crit > 0 && pct <= crit
                                     && settingsStore.batteryCriticalAction === "suspend"
