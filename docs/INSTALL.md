@@ -25,10 +25,13 @@ Dependencies and manual setup. The one-command install is in the [README](../REA
 - `python3` + `python3-pillow` — avatar generation
 - `jq` — JSON parsing
 - `inotify-tools` — dotfile hot-reload daemon
-- `fish` `fzf` `zoxide` — shell, fuzzy finder, directory jumping
-- `wayvnc` — optional VNC server (`Super+Ctrl+R`)
-- `ranger` — optional TUI file manager
-- `btop` — optional TUI system monitor
+- `fish` `fzf` — shell, fuzzy finder (the `kb` keybind search)
+- `ranger` — TUI file manager
+- `mpv` `network-manager-applet` `libnotify` `upower` — music player, tray network applet, notifications, battery
+- Optional, per feature: `zoxide` (directory jumping), `wayvnc` (remote access, `Super+Ctrl+R`), `btop`
+  (TUI system monitor), `hyprsunset` (night light), `tailscale`, `docker` (Windows VM, games browser),
+  `evtest` (hold-Super detection for the overview and wallpaper deck), `cronie` (Immich schedule),
+  `expect` (`ledvance.sh`), `unzip`, the Immich CLI, and Disktree (below)
 
 Fish plugin files are not tracked. They are declared in [`config/fish/fish_plugins`](../config/fish/fish_plugins);
 on a fresh machine run `fisher update` ([fisher](https://github.com/jorgebucaran/fisher), see
@@ -42,8 +45,8 @@ machine apply them with `fish ~/.config/fish/tide-stone/apply.fish`.
 ### External repositories
 
 ```bash
-sudo dnf copr enable lionheartp/Hyprland       # hyprland
-sudo dnf copr enable errornointernet/quickshell  # quickshell (or build from source)
+sudo dnf copr enable lionheartp/Hyprland       # hyprland, quickshell, awww, hyprshutdown
+sudo dnf copr enable errornointernet/quickshell  # only if lionheartp has no quickshell for your release
 ```
 
 ### Install all dependencies
@@ -62,8 +65,9 @@ sudo dnf install hyprland hyprland-devel quickshell kitty nautilus cliphist awww
   unzip liberation-sans-fonts
 ```
 
-Optional extras, used by single features: `zoxide` (directory jumping in fish),
-`hyprsunset` (night light), `wayvnc` (remote access), `btop`.
+Optional extras are listed under [Dependencies](#dependencies) and in
+`DEPS_OPTIONAL` in `deps.sh`; install the ones for features you use, e.g.
+`sudo dnf install zoxide hyprsunset wayvnc btop`.
 
 ### Font
 
@@ -114,12 +118,19 @@ chmod +x dots.sh
 ```
 
 The setup script will:
-- Check for missing dependencies and offer to install them
-- Create symlinks for all config directories
+- Check for missing dependencies and offer to install them (COPRs + `DEPS_DNF`)
+- Create symlinks for every config in `CONFIG_ITEMS` (existing ones are backed up)
 - Create required user directories (`~/Pictures/Screenshots`, `~/Music`, etc.)
-- Set up script permissions
-- Configure GTK theme
+- Install Iosevka Nerd Font
+- Set script permissions and enable the tracked git hooks
+- Link the Nautilus thumbnailers, and optionally install the STL thumbnailer (sudo)
+- Install and enable the systemd user units (`dots.sh units`)
+- Configure the GTK theme (and the Tailscale operator when Tailscale is installed)
+- Optionally set up the Immich CLI, Jellyfin music sync and Gcode Viewer (skipped with `--yes`)
 - Optionally generate an initials avatar for the lock screen
+
+A step that fails is reported and setup carries on; the summary lists what did
+not complete, and running setup again repeats only what is needed.
 
 Firefox is the one config the setup script cannot link for you: its
 chrome directory lives inside a profile whose name is generated at
