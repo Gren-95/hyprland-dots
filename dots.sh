@@ -1041,11 +1041,13 @@ setup_jellyfin_sync() {
             log_warning "API key cannot be empty"
         done
         mkdir -p "$(dirname "$conf")"
-        cat >"$conf" <<EOF
-JELLYFIN_URL="$jf_url"
-JELLYFIN_API_KEY="$jf_key"
-EOF
-        chmod 600 "$conf"
+        # The sync script sources this file, so the values are written with
+        # %q: quotes, backticks and $( in them stay text. umask 077 keeps the
+        # key private from the moment the file exists.
+        (
+            umask 077
+            printf 'JELLYFIN_URL=%q\nJELLYFIN_API_KEY=%q\n' "$jf_url" "$jf_key" >"$conf"
+        )
         log_success "Jellyfin credentials saved"
     else
         log_success "Jellyfin credentials already configured"

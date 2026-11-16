@@ -84,11 +84,13 @@ load_config() {
         done
     fi
 
-    cat >"$CONFIG" <<EOF
-JELLYFIN_URL="$JELLYFIN_URL"
-JELLYFIN_API_KEY="$JELLYFIN_API_KEY"
-EOF
-    chmod 600 "$CONFIG"
+    # This file is sourced above, so the values are written with %q: quotes,
+    # backticks and $( in them stay text. umask 077 keeps the key private
+    # from the moment the file exists.
+    (
+        umask 077
+        printf 'JELLYFIN_URL=%q\nJELLYFIN_API_KEY=%q\n' "$JELLYFIN_URL" "$JELLYFIN_API_KEY" >"$CONFIG"
+    )
 }
 
 # Get the first user's ID from Jellyfin (API keys are not user-scoped)
