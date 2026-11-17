@@ -29,6 +29,7 @@ panel or a setting; the shared pieces in `src/ui.rs`, `src/controls.rs` and
 | One of **three or more** options | Dropdown (`pick_list`) |
 | Several on/off options that belong together | Multi-select button group, on ones filled and checked (`ui::multi_select`) |
 | A number in a range | Slider with its value and unit beside it |
+| One out of a long list (fonts, keyboard layouts) | Search picker: a search field with up to eight matches under it, fonts drawn in themselves (`ui::search_picker`) |
 | Free text | Text field, applied on Enter |
 | A path or a link | Text field; links are shortened when they hold tokens |
 

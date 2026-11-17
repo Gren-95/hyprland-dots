@@ -3,7 +3,7 @@
 
 use std::fmt;
 
-use iced::widget::{Column, button, column, container, pick_list, row, slider, text, text_input, toggler};
+use iced::widget::{Column, column, container, pick_list, row, slider, text, text_input, toggler};
 use iced::{Alignment, Element, Length, Task};
 
 use crate::hypr::{Keyboard, Settings};
@@ -329,30 +329,27 @@ impl State {
                 ui::item("󰌌", self.name_of(layout, variant), detail, vec![buttons])
             })
             .collect();
-        let field = text_input("Add a layout: type a language or country", &self.filter)
-            .on_input(Msg::Filter)
-            .padding([7, 10])
-            .style(style::field);
-        rows.push(container(field).padding([8, 14]).into());
-        for (i, l) in find(&self.catalog, &self.filter).into_iter().enumerate() {
-            let code = if l.variant.is_empty() {
-                l.layout.clone()
-            } else {
-                format!("{} ({})", l.layout, l.variant)
-            };
-            let entry = button(
-                row![
-                    text(l.name.clone()).size(13).width(Length::Fill),
-                    text(code).size(12).color(style::MUTED_DEEP)
-                ]
-                .align_y(Alignment::Center),
-            )
-            .on_press(Msg::Add(i))
-            .width(Length::Fill)
-            .padding([6, 12])
-            .style(style::nav(false));
-            rows.push(container(entry).padding([0, 14]).into());
-        }
+        let matches = find(&self.catalog, &self.filter)
+            .into_iter()
+            .enumerate()
+            .map(|(i, l)| ui::PickerMatch {
+                label: l.name.clone(),
+                font: None,
+                detail: if l.variant.is_empty() {
+                    l.layout.clone()
+                } else {
+                    format!("{} ({})", l.layout, l.variant)
+                },
+                on_pick: Msg::Add(i),
+            })
+            .collect();
+        let picker = ui::search_picker(
+            "Add a layout: type a language or country",
+            &self.filter,
+            Msg::Filter,
+            matches,
+        );
+        rows.push(container(picker).padding([8, 14]).into());
         rows
     }
 }

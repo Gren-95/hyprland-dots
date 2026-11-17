@@ -7,6 +7,7 @@ mod audio;
 mod bluetooth;
 mod calendar;
 mod controls;
+mod fonts;
 mod hypr;
 mod keyboard;
 mod network;

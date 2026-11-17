@@ -83,6 +83,8 @@ pub struct App {
     audio: audio::State,
     calendar: calendar::State,
     keyboard: keyboard::State,
+    /// Installed font families, loaded once at start for the Font picker.
+    fonts: Vec<&'static str>,
     error: Option<String>,
 }
 
@@ -110,6 +112,7 @@ pub enum Message {
     Audio(audio::Msg),
     Calendar(calendar::Msg),
     Keyboard(keyboard::Msg),
+    Fonts(Vec<&'static str>),
 }
 
 impl App {
@@ -131,10 +134,14 @@ impl App {
             audio: audio::State::default(),
             calendar: calendar::State::default(),
             keyboard: keyboard::State::default(),
+            fonts: Vec::new(),
             error: None,
         };
         app.reload();
-        let task = app.refresh_page();
+        let fonts = Task::perform(crate::system::spawn(crate::fonts::load), |f| {
+            Message::Fonts(f.unwrap_or_default())
+        });
+        let task = Task::batch([app.refresh_page(), fonts]);
         (app, task)
     }
 
@@ -244,7 +251,12 @@ impl App {
                 self.query.clear();
                 self.searching = false;
             }
-            Message::Set(file, value) => self.write(file, value),
+            Message::Set(file, value) => {
+                // A pick from a search picker ends its search.
+                self.drafts.remove(file);
+                self.write(file, value);
+            }
+            Message::Fonts(fonts) => self.fonts = fonts,
             Message::Reset(file) => {
                 if let Some(setting) = all_settings().find(|s| s.file == file) {
                     for (file, _, default) in setting.files() {
@@ -367,7 +379,14 @@ impl App {
     ) -> Column<'a, Message> {
         let rows = section.settings.iter().map(|s| {
             let highlighted = self.highlight.is_some_and(|(file, _)| file == s.file);
-            controls::setting_row(s, &self.values, self.drafts.get(s.file), layout.stacked, highlighted)
+            controls::setting_row(
+                s,
+                &self.values,
+                self.drafts.get(s.file),
+                &self.fonts,
+                layout.stacked,
+                highlighted,
+            )
         });
         ui::section(body, section.title, rows.collect())
     }

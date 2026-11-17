@@ -246,3 +246,41 @@ pub fn more_actions<'a, M: Clone + 'a>(
         .align_y(Alignment::Center)
         .into()
 }
+
+/// One match of a search picker: label, the font to draw it in (fonts are
+/// previewed in themselves), a muted detail on the right, and the message.
+pub struct PickerMatch<M> {
+    pub label: String,
+    pub font: Option<iced::Font>,
+    pub detail: String,
+    pub on_pick: M,
+}
+
+/// A search field with the matching entries listed under it (UI.md: search
+/// picker). Used for long lists: keyboard layouts, fonts.
+pub fn search_picker<'a, M: Clone + 'a>(
+    placeholder: &'a str,
+    query: &'a str,
+    on_input: impl Fn(String) -> M + 'a,
+    matches: Vec<PickerMatch<M>>,
+) -> Element<'a, M> {
+    let field = iced::widget::text_input(placeholder, query)
+        .on_input(on_input)
+        .padding([7, 10])
+        .style(style::field);
+    let mut list = column![field].spacing(2);
+    for m in matches {
+        let mut label = text(m.label).size(14).width(Length::Fill);
+        if let Some(font) = m.font {
+            label = label.font(font);
+        }
+        list = list.push(
+            button(row![label, text(m.detail).size(12).color(style::MUTED_DEEP)].align_y(Alignment::Center))
+                .on_press(m.on_pick)
+                .width(Length::Fill)
+                .padding([6, 12])
+                .style(style::nav(false)),
+        );
+    }
+    list.into()
+}

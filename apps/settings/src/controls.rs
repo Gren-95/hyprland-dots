@@ -36,6 +36,7 @@ pub fn setting_row<'a>(
     s: &'static Setting,
     values: &HashMap<&'static str, Value>,
     draft: Option<&'a String>,
+    fonts: &[&'static str],
     stacked: bool,
     highlighted: bool,
 ) -> Element<'a, Message> {
@@ -62,13 +63,13 @@ pub fn setting_row<'a>(
     let label = column![title, text(s.help).size(12).color(style::MUTED_DEEP)]
         .spacing(2)
         .width(Length::Fill);
-    let control = control(s, values, draft, stacked);
+    let control = control(s, values, draft, fonts, stacked);
     let line: Element<'a, Message> = match s.control {
         // A toggle is small enough to stay beside its label.
         Control::Toggle => row![label, control].spacing(16).align_y(Alignment::Center).into(),
         // A multi-select group goes under its label; so does every control
         // when the panel is narrow.
-        Control::Flags(_) | Control::Toggles(_) => column![label, control].spacing(8).into(),
+        Control::Flags(_) | Control::Toggles(_) | Control::Font => column![label, control].spacing(8).into(),
         _ if stacked => column![label, control].spacing(10).into(),
         _ => row![label, control].spacing(16).align_y(Alignment::Center).into(),
     };
@@ -88,6 +89,7 @@ fn control<'a>(
     s: &'static Setting,
     values: &HashMap<&'static str, Value>,
     draft: Option<&'a String>,
+    fonts: &[&'static str],
     stacked: bool,
 ) -> Element<'a, Message> {
     let file = s.file;
@@ -181,6 +183,37 @@ fn control<'a>(
                 })
                 .collect();
             ui::multi_select(items, Length::Fill)
+        }
+        (Control::Font, Value::Text(current)) => {
+            let matches = crate::fonts::find(fonts, draft.map(String::as_str).unwrap_or(""))
+                .into_iter()
+                .map(|name| ui::PickerMatch {
+                    label: name.to_string(),
+                    font: Some(iced::Font::with_name(name)),
+                    detail: if name == current {
+                        "In use".into()
+                    } else {
+                        String::new()
+                    },
+                    on_pick: Message::Set(file, Value::Text(name.to_string())),
+                })
+                .collect();
+            // The current font, drawn in itself when it is installed.
+            let mut shown = text(current.clone()).size(15).color(style::FG);
+            if let Some(name) = fonts.iter().find(|f| **f == current) {
+                shown = shown.font(iced::Font::with_name(name));
+            }
+            column![
+                shown,
+                ui::search_picker(
+                    "Search installed fonts",
+                    draft.map(String::as_str).unwrap_or(""),
+                    move |t| Message::Draft(file, t),
+                    matches
+                ),
+            ]
+            .spacing(8)
+            .into()
         }
         (Control::NumberChoice(options), Value::Int(current)) => {
             let items = options

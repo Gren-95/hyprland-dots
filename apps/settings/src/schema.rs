@@ -76,6 +76,8 @@ pub enum Control {
     /// Several on/off settings, each in its own file, as one multi-select
     /// button group. The setting's own `file` is the first one's.
     Toggles(&'static [Toggle]),
+    /// An installed font family, picked from a search list.
+    Font,
     /// One of a few numbers, as a button group: (value, label).
     NumberChoice(&'static [(i64, &'static str)]),
     /// Two options that can each be on, stored in one text file as `none`,
@@ -115,6 +117,7 @@ impl Control {
             Control::Flags(_) => "a list of flags",
             Control::Toggles(_) => "a group of switches",
             Control::NumberChoice(_) => "a choice of numbers",
+            Control::Font => "a font picker",
             Control::Pair { .. } => "a pair of switches",
         }
     }
@@ -126,7 +129,7 @@ impl Setting {
             Control::Toggle => Kind::Bool,
             Control::Number { .. } | Control::NumberChoice(_) => Kind::Int,
             Control::Scale { .. } => Kind::Real,
-            Control::Choice(_) | Control::Entry { .. } | Control::Pair { .. } => Kind::Text,
+            Control::Choice(_) | Control::Entry { .. } | Control::Pair { .. } | Control::Font => Kind::Text,
             Control::Toggles(_) => Kind::Bool,
             Control::Flags(_) => Kind::Json,
         }
@@ -320,13 +323,13 @@ pub const PANELS: &[Panel] = &[
             Section {
                 title: "Text",
                 settings: &[
-                    entry(
-                        "font-family",
-                        "Font",
-                        "Font family of the shell",
-                        "Iosevka Nerd Font",
-                        Default::Text("Iosevka Nerd Font"),
-                    ),
+                    Setting {
+                        file: "font-family",
+                        label: "Font",
+                        help: "Font family of the shell; a Nerd Font keeps the icons",
+                        control: Control::Font,
+                        default: Default::Text("Iosevka Nerd Font"),
+                    },
                     scale(
                         "font-scale",
                         "Text size",
