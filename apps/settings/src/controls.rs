@@ -1,0 +1,155 @@
+//! One setting as a row: its label and help text with the control that edits
+//! it (toggle, slider, choice, text entry or a list of flags).
+
+use std::fmt;
+
+use iced::widget::{column, container, pick_list, row, slider, text, text_input, toggler};
+use iced::{Alignment, Element, Length};
+
+use crate::app::Message;
+use crate::schema::{Control, Setting};
+use crate::store::Value;
+use crate::style;
+
+/// Width of a control beside its label.
+const CONTROL_WIDTH: f32 = 300.0;
+
+/// A pick-list entry: shows the label, stores the value.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Choice {
+    value: &'static str,
+    label: &'static str,
+}
+
+impl fmt::Display for Choice {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.label)
+    }
+}
+
+/// `draft` is the text being typed into an entry, not yet applied.
+/// `stacked` puts the control under its label (narrow panels).
+pub fn setting_row<'a>(
+    s: &'static Setting,
+    value: Value,
+    draft: Option<&'a String>,
+    stacked: bool,
+) -> Element<'a, Message> {
+    let label = column![
+        text(s.label).size(14).color(style::FG),
+        text(s.help).size(12).color(style::MUTED_DEEP),
+    ]
+    .spacing(2)
+    .width(Length::Fill);
+    let control = control(s, value, draft, stacked);
+    let line: Element<'a, Message> = match s.control {
+        // A toggle is small enough to stay beside its label.
+        Control::Toggle => row![label, control].spacing(16).align_y(Alignment::Center).into(),
+        // The flags list goes under its label, one toggle per line; so does
+        // every control when the panel is narrow.
+        Control::Flags(_) => column![label, control].spacing(8).into(),
+        _ if stacked => column![label, control].spacing(10).into(),
+        _ => row![label, control].spacing(16).align_y(Alignment::Center).into(),
+    };
+    container(line).padding([10, 14]).into()
+}
+
+fn control<'a>(s: &'static Setting, value: Value, draft: Option<&'a String>, stacked: bool) -> Element<'a, Message> {
+    let file = s.file;
+    // Under the label the control takes the full width; beside it, a fixed
+    // one so the controls line up.
+    let width = if stacked {
+        Length::Fill
+    } else {
+        Length::Fixed(CONTROL_WIDTH)
+    };
+    match (&s.control, value) {
+        (Control::Toggle, Value::Bool(on)) => toggler(on)
+            .on_toggle(move |b| Message::Set(file, Value::Bool(b)))
+            .into(),
+        (Control::Number { min, max, step, unit }, Value::Int(n)) => {
+            let shown = n.clamp(*min, *max) as i32;
+            let bar = slider(*min as i32..=*max as i32, shown, move |v| {
+                Message::Preview(file, Value::Int(v as i64))
+            })
+            .on_release(Message::Commit(file))
+            .step(*step as i32);
+            slider_row(bar.into(), format!("{n} {unit}").trim().to_string(), width)
+        }
+        (
+            Control::Scale {
+                min,
+                max,
+                step,
+                percent,
+            },
+            Value::Real(n),
+        ) => {
+            let label = if *percent {
+                format!("{}%", (n * 100.0).round())
+            } else {
+                format!("{n:.2}×")
+            };
+            let bar = slider(*min..=*max, n.clamp(*min, *max), move |v| {
+                Message::Preview(file, Value::Real(v))
+            })
+            .on_release(Message::Commit(file))
+            .step(*step);
+            slider_row(bar.into(), label, width)
+        }
+        (Control::Choice(options), Value::Text(current)) => {
+            let choices: Vec<Choice> = options.iter().map(|(value, label)| Choice { value, label }).collect();
+            let selected = choices.iter().find(|c| c.value == current).cloned();
+            pick_list(choices, selected, move |c| {
+                Message::Set(file, Value::Text(c.value.to_string()))
+            })
+            .width(width)
+            .into()
+        }
+        (Control::Entry { placeholder }, Value::Text(current)) => {
+            let input = text_input(placeholder, draft.map(String::as_str).unwrap_or(&current))
+                .on_input(move |t| Message::Draft(file, t))
+                .on_submit(Message::Submit(file))
+                .padding([7, 10])
+                .style(style::field)
+                .width(width);
+            match draft {
+                Some(d) if *d != current => column![input, text("Press Enter to apply").size(11).color(style::YELLOW)]
+                    .spacing(4)
+                    .into(),
+                _ => input.into(),
+            }
+        }
+        (Control::Flags(flags), Value::Json(map)) => {
+            let lines = flags.iter().map(|(key, label)| {
+                let on = map.get(*key).and_then(|v| v.as_bool()).unwrap_or(false);
+                let map = map.clone();
+                row![
+                    text(*label).size(13).color(style::FG_MUTED).width(Length::Fill),
+                    toggler(on).on_toggle(move |b| {
+                        let mut next = map.as_object().cloned().unwrap_or_default();
+                        next.insert(key.to_string(), serde_json::Value::Bool(b));
+                        Message::Set(file, Value::Json(serde_json::Value::Object(next)))
+                    }),
+                ]
+                .align_y(Alignment::Center)
+                .into()
+            });
+            column(lines).spacing(10).padding([0, 8]).into()
+        }
+        // Values are read with the setting's own type and defaults are tested
+        // to match, so a mismatch is a schema bug.
+        (control, value) => text(format!("{file}: {value:?} does not fit {}", control.name()))
+            .color(style::RED)
+            .into(),
+    }
+}
+
+/// A slider with its value written beside it.
+fn slider_row<'a>(bar: Element<'a, Message>, value: String, width: Length) -> Element<'a, Message> {
+    row![bar, text(value).size(13).color(style::FG_MUTED).width(72)]
+        .spacing(12)
+        .width(width)
+        .align_y(Alignment::Center)
+        .into()
+}

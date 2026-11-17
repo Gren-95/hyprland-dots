@@ -1,0 +1,15 @@
+[package]
+name = "settings"
+version = "0.1.0"
+edition = "2024"
+description = "Settings app for the Hyprland dots: panels over the Quickshell settings store"
+license = "MIT"
+publish = false
+
+[dependencies]
+iced = { version = "0.14.0", features = ["tokio"] }
+serde_json = "1.0.154"
+
+[profile.release]
+lto = "thin"
+strip = true

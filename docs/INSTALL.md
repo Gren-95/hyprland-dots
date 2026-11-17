@@ -27,6 +27,7 @@ Dependencies and manual setup. The one-command install is in the [README](../REA
 - `inotify-tools` — dotfile hot-reload daemon
 - `fish` `fzf` — shell, fuzzy finder (the `kb` keybind search)
 - `ranger` — TUI file manager
+- `cargo` — builds the settings app ([`apps/settings`](../apps/settings/README.md)); `adwaita-sans-fonts` is its text font
 - `gnome-font-viewer` — font previews in Nautilus (TTF, OTF, WOFF; WOFF2 through `thumbnailers/woff2.thumbnailer`)
 - `mpv` `network-manager-applet` `libnotify` `upower` — music player, tray network applet, notifications, battery
 - Optional, per feature: `zoxide` (directory jumping), `wayvnc` (remote access, `Super+Ctrl+R`), `btop`
@@ -62,8 +63,9 @@ sudo dnf install hyprland hyprland-devel quickshell kitty nautilus cliphist awww
   brightnessctl playerctl powerprofilesctl gpu-screen-recorder \
   network-manager-applet libnotify upower mpv bc curl gnome-keyring \
   jq inotify-tools pulseaudio-utils bluez hyprshutdown timeshift fzf \
-  gnome-font-viewer squashfs-tools fish ranger python3 python3-pillow \
-  python3-numpy python3-gobject unzip liberation-sans-fonts
+  gnome-font-viewer squashfs-tools cargo fish ranger python3 \
+  python3-pillow python3-numpy python3-gobject unzip liberation-sans-fonts \
+  adwaita-sans-fonts
 ```
 
 Optional extras are listed under [Dependencies](#dependencies) and in
@@ -125,6 +127,7 @@ The setup script will:
 - Install Iosevka Nerd Font
 - Set script permissions and enable the tracked git hooks
 - Link the Nautilus thumbnailers (3MF, PSD, STL, GLB, OBJ, WOFF2, AppImage), and install the programs the 3D and AppImage ones run to `/usr/local/bin` (sudo)
+- Build the settings app to `~/.local/bin/settings` and add its launcher entry
 - Install and enable the systemd user units (`dots.sh units`)
 - Configure the GTK theme (and the Tailscale operator when Tailscale is installed)
 - Optionally set up the Immich CLI, Jellyfin music sync and Gcode Viewer (skipped with `--yes`)

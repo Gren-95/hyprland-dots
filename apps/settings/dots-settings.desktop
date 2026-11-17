@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Settings
+GenericName=Hyprland settings
+Comment=Settings for the bar, notifications, clock and the rest of the shell
+Exec=settings
+Icon=preferences-system
+Terminal=false
+Categories=Settings;
+Keywords=settings;preferences;bar;notifications;quickshell;hyprland;
+StartupWMClass=dots-settings

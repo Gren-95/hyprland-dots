@@ -1125,6 +1125,18 @@ setup_sandbox_thumbnailers() {
     log_success "Restart Nautilus (nautilus -q) to pick them up"
 }
 
+# Settings app (apps/settings, Rust): built with cargo and installed to
+# ~/.local/bin/settings, with its desktop entry linked for the launcher.
+setup_settings_app() {
+    local app="$DOTS_DIR/apps/settings"
+    log_info "Building the settings app (first build takes a few minutes)..."
+    cargo build --release --locked --manifest-path "$app/Cargo.toml" || return 1
+    install -Dm755 "$app/target/release/settings" "$HOME/.local/bin/settings" || return 1
+    mkdir -p "$HOME/.local/share/applications"
+    ln -sfn "$app/dots-settings.desktop" "$HOME/.local/share/applications/dots-settings.desktop"
+    log_success "Settings app installed: run settings, or settings -p <panel>"
+}
+
 # Gcode Viewer (https://github.com/Gren-95/gcode-viewer): builds from source,
 # registers it as the default opener for .gcode and installs its thumbnailer
 # (sudo, same /usr sandbox reason as above).
@@ -1310,6 +1322,11 @@ cmd_setup() {
     echo ""
     if ask "Install and enable the session daemon units (battery, power profile, Bluetooth audio)? (Y/n)" Y; then
         setup_step "User units" setup_user_units
+    fi
+
+    echo ""
+    if ask "Build and install the settings app (needs cargo)? (Y/n)" Y; then
+        setup_step "Settings app" setup_settings_app
     fi
 
     # System setup

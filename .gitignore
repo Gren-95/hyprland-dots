@@ -50,3 +50,6 @@ brave/
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Rust build output (apps/settings)
+apps/settings/target/
