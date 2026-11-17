@@ -10,12 +10,36 @@ pub struct Panel {
     pub title: &'static str,
     /// Nerd Font glyph for the sidebar.
     pub glyph: &'static str,
+    /// The sidebar group it is listed under.
+    pub group: Group,
     /// What the panel shows.
     pub page: Page,
     /// More words search finds the panel by.
     pub keywords: &'static str,
     /// The settings of a `Page::Settings` panel.
     pub sections: &'static [Section],
+}
+
+/// Sidebar groups, in sidebar order (like KDE System Settings).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Group {
+    Connections,
+    InputOutput,
+    Appearance,
+    Workspace,
+    System,
+}
+
+impl Group {
+    pub fn title(self) -> &'static str {
+        match self {
+            Group::Connections => "Connections",
+            Group::InputOutput => "Input & output",
+            Group::Appearance => "Appearance",
+            Group::Workspace => "Workspace",
+            Group::System => "System",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -277,38 +301,113 @@ pub const PANELS: &[Panel] = &[
         id: "network",
         title: "Network",
         glyph: "󰖩",
+        group: Group::Connections,
         page: Page::Network,
         keywords: "wifi wi-fi wireless wlan internet ethernet wired vpn wireguard",
-        sections: &[],
-    },
-    Panel {
-        id: "sound",
-        title: "Sound",
-        glyph: "󰓃",
-        page: Page::Sound,
-        keywords: "audio speakers headphones microphone mic input output volume mute apps",
         sections: &[],
     },
     Panel {
         id: "bluetooth",
         title: "Bluetooth",
         glyph: "󰂯",
+        group: Group::Connections,
         page: Page::Bluetooth,
         keywords: "devices headphones headset airpods speaker mouse keyboard pair",
+        sections: &[],
+    },
+    Panel {
+        id: "sound",
+        title: "Sound",
+        glyph: "󰓃",
+        group: Group::InputOutput,
+        page: Page::Sound,
+        keywords: "audio speakers headphones microphone mic input output volume mute apps",
         sections: &[],
     },
     Panel {
         id: "keyboard",
         title: "Keyboard",
         glyph: "󰌌",
+        group: Group::InputOutput,
         page: Page::Keyboard,
         keywords: "layout language xkb input repeat delay caps lock num lock typing",
         sections: &[],
     },
     Panel {
+        id: "osd",
+        title: "Volume & OSD",
+        glyph: "󰕾",
+        group: Group::InputOutput,
+        page: Page::Settings,
+        keywords: "",
+        sections: &[
+            Section {
+                title: "Steps",
+                settings: &[
+                    number(
+                        "volume-step",
+                        "Volume step",
+                        "Change per scroll tick or arrow press",
+                        1,
+                        20,
+                        1,
+                        "%",
+                        5,
+                    ),
+                    number(
+                        "brightness-step",
+                        "Brightness step",
+                        "Change per scroll tick or arrow press",
+                        1,
+                        20,
+                        1,
+                        "%",
+                        5,
+                    ),
+                    number(
+                        "max-volume",
+                        "Maximum volume",
+                        "Ceiling for every volume control",
+                        50,
+                        150,
+                        5,
+                        "%",
+                        100,
+                    ),
+                ],
+            },
+            Section {
+                title: "On-screen display",
+                settings: &[
+                    number(
+                        "osd-duration",
+                        "Time on screen",
+                        "How long the volume and brightness display stays",
+                        500,
+                        5000,
+                        100,
+                        "ms",
+                        1500,
+                    ),
+                    number(
+                        "osd-bottom-margin",
+                        "Distance from bottom",
+                        "Gap between the display and the screen edge",
+                        0,
+                        300,
+                        10,
+                        "px",
+                        60,
+                    ),
+                ],
+            },
+        ],
+    },
+    Panel {
         id: "appearance",
         title: "Appearance",
         glyph: "󰏘",
+        group: Group::Appearance,
         page: Page::Settings,
         keywords: "",
         sections: &[
@@ -390,6 +489,7 @@ pub const PANELS: &[Panel] = &[
         id: "bar",
         title: "Bar",
         glyph: "󰕮",
+        group: Group::Appearance,
         page: Page::Settings,
         keywords: "",
         sections: &[
@@ -463,6 +563,7 @@ pub const PANELS: &[Panel] = &[
         id: "clock",
         title: "Clock & weather",
         glyph: "󰥔",
+        group: Group::Workspace,
         page: Page::Settings,
         keywords: "time date weather temperature forecast location fahrenheit",
         sections: &[
@@ -499,6 +600,7 @@ pub const PANELS: &[Panel] = &[
         id: "calendar",
         title: "Calendar",
         glyph: "󰃭",
+        group: Group::Workspace,
         page: Page::Calendar,
         keywords: "ics webcal feeds events google outlook",
         sections: &[Section {
@@ -527,6 +629,7 @@ pub const PANELS: &[Panel] = &[
         id: "notifications",
         title: "Notifications",
         glyph: "󰂚",
+        group: Group::Workspace,
         page: Page::Settings,
         keywords: "",
         sections: &[
@@ -630,6 +733,7 @@ pub const PANELS: &[Panel] = &[
         id: "launcher",
         title: "Launcher & clipboard",
         glyph: "󰀻",
+        group: Group::Workspace,
         page: Page::Settings,
         keywords: "",
         sections: &[
@@ -666,78 +770,10 @@ pub const PANELS: &[Panel] = &[
         ],
     },
     Panel {
-        id: "osd",
-        title: "Volume & OSD",
-        glyph: "󰕾",
-        page: Page::Settings,
-        keywords: "",
-        sections: &[
-            Section {
-                title: "Steps",
-                settings: &[
-                    number(
-                        "volume-step",
-                        "Volume step",
-                        "Change per scroll tick or arrow press",
-                        1,
-                        20,
-                        1,
-                        "%",
-                        5,
-                    ),
-                    number(
-                        "brightness-step",
-                        "Brightness step",
-                        "Change per scroll tick or arrow press",
-                        1,
-                        20,
-                        1,
-                        "%",
-                        5,
-                    ),
-                    number(
-                        "max-volume",
-                        "Maximum volume",
-                        "Ceiling for every volume control",
-                        50,
-                        150,
-                        5,
-                        "%",
-                        100,
-                    ),
-                ],
-            },
-            Section {
-                title: "On-screen display",
-                settings: &[
-                    number(
-                        "osd-duration",
-                        "Time on screen",
-                        "How long the volume and brightness display stays",
-                        500,
-                        5000,
-                        100,
-                        "ms",
-                        1500,
-                    ),
-                    number(
-                        "osd-bottom-margin",
-                        "Distance from bottom",
-                        "Gap between the display and the screen edge",
-                        0,
-                        300,
-                        10,
-                        "px",
-                        60,
-                    ),
-                ],
-            },
-        ],
-    },
-    Panel {
         id: "recording",
         title: "Screenshots & recording",
         glyph: "󰕧",
+        group: Group::System,
         page: Page::Settings,
         keywords: "screenshot capture grim picture record video gpu-screen-recorder screencast",
         sections: &[
@@ -870,6 +906,7 @@ pub const PANELS: &[Panel] = &[
         id: "sysmon",
         title: "System monitor",
         glyph: "󰍛",
+        group: Group::System,
         page: Page::Settings,
         keywords: "",
         sections: &[
@@ -923,6 +960,7 @@ pub const PANELS: &[Panel] = &[
         id: "power",
         title: "Power & idle",
         glyph: "󰂄",
+        group: Group::System,
         page: Page::Settings,
         keywords: "",
         sections: &[
@@ -1018,6 +1056,17 @@ mod tests {
                 row.contains(&format!("type: \"{qml_type}\"")),
                 "{file}: type differs from Settings.qml"
             );
+        }
+    }
+
+    #[test]
+    fn groups_are_contiguous() {
+        let mut seen = Vec::new();
+        for p in PANELS {
+            if seen.last() != Some(&p.group) {
+                assert!(!seen.contains(&p.group), "{} splits its group", p.id);
+                seen.push(p.group);
+            }
         }
     }
 

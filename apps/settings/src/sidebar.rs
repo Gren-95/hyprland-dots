@@ -29,7 +29,12 @@ pub fn view<'a>(panel: usize, query: &'a str, layout: Layout) -> Element<'a, Mes
         column![
             container(text("Settings").font(style::FONT_BOLD).size(18).color(style::FG)).padding([14, 12]),
             field,
-            scrollable(list.spacing(2)).height(Length::Fill),
+            // A thin scrollbar beside the list, not over it.
+            scrollable(list.spacing(2))
+                .direction(scrollable::Direction::Vertical(
+                    scrollable::Scrollbar::new().width(4).scroller_width(4).spacing(4)
+                ))
+                .height(Length::Fill),
         ]
         .spacing(10)
         .into()
@@ -59,8 +64,30 @@ fn glyph<'a>(g: &'static str) -> text::Text<'a> {
     text(g).font(style::GLYPH_FONT).size(18).width(26).center()
 }
 
+/// The panel list under group headers.
 fn panels<'a>(open: usize) -> Column<'a, Message> {
-    column((0..PANELS.len()).map(|i| panel_entry(i, i == open).into()))
+    let mut list = column![];
+    for (i, panel) in PANELS.iter().enumerate() {
+        if i == 0 || PANELS[i - 1].group != panel.group {
+            let top = if i == 0 { 0 } else { 12 };
+            list = list.push(
+                container(
+                    text(panel.group.title().to_uppercase())
+                        .font(style::FONT_BOLD)
+                        .size(11)
+                        .color(style::MUTED_DEEP),
+                )
+                .padding(iced::Padding {
+                    top: top as f32,
+                    right: 12.0,
+                    bottom: 4.0,
+                    left: 12.0,
+                }),
+            );
+        }
+        list = list.push(panel_entry(i, i == open));
+    }
+    list
 }
 
 fn results<'a>(open: usize, query: &str) -> Column<'a, Message> {
@@ -93,16 +120,27 @@ fn compact<'a>(open: usize) -> Element<'a, Message> {
             .style(style::nav(false)),
         "Search (Ctrl+F)",
     );
-    let entries = (0..PANELS.len()).map(|i| {
+    // Icons only: a thin line between groups instead of their headers.
+    let mut entries = column![].spacing(2);
+    for i in 0..PANELS.len() {
+        if i > 0 && PANELS[i - 1].group != PANELS[i].group {
+            entries = entries.push(
+                container(
+                    container(Space::new())
+                        .width(Length::Fill)
+                        .height(1)
+                        .style(style::divider),
+                )
+                .padding([6, 10]),
+            );
+        }
         let entry = button(glyph(PANELS[i].glyph))
             .on_press(Message::SelectPanel(i))
             .padding([9, 12])
             .style(style::nav(i == open));
-        with_tooltip(entry, PANELS[i].title)
-    });
-    column![Space::new().height(8), search, column(entries).spacing(2)]
-        .spacing(10)
-        .into()
+        entries = entries.push(with_tooltip(entry, PANELS[i].title));
+    }
+    column![Space::new().height(8), search, entries].spacing(10).into()
 }
 
 fn with_tooltip<'a>(content: button::Button<'a, Message>, tip: &'a str) -> Element<'a, Message> {

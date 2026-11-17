@@ -31,6 +31,8 @@ pub const SEARCH_ID: &str = "search";
 /// tick after it).
 const HIGHLIGHT_FOR: Duration = Duration::from_secs(2);
 const SIDEBAR_WIDTH: f32 = 230.0;
+/// Widest a panel's content gets; it is centred in wider windows.
+const PAGE_WIDTH: f32 = 760.0;
 const SIDEBAR_COMPACT_WIDTH: f32 = 64.0;
 /// Below this window width the sidebar shows only icons.
 const COMPACT_SIDEBAR_BELOW: f32 = 820.0;
@@ -377,11 +379,14 @@ impl App {
                         bottom: pad,
                         left: pad,
                     })
-                    .max_width(760);
+                    .width(Length::Fill)
+                    .max_width(PAGE_WIDTH);
                 for section in panel.sections {
                     options = self.section(options, section, layout);
                 }
-                column![feeds, options].into()
+                // Same width as one page column, so it lines up with the
+                // other panels.
+                column![feeds, options].width(Length::Fill).max_width(PAGE_WIDTH).into()
             }
             Page::Keyboard => {
                 Element::from(self.keyboard.view(page_column(panel.title, layout))).map(Message::Keyboard)
@@ -422,7 +427,8 @@ fn page_column<'a, M: 'a>(title: &'static str, layout: Layout) -> Column<'a, M> 
     column![text(title).font(style::FONT_BOLD).size(title_size)]
         .spacing(10)
         .padding(padding)
-        .max_width(760)
+        .width(Length::Fill)
+        .max_width(PAGE_WIDTH)
 }
 
 #[cfg(test)]

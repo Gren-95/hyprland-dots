@@ -132,7 +132,7 @@ mod tests {
         let ids: Vec<_> = search("airpods").iter().map(|m| PANELS[m.panel].id).collect();
         assert_eq!(ids, ["bluetooth"]);
         let ids: Vec<_> = search("headphones").iter().map(|m| PANELS[m.panel].id).collect();
-        assert_eq!(ids, ["sound", "bluetooth"]);
+        assert_eq!(ids, ["bluetooth", "sound"]);
     }
 
     #[test]

@@ -6,6 +6,10 @@ panel or a setting; the shared pieces in `src/ui.rs`, `src/controls.rs` and
 
 ## Structure
 
+- **Sidebar groups:** panels are listed under group headers (Connections,
+  Input & output, Appearance, Workspace, System; `schema::Group`), with a
+  thin line between groups in the icon-only sidebar. A new panel goes in the
+  group a user would look in, next to its group's other panels.
 - **Sidebar → panel → sections → rows.** A panel is one topic (Keyboard,
   Sound). A section is an uppercase header over one card. A row is one
   option or one item (a network, a device).
