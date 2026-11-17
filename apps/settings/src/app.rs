@@ -8,6 +8,7 @@ use std::time::{Duration, Instant};
 use iced::widget::{Column, Space, column, container, responsive, row, scrollable, text};
 use iced::{Element, Length, Subscription, Task, Theme, keyboard};
 
+use crate::audio;
 use crate::bluetooth;
 use crate::controls;
 use crate::network;
@@ -76,6 +77,7 @@ pub struct App {
     highlight: Option<(&'static str, Instant)>,
     network: network::State,
     bluetooth: bluetooth::State,
+    audio: audio::State,
     error: Option<String>,
 }
 
@@ -98,6 +100,7 @@ pub enum Message {
     Reload,
     Network(network::Msg),
     Bluetooth(bluetooth::Msg),
+    Audio(audio::Msg),
 }
 
 impl App {
@@ -116,6 +119,7 @@ impl App {
             highlight: None,
             network: network::State::default(),
             bluetooth: bluetooth::State::default(),
+            audio: audio::State::default(),
             error: None,
         };
         app.reload();
@@ -129,6 +133,7 @@ impl App {
             Page::Settings => Task::none(),
             Page::Network => self.network.update(network::Msg::Refresh).map(Message::Network),
             Page::Bluetooth => self.bluetooth.update(bluetooth::Msg::Refresh).map(Message::Bluetooth),
+            Page::Sound => self.audio.update(audio::Msg::Refresh).map(Message::Audio),
         }
     }
 
@@ -187,6 +192,9 @@ impl App {
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Network(network::Msg::Refresh))),
             Page::Bluetooth => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Bluetooth(bluetooth::Msg::Refresh))),
+            Page::Sound => {
+                subscriptions.push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Audio(audio::Msg::Refresh)))
+            }
         }
         Subscription::batch(subscriptions)
     }
@@ -202,6 +210,7 @@ impl App {
             }
             Message::Network(msg) => return self.network.update(msg).map(Message::Network),
             Message::Bluetooth(msg) => return self.bluetooth.update(msg).map(Message::Bluetooth),
+            Message::Audio(msg) => return self.audio.update(msg).map(Message::Audio),
             Message::Search(query) => {
                 self.query = query;
                 self.searching = true;
@@ -284,6 +293,13 @@ impl App {
             Page::Network => Element::from(self.network.view(page_column(panel.title, layout))).map(Message::Network),
             Page::Bluetooth => {
                 Element::from(self.bluetooth.view(page_column(panel.title, layout))).map(Message::Bluetooth)
+            }
+            Page::Sound => {
+                let max_volume = match self.values.get("max-volume") {
+                    Some(Value::Int(n)) => *n,
+                    _ => 100,
+                };
+                Element::from(self.audio.view(page_column(panel.title, layout), max_volume)).map(Message::Audio)
             }
         };
         // One scroll position per panel.

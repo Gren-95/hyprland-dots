@@ -27,7 +27,7 @@ Dependencies and manual setup. The one-command install is in the [README](../REA
 - `inotify-tools` — dotfile hot-reload daemon
 - `fish` `fzf` — shell, fuzzy finder (the `kb` keybind search)
 - `ranger` — TUI file manager
-- `cargo` — builds the settings app ([`apps/settings`](../apps/settings/README.md)); `adwaita-sans-fonts` is its text font
+- `cargo` — builds the settings app ([`apps/settings`](../apps/settings/README.md)); `adwaita-sans-fonts` is its text font and `pipewire-utils` (`pw-dump`) feeds its Sound panel
 - `gnome-font-viewer` — font previews in Nautilus (TTF, OTF, WOFF; WOFF2 through `thumbnailers/woff2.thumbnailer`)
 - `mpv` `network-manager-applet` `libnotify` `upower` — music player, tray network applet, notifications, battery
 - Optional, per feature: `zoxide` (directory jumping), `wayvnc` (remote access, `Super+Ctrl+R`), `btop`
@@ -63,8 +63,8 @@ sudo dnf install hyprland hyprland-devel quickshell kitty nautilus cliphist awww
   brightnessctl playerctl powerprofilesctl gpu-screen-recorder \
   network-manager-applet libnotify upower mpv bc curl gnome-keyring \
   jq inotify-tools pulseaudio-utils bluez hyprshutdown timeshift fzf \
-  gnome-font-viewer squashfs-tools cargo fish ranger python3 \
-  python3-pillow python3-numpy python3-gobject unzip liberation-sans-fonts \
+  gnome-font-viewer squashfs-tools cargo pipewire-utils fish ranger \
+  python3 python3-pillow python3-numpy python3-gobject unzip liberation-sans-fonts \
   adwaita-sans-fonts
 ```
 

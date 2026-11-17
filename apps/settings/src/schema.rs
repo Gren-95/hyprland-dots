@@ -26,6 +26,8 @@ pub enum Page {
     Network,
     /// Bluetooth devices (bluetooth.rs).
     Bluetooth,
+    /// Audio devices and app volumes (audio.rs).
+    Sound,
 }
 
 pub struct Section {
@@ -224,6 +226,14 @@ pub const PANELS: &[Panel] = &[
         glyph: "󰖩",
         page: Page::Network,
         keywords: "wifi wi-fi wireless wlan internet ethernet wired vpn wireguard",
+        sections: &[],
+    },
+    Panel {
+        id: "sound",
+        title: "Sound",
+        glyph: "󰓃",
+        page: Page::Sound,
+        keywords: "audio speakers headphones microphone mic input output volume mute apps",
         sections: &[],
     },
     Panel {
@@ -565,7 +575,7 @@ pub const PANELS: &[Panel] = &[
         ],
     },
     Panel {
-        id: "sound",
+        id: "osd",
         title: "Volume & OSD",
         glyph: "󰕾",
         page: Page::Settings,

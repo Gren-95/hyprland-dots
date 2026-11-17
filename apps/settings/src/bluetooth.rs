@@ -4,6 +4,7 @@
 use iced::widget::Column;
 use iced::{Element, Task};
 
+use crate::airpods::{self, AirPods};
 use crate::style::Action;
 use crate::system::{self, args};
 use crate::ui;
@@ -14,6 +15,8 @@ const SCAN_SECONDS: &str = "20";
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Snapshot {
     pub powered: bool,
+    /// Connected AirPods, with their extra controls.
+    pub airpods: Vec<AirPods>,
     pub paired: Vec<Device>,
     /// Devices seen nearby that are not paired.
     pub nearby: Vec<Device>,
@@ -49,6 +52,8 @@ pub enum Msg {
     Disconnect(String),
     Pair(String),
     Forget(String),
+    /// An AirPods control, for the device with this MAC.
+    AirPods(String, airpods::Action),
     Done(Result<(), String>),
 }
 
@@ -121,8 +126,14 @@ fn snapshot() -> Result<Snapshot, String> {
             ..Device::default()
         })
         .collect();
+    let airpods = paired
+        .iter()
+        .filter(|d| d.connected && airpods::is_airpods(&d.name))
+        .map(|d| airpods::read(&d.mac, &d.name))
+        .collect();
     Ok(Snapshot {
         powered,
+        airpods,
         paired,
         nearby,
     })
@@ -202,6 +213,11 @@ impl State {
                 self.busy = Some(mac.clone());
                 return pair(mac);
             }
+            Msg::AirPods(mac, action) => {
+                self.busy = Some(mac.clone());
+                let list = airpods::command(&mac, &action);
+                return Task::perform(system::run("bash", list, None), |r| Msg::Done(r.map(|_| ())));
+            }
             Msg::Done(result) => {
                 self.busy = None;
                 self.error = result.err();
@@ -236,6 +252,11 @@ impl State {
         let mut paired: Vec<Element<'a, Msg>> = snap.paired.iter().map(|d| self.paired_row(d)).collect();
         if paired.is_empty() {
             paired.push(ui::note("No paired devices"));
+        }
+        for a in &snap.airpods {
+            let mac = a.mac.clone();
+            let rows = airpods::rows(a, idle, move |action| Msg::AirPods(mac.clone(), action));
+            body = ui::section(body, "AirPods", rows);
         }
         body = ui::section(body, "Paired devices", paired);
 

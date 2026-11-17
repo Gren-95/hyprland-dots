@@ -14,13 +14,14 @@ shell show in the app too.
 | Name | Settings |
 |------|----------|
 | `network` | Wi-Fi on/off, nearby networks (connect, disconnect, forget, scan), wired devices, VPN connections — through `nmcli` |
-| `bluetooth` | Bluetooth on/off, paired devices (connect, disconnect, forget, battery), scanning and pairing — through `bluetoothctl` |
+| `sound` | Output and input device, their volume and mute, and the volume of every app playing — through `pw-dump` and `wpctl` |
+| `bluetooth` | Bluetooth on/off, paired devices (connect, disconnect, forget, battery), scanning and pairing — through `bluetoothctl`. Connected AirPods get battery per bud and case, noise control, conversation awareness, codec and an audio reset, through librepods and `config/scripts/airpods.sh` |
 | `appearance` | Accent colour, font and text size, corner roundness, animation speed, wallpaper folder |
 | `bar` | Height, opacity, window title width, workspace icons, activity icons, scroll action |
 | `clock` | 24-hour clock, seconds, date format, first day of the week, calendar feed refresh |
 | `notifications` | Toast position, time, count and width; history; auto-dismiss; system event toasts |
 | `launcher` | Results shown, calculator, clipboard thumbnails |
-| `sound` | Volume and brightness steps, maximum volume, on-screen display |
+| `osd` | Volume and brightness steps, maximum volume, on-screen display |
 | `sysmon` | System monitor refresh interval and sections |
 | `weather` | Location, Fahrenheit |
 | `power` | Critical battery level and action, stay awake rules |
@@ -44,8 +45,9 @@ shows only icons and widens while you search.
 
 Sliders write when released. Text fields write on Enter.
 
-The Network and Bluetooth panels ask `nmcli` and `bluetoothctl` again every
-three seconds while open. A Wi-Fi password is handed to `nmcli --ask` on
+The Network, Sound and Bluetooth panels ask the system again every three
+seconds while open. Volume sliders stop at the maximum volume set in Volume &
+OSD. A Wi-Fi password is handed to `nmcli --ask` on
 stdin, so it never appears in the process list.
 
 ## Build
@@ -74,6 +76,8 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/controls.rs` | A setting as a row: label, help and its control |
 | `src/network.rs` | Network panel: nmcli output parsing, actions, view |
 | `src/bluetooth.rs` | Bluetooth panel: bluetoothctl output parsing, actions, view |
+| `src/audio.rs` | Sound panel: pw-dump parsing, wpctl actions, view |
+| `src/airpods.rs` | AirPods section of the Bluetooth panel: librepods state, airpods.sh actions |
 | `src/system.rs` | Running nmcli and bluetoothctl on a background thread |
 | `src/ui.rs` | Shared pieces: section cards, list rows, action buttons |
 | `src/reveal.rs` | Scrolling a panel to a setting's row (a widget operation) |

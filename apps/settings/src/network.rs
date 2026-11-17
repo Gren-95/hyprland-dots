@@ -448,8 +448,7 @@ mod tests {
 
     #[test]
     fn lists_ethernet_devices_only() {
-        let out =
-            "wlp0s20f3:wifi:connected:TimeCapsule\nenp3s0:ethernet:unavailable:\nveth1:ethernet:unmanaged:\ndocker0:bridge:connected:docker0\n";
+        let out = "wlp0s20f3:wifi:connected:TimeCapsule\nenp3s0:ethernet:unavailable:\nveth1:ethernet:unmanaged:\ndocker0:bridge:connected:docker0\n";
         assert_eq!(
             parse_wired(out),
             [Wired {
