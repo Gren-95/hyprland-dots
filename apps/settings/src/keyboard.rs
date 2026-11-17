@@ -28,6 +28,7 @@ const SWITCHES: &[(&str, &str)] = &[
 /// Caps Lock behaviours: (XKB option, label).
 const CAPS: &[(&str, &str)] = &[
     ("", "Caps Lock"),
+    ("caps:none", "Off"),
     ("caps:escape", "Escape"),
     ("ctrl:nocaps", "Ctrl"),
     ("caps:swapescape", "Swap with Esc"),

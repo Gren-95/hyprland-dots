@@ -229,6 +229,7 @@ mod tests {
         assert_eq!(other, ["compose:ralt"]);
         assert_eq!(sort_options(""), (String::new(), String::new(), vec![]));
         assert_eq!(sort_options("ctrl:nocaps").1, "ctrl:nocaps");
+        assert_eq!(sort_options("caps:none").1, "caps:none");
     }
 
     #[test]
