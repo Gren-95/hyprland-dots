@@ -461,24 +461,39 @@ pub const PANELS: &[Panel] = &[
     },
     Panel {
         id: "clock",
-        title: "Clock",
+        title: "Clock & weather",
         glyph: "󰥔",
         page: Page::Settings,
-        keywords: "",
-        sections: &[Section {
-            title: "Clock",
-            settings: &[
-                toggle("clock-24h", "24-hour clock", "Show 13:00 instead of 1:00 PM", true),
-                toggle("clock-seconds", "Seconds", "Show seconds in the bar clock", false),
-                entry(
-                    "clock-date-format",
-                    "Date format",
-                    "Qt date format of the bar date",
-                    "ddd, dd MMM",
-                    Default::Text("ddd, dd MMM"),
-                ),
-            ],
-        }],
+        keywords: "time date weather temperature forecast location fahrenheit",
+        sections: &[
+            Section {
+                title: "Clock",
+                settings: &[
+                    toggle("clock-24h", "24-hour clock", "Show 13:00 instead of 1:00 PM", true),
+                    toggle("clock-seconds", "Seconds", "Show seconds in the bar clock", false),
+                    entry(
+                        "clock-date-format",
+                        "Date format",
+                        "Qt date format of the bar date",
+                        "ddd, dd MMM",
+                        Default::Text("ddd, dd MMM"),
+                    ),
+                ],
+            },
+            Section {
+                title: "Weather",
+                settings: &[
+                    entry(
+                        "weather-location",
+                        "Location",
+                        "City name; empty turns the weather off",
+                        "Tallinn",
+                        Default::Text(""),
+                    ),
+                    toggle("weather-fahrenheit", "Fahrenheit", "Show temperatures in °F", false),
+                ],
+            },
+        ],
     },
     Panel {
         id: "calendar",
@@ -905,26 +920,6 @@ pub const PANELS: &[Panel] = &[
         ],
     },
     Panel {
-        id: "weather",
-        title: "Weather",
-        glyph: "󰖐",
-        page: Page::Settings,
-        keywords: "",
-        sections: &[Section {
-            title: "Weather",
-            settings: &[
-                entry(
-                    "weather-location",
-                    "Location",
-                    "City name; empty turns the weather off",
-                    "Tallinn",
-                    Default::Text(""),
-                ),
-                toggle("weather-fahrenheit", "Fahrenheit", "Show temperatures in °F", false),
-            ],
-        }],
-    },
-    Panel {
         id: "power",
         title: "Power & idle",
         glyph: "󰂄",
@@ -981,7 +976,11 @@ pub const PANELS: &[Panel] = &[
     },
 ];
 
+/// Old panel names that now open another panel.
+const ALIASES: &[(&str, &str)] = &[("weather", "clock")];
+
 pub fn panel_index(id: &str) -> Option<usize> {
+    let id = ALIASES.iter().find(|(old, _)| *old == id).map_or(id, |(_, new)| new);
     PANELS.iter().position(|p| p.id == id)
 }
 

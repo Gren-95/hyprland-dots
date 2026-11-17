@@ -19,14 +19,13 @@ shell show in the app too.
 | `keyboard` | Keyboard layouts (search the XKB list, add, remove, reorder), layout switch shortcut, Caps Lock key, Num Lock at start, key repeat delay and speed — written to `config/hypr/settings.lua` (gitignored, loaded last) and applied with `hyprctl eval` |
 | `appearance` | Accent colour, font and text size, corner roundness, animation speed, wallpaper folder |
 | `bar` | Height, opacity, window title width, workspace icons, activity icons, scroll action |
-| `clock` | 24-hour clock, seconds, date format |
+| `clock` | 24-hour clock, seconds, date format; weather location and Fahrenheit (`-p weather` opens it too) |
 | `calendar` | ICS feeds of the day panel (`~/.config/quickshell/calendar.url`; links shown shortened as they hold private tokens): add, switch on and off, name, colour, replace the link, move up, remove; first day of the week, feed refresh interval |
 | `notifications` | Toast position, time, count and width; history; auto-dismiss; system event toasts |
 | `launcher` | Results shown, calculator, clipboard thumbnails |
 | `osd` | Volume and brightness steps, maximum volume, on-screen display |
 | `recording` | Screenshots (folder, PNG or JPEG, cursor, clipboard, actions sheet) and screen recording (folder, file type, frame rate, quality, codec, cursor, sound) — read by `config/scripts/lib/screenshot.sh` and `screenrecord.sh` |
 | `sysmon` | System monitor refresh interval and sections |
-| `weather` | Location, Fahrenheit |
 | `power` | Critical battery level and action, stay awake rules |
 
 ## Usage

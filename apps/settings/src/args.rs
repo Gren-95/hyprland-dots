@@ -93,6 +93,18 @@ mod tests {
     }
 
     #[test]
+    fn old_panel_names_still_open() {
+        let clock = panel_index("clock").unwrap();
+        assert_eq!(
+            run(&["-p", "weather"]),
+            Ok(Command::Open {
+                panel: clock,
+                search: String::new()
+            })
+        );
+    }
+
+    #[test]
     fn opens_with_a_search() {
         let open = Ok(Command::Open {
             panel: 0,
