@@ -36,6 +36,10 @@ pub fn matches(query: &str, panel: &Panel, section: &Section, setting: &Setting)
             haystack.push(' ');
             haystack.push_str(t.label);
         }),
+        Control::NumberChoice(options) => options.iter().for_each(|(_, label)| {
+            haystack.push(' ');
+            haystack.push_str(label);
+        }),
         Control::Pair { options, .. } => options.iter().for_each(|(_, label)| {
             haystack.push(' ');
             haystack.push_str(label);

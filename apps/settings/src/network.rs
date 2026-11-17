@@ -47,6 +47,9 @@ pub struct State {
     /// Network whose password is being asked for.
     prompt: Option<String>,
     password: String,
+    /// The hidden network form: name and password.
+    hidden_ssid: String,
+    hidden_password: String,
     error: Option<String>,
 }
 
@@ -64,6 +67,9 @@ pub enum Msg {
     Forget(String),
     SetVpn(String, bool),
     /// An action finished; refresh to show its effect.
+    HiddenSsid(String),
+    HiddenPassword(String),
+    JoinHidden,
     Done(Result<(), String>),
 }
 
@@ -259,6 +265,26 @@ impl State {
                 let verb = if on { "up" } else { "down" };
                 return act(vec!["connection".into(), verb.into(), "id".into(), name], None);
             }
+            Msg::HiddenSsid(text) => self.hidden_ssid = text,
+            Msg::HiddenPassword(text) => self.hidden_password = text,
+            Msg::JoinHidden => {
+                let ssid = self.hidden_ssid.trim().to_string();
+                if ssid.is_empty() {
+                    return Task::none();
+                }
+                self.busy = Some(ssid.clone());
+                let password = std::mem::take(&mut self.hidden_password);
+                self.hidden_ssid.clear();
+                let mut list = args(&["device", "wifi", "connect"]);
+                list.push(ssid);
+                list.extend(args(&["hidden", "yes"]));
+                if password.is_empty() {
+                    return act(list, None);
+                }
+                // --ask reads the password from stdin, never the command line.
+                list.insert(0, "--ask".into());
+                return act(list, Some(format!("{password}\n")));
+            }
             Msg::Done(result) => {
                 self.busy = None;
                 self.error = result.err();
@@ -298,6 +324,23 @@ impl State {
             if self.prompt.as_deref() == Some(n.ssid.as_str()) {
                 wifi.push(self.password_row());
             }
+        }
+        if snap.wifi_enabled {
+            let join = (idle && !self.hidden_ssid.trim().is_empty()).then_some(Msg::JoinHidden);
+            let fields = vec![
+                text_input("Hidden network name", &self.hidden_ssid)
+                    .on_input(Msg::HiddenSsid)
+                    .on_submit(Msg::JoinHidden),
+                text_input("Password (empty if open)", &self.hidden_password)
+                    .secure(true)
+                    .on_input(Msg::HiddenPassword)
+                    .on_submit(Msg::JoinHidden),
+            ];
+            wifi.push(
+                iced::widget::container(ui::fields_group(fields, vec![("Join", join, Action::Primary)]))
+                    .padding([8, 14])
+                    .into(),
+            );
         }
         body = ui::section(body, "Wi-Fi", wifi);
         if !snap.wired.is_empty() {
@@ -358,27 +401,24 @@ impl State {
         }
         let busy = self.busy.as_deref() == Some(n.ssid.as_str());
         let idle = self.busy.is_none();
-        let mut controls: Vec<Element<'a, Msg>> = Vec::new();
-        if busy {
-            controls.push(ui::note("Working…"));
+        let controls: Vec<Element<'a, Msg>> = if busy {
+            vec![ui::note("Working…")]
         } else {
+            let mut buttons = Vec::new();
             if saved {
-                controls.push(ui::action(
-                    "Forget",
-                    idle.then(|| Msg::Forget(n.ssid.clone())),
-                    Action::Danger,
-                ));
+                buttons.push(("Forget", idle.then(|| Msg::Forget(n.ssid.clone())), Action::Danger));
             }
-            controls.push(if n.in_use {
-                ui::action(
+            buttons.push(if n.in_use {
+                (
                     "Disconnect",
                     idle.then(|| Msg::Disconnect(n.ssid.clone())),
                     Action::Normal,
                 )
             } else {
-                ui::action("Connect", idle.then(|| Msg::Connect(n.ssid.clone())), Action::Primary)
+                ("Connect", idle.then(|| Msg::Connect(n.ssid.clone())), Action::Primary)
             });
-        }
+            vec![ui::button_group(buttons)]
+        };
         ui::item(glyph, n.ssid.clone(), detail.join(" · "), controls)
     }
 

@@ -1,7 +1,7 @@
 //! Bluetooth panel: power, paired devices and pairing new ones through
 //! bluetoothctl.
 
-use iced::widget::Column;
+use iced::widget::{Column, container, text_input};
 use iced::{Element, Task};
 
 use crate::airpods::{self, AirPods};
@@ -38,6 +38,8 @@ pub struct State {
     /// MAC of the device being worked on, or "power".
     busy: Option<String>,
     scanning: bool,
+    /// Device being renamed: MAC and the name typed so far.
+    renaming: Option<(String, String)>,
     error: Option<String>,
 }
 
@@ -54,6 +56,10 @@ pub enum Msg {
     Forget(String),
     /// An AirPods control, for the device with this MAC.
     AirPods(String, airpods::Action),
+    StartRename(String, String),
+    RenameText(String),
+    SaveRename,
+    CancelRename,
     Done(Result<(), String>),
 }
 
@@ -162,6 +168,35 @@ fn pair(mac: String) -> Task<Msg> {
     })
 }
 
+/// The bluez object path of a device, from `busctl --list tree org.bluez`.
+pub fn device_path(tree: &str, mac: &str) -> Option<String> {
+    let suffix = format!("/dev_{}", mac.replace(':', "_"));
+    tree.lines()
+        .map(str::trim)
+        .find(|l| l.ends_with(&suffix))
+        .map(String::from)
+}
+
+/// Set a device's alias (the name shown everywhere) over D-Bus.
+fn rename(mac: &str, name: &str) -> Result<(), String> {
+    let tree = system::run_blocking("busctl", &args(&["--list", "tree", "org.bluez"]), None)?;
+    let path = device_path(&tree, mac).ok_or_else(|| format!("bluez does not know {mac}"))?;
+    system::run_blocking(
+        "busctl",
+        &args(&[
+            "set-property",
+            "org.bluez",
+            &path,
+            "org.bluez.Device1",
+            "Alias",
+            "s",
+            name,
+        ]),
+        None,
+    )
+    .map(|_| ())
+}
+
 fn glyph(icon: &str) -> &'static str {
     match icon {
         i if i.starts_with("audio-head") => "󰋋",
@@ -218,6 +253,25 @@ impl State {
                 let list = airpods::command(&mac, &action);
                 return Task::perform(system::run("bash", list, None), |r| Msg::Done(r.map(|_| ())));
             }
+            Msg::StartRename(mac, name) => self.renaming = Some((mac, name)),
+            Msg::RenameText(text) => {
+                if let Some((_, name)) = &mut self.renaming {
+                    *name = text;
+                }
+            }
+            Msg::CancelRename => self.renaming = None,
+            Msg::SaveRename => {
+                if let Some((mac, name)) = self.renaming.take() {
+                    let name = name.trim().to_string();
+                    if name.is_empty() {
+                        return Task::none();
+                    }
+                    self.busy = Some(mac.clone());
+                    return Task::perform(system::spawn(move || rename(&mac, &name)), |r| {
+                        Msg::Done(r.unwrap_or_else(|| Err("renaming stopped unexpectedly".into())))
+                    });
+                }
+            }
             Msg::Done(result) => {
                 self.busy = None;
                 self.error = result.err();
@@ -249,7 +303,23 @@ impl State {
         if !snap.powered {
             return body;
         }
-        let mut paired: Vec<Element<'a, Msg>> = snap.paired.iter().map(|d| self.paired_row(d)).collect();
+        let mut paired: Vec<Element<'a, Msg>> = Vec::new();
+        for d in &snap.paired {
+            paired.push(self.paired_row(d));
+            if let Some((mac, name)) = &self.renaming
+                && *mac == d.mac
+            {
+                let field = text_input("Device name", name)
+                    .on_input(Msg::RenameText)
+                    .on_submit(Msg::SaveRename);
+                let save = (!name.trim().is_empty()).then_some(Msg::SaveRename);
+                let buttons = vec![
+                    ("Cancel", Some(Msg::CancelRename), Action::Normal),
+                    ("Save", save, Action::Primary),
+                ];
+                paired.push(container(ui::input_group(field, buttons)).padding([4, 14]).into());
+            }
+        }
         if paired.is_empty() {
             paired.push(ui::note("No paired devices"));
         }
@@ -295,18 +365,24 @@ impl State {
         let controls = if self.busy.as_deref() == Some(d.mac.as_str()) {
             vec![ui::note("Working…")]
         } else {
-            vec![
-                ui::action("Forget", idle.then(|| Msg::Forget(d.mac.clone())), Action::Danger),
-                if d.connected {
-                    ui::action(
-                        "Disconnect",
-                        idle.then(|| Msg::Disconnect(d.mac.clone())),
-                        Action::Normal,
-                    )
-                } else {
-                    ui::action("Connect", idle.then(|| Msg::Connect(d.mac.clone())), Action::Primary)
-                },
-            ]
+            let connect = if d.connected {
+                (
+                    "Disconnect",
+                    idle.then(|| Msg::Disconnect(d.mac.clone())),
+                    Action::Normal,
+                )
+            } else {
+                ("Connect", idle.then(|| Msg::Connect(d.mac.clone())), Action::Primary)
+            };
+            vec![ui::button_group(vec![
+                ("Forget", idle.then(|| Msg::Forget(d.mac.clone())), Action::Danger),
+                (
+                    "Rename",
+                    idle.then(|| Msg::StartRename(d.mac.clone(), d.name.clone())),
+                    Action::Normal,
+                ),
+                connect,
+            ])]
         };
         ui::item(glyph(&d.icon), d.name.clone(), detail.join(" · "), controls)
     }
@@ -315,6 +391,16 @@ impl State {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn finds_device_paths() {
+        let tree = "/org/bluez\n/org/bluez/hci0\n/org/bluez/hci0/dev_CC_22_FE_32_52_E4\n/org/bluez/hci0/dev_CC_22_FE_32_52_E4/sep1\n";
+        assert_eq!(
+            device_path(tree, "CC:22:FE:32:52:E4").as_deref(),
+            Some("/org/bluez/hci0/dev_CC_22_FE_32_52_E4")
+        );
+        assert_eq!(device_path(tree, "AA:BB"), None);
+    }
 
     #[test]
     fn parses_device_lists() {

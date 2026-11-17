@@ -165,6 +165,13 @@ fn control<'a>(
                 .collect();
             ui::multi_select(items, Length::Fill)
         }
+        (Control::NumberChoice(options), Value::Int(current)) => {
+            let items = options
+                .iter()
+                .map(|(n, label)| (*label, *n == current, Some(Message::Set(file, Value::Int(*n)))))
+                .collect();
+            ui::segmented(items, width)
+        }
         (Control::Toggles(toggles), _) => {
             let items = toggles
                 .iter()
@@ -221,7 +228,7 @@ fn pair_value<'s>(on: [bool; 2], options: &[(&'s str, &str); 2], none: &'s str, 
 
 /// Few short options fit a segmented control; more stay a dropdown.
 fn fits_segments(options: &[(&str, &str)]) -> bool {
-    options.len() <= 4 && options.iter().map(|(_, label)| label.chars().count()).sum::<usize>() <= 30
+    options.len() <= 5 && options.iter().map(|(_, label)| label.chars().count()).sum::<usize>() <= 30
 }
 
 /// A slider with its value written beside it.
@@ -263,7 +270,15 @@ mod tests {
             ("both", "System sound and microphone"),
         ];
         assert!(!fits_segments(&audio));
-        let five = [("a", "A"), ("b", "B"), ("c", "C"), ("d", "D"), ("e", "E")];
-        assert!(!fits_segments(&five));
+        let codecs = [
+            ("auto", "Automatic"),
+            ("h264", "H.264"),
+            ("hevc", "HEVC"),
+            ("av1", "AV1"),
+            ("vp9", "VP9"),
+        ];
+        assert!(fits_segments(&codecs));
+        let six = [("a", "A"), ("b", "B"), ("c", "C"), ("d", "D"), ("e", "E"), ("f", "F")];
+        assert!(!fits_segments(&six));
     }
 }

@@ -76,6 +76,8 @@ pub enum Control {
     /// Several on/off settings, each in its own file, as one multi-select
     /// button group. The setting's own `file` is the first one's.
     Toggles(&'static [Toggle]),
+    /// One of a few numbers, as a button group: (value, label).
+    NumberChoice(&'static [(i64, &'static str)]),
     /// Two options that can each be on, stored in one text file as `none`,
     /// either option's value, or `both` (a multi-select of two).
     Pair {
@@ -112,6 +114,7 @@ impl Control {
             Control::Entry { .. } => "a text entry",
             Control::Flags(_) => "a list of flags",
             Control::Toggles(_) => "a group of switches",
+            Control::NumberChoice(_) => "a choice of numbers",
             Control::Pair { .. } => "a pair of switches",
         }
     }
@@ -121,7 +124,7 @@ impl Setting {
     pub fn kind(&self) -> Kind {
         match self.control {
             Control::Toggle => Kind::Bool,
-            Control::Number { .. } => Kind::Int,
+            Control::Number { .. } | Control::NumberChoice(_) => Kind::Int,
             Control::Scale { .. } => Kind::Real,
             Control::Choice(_) | Control::Entry { .. } | Control::Pair { .. } => Kind::Text,
             Control::Toggles(_) => Kind::Bool,
@@ -725,24 +728,29 @@ pub const PANELS: &[Panel] = &[
                         &[("png", "PNG"), ("jpg", "JPEG")],
                         "png",
                     ),
-                    toggle(
-                        "shot-cursor",
-                        "Capture the cursor",
-                        "Show the mouse pointer in screenshots",
-                        false,
-                    ),
-                    toggle(
-                        "shot-clipboard",
-                        "Copy to clipboard",
-                        "Put every screenshot on the clipboard too",
-                        true,
-                    ),
-                    toggle(
-                        "shot-actions",
-                        "Show actions afterwards",
-                        "After a region screenshot, offer Edit, OCR and Reveal",
-                        true,
-                    ),
+                    Setting {
+                        file: "shot-cursor",
+                        label: "With every screenshot",
+                        help: "Capture the cursor, copy it to the clipboard, offer Edit, OCR and Reveal after a region shot",
+                        control: Control::Toggles(&[
+                            Toggle {
+                                file: "shot-cursor",
+                                label: "Cursor",
+                                default: false,
+                            },
+                            Toggle {
+                                file: "shot-clipboard",
+                                label: "Copy to clipboard",
+                                default: true,
+                            },
+                            Toggle {
+                                file: "shot-actions",
+                                label: "Show actions",
+                                default: true,
+                            },
+                        ]),
+                        default: Default::Bool(false),
+                    },
                 ],
             },
             Section {
@@ -767,7 +775,18 @@ pub const PANELS: &[Panel] = &[
             Section {
                 title: "Recording video",
                 settings: &[
-                    number("record-fps", "Frame rate", "Frames per second", 10, 240, 5, "fps", 60),
+                    Setting {
+                        file: "record-fps",
+                        label: "Frame rate",
+                        help: "Frames per second",
+                        control: Control::NumberChoice(&[
+                            (30, "30 fps"),
+                            (60, "60 fps"),
+                            (120, "120 fps"),
+                            (144, "144 fps"),
+                        ]),
+                        default: Default::Int(60),
+                    },
                     choice(
                         "record-quality",
                         "Quality",

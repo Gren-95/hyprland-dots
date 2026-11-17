@@ -60,6 +60,12 @@ pub fn action<'a, M: Clone + 'a>(label: &'a str, on_press: Option<M>, kind: styl
         .into()
 }
 
+/// A button's share of its group's width: longer labels get more room, so
+/// none wraps while the group still fills its width.
+fn share(label: &str) -> Length {
+    Length::FillPortion(label.chars().count().clamp(3, 30) as u16 + 4)
+}
+
 /// Height of every part of a joined group, so they line up.
 const GROUP_TEXT: f32 = 14.0;
 
@@ -70,8 +76,8 @@ pub fn segmented<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>, widt
     let buttons = items.into_iter().enumerate().map(|(i, (label, selected, on_press))| {
         button(text(label).size(GROUP_TEXT).center().width(Length::Fill))
             .on_press_maybe(on_press)
-            .padding([8, 12])
-            .width(Length::Fill)
+            .padding([8, 10])
+            .width(share(label))
             .style(style::segment(selected, style::Joint::of(i, count)))
             .into()
     });
@@ -90,12 +96,25 @@ pub fn multi_select<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>, w
             .align_y(Alignment::Center);
         button(container(content).center_x(Length::Fill))
             .on_press_maybe(on_press)
-            .padding([8, 12])
-            .width(Length::Fill)
+            .padding([8, 10])
+            .width(share(label))
             .style(style::segment(on, style::Joint::of(i, count)))
             .into()
     });
     Row::with_children(buttons).spacing(-1.0).width(width).into()
+}
+
+/// Plain action buttons joined into one group: (label, message, kind).
+pub fn button_group<'a, M: Clone + 'a>(buttons: Vec<(&'a str, Option<M>, style::Action)>) -> Element<'a, M> {
+    let count = buttons.len();
+    let parts = buttons.into_iter().enumerate().map(|(i, (label, on_press, kind))| {
+        button(text(label).size(13))
+            .on_press_maybe(on_press)
+            .padding([5, 12])
+            .style(style::action_at(kind, style::Joint::of(i, count)))
+            .into()
+    });
+    Row::with_children(parts).spacing(-1.0).into()
 }
 
 /// An input group: a text field with buttons joined to its right.
@@ -103,19 +122,32 @@ pub fn input_group<'a, M: Clone + 'a>(
     field: TextInput<'a, M>,
     buttons: Vec<(&'a str, Option<M>, style::Action)>,
 ) -> Element<'a, M> {
-    let count = buttons.len() + 1;
-    let field = field
-        .size(GROUP_TEXT)
-        .padding([8, 10])
-        .width(Length::Fill)
-        .style(style::field_at(style::Joint::of(0, count)));
-    let mut group = row![field].spacing(-1.0).align_y(Alignment::Center);
+    fields_group(vec![field], buttons)
+}
+
+/// An input group of several text fields followed by buttons.
+pub fn fields_group<'a, M: Clone + 'a>(
+    fields: Vec<TextInput<'a, M>>,
+    buttons: Vec<(&'a str, Option<M>, style::Action)>,
+) -> Element<'a, M> {
+    let count = fields.len() + buttons.len();
+    let mut group = Row::new().spacing(-1.0).align_y(Alignment::Center);
+    let field_count = fields.len();
+    for (i, field) in fields.into_iter().enumerate() {
+        group = group.push(
+            field
+                .size(GROUP_TEXT)
+                .padding([8, 10])
+                .width(Length::Fill)
+                .style(style::field_at(style::Joint::of(i, count))),
+        );
+    }
     for (i, (label, on_press, kind)) in buttons.into_iter().enumerate() {
         group = group.push(
             button(text(label).size(GROUP_TEXT))
                 .on_press_maybe(on_press)
                 .padding([8, 14])
-                .style(style::action_at(kind, style::Joint::of(i + 1, count))),
+                .style(style::action_at(kind, style::Joint::of(field_count + i, count))),
         );
     }
     group.into()
