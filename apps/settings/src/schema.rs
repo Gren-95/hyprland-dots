@@ -56,6 +56,8 @@ pub enum Page {
     Calendar,
     /// Keyboard layouts and repeat in Hyprland (keyboard.rs, hypr.rs).
     Keyboard,
+    /// Mouse, touchpad and gesture options in Hyprland (mouse.rs).
+    Mouse,
 }
 
 pub struct Section {
@@ -331,6 +333,15 @@ pub const PANELS: &[Panel] = &[
         group: Group::InputOutput,
         page: Page::Keyboard,
         keywords: "layout language xkb input repeat delay caps lock num lock typing",
+        sections: &[],
+    },
+    Panel {
+        id: "mouse",
+        title: "Mouse & touchpad",
+        glyph: "󰍽",
+        group: Group::InputOutput,
+        page: Page::Mouse,
+        keywords: "pointer cursor speed acceleration scroll wheel touchpad trackpad tap click gestures swipe left-handed",
         sections: &[],
     },
     Panel {

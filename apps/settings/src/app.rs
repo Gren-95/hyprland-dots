@@ -13,7 +13,9 @@ use crate::audio;
 use crate::bluetooth;
 use crate::calendar;
 use crate::controls;
+use crate::hyprpage;
 use crate::keyboard;
+use crate::mouse;
 use crate::network;
 use crate::reveal;
 use crate::schema::{PANELS, Page, Panel, Section, all_settings};
@@ -85,6 +87,7 @@ pub struct App {
     audio: audio::State,
     calendar: calendar::State,
     keyboard: keyboard::State,
+    mouse: hyprpage::State,
     /// Installed font families, loaded once at start for the Font picker.
     fonts: Vec<&'static str>,
     error: Option<String>,
@@ -118,6 +121,7 @@ pub enum Message {
     Audio(audio::Msg),
     Calendar(calendar::Msg),
     Keyboard(keyboard::Msg),
+    Mouse(hyprpage::Msg),
     Fonts(Vec<&'static str>),
 }
 
@@ -140,6 +144,7 @@ impl App {
             audio: audio::State::default(),
             calendar: calendar::State::default(),
             keyboard: keyboard::State::default(),
+            mouse: hyprpage::State::default(),
             fonts: Vec::new(),
             error: None,
         };
@@ -163,6 +168,10 @@ impl App {
                 Task::none()
             }
             Page::Keyboard => self.keyboard.update(keyboard::Msg::Load).map(Message::Keyboard),
+            Page::Mouse => self
+                .mouse
+                .update(hyprpage::Msg::Load, mouse::SECTIONS)
+                .map(Message::Mouse),
         }
     }
 
@@ -226,7 +235,7 @@ impl App {
             }
             Page::Calendar => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Calendar(calendar::Msg::Refresh))),
-            Page::Keyboard => {}
+            Page::Keyboard | Page::Mouse => {}
         }
         Subscription::batch(subscriptions)
     }
@@ -245,6 +254,7 @@ impl App {
             Message::Audio(msg) => return self.audio.update(msg).map(Message::Audio),
             Message::Calendar(msg) => self.calendar.update(msg),
             Message::Keyboard(msg) => return self.keyboard.update(msg).map(Message::Keyboard),
+            Message::Mouse(msg) => return self.mouse.update(msg, mouse::SECTIONS).map(Message::Mouse),
             Message::Search(query) => {
                 self.query = query;
                 self.searching = true;
@@ -390,6 +400,9 @@ impl App {
             }
             Page::Keyboard => {
                 Element::from(self.keyboard.view(page_column(panel.title, layout))).map(Message::Keyboard)
+            }
+            Page::Mouse => {
+                Element::from(self.mouse.view(page_column(panel.title, layout), mouse::SECTIONS)).map(Message::Mouse)
             }
         };
         // One scroll position per panel.

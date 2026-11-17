@@ -6,6 +6,7 @@
 //! Anything not saved yet is read from the running Hyprland, so the app
 //! starts from what is in effect.
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
@@ -165,6 +166,27 @@ impl Keyboard {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Settings {
     pub keyboard: Keyboard,
+    /// Other options the user changed, by Hyprland name
+    /// ("input:touchpad:tap_to_click"). Options not here keep the value of
+    /// the tracked config.
+    pub options: BTreeMap<String, Json>,
+}
+
+/// A Hyprland option's value now: the saved one, else the running one.
+pub fn option_value(settings: &Settings, name: &str) -> Option<Json> {
+    settings.options.get(name).cloned().or_else(|| live_option(name))
+}
+
+/// What the running Hyprland uses for an option. Empty strings come back
+/// as "[[EMPTY]]", which means "".
+pub fn live_option(name: &str) -> Option<Json> {
+    getoption(name).map(|v| {
+        if v == "[[EMPTY]]" {
+            Json::String(String::new())
+        } else {
+            v
+        }
+    })
 }
 
 impl Settings {
@@ -176,27 +198,97 @@ impl Settings {
             .unwrap_or(Json::Null);
         Settings {
             keyboard: Keyboard::from_json(&saved["keyboard"]).unwrap_or_else(Keyboard::live),
+            options: saved["options"]
+                .as_object()
+                .map(|o| o.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
+                .unwrap_or_default(),
         }
     }
 
     fn lua(&self) -> Result<String, String> {
         Ok(format!(
-            "-- Written by the settings app (apps/settings): its Hyprland choices on this\n-- machine. Loaded last by hyprland.lua. Gitignored; edit it in the app.\n\n{}",
-            self.keyboard.lua()?
+            "-- Written by the settings app (apps/settings): its Hyprland choices on this\n-- machine. Loaded last by hyprland.lua. Gitignored; edit it in the app.\n\n{}{}",
+            self.keyboard.lua()?,
+            options_lua(&self.options)?
         ))
     }
 
-    /// Save both files, then apply the Lua to the running Hyprland.
-    pub async fn apply(self) -> Result<(), String> {
-        let lua = self.lua()?;
+    fn json(&self) -> Json {
+        json!({ "keyboard": self.keyboard.to_json(), "options": self.options })
+    }
+}
+
+/// Change the saved settings and apply them. Each panel changes only its
+/// part, on top of what is on disk now, so panels do not undo each other.
+pub async fn update(change: impl FnOnce(&mut Settings) + Send + 'static) -> Result<(), String> {
+    let lua = system::spawn(move || -> Result<String, String> {
+        let mut settings = Settings::load();
+        change(&mut settings);
+        let lua = settings.lua()?;
         write(
             &dir().join("settings.json"),
-            &serde_json::to_string_pretty(&json!({"keyboard": self.keyboard.to_json()})).unwrap_or_default(),
+            &serde_json::to_string_pretty(&settings.json()).unwrap_or_default(),
         )
         .map_err(|e| format!("Could not save settings.json: {e}"))?;
         write(&dir().join("settings.lua"), &lua).map_err(|e| format!("Could not save settings.lua: {e}"))?;
-        system::run("hyprctl", vec!["eval".into(), lua], None).await.map(|_| ())
+        Ok(lua)
+    })
+    .await
+    .unwrap_or_else(|| Err("saving stopped unexpectedly".into()))?;
+    system::run("hyprctl", vec!["eval".into(), lua], None).await.map(|_| ())
+}
+
+/// One Lua value: numbers, booleans and plain strings only.
+fn lua_value(v: &Json) -> Result<String, String> {
+    match v {
+        Json::Bool(b) => Ok(b.to_string()),
+        Json::Number(n) => Ok(n.to_string()),
+        Json::String(s) if s.chars().all(|c| c.is_ascii_alphanumeric() || " _-:,.()".contains(c)) => {
+            Ok(format!("\"{s}\""))
+        }
+        _ => Err(format!("unexpected Hyprland option value: {v}")),
     }
+}
+
+/// `hl.config` for options named "a:b:c": nested tables a = { b = { c = … } }.
+pub fn options_lua(options: &BTreeMap<String, Json>) -> Result<String, String> {
+    if options.is_empty() {
+        return Ok(String::new());
+    }
+    let mut tree = serde_json::Map::new();
+    for (name, value) in options {
+        let parts: Vec<&str> = name.split(':').collect();
+        if parts
+            .iter()
+            .any(|p| p.is_empty() || !p.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '.'))
+        {
+            return Err(format!("unexpected Hyprland option name: {name}"));
+        }
+        let mut node = &mut tree;
+        for part in &parts[..parts.len() - 1] {
+            node = node
+                .entry(part.to_string())
+                .or_insert_with(|| Json::Object(Default::default()))
+                .as_object_mut()
+                .ok_or_else(|| format!("{name} clashes with another option"))?;
+        }
+        node.insert(parts[parts.len() - 1].to_string(), value.clone());
+    }
+    fn table(map: &serde_json::Map<String, Json>, depth: usize) -> Result<String, String> {
+        let pad = "    ".repeat(depth + 1);
+        let mut out = String::from("{\n");
+        for (key, value) in map {
+            let inner = match value {
+                Json::Object(m) => table(m, depth + 1)?,
+                v => lua_value(v)?,
+            };
+            out.push_str(&format!("{pad}{key} = {inner},\n"));
+        }
+        out.push_str(&"    ".repeat(depth));
+        out.push('}');
+        Ok(out)
+    }
+    Ok(format!("\nhl.config({})\n", table(&tree, 0)?))
 }
 
 fn write(path: &PathBuf, text: &str) -> io::Result<()> {
@@ -260,6 +352,31 @@ mod tests {
         let mut k = sample();
         k.layouts[0].0 = "ee\"}) os.execute(\"x".into();
         assert!(k.lua().is_err());
+    }
+
+    #[test]
+    fn renders_nested_options() {
+        let mut o = BTreeMap::new();
+        o.insert("input:sensitivity".to_string(), json!(0.25));
+        o.insert("input:touchpad:tap_to_click".to_string(), json!(false));
+        o.insert("input:accel_profile".to_string(), json!("flat"));
+        let lua = options_lua(&o).unwrap();
+        assert!(lua.contains("hl.config({"));
+        assert!(lua.contains("    input = {"));
+        assert!(lua.contains("        sensitivity = 0.25,"));
+        assert!(lua.contains("        accel_profile = \"flat\","));
+        assert!(lua.contains("            tap_to_click = false,"));
+        assert_eq!(options_lua(&BTreeMap::new()).unwrap(), "");
+    }
+
+    #[test]
+    fn refuses_bad_option_names_and_values() {
+        let mut o = BTreeMap::new();
+        o.insert("input:x\") os.execute(\"".to_string(), json!(1));
+        assert!(options_lua(&o).is_err());
+        let mut o = BTreeMap::new();
+        o.insert("input:accel_profile".to_string(), json!("a\"b"));
+        assert!(options_lua(&o).is_err());
     }
 
     #[test]

@@ -161,7 +161,8 @@ impl State {
             return Task::none();
         };
         edit(&mut settings.keyboard);
-        Task::perform(settings.clone().apply(), Msg::Applied)
+        let keyboard = settings.keyboard.clone();
+        Task::perform(crate::hypr::update(move |s| s.keyboard = keyboard), Msg::Applied)
     }
 
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
