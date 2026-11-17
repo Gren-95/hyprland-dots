@@ -10,6 +10,7 @@ mod controls;
 mod fonts;
 mod hypr;
 mod hyprpage;
+mod idle;
 mod keyboard;
 mod mouse;
 mod network;

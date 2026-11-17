@@ -60,6 +60,8 @@ pub enum Page {
     Mouse,
     /// Where bar, Quick Actions and tray items show (placement.rs).
     BarItems,
+    /// Idle timings from hypridle.conf (idle.rs), then the panel's settings.
+    Lock,
 }
 
 pub struct Section {
@@ -971,35 +973,13 @@ pub const PANELS: &[Panel] = &[
         ],
     },
     Panel {
-        id: "power",
-        title: "Power & idle",
-        glyph: "󰂄",
+        id: "lock",
+        title: "Lock & idle",
+        glyph: "󰌾",
         group: Group::System,
-        page: Page::Settings,
-        keywords: "",
+        page: Page::Lock,
+        keywords: "idle dim lock screen off suspend sleep lid hyprlock hypridle stay awake timeout",
         sections: &[
-            Section {
-                title: "Battery",
-                settings: &[
-                    number(
-                        "battery-critical-pct",
-                        "Critical level",
-                        "Battery level that starts the countdown; 0 turns it off",
-                        0,
-                        30,
-                        1,
-                        "%",
-                        5,
-                    ),
-                    choice(
-                        "battery-critical-action",
-                        "At critical level",
-                        "What happens when the countdown ends",
-                        &[("suspend", "Suspend"), ("none", "Nothing")],
-                        "suspend",
-                    ),
-                ],
-            },
             Section {
                 title: "Stay awake",
                 settings: &[
@@ -1024,12 +1004,82 @@ pub const PANELS: &[Panel] = &[
                     },
                 ],
             },
+            Section {
+                title: "Lid",
+                settings: &[choice(
+                    "lid-close-action",
+                    "When the lid closes",
+                    "Unless an external display is connected",
+                    &[
+                        ("lock", "Lock"),
+                        ("suspend", "Suspend"),
+                        ("nothing", "Turn the screen off"),
+                    ],
+                    "lock",
+                )],
+            },
+            Section {
+                title: "Lock screen",
+                settings: &[Setting {
+                    file: "lock-show-media",
+                    label: "Show",
+                    help: "What the lock screen shows besides the clock",
+                    control: Control::Toggles(&[
+                        Toggle {
+                            file: "lock-show-media",
+                            label: "Now playing",
+                            default: true,
+                        },
+                        Toggle {
+                            file: "lock-show-weather",
+                            label: "Weather",
+                            default: true,
+                        },
+                        Toggle {
+                            file: "lock-show-battery",
+                            label: "Battery",
+                            default: true,
+                        },
+                    ]),
+                    default: Default::Bool(true),
+                }],
+            },
         ],
+    },
+    Panel {
+        id: "power",
+        title: "Power",
+        glyph: "󰂄",
+        group: Group::System,
+        page: Page::Settings,
+        keywords: "battery critical suspend",
+        sections: &[Section {
+            title: "Battery",
+            settings: &[
+                number(
+                    "battery-critical-pct",
+                    "Critical level",
+                    "Battery level that starts the countdown; 0 turns it off",
+                    0,
+                    30,
+                    1,
+                    "%",
+                    5,
+                ),
+                choice(
+                    "battery-critical-action",
+                    "At critical level",
+                    "What happens when the countdown ends",
+                    &[("suspend", "Suspend"), ("none", "Nothing")],
+                    "suspend",
+                ),
+            ],
+        }],
     },
 ];
 
 /// Old panel names that now open another panel.
-const ALIASES: &[(&str, &str)] = &[("weather", "clock")];
+const ALIASES: &[(&str, &str)] = &[("weather", "clock"), ("idle", "lock")];
 
 pub fn panel_index(id: &str) -> Option<usize> {
     let id = ALIASES.iter().find(|(old, _)| *old == id).map_or(id, |(_, new)| new);

@@ -11,6 +11,9 @@
 
 MAX_CHARS=42
 
+source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/settings.sh"
+
 battery() {
     local bat capacity status icon idx
     bat=$(find /sys/class/power_supply -maxdepth 1 -name 'BAT*' 2>/dev/null | head -n1)
@@ -45,9 +48,11 @@ media_field() {
     printf '%s\n' "$value"
 }
 
+# The settings app's Lock & idle panel can switch each part off
+# (lock-show-battery, lock-show-media).
 case ${1:-} in
-    battery) battery ;;
-    title) media_field title ;;
-    artist) media_field artist ;;
+    battery) [[ $(setting lock-show-battery 1) == 1 ]] && battery ;;
+    title) [[ $(setting lock-show-media 1) == 1 ]] && media_field title ;;
+    artist) [[ $(setting lock-show-media 1) == 1 ]] && media_field artist ;;
 esac
 exit 0

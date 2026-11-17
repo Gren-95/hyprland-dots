@@ -14,6 +14,7 @@ use crate::bluetooth;
 use crate::calendar;
 use crate::controls;
 use crate::hyprpage;
+use crate::idle;
 use crate::keyboard;
 use crate::mouse;
 use crate::network;
@@ -90,6 +91,7 @@ pub struct App {
     keyboard: keyboard::State,
     mouse: hyprpage::State,
     placement: placement::State,
+    idle: idle::State,
     /// Installed font families, loaded once at start for the Font picker.
     fonts: Vec<&'static str>,
     error: Option<String>,
@@ -125,6 +127,7 @@ pub enum Message {
     Keyboard(keyboard::Msg),
     Mouse(hyprpage::Msg),
     Placement(placement::Msg),
+    Idle(idle::Msg),
     Fonts(Vec<&'static str>),
 }
 
@@ -149,6 +152,7 @@ impl App {
             keyboard: keyboard::State::default(),
             mouse: hyprpage::State::default(),
             placement: placement::State::default(),
+            idle: idle::State::default(),
             fonts: Vec::new(),
             error: None,
         };
@@ -177,6 +181,7 @@ impl App {
                 .update(hyprpage::Msg::Load, mouse::SECTIONS)
                 .map(Message::Mouse),
             Page::BarItems => self.placement.update(placement::Msg::Refresh).map(Message::Placement),
+            Page::Lock => self.idle.update(idle::Msg::Load).map(Message::Idle),
         }
     }
 
@@ -240,7 +245,7 @@ impl App {
             }
             Page::Calendar => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Calendar(calendar::Msg::Refresh))),
-            Page::Keyboard | Page::Mouse => {}
+            Page::Keyboard | Page::Mouse | Page::Lock => {}
             Page::BarItems => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Placement(placement::Msg::Refresh))),
         }
@@ -263,6 +268,7 @@ impl App {
             Message::Keyboard(msg) => return self.keyboard.update(msg).map(Message::Keyboard),
             Message::Mouse(msg) => return self.mouse.update(msg, mouse::SECTIONS).map(Message::Mouse),
             Message::Placement(msg) => return self.placement.update(msg).map(Message::Placement),
+            Message::Idle(msg) => return self.idle.update(msg).map(Message::Idle),
             Message::Search(query) => {
                 self.query = query;
                 self.searching = true;
@@ -388,23 +394,7 @@ impl App {
             }
             Page::Calendar => {
                 let feeds = Element::from(self.calendar.view(page_column(panel.title, layout))).map(Message::Calendar);
-                let pad = if layout.stacked { 16.0 } else { 28.0 };
-                let mut options = Column::new()
-                    .spacing(10)
-                    .padding(iced::Padding {
-                        top: 0.0,
-                        right: pad,
-                        bottom: pad,
-                        left: pad,
-                    })
-                    .width(Length::Fill)
-                    .max_width(PAGE_WIDTH);
-                for section in panel.sections {
-                    options = self.section(options, section, layout);
-                }
-                // Same width as one page column, so it lines up with the
-                // other panels.
-                column![feeds, options].width(Length::Fill).max_width(PAGE_WIDTH).into()
+                self.with_settings(feeds, panel, layout)
             }
             Page::Keyboard => {
                 Element::from(self.keyboard.view(page_column(panel.title, layout))).map(Message::Keyboard)
@@ -415,12 +405,41 @@ impl App {
             Page::BarItems => {
                 Element::from(self.placement.view(page_column(panel.title, layout))).map(Message::Placement)
             }
+            Page::Lock => {
+                let times = Element::from(self.idle.view(page_column(panel.title, layout))).map(Message::Idle);
+                self.with_settings(times, panel, layout)
+            }
         };
         // One scroll position per panel.
         scrollable(container(content).center_x(Length::Fill))
             .id(panel.id)
             .height(Length::Fill)
             .into()
+    }
+
+    /// A page's own part (feeds, idle times) followed by the panel's ordinary
+    /// settings sections, at the width of one page column.
+    fn with_settings<'a>(
+        &'a self,
+        top: Element<'a, Message>,
+        panel: &'static Panel,
+        layout: Layout,
+    ) -> Element<'a, Message> {
+        let pad = if layout.stacked { 16.0 } else { 28.0 };
+        let mut options = Column::new()
+            .spacing(10)
+            .padding(iced::Padding {
+                top: 0.0,
+                right: pad,
+                bottom: pad,
+                left: pad,
+            })
+            .width(Length::Fill)
+            .max_width(PAGE_WIDTH);
+        for section in panel.sections {
+            options = self.section(options, section, layout);
+        }
+        column![top, options].width(Length::Fill).max_width(PAGE_WIDTH).into()
     }
 
     /// A section header and a card of setting rows.

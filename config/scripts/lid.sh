@@ -3,13 +3,16 @@
 # hypr/modules/monitors.lua.
 #
 # Usage:
-#   lid.sh close   lock the session (unless docked), then power the panel off
+#   lid.sh close   lock or suspend (unless docked, per lid-close-action), then
+#                  power the panel off
 #   lid.sh open    power the panel back on and restore the brightness
 #
 # logind ignores the lid (HandleLidSwitch=ignore), so closing it never
 # suspends or locks by itself. Without the lock here the session would stay
 # open until hypridle's lock timeout.
 set -uo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/settings.sh"
 
 readonly INTERNAL_PANEL=eDP-1
 
@@ -33,8 +36,15 @@ panel() {
 case "${1:-}" in
     close)
         # Docked, a closed lid is clamshell mode: the session stays in use on
-        # the external display, so it must not lock.
-        external_monitor_connected || loginctl lock-session
+        # the external display, so it must not lock or sleep.
+        if ! external_monitor_connected; then
+            # lid-close-action from the settings app: lock, suspend or nothing.
+            # Suspend locks first through hypridle's before_sleep_cmd.
+            case $(valid "$(setting lid-close-action lock)" 'lock|suspend|nothing' lock) in
+                lock) loginctl lock-session ;;
+                suspend) systemctl suspend ;;
+            esac
+        fi
         panel off
         ;;
     open)

@@ -28,7 +28,8 @@ shell show in the app too.
 | `osd` | Volume and brightness steps, maximum volume, on-screen display |
 | `recording` | Screenshots (folder, PNG or JPEG, cursor, clipboard, actions sheet) and screen recording (folder, file type, frame rate, quality, codec, cursor, sound) — read by `config/scripts/lib/screenshot.sh` and `screenrecord.sh` |
 | `sysmon` | System monitor refresh interval and sections |
-| `power` | Critical battery level and action, stay awake rules |
+| `lock` | Idle times (dim, lock, screen off, suspend) edited in `config/hypr/hypridle.conf`, which then restarts hypridle; stay awake; what the lid does; lock screen parts |
+| `power` | Critical battery level and action |
 
 ## Usage
 
@@ -92,6 +93,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/hypr.rs` | Hyprland settings the app owns: settings.json, the generated settings.lua, `hyprctl eval` |
 | `src/hyprpage.rs` | Panels of plain Hyprland options declared as rows (Mouse & touchpad) |
 | `src/mouse.rs` | The Mouse & touchpad rows |
+| `src/idle.rs` | Idle times: the variables in hypridle.conf |
 | `src/placement.rs` | Bar items panel: placement files and the live tray list |
 | `src/keyboard.rs` | Keyboard panel and the XKB layout list |
 | `src/system.rs` | Running nmcli and bluetoothctl on a background thread |

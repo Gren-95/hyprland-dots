@@ -117,6 +117,8 @@ The ones most worth knowing:
 | `bar-placement.json`, `tray-placement.json`, `qa-placement.json` | empty | Per item `"bar"`, `"overflow"` or `"hidden"` for bar modules, tray apps and Quick Actions items |
 | `flyout-sizes.json` | empty | Per flyout `{ "w": …, "h": … }` size overrides |
 | `hidden-apps.json` | empty | Apps hidden from the launcher (managed with `Ctrl+D` there) |
+| `lid-close-action` | `lock` | What closing the lid does when no external display is connected: `lock`, `suspend` or `nothing` (screen off only); read by `scripts/lid.sh` |
+| `lock-show-media`, `lock-show-weather`, `lock-show-battery` | `1` | Parts of the lock screen; read by the `hyprlock-*.sh` scripts |
 | `shot-dir`, `shot-format`, `shot-cursor`, `shot-clipboard`, `shot-actions` | `~/Pictures/Screenshots`, `png`, `0`, `1`, `1` | Screenshot folder, `png` or `jpg`, capture the cursor, copy to the clipboard, open the actions sheet after a region shot (read by `scripts/lib/screenshot.sh` and RegionSelector) |
 | `record-dir`, `record-container`, `record-fps`, `record-quality`, `record-codec`, `record-cursor`, `record-audio` | `~/Videos/Recordings`, `mp4`, `60`, `very_high`, `auto`, `1`, `none` | Screen recording options, read by `scripts/screenrecord.sh` (audio: `none`, `output`, `input`, `both`) |
 | `icon-theme-recents.json`, `cursor-theme-recents.json` | empty | Recently applied themes, listed first in the Icons & cursors popup |

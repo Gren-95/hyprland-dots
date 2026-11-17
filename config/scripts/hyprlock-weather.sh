@@ -22,6 +22,9 @@ CACHE="$CACHE_DIR/hyprlock-weather"
 GEO_CACHE="$CACHE_DIR/hyprlock-weather-geo"
 STALE_SECONDS=10800
 
+# Weather switched off on the lock screen (settings app, lock-show-weather).
+[[ $(cat "$SETTINGS_DIR/lock-show-weather" 2>/dev/null) == 0 ]] && exit 0
+
 location=$(cat "$SETTINGS_DIR/weather-location" 2>/dev/null) || location=""
 location=$(printf '%s' "$location" | xargs 2>/dev/null)
 [[ -n $location ]] || exit 0

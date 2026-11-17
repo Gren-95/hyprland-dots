@@ -20,6 +20,7 @@
 
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/settings.sh"
 
 DEST="$LOCK_ART"
 PRINT=0
@@ -42,6 +43,9 @@ if ((!PRINT)); then
         2>/dev/null | shuf -n1)
     [[ -n $WP && -f $WP ]] && ln -sf "$WP" "$LOCK_BG"
 fi
+
+# Media switched off on the lock screen (settings app, lock-show-media).
+[[ $(setting lock-show-media 1) == 1 ]] || give_up
 
 # playerctl exits non-zero when no player is registered, which is the normal
 # case rather than an error.

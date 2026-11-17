@@ -88,6 +88,11 @@ Scope {
     property bool idleInhibitOnMedia: false    // Stay Awake while media plays
     property bool idleInhibitOnPower: false    // Stay Awake while on AC
     property bool idleStayAwake: false         // the manual Stay Awake toggle
+    // Read by scripts, not the shell: lid.sh and the hyprlock text scripts.
+    property string lidCloseAction: "lock"     // lock | suspend | nothing
+    property bool lockShowMedia: true
+    property bool lockShowWeather: true
+    property bool lockShowBattery: true
     property var eventToasts: ({ charger: true, vpn: true, audio: false, layout: false })
     property string weatherLocation: ""        // city name; empty = weather off
     property bool weatherFahrenheit: false
@@ -204,6 +209,10 @@ Scope {
         { name: "idleInhibitOnMedia",   file: "idle-inhibit-media",     type: "bool" },
         { name: "idleInhibitOnPower",   file: "idle-inhibit-power",     type: "bool" },
         { name: "idleStayAwake",        file: "idle-stay-awake",        type: "bool" },
+        { name: "lidCloseAction",       file: "lid-close-action",       type: "string" },
+        { name: "lockShowMedia",        file: "lock-show-media",        type: "bool" },
+        { name: "lockShowWeather",      file: "lock-show-weather",      type: "bool" },
+        { name: "lockShowBattery",      file: "lock-show-battery",      type: "bool" },
         { name: "eventToasts",          file: "event-toasts.json",      type: "json" },
         { name: "weatherLocation",      file: "weather-location",       type: "string" },
         { name: "weatherFahrenheit",    file: "weather-fahrenheit",     type: "bool" },
