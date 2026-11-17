@@ -23,6 +23,8 @@ const FEED_COLORS: [u32; 7] = [0x4c9aff, 0xff7a1a, 0xff4d5e, 0x2ee59d, 0xb57bff,
 pub struct State {
     feeds: Vec<String>,
     draft: String,
+    /// Feed whose Remove was clicked once; a second click removes it.
+    confirming: Option<usize>,
     error: Option<String>,
 }
 
@@ -118,6 +120,9 @@ fn read() -> String {
 
 impl State {
     pub fn update(&mut self, msg: Msg) {
+        if !matches!(msg, Msg::Remove(_) | Msg::Refresh) {
+            self.confirming = None;
+        }
         match msg {
             Msg::Refresh => self.feeds = parse_feeds(&read()),
             Msg::Draft(text) => self.draft = text,
@@ -133,8 +138,10 @@ impl State {
                 },
                 Err(e) => self.error = Some(e),
             },
+            Msg::Remove(index) if self.confirming != Some(index) => self.confirming = Some(index),
             Msg::Remove(index) => match write(&without_feed(&read(), index)) {
                 Ok(()) => {
+                    self.confirming = None;
                     self.error = None;
                     self.feeds = parse_feeds(&read());
                 }
@@ -160,7 +167,11 @@ impl State {
                 let line = row![
                     dot,
                     text(mask(url)).size(14).color(style::FG).width(Length::Fill),
-                    ui::action("Remove", Some(Msg::Remove(i)), Action::Danger),
+                    ui::action(
+                        if self.confirming == Some(i) { "Sure?" } else { "Remove" },
+                        Some(Msg::Remove(i)),
+                        Action::Danger,
+                    ),
                 ]
                 .spacing(14)
                 .align_y(Alignment::Center);

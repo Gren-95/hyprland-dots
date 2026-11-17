@@ -40,6 +40,8 @@ pub struct State {
     scanning: bool,
     /// Device being renamed: MAC and the name typed so far.
     renaming: Option<(String, String)>,
+    /// Device whose Forget was picked once; picking it again forgets it.
+    confirming: Option<String>,
     error: Option<String>,
 }
 
@@ -212,6 +214,9 @@ fn glyph(icon: &str) -> &'static str {
 
 impl State {
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
+        if !matches!(msg, Msg::Forget(_) | Msg::Refresh | Msg::Refreshed(_)) {
+            self.confirming = None;
+        }
         match msg {
             Msg::Refresh => return refresh(),
             Msg::Refreshed(Ok(snapshot)) => self.snapshot = Some(snapshot),
@@ -240,7 +245,9 @@ impl State {
                 self.busy = Some(mac.clone());
                 return act(vec!["disconnect".into(), mac]);
             }
+            Msg::Forget(mac) if self.confirming.as_ref() != Some(&mac) => self.confirming = Some(mac),
             Msg::Forget(mac) => {
+                self.confirming = None;
                 self.busy = Some(mac.clone());
                 return act(vec!["remove".into(), mac]);
             }
@@ -374,15 +381,18 @@ impl State {
             } else {
                 ("Connect", idle.then(|| Msg::Connect(d.mac.clone())), Action::Primary)
             };
-            vec![ui::button_group(vec![
-                ("Forget", idle.then(|| Msg::Forget(d.mac.clone())), Action::Danger),
-                (
-                    "Rename",
-                    idle.then(|| Msg::StartRename(d.mac.clone(), d.name.clone())),
-                    Action::Normal,
-                ),
+            let forget = if self.confirming.as_ref() == Some(&d.mac) {
+                "Forget — sure?"
+            } else {
+                "Forget"
+            };
+            vec![ui::more_actions(
                 connect,
-            ])]
+                vec![
+                    ("Rename", idle.then(|| Msg::StartRename(d.mac.clone(), d.name.clone()))),
+                    (forget, idle.then(|| Msg::Forget(d.mac.clone()))),
+                ],
+            )]
         };
         ui::item(glyph(&d.icon), d.name.clone(), detail.join(" · "), controls)
     }

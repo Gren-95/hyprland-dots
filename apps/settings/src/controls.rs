@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use iced::widget::{column, container, pick_list, row, slider, text, text_input, toggler};
+use iced::widget::{button, column, container, pick_list, row, slider, text, text_input, toggler, tooltip};
 use iced::{Alignment, Element, Length};
 
 use crate::app::Message;
@@ -39,12 +39,29 @@ pub fn setting_row<'a>(
     stacked: bool,
     highlighted: bool,
 ) -> Element<'a, Message> {
-    let label = column![
-        text(s.label).size(14).color(style::FG),
-        text(s.help).size(12).color(style::MUTED_DEEP),
-    ]
-    .spacing(2)
-    .width(Length::Fill);
+    let title: Element<'a, Message> = if is_default(s, values) {
+        text(s.label).size(14).color(style::FG).into()
+    } else {
+        // Changed from the default: offer to put it back (UI.md).
+        let reset = button(text("↺").size(13))
+            .on_press(Message::Reset(s.file))
+            .padding([0, 6])
+            .style(style::action(style::Action::Normal));
+        let reset = tooltip(
+            reset,
+            container(text("Reset to default").size(12))
+                .padding([3, 8])
+                .style(style::card),
+            tooltip::Position::Top,
+        );
+        row![text(s.label).size(14).color(style::FG), reset]
+            .spacing(8)
+            .align_y(Alignment::Center)
+            .into()
+    };
+    let label = column![title, text(s.help).size(12).color(style::MUTED_DEEP)]
+        .spacing(2)
+        .width(Length::Fill);
     let control = control(s, values, draft, stacked);
     let line: Element<'a, Message> = match s.control {
         // A toggle is small enough to stay beside its label.
@@ -170,7 +187,7 @@ fn control<'a>(
                 .iter()
                 .map(|(n, label)| (*label, *n == current, Some(Message::Set(file, Value::Int(*n)))))
                 .collect();
-            ui::segmented(items, width)
+            ui::choice(items, width)
         }
         (Control::Toggles(toggles), _) => {
             let items = toggles
@@ -226,9 +243,16 @@ fn pair_value<'s>(on: [bool; 2], options: &[(&'s str, &str); 2], none: &'s str, 
     }
 }
 
-/// Few short options fit a segmented control; more stay a dropdown.
+/// Whether every file of the setting holds its default.
+pub fn is_default(s: &Setting, values: &HashMap<&'static str, Value>) -> bool {
+    s.files()
+        .into_iter()
+        .all(|(file, _, default)| values.get(file).is_none_or(|v| *v == default))
+}
+
+/// Two options are a joined button group, more a dropdown (UI.md).
 fn fits_segments(options: &[(&str, &str)]) -> bool {
-    options.len() <= 5 && options.iter().map(|(_, label)| label.chars().count()).sum::<usize>() <= 30
+    options.len() == 2
 }
 
 /// A slider with its value written beside it.
@@ -260,25 +284,24 @@ mod tests {
     }
 
     #[test]
-    fn short_choices_become_segments() {
+    fn knows_when_a_setting_is_at_its_default() {
+        let s = crate::schema::all_settings().find(|s| s.file == "bar-height").unwrap();
+        let mut values = HashMap::new();
+        assert!(is_default(s, &values));
+        values.insert("bar-height", Value::Int(36));
+        assert!(is_default(s, &values));
+        values.insert("bar-height", Value::Int(40));
+        assert!(!is_default(s, &values));
+        let group = crate::schema::all_settings()
+            .find(|s| s.file == "sysmon-show-cpu")
+            .unwrap();
+        values.insert("sysmon-show-ram", Value::Bool(false));
+        assert!(!is_default(group, &values));
+    }
+
+    #[test]
+    fn only_two_options_become_segments() {
         assert!(fits_segments(&[("center", "Top centre"), ("right", "Top right")]));
-        assert!(fits_segments(&[("png", "PNG"), ("jpg", "JPEG")]));
-        let audio = [
-            ("none", "None"),
-            ("output", "System sound"),
-            ("input", "Microphone"),
-            ("both", "System sound and microphone"),
-        ];
-        assert!(!fits_segments(&audio));
-        let codecs = [
-            ("auto", "Automatic"),
-            ("h264", "H.264"),
-            ("hevc", "HEVC"),
-            ("av1", "AV1"),
-            ("vp9", "VP9"),
-        ];
-        assert!(fits_segments(&codecs));
-        let six = [("a", "A"), ("b", "B"), ("c", "C"), ("d", "D"), ("e", "E"), ("f", "F")];
-        assert!(!fits_segments(&six));
+        assert!(!fits_segments(&[("a", "A"), ("b", "B"), ("c", "C")]));
     }
 }

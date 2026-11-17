@@ -1,7 +1,9 @@
 //! Pieces every panel is built from: section headers, cards, list rows and
 //! small action buttons.
 
-use iced::widget::{Column, Row, Space, TextInput, button, column, container, row, text};
+use std::fmt;
+
+use iced::widget::{Column, Row, Space, TextInput, button, column, container, pick_list, row, text};
 use iced::{Alignment, Element, Length};
 
 use crate::style;
@@ -151,4 +153,96 @@ pub fn fields_group<'a, M: Clone + 'a>(
         );
     }
     group.into()
+}
+
+/// A dropdown entry: shown by label, picked by position.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Entry {
+    index: usize,
+    label: String,
+}
+
+impl fmt::Display for Entry {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.label)
+    }
+}
+
+/// A dropdown of options, each (label, selected, message when picked).
+pub fn select<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>, width: Length) -> Element<'a, M> {
+    let entries: Vec<Entry> = items
+        .iter()
+        .enumerate()
+        .map(|(index, (label, _, _))| Entry {
+            index,
+            label: label.to_string(),
+        })
+        .collect();
+    let selected = items.iter().position(|(_, on, _)| *on).map(|i| entries[i].clone());
+    let messages: Vec<Option<M>> = items.into_iter().map(|(_, _, m)| m).collect();
+    // iced's pick_list cannot be disabled, so a busy dropdown is drawn as a
+    // disabled button showing the current pick.
+    if messages.iter().any(Option::is_none) {
+        let shown = selected.map(|e| e.label).unwrap_or_default();
+        return disabled(shown, width);
+    }
+    let messages: Vec<M> = messages.into_iter().flatten().collect();
+    pick_list(entries, selected, move |e: Entry| messages[e.index].clone())
+        .text_size(GROUP_TEXT)
+        .width(width)
+        .into()
+}
+
+/// A greyed-out, inert stand-in for a control.
+fn disabled<'a, M: Clone + 'a>(label: String, width: Length) -> Element<'a, M> {
+    button(text(label).size(GROUP_TEXT))
+        .padding([5, 10])
+        .width(width)
+        .style(style::action(style::Action::Normal))
+        .into()
+}
+
+/// One choice out of several (UI.md): two options are a joined button
+/// group, three or more a dropdown.
+pub fn choice<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>, width: Length) -> Element<'a, M> {
+    if items.len() == 2 {
+        segmented(items, width)
+    } else {
+        select(items, width)
+    }
+}
+
+/// Width of every "More" dropdown, so rows line up.
+const MORE_WIDTH: f32 = 96.0;
+
+/// The main action as a button with the other actions in a "More" dropdown
+/// beside it (UI.md: more than two buttons on a row).
+pub fn more_actions<'a, M: Clone + 'a>(
+    main: (&'a str, Option<M>, style::Action),
+    others: Vec<(&'a str, Option<M>)>,
+) -> Element<'a, M> {
+    let entries: Vec<Entry> = others
+        .iter()
+        .enumerate()
+        .map(|(index, (label, _))| Entry {
+            index,
+            label: label.to_string(),
+        })
+        .collect();
+    let messages: Vec<Option<M>> = others.into_iter().map(|(_, m)| m).collect();
+    let more: Element<'a, M> = if messages.iter().any(Option::is_none) {
+        disabled("More".into(), Length::Fixed(MORE_WIDTH))
+    } else {
+        let messages: Vec<M> = messages.into_iter().flatten().collect();
+        pick_list(entries, None::<Entry>, move |e: Entry| messages[e.index].clone())
+            .placeholder("More")
+            .text_size(13)
+            .padding([5, 10])
+            .width(MORE_WIDTH)
+            .into()
+    };
+    row![more, action(main.0, main.1, main.2)]
+        .spacing(6)
+        .align_y(Alignment::Center)
+        .into()
 }

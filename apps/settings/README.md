@@ -53,6 +53,12 @@ seconds while open. Volume sliders stop at the maximum volume set in Volume &
 OSD. A Wi-Fi password is handed to `nmcli --ask` on
 stdin, so it never appears in the process list.
 
+## UI rules
+
+[`UI.md`](UI.md) has the rules every panel follows: which control to use
+for which kind of option, button and input groups, confirmations, wording,
+states and layout.
+
 ## Build
 
 `dots.sh setup` builds it and installs `~/.local/bin/settings` plus the

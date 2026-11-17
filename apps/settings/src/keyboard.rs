@@ -108,6 +108,8 @@ pub struct State {
     test: String,
     /// Repeat slider being dragged, shown but not applied yet.
     dragging: bool,
+    /// Layout whose Remove was clicked once; a second click removes it.
+    confirming: Option<usize>,
     error: Option<String>,
 }
 
@@ -163,6 +165,9 @@ impl State {
     }
 
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
+        if !matches!(msg, Msg::Remove(_) | Msg::Load | Msg::Loaded(_) | Msg::Applied(_)) {
+            self.confirming = None;
+        }
         match msg {
             Msg::Load => {
                 if self.catalog.is_empty() {
@@ -186,7 +191,9 @@ impl State {
                     });
                 }
             }
+            Msg::Remove(i) if self.confirming != Some(i) => self.confirming = Some(i),
             Msg::Remove(i) => {
+                self.confirming = None;
                 return self.change(|k| {
                     if k.layouts.len() > 1 && i < k.layouts.len() {
                         k.layouts.remove(i);
@@ -255,7 +262,7 @@ impl State {
                     column![
                         text("Caps Lock key").size(14).color(style::FG),
                         text("What the Caps Lock key does").size(12).color(style::MUTED_DEEP),
-                        ui::segmented(caps, Length::Fill),
+                        ui::choice(caps, Length::Fill),
                     ]
                     .spacing(6),
                 )
@@ -318,9 +325,12 @@ impl State {
                 } else {
                     layout.clone()
                 };
-                let up = ui::action("Up", (i > 0).then_some(Msg::MoveUp(i)), Action::Normal);
-                let remove = ui::action("Remove", (count > 1).then_some(Msg::Remove(i)), Action::Danger);
-                ui::item("󰌌", self.name_of(layout, variant), detail, vec![up, remove])
+                let remove = if self.confirming == Some(i) { "Sure?" } else { "Remove" };
+                let buttons = ui::button_group(vec![
+                    ("Up", (i > 0).then_some(Msg::MoveUp(i)), Action::Normal),
+                    (remove, (count > 1).then_some(Msg::Remove(i)), Action::Danger),
+                ]);
+                ui::item("󰌌", self.name_of(layout, variant), detail, vec![buttons])
             })
             .collect();
         let field = text_input("Add a layout: type a language or country", &self.filter)

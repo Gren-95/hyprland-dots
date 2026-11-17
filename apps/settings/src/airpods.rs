@@ -186,7 +186,7 @@ pub fn rows<'a, M: Clone + 'a>(a: &'a AirPods, idle: bool, on_action: impl Fn(Ac
             "󰟎",
             "Noise control".into(),
             String::new(),
-            vec![ui::segmented(modes, Length::Shrink)],
+            vec![ui::choice(modes, Length::Fixed(220.0))],
         ));
         let on = a.conversation.unwrap_or(false);
         // A toggle only ever flips, so its message is known up front.
@@ -213,7 +213,7 @@ pub fn rows<'a, M: Clone + 'a>(a: &'a AirPods, idle: bool, on_action: impl Fn(Ac
         "󰎈",
         "Codec".into(),
         String::new(),
-        vec![ui::segmented(codecs, Length::Shrink)],
+        vec![ui::choice(codecs, Length::Fixed(220.0))],
     ));
     rows.push(ui::item(
         "󰑓",

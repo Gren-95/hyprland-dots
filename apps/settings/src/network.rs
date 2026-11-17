@@ -50,6 +50,8 @@ pub struct State {
     /// The hidden network form: name and password.
     hidden_ssid: String,
     hidden_password: String,
+    /// Network whose Forget was clicked once; a second click forgets it.
+    confirming: Option<String>,
     error: Option<String>,
 }
 
@@ -208,6 +210,9 @@ fn act(list: Vec<String>, stdin: Option<String>) -> Task<Msg> {
 
 impl State {
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
+        if !matches!(msg, Msg::Forget(_) | Msg::Refresh | Msg::Refreshed(_)) {
+            self.confirming = None;
+        }
         match msg {
             Msg::Refresh => return refresh(),
             Msg::Refreshed(Ok(snapshot)) => self.snapshot = Some(snapshot),
@@ -256,7 +261,9 @@ impl State {
                 self.busy = Some(name.clone());
                 return act(vec!["connection".into(), "down".into(), "id".into(), name], None);
             }
+            Msg::Forget(name) if self.confirming.as_ref() != Some(&name) => self.confirming = Some(name),
             Msg::Forget(name) => {
+                self.confirming = None;
                 self.busy = Some(name.clone());
                 return act(vec!["connection".into(), "delete".into(), "id".into(), name], None);
             }
@@ -406,7 +413,12 @@ impl State {
         } else {
             let mut buttons = Vec::new();
             if saved {
-                buttons.push(("Forget", idle.then(|| Msg::Forget(n.ssid.clone())), Action::Danger));
+                let forget = if self.confirming.as_ref() == Some(&n.ssid) {
+                    "Sure?"
+                } else {
+                    "Forget"
+                };
+                buttons.push((forget, idle.then(|| Msg::Forget(n.ssid.clone())), Action::Danger));
             }
             buttons.push(if n.in_use {
                 (

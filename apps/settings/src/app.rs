@@ -100,6 +100,8 @@ pub enum Message {
     FocusSearch,
     /// Escape: empty the search field.
     ClearSearch,
+    /// Put a setting (every file of it) back to its default.
+    Reset(&'static str),
     /// A search result: open the panel, scroll to the setting, outline it.
     Reveal(usize, &'static str),
     Reload,
@@ -243,6 +245,14 @@ impl App {
                 self.searching = false;
             }
             Message::Set(file, value) => self.write(file, value),
+            Message::Reset(file) => {
+                if let Some(setting) = all_settings().find(|s| s.file == file) {
+                    for (file, _, default) in setting.files() {
+                        self.drafts.remove(file);
+                        self.write(file, default);
+                    }
+                }
+            }
             Message::Preview(file, value) => {
                 self.dragging = Some(file);
                 self.values.insert(file, value);
