@@ -220,6 +220,31 @@ pub fn segment(selected: bool, joint: Joint) -> impl Fn(&Theme, button::Status) 
     action_at(if selected { Action::Primary } else { Action::Normal }, joint)
 }
 
+/// A pill: one item of a list setting, with its remove button inside.
+pub fn pill(theme: &Theme) -> container::Style {
+    let accent = theme.palette().primary;
+    container::Style {
+        background: Some(Background::Color(Color { a: 0.14, ..accent })),
+        border: Border {
+            color: Color { a: 0.5, ..accent },
+            width: 1.0,
+            radius: border::radius(12.0),
+        },
+        text_color: Some(FG),
+        ..container::Style::default()
+    }
+}
+
+/// The × inside a pill.
+pub fn pill_close(_: &Theme, status: button::Status) -> button::Style {
+    let hovered = matches!(status, button::Status::Hovered | button::Status::Pressed);
+    button::Style {
+        background: None,
+        text_color: if hovered { RED } else { FG_MUTED },
+        ..button::Style::default()
+    }
+}
+
 /// A round colour swatch.
 pub fn dot(color: Color) -> container::Style {
     container::Style {

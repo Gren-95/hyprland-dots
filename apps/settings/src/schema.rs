@@ -78,6 +78,11 @@ pub enum Control {
     Toggles(&'static [Toggle]),
     /// An installed font family, picked from a search list.
     Font,
+    /// A list of texts (JSON array), shown as removable pills with an input
+    /// group to add one.
+    Pills {
+        placeholder: &'static str,
+    },
     /// One of a few numbers, as a button group: (value, label).
     NumberChoice(&'static [(i64, &'static str)]),
     /// Two options that can each be on, stored in one text file as `none`,
@@ -104,6 +109,7 @@ pub enum Default {
     /// A path under $HOME.
     HomePath(&'static str),
     Flags(&'static [(&'static str, bool)]),
+    List(&'static [&'static str]),
 }
 
 impl Control {
@@ -118,6 +124,7 @@ impl Control {
             Control::Toggles(_) => "a group of switches",
             Control::NumberChoice(_) => "a choice of numbers",
             Control::Font => "a font picker",
+            Control::Pills { .. } => "a list of texts",
             Control::Pair { .. } => "a pair of switches",
         }
     }
@@ -131,7 +138,7 @@ impl Setting {
             Control::Scale { .. } => Kind::Real,
             Control::Choice(_) | Control::Entry { .. } | Control::Pair { .. } | Control::Font => Kind::Text,
             Control::Toggles(_) => Kind::Bool,
-            Control::Flags(_) => Kind::Json,
+            Control::Flags(_) | Control::Pills { .. } => Kind::Json,
         }
     }
 
@@ -154,6 +161,9 @@ impl Setting {
             Default::Real(n) => Value::Real(n),
             Default::Text(s) => Value::Text(s.to_string()),
             Default::HomePath(p) => Value::Text(home().join(p).to_string_lossy().into_owned()),
+            Default::List(items) => Value::Json(serde_json::Value::Array(
+                items.iter().map(|i| serde_json::Value::String(i.to_string())).collect(),
+            )),
             Default::Flags(flags) => Value::Json(serde_json::Value::Object(
                 flags
                     .iter()
@@ -563,13 +573,15 @@ pub const PANELS: &[Panel] = &[
                         "Remove matching notifications from the history on their own",
                         true,
                     ),
-                    entry(
-                        "notif-auto-expire-match",
-                        "Match",
-                        "Text in the app name or summary; empty turns it off",
-                        "Claude Code",
-                        Default::Text("Claude Code"),
-                    ),
+                    Setting {
+                        file: "notif-auto-expire-rules.json",
+                        label: "Rules",
+                        help: "A notification whose app name or summary contains one of these is dismissed",
+                        control: Control::Pills {
+                            placeholder: "Add a rule, e.g. Claude Code",
+                        },
+                        default: Default::List(&["Claude Code"]),
+                    },
                     number(
                         "notif-auto-expire-delay",
                         "After",

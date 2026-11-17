@@ -74,15 +74,17 @@ Scope {
     // bursts and pile the center full. Matched entries carry a deadline and
     // leave on their own, toast and history together.
     //
-    // The match is a substring of appName + summary because a terminal agent
+    // A rule matches a substring of appName + summary because a terminal agent
     // has no app name of its own: kitty forwards Claude Code's OSC 99 to the
     // notification server as appName "kitty", summary "Claude Code".
     function _autoExpires(entry) {
         if (!settingsStore.notifAutoExpire) return false;
-        const pat = (settingsStore.notifAutoExpireMatch || "").toLowerCase();
-        if (pat === "") return false;
+        const rules = (settingsStore.notifAutoExpireRules || [])
+            .map(r => String(r).trim().toLowerCase())
+            .filter(r => r !== "");
+        if (rules.length === 0) return false;
         const hay = ((entry.appName || "") + " " + (entry.summary || "")).toLowerCase();
-        return hay.indexOf(pat) >= 0;
+        return rules.some(r => hay.indexOf(r) >= 0);
     }
     readonly property bool _hasExpiring:
         historyList.some(e => e.expiresAt > 0) || activeList.some(e => e.expiresAt > 0)

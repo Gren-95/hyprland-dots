@@ -102,6 +102,10 @@ pub enum Message {
     FocusSearch,
     /// Escape: empty the search field.
     ClearSearch,
+    /// Add the typed text to a list setting (pills).
+    AddPill(&'static str),
+    /// Remove one item of a list setting.
+    RemovePill(&'static str, usize),
     /// Put a setting (every file of it) back to its default.
     Reset(&'static str),
     /// A search result: open the panel, scroll to the setting, outline it.
@@ -257,6 +261,26 @@ impl App {
                 self.write(file, value);
             }
             Message::Fonts(fonts) => self.fonts = fonts,
+            Message::AddPill(file) => {
+                let typed = self.drafts.remove(file).unwrap_or_default();
+                let item = typed.trim();
+                if let (false, Some(Value::Json(list))) = (item.is_empty(), self.values.get(file)) {
+                    let mut items = list.as_array().cloned().unwrap_or_default();
+                    if !items.iter().any(|v| v.as_str() == Some(item)) {
+                        items.push(serde_json::Value::String(item.to_string()));
+                    }
+                    self.write(file, Value::Json(serde_json::Value::Array(items)));
+                }
+            }
+            Message::RemovePill(file, index) => {
+                if let Some(Value::Json(list)) = self.values.get(file) {
+                    let mut items = list.as_array().cloned().unwrap_or_default();
+                    if index < items.len() {
+                        items.remove(index);
+                    }
+                    self.write(file, Value::Json(serde_json::Value::Array(items)));
+                }
+            }
             Message::Reset(file) => {
                 if let Some(setting) = all_settings().find(|s| s.file == file) {
                     for (file, _, default) in setting.files() {

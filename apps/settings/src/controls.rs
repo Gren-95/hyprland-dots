@@ -69,7 +69,9 @@ pub fn setting_row<'a>(
         Control::Toggle => row![label, control].spacing(16).align_y(Alignment::Center).into(),
         // A multi-select group goes under its label; so does every control
         // when the panel is narrow.
-        Control::Flags(_) | Control::Toggles(_) | Control::Font => column![label, control].spacing(8).into(),
+        Control::Flags(_) | Control::Toggles(_) | Control::Font | Control::Pills { .. } => {
+            column![label, control].spacing(8).into()
+        }
         _ if stacked => column![label, control].spacing(10).into(),
         _ => row![label, control].spacing(16).align_y(Alignment::Center).into(),
     };
@@ -183,6 +185,42 @@ fn control<'a>(
                 })
                 .collect();
             ui::multi_select(items, Length::Fill)
+        }
+        (Control::Pills { placeholder }, Value::Json(list)) => {
+            let items: Vec<String> = list
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect();
+            let pills = items.iter().enumerate().map(|(i, item)| {
+                let remove = button(text("×").size(14))
+                    .on_press(Message::RemovePill(file, i))
+                    .padding([0, 4])
+                    .style(style::pill_close);
+                container(
+                    row![text(item.clone()).size(13), remove]
+                        .spacing(4)
+                        .align_y(Alignment::Center),
+                )
+                .padding([3, 6])
+                .style(style::pill)
+                .into()
+            });
+            let mut list_view = column![].spacing(8);
+            if items.is_empty() {
+                list_view = list_view.push(text("No rules: nothing is dismissed").size(12).color(style::MUTED_DEEP));
+            } else {
+                list_view = list_view.push(iced::widget::Row::with_children(pills).spacing(6).wrap());
+            }
+            let typed = draft.map(String::as_str).unwrap_or("");
+            let field = text_input(placeholder, typed)
+                .on_input(move |t| Message::Draft(file, t))
+                .on_submit(Message::AddPill(file));
+            let add = (!typed.trim().is_empty()).then_some(Message::AddPill(file));
+            list_view
+                .push(ui::input_group(field, vec![("Add", add, style::Action::Primary)]))
+                .into()
         }
         (Control::Font, Value::Text(current)) => {
             let matches = crate::fonts::find(fonts, draft.map(String::as_str).unwrap_or(""))
