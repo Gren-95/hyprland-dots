@@ -93,6 +93,13 @@ Scope {
     property bool lockShowMedia: true
     property bool lockShowWeather: true
     property bool lockShowBattery: true
+    // Read by scripts: battery-notify.sh and night.sh.
+    property int batteryLowPct: 20
+    property int batteryWarnPct: 10
+    property int nightTemperature: 4000
+    property bool nightSchedule: false
+    property string nightFrom: "21:00"
+    property string nightTo: "07:00"
     property var eventToasts: ({ charger: true, vpn: true, audio: false, layout: false })
     property string weatherLocation: ""        // city name; empty = weather off
     property bool weatherFahrenheit: false
@@ -213,6 +220,12 @@ Scope {
         { name: "lockShowMedia",        file: "lock-show-media",        type: "bool" },
         { name: "lockShowWeather",      file: "lock-show-weather",      type: "bool" },
         { name: "lockShowBattery",      file: "lock-show-battery",      type: "bool" },
+        { name: "batteryLowPct",        file: "battery-low-pct",        type: "int"  },
+        { name: "batteryWarnPct",       file: "battery-warn-pct",       type: "int"  },
+        { name: "nightTemperature",     file: "night-temperature",      type: "int"  },
+        { name: "nightSchedule",        file: "night-schedule",         type: "bool" },
+        { name: "nightFrom",            file: "night-from",             type: "string" },
+        { name: "nightTo",              file: "night-to",               type: "string" },
         { name: "eventToasts",          file: "event-toasts.json",      type: "json" },
         { name: "weatherLocation",      file: "weather-location",       type: "string" },
         { name: "weatherFahrenheit",    file: "weather-fahrenheit",     type: "bool" },

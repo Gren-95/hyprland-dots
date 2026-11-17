@@ -117,6 +117,8 @@ The ones most worth knowing:
 | `bar-placement.json`, `tray-placement.json`, `qa-placement.json` | empty | Per item `"bar"`, `"overflow"` or `"hidden"` for bar modules, tray apps and Quick Actions items |
 | `flyout-sizes.json` | empty | Per flyout `{ "w": …, "h": … }` size overrides |
 | `hidden-apps.json` | empty | Apps hidden from the launcher (managed with `Ctrl+D` there) |
+| `battery-low-pct`, `battery-warn-pct` | `20`, `10` | Battery warning levels, read by `scripts/battery-notify.sh` |
+| `night-temperature`, `night-schedule`, `night-from`, `night-to` | `4000`, `0`, `21:00`, `07:00` | Night light colour and optional schedule, read by `scripts/night.sh` |
 | `lid-close-action` | `lock` | What closing the lid does when no external display is connected: `lock`, `suspend` or `nothing` (screen off only); read by `scripts/lid.sh` |
 | `lock-show-media`, `lock-show-weather`, `lock-show-battery` | `1` | Parts of the lock screen; read by the `hyprlock-*.sh` scripts |
 | `shot-dir`, `shot-format`, `shot-cursor`, `shot-clipboard`, `shot-actions` | `~/Pictures/Screenshots`, `png`, `0`, `1`, `1` | Screenshot folder, `png` or `jpg`, capture the cursor, copy to the clipboard, open the actions sheet after a region shot (read by `scripts/lib/screenshot.sh` and RegionSelector) |

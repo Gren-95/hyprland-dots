@@ -111,6 +111,8 @@ awww-daemon >/dev/null 2>&1 &
     awww restore
 ) >/dev/null 2>&1 &
 hypridle >/dev/null 2>&1 &
+# A scheduled night light starts with the session (night.sh resume is quiet).
+bash "$SCRIPTS_DIR/night.sh" resume >/dev/null 2>&1
 bash "$SCRIPTS_DIR/dotwatch.sh" >/dev/null 2>&1 &
 wl-paste --watch cliphist store >/dev/null 2>&1 &
 # nm-applet owns Wi-Fi, wired, the Wi-Fi password prompt and Tailscale (via
