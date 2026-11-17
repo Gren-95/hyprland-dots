@@ -32,6 +32,14 @@ pub fn matches(query: &str, panel: &Panel, section: &Section, setting: &Setting)
             haystack.push(' ');
             haystack.push_str(label);
         }),
+        Control::Toggles(toggles) => toggles.iter().for_each(|t| {
+            haystack.push(' ');
+            haystack.push_str(t.label);
+        }),
+        Control::Pair { options, .. } => options.iter().for_each(|(_, label)| {
+            haystack.push(' ');
+            haystack.push_str(label);
+        }),
         _ => {}
     }
     contains_all(&haystack, query)

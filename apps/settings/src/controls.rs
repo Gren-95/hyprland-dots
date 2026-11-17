@@ -1,6 +1,7 @@
 //! One setting as a row: its label and help text with the control that edits
 //! it (toggle, slider, choice, text entry or a list of flags).
 
+use std::collections::HashMap;
 use std::fmt;
 
 use iced::widget::{column, container, pick_list, row, slider, text, text_input, toggler};
@@ -33,7 +34,7 @@ impl fmt::Display for Choice {
 /// `stacked` puts the control under its label (narrow panels).
 pub fn setting_row<'a>(
     s: &'static Setting,
-    value: Value,
+    values: &HashMap<&'static str, Value>,
     draft: Option<&'a String>,
     stacked: bool,
     highlighted: bool,
@@ -44,13 +45,13 @@ pub fn setting_row<'a>(
     ]
     .spacing(2)
     .width(Length::Fill);
-    let control = control(s, value, draft, stacked);
+    let control = control(s, values, draft, stacked);
     let line: Element<'a, Message> = match s.control {
         // A toggle is small enough to stay beside its label.
         Control::Toggle => row![label, control].spacing(16).align_y(Alignment::Center).into(),
-        // The flags list goes under its label, one toggle per line; so does
-        // every control when the panel is narrow.
-        Control::Flags(_) => column![label, control].spacing(8).into(),
+        // A multi-select group goes under its label; so does every control
+        // when the panel is narrow.
+        Control::Flags(_) | Control::Toggles(_) => column![label, control].spacing(8).into(),
         _ if stacked => column![label, control].spacing(10).into(),
         _ => row![label, control].spacing(16).align_y(Alignment::Center).into(),
     };
@@ -66,7 +67,12 @@ pub fn setting_row<'a>(
         .into()
 }
 
-fn control<'a>(s: &'static Setting, value: Value, draft: Option<&'a String>, stacked: bool) -> Element<'a, Message> {
+fn control<'a>(
+    s: &'static Setting,
+    values: &HashMap<&'static str, Value>,
+    draft: Option<&'a String>,
+    stacked: bool,
+) -> Element<'a, Message> {
     let file = s.file;
     // Under the label the control takes the full width; beside it, a fixed
     // one so the controls line up.
@@ -75,6 +81,7 @@ fn control<'a>(s: &'static Setting, value: Value, draft: Option<&'a String>, sta
     } else {
         Length::Fixed(CONTROL_WIDTH)
     };
+    let value = values.get(s.file).cloned().unwrap_or_else(|| s.default_value());
     match (&s.control, value) {
         (Control::Toggle, Value::Bool(on)) => toggler(on)
             .on_toggle(move |b| Message::Set(file, Value::Bool(b)))
@@ -143,27 +150,72 @@ fn control<'a>(s: &'static Setting, value: Value, draft: Option<&'a String>, sta
             }
         }
         (Control::Flags(flags), Value::Json(map)) => {
-            let lines = flags.iter().map(|(key, label)| {
-                let on = map.get(*key).and_then(|v| v.as_bool()).unwrap_or(false);
-                let map = map.clone();
-                row![
-                    text(*label).size(13).color(style::FG_MUTED).width(Length::Fill),
-                    toggler(on).on_toggle(move |b| {
-                        let mut next = map.as_object().cloned().unwrap_or_default();
-                        next.insert(key.to_string(), serde_json::Value::Bool(b));
-                        Message::Set(file, Value::Json(serde_json::Value::Object(next)))
-                    }),
-                ]
-                .align_y(Alignment::Center)
-                .into()
-            });
-            column(lines).spacing(10).padding([0, 8]).into()
+            let items = flags
+                .iter()
+                .map(|(key, label)| {
+                    let on = map.get(*key).and_then(|v| v.as_bool()).unwrap_or(false);
+                    let mut next = map.as_object().cloned().unwrap_or_default();
+                    next.insert(key.to_string(), serde_json::Value::Bool(!on));
+                    (
+                        *label,
+                        on,
+                        Some(Message::Set(file, Value::Json(serde_json::Value::Object(next)))),
+                    )
+                })
+                .collect();
+            ui::multi_select(items, Length::Fill)
+        }
+        (Control::Toggles(toggles), _) => {
+            let items = toggles
+                .iter()
+                .map(|t| {
+                    let on = matches!(values.get(t.file), Some(Value::Bool(true)))
+                        || (values.get(t.file).is_none() && t.default);
+                    (t.label, on, Some(Message::Set(t.file, Value::Bool(!on))))
+                })
+                .collect();
+            ui::multi_select(items, Length::Fill)
+        }
+        (Control::Pair { options, none, both }, Value::Text(current)) => {
+            let on = pair_state(&current, options, both);
+            let items = (0..2)
+                .map(|i| {
+                    let mut next = on;
+                    next[i] = !next[i];
+                    let stored = pair_value(next, options, none, both);
+                    (
+                        options[i].1,
+                        on[i],
+                        Some(Message::Set(file, Value::Text(stored.to_string()))),
+                    )
+                })
+                .collect();
+            ui::multi_select(items, width)
         }
         // Values are read with the setting's own type and defaults are tested
         // to match, so a mismatch is a schema bug.
         (control, value) => text(format!("{file}: {value:?} does not fit {}", control.name()))
             .color(style::RED)
             .into(),
+    }
+}
+
+/// Which of a pair's two options the stored value turns on.
+fn pair_state(value: &str, options: &[(&str, &str); 2], both: &str) -> [bool; 2] {
+    if value == both {
+        [true, true]
+    } else {
+        [value == options[0].0, value == options[1].0]
+    }
+}
+
+/// The stored value for a pair's on/off state.
+fn pair_value<'s>(on: [bool; 2], options: &[(&'s str, &str); 2], none: &'s str, both: &'s str) -> &'s str {
+    match on {
+        [true, true] => both,
+        [true, false] => options[0].0,
+        [false, true] => options[1].0,
+        [false, false] => none,
     }
 }
 
@@ -184,6 +236,21 @@ fn slider_row<'a>(bar: Element<'a, Message>, value: String, width: Length) -> El
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pair_maps_both_ways() {
+        let options = [("output", "System sound"), ("input", "Microphone")];
+        for (value, on) in [
+            ("none", [false, false]),
+            ("output", [true, false]),
+            ("input", [false, true]),
+            ("both", [true, true]),
+        ] {
+            assert_eq!(pair_state(value, &options, "both"), on);
+            assert_eq!(pair_value(on, &options, "none", "both"), value);
+        }
+        assert_eq!(pair_state("junk", &options, "both"), [false, false]);
+    }
 
     #[test]
     fn short_choices_become_segments() {

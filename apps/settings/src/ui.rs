@@ -79,6 +79,25 @@ pub fn segmented<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>, widt
     Row::with_children(buttons).spacing(-1.0).width(width).into()
 }
 
+/// A multi-select button group: joined buttons that are each on or off;
+/// on ones are filled and checked. Each item is (label, on, message).
+pub fn multi_select<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>, width: Length) -> Element<'a, M> {
+    let count = items.len();
+    let buttons = items.into_iter().enumerate().map(|(i, (label, on, on_press))| {
+        let mark = text(if on { "󰄬" } else { "" }).font(style::GLYPH_FONT).size(GROUP_TEXT);
+        let content = row![mark, text(label).size(GROUP_TEXT)]
+            .spacing(6)
+            .align_y(Alignment::Center);
+        button(container(content).center_x(Length::Fill))
+            .on_press_maybe(on_press)
+            .padding([8, 12])
+            .width(Length::Fill)
+            .style(style::segment(on, style::Joint::of(i, count)))
+            .into()
+    });
+    Row::with_children(buttons).spacing(-1.0).width(width).into()
+}
+
 /// An input group: a text field with buttons joined to its right.
 pub fn input_group<'a, M: Clone + 'a>(
     field: TextInput<'a, M>,

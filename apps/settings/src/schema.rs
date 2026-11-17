@@ -68,8 +68,26 @@ pub enum Control {
     Entry {
         placeholder: &'static str,
     },
-    /// JSON object of named on/off flags: (key, label).
+    /// JSON object of named on/off flags: (key, label); a multi-select
+    /// button group.
     Flags(&'static [(&'static str, &'static str)]),
+    /// Several on/off settings, each in its own file, as one multi-select
+    /// button group. The setting's own `file` is the first one's.
+    Toggles(&'static [Toggle]),
+    /// Two options that can each be on, stored in one text file as `none`,
+    /// either option's value, or `both` (a multi-select of two).
+    Pair {
+        options: [(&'static str, &'static str); 2],
+        none: &'static str,
+        both: &'static str,
+    },
+}
+
+/// One button of a `Control::Toggles` group.
+pub struct Toggle {
+    pub file: &'static str,
+    pub label: &'static str,
+    pub default: bool,
 }
 
 pub enum Default {
@@ -91,6 +109,8 @@ impl Control {
             Control::Choice(_) => "a choice",
             Control::Entry { .. } => "a text entry",
             Control::Flags(_) => "a list of flags",
+            Control::Toggles(_) => "a group of switches",
+            Control::Pair { .. } => "a pair of switches",
         }
     }
 }
@@ -101,8 +121,21 @@ impl Setting {
             Control::Toggle => Kind::Bool,
             Control::Number { .. } => Kind::Int,
             Control::Scale { .. } => Kind::Real,
-            Control::Choice(_) | Control::Entry { .. } => Kind::Text,
+            Control::Choice(_) | Control::Entry { .. } | Control::Pair { .. } => Kind::Text,
+            Control::Toggles(_) => Kind::Bool,
             Control::Flags(_) => Kind::Json,
+        }
+    }
+
+    /// Every file this setting stores, with its type and default: one, or
+    /// one per button of a `Toggles` group.
+    pub fn files(&self) -> Vec<(&'static str, Kind, Value)> {
+        match self.control {
+            Control::Toggles(toggles) => toggles
+                .iter()
+                .map(|t| (t.file, Kind::Bool, Value::Bool(t.default)))
+                .collect(),
+            _ => vec![(self.file, self.kind(), self.default_value())],
         }
     }
 
@@ -540,10 +573,10 @@ pub const PANELS: &[Panel] = &[
                     label: "Show a toast for",
                     help: "Events that pop up a toast",
                     control: Control::Flags(&[
-                        ("charger", "Charger plugged in or out"),
-                        ("vpn", "VPN connected or disconnected"),
-                        ("audio", "Audio output changed"),
-                        ("layout", "Keyboard layout changed"),
+                        ("charger", "Charger"),
+                        ("vpn", "VPN"),
+                        ("audio", "Audio output"),
+                        ("layout", "Keyboard layout"),
                     ]),
                     default: Default::Flags(&[("charger", true), ("vpn", true), ("audio", false), ("layout", false)]),
                 }],
@@ -760,18 +793,17 @@ pub const PANELS: &[Panel] = &[
             },
             Section {
                 title: "Recording audio",
-                settings: &[choice(
-                    "record-audio",
-                    "Sound",
-                    "What sound goes into the recording",
-                    &[
-                        ("none", "None"),
-                        ("output", "System sound"),
-                        ("input", "Microphone"),
-                        ("both", "System sound and microphone"),
-                    ],
-                    "none",
-                )],
+                settings: &[Setting {
+                    file: "record-audio",
+                    label: "Sound",
+                    help: "What sound goes into the recording; none when both are off",
+                    control: Control::Pair {
+                        options: [("output", "System sound"), ("input", "Microphone")],
+                        none: "none",
+                        both: "both",
+                    },
+                    default: Default::Text("none"),
+                }],
             },
         ],
     },
@@ -797,17 +829,34 @@ pub const PANELS: &[Panel] = &[
             },
             Section {
                 title: "Sections",
-                settings: &[
-                    toggle("sysmon-show-cpu", "Processor", "CPU usage and cores", true),
-                    toggle("sysmon-show-ram", "Memory", "RAM usage", true),
-                    toggle("sysmon-show-storage", "Storage", "Mounted file systems", true),
-                    toggle(
-                        "sysmon-show-thermal",
-                        "Temperatures",
-                        "CPU and NVMe temperatures, fans",
-                        true,
-                    ),
-                ],
+                settings: &[Setting {
+                    file: "sysmon-show-cpu",
+                    label: "Shown",
+                    help: "Sections of the system monitor: processor, memory, storage, temperatures and fans",
+                    control: Control::Toggles(&[
+                        Toggle {
+                            file: "sysmon-show-cpu",
+                            label: "CPU",
+                            default: true,
+                        },
+                        Toggle {
+                            file: "sysmon-show-ram",
+                            label: "Memory",
+                            default: true,
+                        },
+                        Toggle {
+                            file: "sysmon-show-storage",
+                            label: "Storage",
+                            default: true,
+                        },
+                        Toggle {
+                            file: "sysmon-show-thermal",
+                            label: "Temperatures",
+                            default: true,
+                        },
+                    ]),
+                    default: Default::Bool(true),
+                }],
             },
         ],
     },
@@ -864,18 +913,24 @@ pub const PANELS: &[Panel] = &[
                 title: "Stay awake",
                 settings: &[
                     toggle("idle-stay-awake", "Stay awake", "Never dim, lock or sleep", false),
-                    toggle(
-                        "idle-inhibit-media",
-                        "While media plays",
-                        "Stay awake while something is playing",
-                        false,
-                    ),
-                    toggle(
-                        "idle-inhibit-power",
-                        "While on AC",
-                        "Stay awake while the charger is plugged in",
-                        false,
-                    ),
+                    Setting {
+                        file: "idle-inhibit-media",
+                        label: "Also stay awake",
+                        help: "While something is playing, or while the charger is plugged in",
+                        control: Control::Toggles(&[
+                            Toggle {
+                                file: "idle-inhibit-media",
+                                label: "While media plays",
+                                default: false,
+                            },
+                            Toggle {
+                                file: "idle-inhibit-power",
+                                label: "On AC",
+                                default: false,
+                            },
+                        ]),
+                        default: Default::Bool(false),
+                    },
                 ],
             },
         ],
@@ -904,12 +959,12 @@ mod tests {
     fn matches_the_quickshell_schema() {
         let qml_path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../config/quickshell/Settings.qml");
         let qml = std::fs::read_to_string(qml_path).expect("Settings.qml");
-        for setting in all_settings() {
+        for (file, kind, _) in all_settings().flat_map(|s| s.files()) {
             let row = qml
                 .lines()
-                .find(|l| l.contains(&format!("file: \"{}\"", setting.file)))
-                .unwrap_or_else(|| panic!("{} is not in Settings.qml _schema", setting.file));
-            let qml_type = match setting.kind() {
+                .find(|l| l.contains(&format!("file: \"{file}\"")))
+                .unwrap_or_else(|| panic!("{file} is not in Settings.qml _schema"));
+            let qml_type = match kind {
                 Kind::Bool => "bool",
                 Kind::Int => "int",
                 Kind::Real => "real",
@@ -918,8 +973,7 @@ mod tests {
             };
             assert!(
                 row.contains(&format!("type: \"{qml_type}\"")),
-                "{}: type differs from Settings.qml",
-                setting.file
+                "{file}: type differs from Settings.qml"
             );
         }
     }
@@ -928,7 +982,7 @@ mod tests {
     fn ids_and_files_are_unique() {
         let ids: HashSet<_> = PANELS.iter().map(|p| p.id).collect();
         assert_eq!(ids.len(), PANELS.len());
-        let files: Vec<_> = all_settings().map(|s| s.file).collect();
+        let files: Vec<_> = all_settings().flat_map(|s| s.files()).map(|(f, _, _)| f).collect();
         let unique: HashSet<_> = files.iter().collect();
         assert_eq!(unique.len(), files.len());
     }

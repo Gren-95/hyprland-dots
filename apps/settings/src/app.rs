@@ -146,12 +146,12 @@ impl App {
     }
 
     fn reload(&mut self) {
-        for s in all_settings() {
-            if self.dragging == Some(s.file) {
+        for (file, kind, default) in all_settings().flat_map(|s| s.files()) {
+            if self.dragging == Some(file) {
                 continue;
             }
-            let value = self.store.read(s.file, s.kind()).unwrap_or_else(|| s.default_value());
-            self.values.insert(s.file, value);
+            let value = self.store.read(file, kind).unwrap_or(default);
+            self.values.insert(file, value);
         }
     }
 
@@ -345,9 +345,8 @@ impl App {
         layout: Layout,
     ) -> Column<'a, Message> {
         let rows = section.settings.iter().map(|s| {
-            let value = self.values.get(s.file).cloned().unwrap_or_else(|| s.default_value());
             let highlighted = self.highlight.is_some_and(|(file, _)| file == s.file);
-            controls::setting_row(s, value, self.drafts.get(s.file), layout.stacked, highlighted)
+            controls::setting_row(s, &self.values, self.drafts.get(s.file), layout.stacked, highlighted)
         });
         ui::section(body, section.title, rows.collect())
     }
