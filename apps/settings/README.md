@@ -18,10 +18,12 @@ shell show in the app too.
 | `bluetooth` | Bluetooth on/off, paired devices (connect, disconnect, forget, battery), scanning and pairing — through `bluetoothctl`. Connected AirPods get battery per bud and case, noise control, conversation awareness, codec and an audio reset, through librepods and `config/scripts/airpods.sh` |
 | `appearance` | Accent colour, font and text size, corner roundness, animation speed, wallpaper folder |
 | `bar` | Height, opacity, window title width, workspace icons, activity icons, scroll action |
-| `clock` | 24-hour clock, seconds, date format, first day of the week, calendar feed refresh |
+| `clock` | 24-hour clock, seconds, date format |
+| `calendar` | ICS feeds of the day panel (`~/.config/quickshell/calendar.url`, shown shortened as the links hold private tokens): add, remove; first day of the week, feed refresh interval |
 | `notifications` | Toast position, time, count and width; history; auto-dismiss; system event toasts |
 | `launcher` | Results shown, calculator, clipboard thumbnails |
 | `osd` | Volume and brightness steps, maximum volume, on-screen display |
+| `recording` | Screenshots (folder, PNG or JPEG, cursor, clipboard, actions sheet) and screen recording (folder, file type, frame rate, quality, codec, cursor, sound) — read by `config/scripts/lib/screenshot.sh` and `screenrecord.sh` |
 | `sysmon` | System monitor refresh interval and sections |
 | `weather` | Location, Fahrenheit |
 | `power` | Critical battery level and action, stay awake rules |
@@ -78,6 +80,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/bluetooth.rs` | Bluetooth panel: bluetoothctl output parsing, actions, view |
 | `src/audio.rs` | Sound panel: pw-dump parsing, wpctl actions, view |
 | `src/airpods.rs` | AirPods section of the Bluetooth panel: librepods state, airpods.sh actions |
+| `src/calendar.rs` | Calendar feeds: reading, adding and removing lines of calendar.url |
 | `src/system.rs` | Running nmcli and bluetoothctl on a background thread |
 | `src/ui.rs` | Shared pieces: section cards, list rows, action buttons |
 | `src/reveal.rs` | Scrolling a panel to a setting's row (a widget operation) |

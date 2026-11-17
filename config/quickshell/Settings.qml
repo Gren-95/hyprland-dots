@@ -91,6 +91,21 @@ Scope {
     property var eventToasts: ({ charger: true, vpn: true, audio: false, layout: false })
     property string weatherLocation: ""        // city name; empty = weather off
     property bool weatherFahrenheit: false
+    // Screenshots: lib/screenshot.sh reads the shot-* files; the shell reads
+    // shotActions (open the actions sheet after a region screenshot).
+    property string shotDir: Quickshell.env("HOME") + "/Pictures/Screenshots"
+    property string shotFormat: "png"          // png | jpg
+    property bool shotCursor: false
+    property bool shotClipboard: true
+    property bool shotActions: true
+    // Screen recording, read by scripts/screenrecord.sh (not by the shell).
+    property string recordDir: Quickshell.env("HOME") + "/Videos/Recordings"
+    property string recordContainer: "mp4"     // mp4 | mkv | webm
+    property int recordFps: 60
+    property string recordQuality: "very_high" // medium | high | very_high | ultra
+    property string recordCodec: "auto"       // auto | h264 | hevc | av1 | vp9
+    property bool recordCursor: true
+    property string recordAudio: "none"       // none | output | input | both
 
     // Reactive flyout-geometry lookup (reads flyoutSizes, so bindings track it).
     function flyoutSize(id, dim, def) {
@@ -192,6 +207,18 @@ Scope {
         { name: "eventToasts",          file: "event-toasts.json",      type: "json" },
         { name: "weatherLocation",      file: "weather-location",       type: "string" },
         { name: "weatherFahrenheit",    file: "weather-fahrenheit",     type: "bool" },
+        { name: "shotDir",              file: "shot-dir",               type: "string" },
+        { name: "shotFormat",           file: "shot-format",            type: "string" },
+        { name: "shotCursor",           file: "shot-cursor",            type: "bool" },
+        { name: "shotClipboard",        file: "shot-clipboard",         type: "bool" },
+        { name: "shotActions",          file: "shot-actions",           type: "bool" },
+        { name: "recordDir",            file: "record-dir",             type: "string" },
+        { name: "recordContainer",      file: "record-container",       type: "string" },
+        { name: "recordFps",            file: "record-fps",             type: "int"  },
+        { name: "recordQuality",        file: "record-quality",         type: "string" },
+        { name: "recordCodec",          file: "record-codec",           type: "string" },
+        { name: "recordCursor",         file: "record-cursor",          type: "bool" },
+        { name: "recordAudio",          file: "record-audio",           type: "string" },
     ]
 
     // Settings live under ~/.config (they're user prefs, not cache — a

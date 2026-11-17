@@ -64,7 +64,9 @@ to enable.
 
 ## Screen Recording
 
-`Super+Shift+R` — toggles screen recording. Recordings are saved to `~/Videos/Recordings/`.
+`Super+Shift+R` — toggles screen recording. Recordings are saved to `~/Videos/Recordings/`
+unless the settings app's Screenshots & recording panel (`settings -p recording`) says otherwise;
+that panel also sets the screenshot folder and format, frame rate, quality, codec and audio.
 
 Requires `gpu-screen-recorder`. A brief toast appears top-right on start/stop
 (it auto-hides during recording so it doesn't appear in the captured video).
@@ -115,6 +117,8 @@ The ones most worth knowing:
 | `bar-placement.json`, `tray-placement.json`, `qa-placement.json` | empty | Per item `"bar"`, `"overflow"` or `"hidden"` for bar modules, tray apps and Quick Actions items |
 | `flyout-sizes.json` | empty | Per flyout `{ "w": …, "h": … }` size overrides |
 | `hidden-apps.json` | empty | Apps hidden from the launcher (managed with `Ctrl+D` there) |
+| `shot-dir`, `shot-format`, `shot-cursor`, `shot-clipboard`, `shot-actions` | `~/Pictures/Screenshots`, `png`, `0`, `1`, `1` | Screenshot folder, `png` or `jpg`, capture the cursor, copy to the clipboard, open the actions sheet after a region shot (read by `scripts/lib/screenshot.sh` and RegionSelector) |
+| `record-dir`, `record-container`, `record-fps`, `record-quality`, `record-codec`, `record-cursor`, `record-audio` | `~/Videos/Recordings`, `mp4`, `60`, `very_high`, `auto`, `1`, `none` | Screen recording options, read by `scripts/screenrecord.sh` (audio: `none`, `output`, `input`, `both`) |
 | `icon-theme-recents.json`, `cursor-theme-recents.json` | empty | Recently applied themes, listed first in the Icons & cursors popup |
 
 ### Calendar feeds

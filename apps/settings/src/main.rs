@@ -5,6 +5,7 @@ mod app;
 mod args;
 mod audio;
 mod bluetooth;
+mod calendar;
 mod controls;
 mod network;
 mod reveal;

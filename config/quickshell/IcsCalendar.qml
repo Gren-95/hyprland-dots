@@ -28,16 +28,18 @@ Scope {
         }
     }
 
-    // Per-feed accent colors, indexed by the feed's position in calendar.url,
-    // so each subscription reads as its own color in the grid and event rows.
+    // Per-feed colors, indexed by the feed's position in calendar.url, so
+    // each subscription reads as its own color in the grid and event rows.
+    // Theme.base, not Theme.accent: "Accent everywhere" must not merge them.
+    // The settings app's Calendar panel shows the same list (calendar.rs).
     readonly property var feedColors: [
-        Theme.accent.blue,
-        Theme.accent.orange,
-        Theme.accent.red,
-        Theme.accent.green,
-        Theme.accent.purple,
-        Theme.accent.pink,
-        Theme.accent.teal
+        Theme.base.blue,
+        Theme.base.orange,
+        Theme.base.red,
+        Theme.base.green,
+        Theme.base.purple,
+        Theme.base.pink,
+        Theme.base.teal
     ]
 
     // Marker curl writes after every transfer, used to split the concatenated

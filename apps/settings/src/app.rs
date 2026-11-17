@@ -10,6 +10,7 @@ use iced::{Element, Length, Subscription, Task, Theme, keyboard};
 
 use crate::audio;
 use crate::bluetooth;
+use crate::calendar;
 use crate::controls;
 use crate::network;
 use crate::reveal;
@@ -78,6 +79,7 @@ pub struct App {
     network: network::State,
     bluetooth: bluetooth::State,
     audio: audio::State,
+    calendar: calendar::State,
     error: Option<String>,
 }
 
@@ -101,6 +103,7 @@ pub enum Message {
     Network(network::Msg),
     Bluetooth(bluetooth::Msg),
     Audio(audio::Msg),
+    Calendar(calendar::Msg),
 }
 
 impl App {
@@ -120,6 +123,7 @@ impl App {
             network: network::State::default(),
             bluetooth: bluetooth::State::default(),
             audio: audio::State::default(),
+            calendar: calendar::State::default(),
             error: None,
         };
         app.reload();
@@ -134,6 +138,10 @@ impl App {
             Page::Network => self.network.update(network::Msg::Refresh).map(Message::Network),
             Page::Bluetooth => self.bluetooth.update(bluetooth::Msg::Refresh).map(Message::Bluetooth),
             Page::Sound => self.audio.update(audio::Msg::Refresh).map(Message::Audio),
+            Page::Calendar => {
+                self.calendar.update(calendar::Msg::Refresh);
+                Task::none()
+            }
         }
     }
 
@@ -195,6 +203,8 @@ impl App {
             Page::Sound => {
                 subscriptions.push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Audio(audio::Msg::Refresh)))
             }
+            Page::Calendar => subscriptions
+                .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Calendar(calendar::Msg::Refresh))),
         }
         Subscription::batch(subscriptions)
     }
@@ -211,6 +221,7 @@ impl App {
             Message::Network(msg) => return self.network.update(msg).map(Message::Network),
             Message::Bluetooth(msg) => return self.bluetooth.update(msg).map(Message::Bluetooth),
             Message::Audio(msg) => return self.audio.update(msg).map(Message::Audio),
+            Message::Calendar(msg) => self.calendar.update(msg),
             Message::Search(query) => {
                 self.query = query;
                 self.searching = true;
@@ -300,6 +311,23 @@ impl App {
                     _ => 100,
                 };
                 Element::from(self.audio.view(page_column(panel.title, layout), max_volume)).map(Message::Audio)
+            }
+            Page::Calendar => {
+                let feeds = Element::from(self.calendar.view(page_column(panel.title, layout))).map(Message::Calendar);
+                let pad = if layout.stacked { 16.0 } else { 28.0 };
+                let mut options = Column::new()
+                    .spacing(10)
+                    .padding(iced::Padding {
+                        top: 0.0,
+                        right: pad,
+                        bottom: pad,
+                        left: pad,
+                    })
+                    .max_width(760);
+                for section in panel.sections {
+                    options = self.section(options, section, layout);
+                }
+                column![feeds, options].into()
             }
         };
         // One scroll position per panel.

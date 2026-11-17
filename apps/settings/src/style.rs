@@ -29,6 +29,11 @@ pub const FONT_BOLD: iced::Font = iced::Font {
 pub const GLYPH_FONT: iced::Font = iced::Font::with_name("Iosevka Nerd Font");
 pub const RADIUS: f32 = 10.0;
 
+/// 0xrrggbb to a colour.
+pub const fn from_hex(hex: u32) -> Color {
+    rgb(hex)
+}
+
 const fn rgb(hex: u32) -> Color {
     Color::from_rgb(
         ((hex >> 16) & 0xff) as f32 / 255.0,
@@ -155,6 +160,18 @@ pub fn action(kind: Action) -> impl Fn(&Theme, button::Status) -> button::Style 
             },
             ..button::Style::default()
         }
+    }
+}
+
+/// A round colour swatch.
+pub fn dot(color: Color) -> container::Style {
+    container::Style {
+        background: Some(Background::Color(color)),
+        border: Border {
+            radius: border::radius(6.0),
+            ..Border::default()
+        },
+        ..container::Style::default()
     }
 }
 

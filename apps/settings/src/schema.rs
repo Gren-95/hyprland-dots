@@ -28,6 +28,8 @@ pub enum Page {
     Bluetooth,
     /// Audio devices and app volumes (audio.rs).
     Sound,
+    /// Calendar feeds (calendar.rs), then the panel's settings.
+    Calendar,
 }
 
 pub struct Section {
@@ -400,47 +402,52 @@ pub const PANELS: &[Panel] = &[
     },
     Panel {
         id: "clock",
-        title: "Clock & calendar",
+        title: "Clock",
         glyph: "󰥔",
         page: Page::Settings,
         keywords: "",
-        sections: &[
-            Section {
-                title: "Clock",
-                settings: &[
-                    toggle("clock-24h", "24-hour clock", "Show 13:00 instead of 1:00 PM", true),
-                    toggle("clock-seconds", "Seconds", "Show seconds in the bar clock", false),
-                    entry(
-                        "clock-date-format",
-                        "Date format",
-                        "Qt date format of the bar date",
-                        "ddd, dd MMM",
-                        Default::Text("ddd, dd MMM"),
-                    ),
-                ],
-            },
-            Section {
-                title: "Calendar",
-                settings: &[
-                    toggle(
-                        "week-start-monday",
-                        "Week starts on Monday",
-                        "Otherwise on Sunday",
-                        true,
-                    ),
-                    number(
-                        "calendar-fetch-interval",
-                        "Refresh feeds",
-                        "Minutes between calendar feed downloads",
-                        1,
-                        120,
-                        1,
-                        "min",
-                        10,
-                    ),
-                ],
-            },
-        ],
+        sections: &[Section {
+            title: "Clock",
+            settings: &[
+                toggle("clock-24h", "24-hour clock", "Show 13:00 instead of 1:00 PM", true),
+                toggle("clock-seconds", "Seconds", "Show seconds in the bar clock", false),
+                entry(
+                    "clock-date-format",
+                    "Date format",
+                    "Qt date format of the bar date",
+                    "ddd, dd MMM",
+                    Default::Text("ddd, dd MMM"),
+                ),
+            ],
+        }],
+    },
+    Panel {
+        id: "calendar",
+        title: "Calendar",
+        glyph: "󰃭",
+        page: Page::Calendar,
+        keywords: "ics webcal feeds events google outlook",
+        sections: &[Section {
+            title: "Options",
+            settings: &[
+                toggle(
+                    "week-start-monday",
+                    "Week starts on Monday",
+                    "Otherwise on Sunday",
+                    true,
+                ),
+                number(
+                    "calendar-fetch-interval",
+                    "Refresh feeds",
+                    "Minutes between calendar feed downloads",
+                    1,
+                    120,
+                    1,
+                    "min",
+                    10,
+                ),
+            ],
+        }],
     },
     Panel {
         id: "notifications",
@@ -648,6 +655,123 @@ pub const PANELS: &[Panel] = &[
                         60,
                     ),
                 ],
+            },
+        ],
+    },
+    Panel {
+        id: "recording",
+        title: "Screenshots & recording",
+        glyph: "󰕧",
+        page: Page::Settings,
+        keywords: "screenshot capture grim picture record video gpu-screen-recorder screencast",
+        sections: &[
+            Section {
+                title: "Screenshots",
+                settings: &[
+                    entry(
+                        "shot-dir",
+                        "Folder",
+                        "Where screenshots are saved",
+                        "~/Pictures/Screenshots",
+                        Default::HomePath("Pictures/Screenshots"),
+                    ),
+                    choice(
+                        "shot-format",
+                        "File type",
+                        "PNG keeps every pixel; JPEG makes smaller files",
+                        &[("png", "PNG"), ("jpg", "JPEG")],
+                        "png",
+                    ),
+                    toggle(
+                        "shot-cursor",
+                        "Capture the cursor",
+                        "Show the mouse pointer in screenshots",
+                        false,
+                    ),
+                    toggle(
+                        "shot-clipboard",
+                        "Copy to clipboard",
+                        "Put every screenshot on the clipboard too",
+                        true,
+                    ),
+                    toggle(
+                        "shot-actions",
+                        "Show actions afterwards",
+                        "After a region screenshot, offer Edit, OCR and Reveal",
+                        true,
+                    ),
+                ],
+            },
+            Section {
+                title: "Recording files",
+                settings: &[
+                    entry(
+                        "record-dir",
+                        "Folder",
+                        "Where recordings are saved",
+                        "~/Videos/Recordings",
+                        Default::HomePath("Videos/Recordings"),
+                    ),
+                    choice(
+                        "record-container",
+                        "File type",
+                        "Container of the video file",
+                        &[("mp4", "MP4"), ("mkv", "MKV"), ("webm", "WebM")],
+                        "mp4",
+                    ),
+                ],
+            },
+            Section {
+                title: "Recording video",
+                settings: &[
+                    number("record-fps", "Frame rate", "Frames per second", 10, 240, 5, "fps", 60),
+                    choice(
+                        "record-quality",
+                        "Quality",
+                        "Higher quality makes bigger files",
+                        &[
+                            ("medium", "Medium"),
+                            ("high", "High"),
+                            ("very_high", "Very high"),
+                            ("ultra", "Ultra"),
+                        ],
+                        "very_high",
+                    ),
+                    choice(
+                        "record-codec",
+                        "Codec",
+                        "Video codec; WebM needs VP9 or AV1",
+                        &[
+                            ("auto", "Automatic"),
+                            ("h264", "H.264"),
+                            ("hevc", "HEVC"),
+                            ("av1", "AV1"),
+                            ("vp9", "VP9"),
+                        ],
+                        "auto",
+                    ),
+                    toggle(
+                        "record-cursor",
+                        "Record the cursor",
+                        "Show the mouse pointer in the video",
+                        true,
+                    ),
+                ],
+            },
+            Section {
+                title: "Recording audio",
+                settings: &[choice(
+                    "record-audio",
+                    "Sound",
+                    "What sound goes into the recording",
+                    &[
+                        ("none", "None"),
+                        ("output", "System sound"),
+                        ("input", "Microphone"),
+                        ("both", "System sound and microphone"),
+                    ],
+                    "none",
+                )],
             },
         ],
     },

@@ -49,7 +49,7 @@ Scope {
         stdout: StdioCollector {
             onStreamFinished: {
                 const path = text.trim();
-                if (path) screenshotActions.show(path);
+                if (path && settingsStore.shotActions) screenshotActions.show(path);
             }
         }
     }

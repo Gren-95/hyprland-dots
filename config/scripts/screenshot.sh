@@ -7,6 +7,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/settings.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/screenshot.sh"
 
 if [[ $# -ge 1 && -n "$1" ]]; then
