@@ -258,16 +258,12 @@ impl State {
                     "Cycles through the layouts above".into(),
                     vec![pick_list(switch, current, |p| Msg::Switch(p.0)).width(220).into()],
                 ),
-                container(
-                    column![
-                        text("Caps Lock key").size(14).color(style::FG),
-                        text("What the Caps Lock key does").size(12).color(style::MUTED_DEEP),
-                        ui::choice(caps, Length::Fill),
-                    ]
-                    .spacing(6),
-                )
-                .padding([10, 14])
-                .into(),
+                ui::item(
+                    "󰘲",
+                    "Caps Lock key".into(),
+                    "What the Caps Lock key does".into(),
+                    vec![ui::choice(caps, Length::Fixed(220.0))],
+                ),
                 ui::item(
                     "󰎠",
                     "Num Lock on at start".into(),

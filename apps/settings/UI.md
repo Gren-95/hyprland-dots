@@ -10,8 +10,11 @@ panel or a setting; the shared pieces in `src/ui.rs`, `src/controls.rs` and
   Sound). A section is an uppercase header over one card. A row is one
   option or one item (a network, a device).
 - **One option per row.** The label and help text are on the left, the
-  control on the right. In a narrow panel the control moves under the label
-  (`Layout::stacked`); a multi-select group is always under its label.
+  control on the right, on one line: toggles, dropdowns, two-option groups
+  and sliders all sit beside their label. In a narrow panel the control
+  moves under the label (`Layout::stacked`); a multi-select group, a pill
+  list and a search picker are always under their label, as they need the
+  width.
 - **Order inside a panel:** the main switch first (Wi-Fi, Bluetooth), then
   what is in use, then lists of other things, then advanced options.
 - Every panel has an `id` for `settings -p <id>` and `keywords` for search,
