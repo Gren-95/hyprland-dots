@@ -7,6 +7,7 @@ use iced::widget::{column, container, pick_list, row, slider, text, text_input, 
 use iced::{Alignment, Element, Length};
 
 use crate::app::Message;
+use crate::reveal;
 use crate::schema::{Control, Setting};
 use crate::store::Value;
 use crate::style;
@@ -34,6 +35,7 @@ pub fn setting_row<'a>(
     value: Value,
     draft: Option<&'a String>,
     stacked: bool,
+    highlighted: bool,
 ) -> Element<'a, Message> {
     let label = column![
         text(s.label).size(14).color(style::FG),
@@ -51,7 +53,16 @@ pub fn setting_row<'a>(
         _ if stacked => column![label, control].spacing(10).into(),
         _ => row![label, control].spacing(16).align_y(Alignment::Center).into(),
     };
-    container(line).padding([10, 14]).into()
+    // The id lets a search result scroll to this row (reveal.rs).
+    container(line)
+        .id(reveal::row_id(s.file))
+        .padding([10, 14])
+        .style(if highlighted {
+            style::highlight
+        } else {
+            container::transparent
+        })
+        .into()
 }
 
 fn control<'a>(s: &'static Setting, value: Value, draft: Option<&'a String>, stacked: bool) -> Element<'a, Message> {

@@ -3,6 +3,7 @@
 mod app;
 mod args;
 mod controls;
+mod reveal;
 mod schema;
 mod search;
 mod sidebar;

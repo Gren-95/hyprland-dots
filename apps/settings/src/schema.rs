@@ -489,7 +489,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "launcher",
         title: "Launcher & clipboard",
-        glyph: "󰍉",
+        glyph: "󰀻",
         sections: &[
             Section {
                 title: "Launcher",

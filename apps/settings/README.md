@@ -34,8 +34,9 @@ settings --help
 
 The search field at the top of the sidebar (Ctrl+F) turns the panel list
 into results, like GNOME Settings: the panels whose name matches, and under
-the others the settings whose label, help text or choices match. Click one
-to open its panel; Escape empties the field. In a narrow window the sidebar
+the others the settings whose label, help text or choices match. Clicking a
+panel opens it; clicking a setting opens its panel, scrolls to it and
+outlines it for two seconds. Escape empties the field. In a narrow window the sidebar
 shows only icons and widens while you search.
 
 Sliders write when released. Text fields write on Enter.
@@ -64,6 +65,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/sidebar.rs` | Panel list and search results |
 | `src/search.rs` | Which panels and settings match a search |
 | `src/controls.rs` | A setting as a row: label, help and its control |
+| `src/reveal.rs` | Scrolling a panel to a setting's row (a widget operation) |
 | `src/style.rs` | Colours from `config/quickshell/Theme.qml` and widget styles |
 
 To add a setting, add its row to `_schema` in `Settings.qml` first, then a

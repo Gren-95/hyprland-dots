@@ -2,12 +2,13 @@
 //! from and written to the Quickshell settings store.
 
 use std::collections::HashMap;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use iced::widget::{Column, Space, column, container, responsive, row, scrollable, text};
 use iced::{Element, Length, Subscription, Task, Theme, keyboard};
 
 use crate::controls;
+use crate::reveal;
 use crate::schema::{PANELS, Panel, Section, all_settings};
 use crate::sidebar;
 use crate::store::{Store, Value};
@@ -16,6 +17,9 @@ use crate::style;
 /// How often the files are read again, so changes made in the shell show up.
 const RELOAD_EVERY: Duration = Duration::from_secs(1);
 pub const SEARCH_ID: &str = "search";
+/// How long a revealed setting stays outlined (cleared on the next reload
+/// tick after it).
+const HIGHLIGHT_FOR: Duration = Duration::from_secs(2);
 const SIDEBAR_WIDTH: f32 = 230.0;
 const SIDEBAR_COMPACT_WIDTH: f32 = 64.0;
 /// Below this window width the sidebar shows only icons.
@@ -62,6 +66,8 @@ pub struct App {
     query: String,
     /// The search field is in use (it widens a compact sidebar).
     searching: bool,
+    /// Setting a search result pointed at, outlined until the time passes.
+    highlight: Option<(&'static str, Instant)>,
     error: Option<String>,
 }
 
@@ -79,6 +85,8 @@ pub enum Message {
     FocusSearch,
     /// Escape: empty the search field.
     ClearSearch,
+    /// A search result: open the panel, scroll to the setting, outline it.
+    Reveal(usize, &'static str),
     Reload,
 }
 
@@ -93,6 +101,7 @@ impl App {
             dragging: None,
             query,
             searching,
+            highlight: None,
             error: None,
         };
         app.reload();
@@ -188,7 +197,21 @@ impl App {
                     self.write(file, Value::Text(draft.trim().to_string()));
                 }
             }
-            Message::Reload => self.reload(),
+            Message::Reveal(panel, file) => {
+                self.panel = panel;
+                self.searching = false;
+                self.highlight = Some((file, Instant::now()));
+                return reveal::reveal(PANELS[panel].id, file);
+            }
+            Message::Reload => {
+                self.reload();
+                if self
+                    .highlight
+                    .is_some_and(|(_, since)| since.elapsed() >= HIGHLIGHT_FOR)
+                {
+                    self.highlight = None;
+                }
+            }
         }
         Task::none()
     }
@@ -238,7 +261,8 @@ impl App {
     ) -> Column<'a, Message> {
         let rows = section.settings.iter().map(|s| {
             let value = self.values.get(s.file).cloned().unwrap_or_else(|| s.default_value());
-            controls::setting_row(s, value, self.drafts.get(s.file), layout.stacked)
+            let highlighted = self.highlight.is_some_and(|(file, _)| file == s.file);
+            controls::setting_row(s, value, self.drafts.get(s.file), layout.stacked, highlighted)
         });
         body.push(Space::new().height(8))
             .push(

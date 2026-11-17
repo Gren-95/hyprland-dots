@@ -108,6 +108,20 @@ pub fn field(theme: &Theme, status: text_input::Status) -> text_input::Style {
     }
 }
 
+/// A setting row a search result pointed at: accent outline and tint.
+pub fn highlight(theme: &Theme) -> container::Style {
+    let accent = theme.palette().primary;
+    container::Style {
+        background: Some(Background::Color(Color { a: 0.12, ..accent })),
+        border: Border {
+            color: accent,
+            width: 1.5,
+            radius: border::radius(8.0),
+        },
+        ..container::Style::default()
+    }
+}
+
 /// The line between the sidebar and the panel.
 pub fn divider(_: &Theme) -> container::Style {
     container::Style {

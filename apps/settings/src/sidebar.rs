@@ -74,7 +74,7 @@ fn results<'a>(open: usize, query: &str) -> Column<'a, Message> {
         for setting in group.settings {
             // Indented under the panel name, past its glyph.
             let entry = button(text(setting.label).size(13))
-                .on_press(Message::SelectPanel(group.panel))
+                .on_press(Message::Reveal(group.panel, setting.file))
                 .width(Length::Fill)
                 .padding([6, 12])
                 .style(style::nav(false));
