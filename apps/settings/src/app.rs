@@ -17,6 +17,7 @@ use crate::hyprpage;
 use crate::keyboard;
 use crate::mouse;
 use crate::network;
+use crate::placement;
 use crate::reveal;
 use crate::schema::{PANELS, Page, Panel, Section, all_settings};
 use crate::sidebar;
@@ -88,6 +89,7 @@ pub struct App {
     calendar: calendar::State,
     keyboard: keyboard::State,
     mouse: hyprpage::State,
+    placement: placement::State,
     /// Installed font families, loaded once at start for the Font picker.
     fonts: Vec<&'static str>,
     error: Option<String>,
@@ -122,6 +124,7 @@ pub enum Message {
     Calendar(calendar::Msg),
     Keyboard(keyboard::Msg),
     Mouse(hyprpage::Msg),
+    Placement(placement::Msg),
     Fonts(Vec<&'static str>),
 }
 
@@ -145,6 +148,7 @@ impl App {
             calendar: calendar::State::default(),
             keyboard: keyboard::State::default(),
             mouse: hyprpage::State::default(),
+            placement: placement::State::default(),
             fonts: Vec::new(),
             error: None,
         };
@@ -172,6 +176,7 @@ impl App {
                 .mouse
                 .update(hyprpage::Msg::Load, mouse::SECTIONS)
                 .map(Message::Mouse),
+            Page::BarItems => self.placement.update(placement::Msg::Refresh).map(Message::Placement),
         }
     }
 
@@ -236,6 +241,8 @@ impl App {
             Page::Calendar => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Calendar(calendar::Msg::Refresh))),
             Page::Keyboard | Page::Mouse => {}
+            Page::BarItems => subscriptions
+                .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Placement(placement::Msg::Refresh))),
         }
         Subscription::batch(subscriptions)
     }
@@ -255,6 +262,7 @@ impl App {
             Message::Calendar(msg) => self.calendar.update(msg),
             Message::Keyboard(msg) => return self.keyboard.update(msg).map(Message::Keyboard),
             Message::Mouse(msg) => return self.mouse.update(msg, mouse::SECTIONS).map(Message::Mouse),
+            Message::Placement(msg) => return self.placement.update(msg).map(Message::Placement),
             Message::Search(query) => {
                 self.query = query;
                 self.searching = true;
@@ -403,6 +411,9 @@ impl App {
             }
             Page::Mouse => {
                 Element::from(self.mouse.view(page_column(panel.title, layout), mouse::SECTIONS)).map(Message::Mouse)
+            }
+            Page::BarItems => {
+                Element::from(self.placement.view(page_column(panel.title, layout))).map(Message::Placement)
             }
         };
         // One scroll position per panel.

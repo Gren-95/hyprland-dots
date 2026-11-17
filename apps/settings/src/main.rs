@@ -13,6 +13,7 @@ mod hyprpage;
 mod keyboard;
 mod mouse;
 mod network;
+mod placement;
 mod reveal;
 mod schema;
 mod search;

@@ -20,6 +20,7 @@ shell show in the app too.
 | `mouse` | Pointer speed, acceleration, left-handed, natural scrolling and scroll speed for mice; tap to click, natural scrolling, off while typing, right-click method, middle click and scroll speed for touchpads; workspace swipe direction and distance — Hyprland options saved to `config/hypr/settings.lua` |
 | `appearance` | Accent colour, font and text size, corner roundness, animation speed, wallpaper folder |
 | `bar` | Height, opacity, window title width, workspace icons, activity icons, scroll action |
+| `baritems` | Where each bar module, Quick Actions item and tray app shows: on the bar, in Quick Actions or hidden (the shell's placement files); tray apps are read live over D-Bus |
 | `clock` | 24-hour clock, seconds, date format; weather location and Fahrenheit (`-p weather` opens it too) |
 | `calendar` | ICS feeds of the day panel (`~/.config/quickshell/calendar.url`; links shown shortened as they hold private tokens): add, switch on and off, name, colour, replace the link, move up, remove; first day of the week, feed refresh interval |
 | `notifications` | Toast position, time, count and width; history; auto-dismiss; system event toasts |
@@ -91,6 +92,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/hypr.rs` | Hyprland settings the app owns: settings.json, the generated settings.lua, `hyprctl eval` |
 | `src/hyprpage.rs` | Panels of plain Hyprland options declared as rows (Mouse & touchpad) |
 | `src/mouse.rs` | The Mouse & touchpad rows |
+| `src/placement.rs` | Bar items panel: placement files and the live tray list |
 | `src/keyboard.rs` | Keyboard panel and the XKB layout list |
 | `src/system.rs` | Running nmcli and bluetoothctl on a background thread |
 | `src/ui.rs` | Shared pieces: section cards, list rows, action buttons |

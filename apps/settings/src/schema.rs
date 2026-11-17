@@ -58,6 +58,8 @@ pub enum Page {
     Keyboard,
     /// Mouse, touchpad and gesture options in Hyprland (mouse.rs).
     Mouse,
+    /// Where bar, Quick Actions and tray items show (placement.rs).
+    BarItems,
 }
 
 pub struct Section {
@@ -548,27 +550,28 @@ pub const PANELS: &[Panel] = &[
             },
             Section {
                 title: "Behaviour",
-                settings: &[
-                    toggle(
-                        "activity-icons.enabled",
-                        "Activity icons",
-                        "Show the activity icons in the bar",
-                        true,
-                    ),
-                    choice(
-                        "bar-wheel-action",
-                        "Scroll on the bar",
-                        "What the mouse wheel does over the bar background",
-                        &[
-                            ("workspace", "Switch workspace"),
-                            ("volume", "Change volume"),
-                            ("none", "Nothing"),
-                        ],
-                        "workspace",
-                    ),
-                ],
+                settings: &[choice(
+                    "bar-wheel-action",
+                    "Scroll on the bar",
+                    "What the mouse wheel does over the bar background",
+                    &[
+                        ("workspace", "Switch workspace"),
+                        ("volume", "Change volume"),
+                        ("none", "Nothing"),
+                    ],
+                    "workspace",
+                )],
             },
         ],
+    },
+    Panel {
+        id: "baritems",
+        title: "Bar items",
+        glyph: "󰍜",
+        group: Group::Appearance,
+        page: Page::BarItems,
+        keywords: "bar modules quick actions tray icons hide show overflow placement layout",
+        sections: &[],
     },
     Panel {
         id: "clock",
