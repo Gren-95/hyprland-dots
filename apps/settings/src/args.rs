@@ -11,15 +11,22 @@ pub enum Command {
         search: String,
     },
     ListPanels,
+    /// Print every setting, or one.
+    Get(Option<String>),
+    /// Change one setting.
+    Set(String, String),
     Help,
 }
 
 pub fn usage() -> String {
     let names: Vec<_> = PANELS.iter().map(|p| p.id).collect();
     format!(
-        "Usage: settings [-p|--panel <name>] [-s|--search <text>] [--list-panels] [-h|--help]\n\n\
+        "Usage: settings [-p|--panel <name>] [-s|--search <text>] [--list-panels] [-h|--help]\n\
+         \x20      settings get [key]\n\
+         \x20      settings set <key> <value>\n\n\
          Opens the settings app, on the given panel if one is named, or with\n\
-         the settings matching a search.\n\
+         the settings matching a search. get prints settings as key and value,\n\
+         set changes one (true/false, a number, one of the choices, or JSON).\n\
          Panels: {}\n",
         names.join(", ")
     )
@@ -29,7 +36,25 @@ pub fn usage() -> String {
 pub fn parse<I: IntoIterator<Item = String>>(args: I) -> Result<Command, String> {
     let mut panel = 0;
     let mut search = String::new();
-    let mut args = args.into_iter();
+    let mut args = args.into_iter().peekable();
+    match args.peek().map(String::as_str) {
+        Some("get") => {
+            args.next();
+            let key = args.next();
+            return match args.next() {
+                Some(extra) => Err(format!("get takes one key, got also {extra}")),
+                None => Ok(Command::Get(key)),
+            };
+        }
+        Some("set") => {
+            args.next();
+            let (Some(key), Some(value), None) = (args.next(), args.next(), args.next()) else {
+                return Err("set needs a key and a value".into());
+            };
+            return Ok(Command::Set(key, value));
+        }
+        _ => {}
+    }
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "-h" | "--help" => return Ok(Command::Help),
@@ -90,6 +115,19 @@ mod tests {
         assert_eq!(run(&["-p", "notifications"]), open);
         assert_eq!(run(&["--panel", "notifications"]), open);
         assert_eq!(run(&["--panel=notifications"]), open);
+    }
+
+    #[test]
+    fn parses_get_and_set() {
+        assert_eq!(run(&["get"]), Ok(Command::Get(None)));
+        assert_eq!(run(&["get", "bar-height"]), Ok(Command::Get(Some("bar-height".into()))));
+        assert_eq!(
+            run(&["set", "bar-height", "40"]),
+            Ok(Command::Set("bar-height".into(), "40".into()))
+        );
+        assert!(run(&["set", "bar-height"]).is_err());
+        assert!(run(&["set", "a", "b", "c"]).is_err());
+        assert!(run(&["get", "a", "b"]).is_err());
     }
 
     #[test]

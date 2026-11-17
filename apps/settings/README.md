@@ -38,6 +38,9 @@ settings                        # open on the first panel
 settings -p notifications       # open on a panel (also --panel notifications)
 settings -s "toast"             # open with a search (also --search toast)
 settings --list-panels          # panel names and titles
+settings get                    # every setting as "key value"
+settings get bar-height         # one value
+settings set bar-height 40      # change one, checked like the window checks it
 settings --help
 ```
 
@@ -79,6 +82,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 |------|--------------|
 | `src/main.rs` | Command line, window |
 | `src/args.rs` | Argument parsing |
+| `src/cli.rs` | `settings get` and `settings set` |
 | `src/schema.rs` | The panels and their settings: file, label, control, default. A test checks every file and type against `Settings.qml` |
 | `src/store.rs` | Reading and writing the setting files in the format `Settings.qml` uses |
 | `src/app.rs` | The iced app: state, messages, the open panel, window-width layout |

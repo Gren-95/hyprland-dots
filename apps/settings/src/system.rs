@@ -57,6 +57,26 @@ pub async fn spawn<T: Send + 'static>(work: impl FnOnce() -> T + Send + 'static)
     rx.await.ok()
 }
 
+/// Settings a running program has to be told about: (file prefix, script
+/// and argument under ~/.config/scripts).
+const AFTER_WRITE: &[(&str, &str, &str)] = &[("night-", "night.sh", "apply")];
+
+/// Run what a written setting needs, on its own thread (which also reaps it).
+pub fn after_write(file: &str) {
+    for (prefix, script, arg) in AFTER_WRITE {
+        if file.starts_with(prefix) {
+            let path = crate::store::home()
+                .join(".config/scripts")
+                .join(script)
+                .to_string_lossy()
+                .into_owned();
+            std::thread::spawn(move || {
+                let _ = run_blocking("bash", &[path, arg.to_string()], None);
+            });
+        }
+    }
+}
+
 /// Shorthand for an argument list.
 pub fn args(list: &[&str]) -> Vec<String> {
     list.iter().map(|s| s.to_string()).collect()

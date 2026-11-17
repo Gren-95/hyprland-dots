@@ -207,7 +207,7 @@ impl App {
             Ok(()) => {
                 self.values.insert(file, value);
                 self.error = None;
-                after_write(file);
+                crate::system::after_write(file);
             }
             Err(e) => self.error = Some(format!("Could not save {file}: {e}")),
         }
@@ -462,26 +462,6 @@ impl App {
             )
         });
         ui::section(body, section.title, rows.collect())
-    }
-}
-
-/// Settings a running program has to be told about: (file prefix, script
-/// and argument under ~/.config/scripts).
-const AFTER_WRITE: &[(&str, &str, &str)] = &[("night-", "night.sh", "apply")];
-
-/// Run what a written setting needs, on its own thread (which also reaps it).
-fn after_write(file: &str) {
-    for (prefix, script, arg) in AFTER_WRITE {
-        if file.starts_with(prefix) {
-            let path = crate::store::home()
-                .join(".config/scripts")
-                .join(script)
-                .to_string_lossy()
-                .into_owned();
-            std::thread::spawn(move || {
-                let _ = crate::system::run_blocking("bash", &[path, arg.to_string()], None);
-            });
-        }
     }
 }
 

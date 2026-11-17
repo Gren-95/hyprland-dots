@@ -6,6 +6,7 @@ mod args;
 mod audio;
 mod bluetooth;
 mod calendar;
+mod cli;
 mod controls;
 mod fonts;
 mod hypr;
@@ -39,6 +40,12 @@ fn main() -> ExitCode {
             }
             return ExitCode::SUCCESS;
         }
+        Ok(Command::Get(key)) => {
+            return report(cli::get(&Store::new(Store::default_dir()), key.as_deref()).map(|out| print!("{out}")));
+        }
+        Ok(Command::Set(key, value)) => {
+            return report(cli::set(&Store::new(Store::default_dir()), &key, &value));
+        }
         Ok(Command::Help) => {
             print!("{}", args::usage());
             return ExitCode::SUCCESS;
@@ -69,6 +76,17 @@ fn main() -> ExitCode {
         ..Default::default()
     })
     .run();
+    match result {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("settings: {e}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+/// Exit status for a command-line action: errors go to stderr, exit 1.
+fn report(result: Result<(), String>) -> ExitCode {
     match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
