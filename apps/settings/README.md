@@ -20,7 +20,7 @@ shell show in the app too.
 | `appearance` | Accent colour, font and text size, corner roundness, animation speed, wallpaper folder |
 | `bar` | Height, opacity, window title width, workspace icons, activity icons, scroll action |
 | `clock` | 24-hour clock, seconds, date format |
-| `calendar` | ICS feeds of the day panel (`~/.config/quickshell/calendar.url`, shown shortened as the links hold private tokens): add, remove; first day of the week, feed refresh interval |
+| `calendar` | ICS feeds of the day panel (`~/.config/quickshell/calendar.url`; links shown shortened as they hold private tokens): add, switch on and off, name, colour, replace the link, move up, remove; first day of the week, feed refresh interval |
 | `notifications` | Toast position, time, count and width; history; auto-dismiss; system event toasts |
 | `launcher` | Results shown, calculator, clipboard thumbnails |
 | `osd` | Volume and brightness steps, maximum volume, on-screen display |
@@ -87,7 +87,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/bluetooth.rs` | Bluetooth panel: bluetoothctl output parsing, actions, view |
 | `src/audio.rs` | Sound panel: pw-dump parsing, wpctl actions, view |
 | `src/airpods.rs` | AirPods section of the Bluetooth panel: librepods state, airpods.sh actions |
-| `src/calendar.rs` | Calendar feeds: reading, adding and removing lines of calendar.url |
+| `src/calendar.rs` | Calendar feeds: the calendar.url line format, editing it |
 | `src/hypr.rs` | Hyprland settings the app owns: settings.json, the generated settings.lua, `hyprctl eval` |
 | `src/keyboard.rs` | Keyboard panel and the XKB layout list |
 | `src/system.rs` | Running nmcli and bluetoothctl on a background thread |

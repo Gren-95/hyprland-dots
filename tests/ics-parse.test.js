@@ -109,3 +109,12 @@ test("all-day event without DTEND lasts one day", () => {
     assert.strictEqual(Ics.occursOn(e, day(2026, 11, 20)), true);
     assert.strictEqual(Ics.occursOn(e, day(2026, 11, 21)), false);
 });
+
+test("feed list reads urls, colours and names, skipping feeds that are off", () => {
+    const text = "# work\nhttps://a.example/x.ics #color=teal #name=Work and study\n#off https://b.example/y.ics #name=Old\n\nhttps://c.example/z.ics\n";
+    const feeds = Ics.parseFeedList(text);
+    assert.strictEqual(feeds.length, 2);
+    assert.deepStrictEqual(JSON.parse(JSON.stringify(feeds[0])), { url: "https://a.example/x.ics", color: "teal", name: "Work and study" });
+    assert.deepStrictEqual(JSON.parse(JSON.stringify(feeds[1])), { url: "https://c.example/z.ics", color: "", name: "" });
+    assert.strictEqual(Ics.parseFeedList("").length, 0);
+});

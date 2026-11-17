@@ -222,3 +222,22 @@ function occursOn(e, day) {
     if (end <= s) return s >= dayStart && s < dayEnd;
     return s < dayEnd && end > dayStart;
 }
+
+// The feeds in calendar.url that are on, in order: [{url, color, name}].
+// A line is "<url>[ #color=<name>][ #name=<text>]"; a feed switched off is
+// written as "#off <url> …" and, like any other #-comment or blank line, is
+// skipped. color is "" when the line names none; name runs to the end of the
+// line. The settings app's Calendar panel writes this format.
+function parseFeedList(text) {
+    if (!text) return [];
+    const feeds = [];
+    for (const raw of text.split(/\r?\n/)) {
+        const line = raw.trim();
+        if (line === "" || line.indexOf("#") === 0) continue;
+        const url = line.split(/\s+/)[0];
+        const color = (line.match(/\s#color=(\w+)/) || [])[1] || "";
+        const name = ((line.match(/\s#name=(.*)$/) || [])[1] || "").trim();
+        feeds.push({ url: url, color: color, name: name });
+    }
+    return feeds;
+}

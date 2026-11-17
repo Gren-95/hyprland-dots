@@ -124,8 +124,12 @@ The ones most worth knowing:
 ### Calendar feeds
 
 The day panel calendar reads ICS feed URLs from
-`~/.config/quickshell/calendar.url`, one per line (blank lines and `#` comments
-are ignored). Each feed gets its own colour by its line. Feeds are fetched every
+`~/.config/quickshell/calendar.url`, one per line:
+`[#off ]<url>[ #color=<colour>][ #name=<name>]`. A feed switched off is written
+as a `#off` comment and not fetched; `#color` is one of blue, orange, red, green,
+purple, pink, teal (without it a feed gets a colour by its position); `#name` is
+shown in the settings app. Other `#` comments and blank lines are ignored. The
+settings app's Calendar panel (`settings -p calendar`) edits all of this. Feeds are fetched every
 `calendar-fetch-interval` minutes (default 10); a feed that fails to fetch keeps
 its last events. The file is gitignored because feed URLs often carry a private
 token.

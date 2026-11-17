@@ -213,7 +213,7 @@ pub fn choice<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>, width: 
 }
 
 /// Width of every "More" dropdown, so rows line up.
-const MORE_WIDTH: f32 = 96.0;
+const MORE_WIDTH: f32 = 128.0;
 
 /// The main action as a button with the other actions in a "More" dropdown
 /// beside it (UI.md: more than two buttons on a row).
@@ -221,7 +221,23 @@ pub fn more_actions<'a, M: Clone + 'a>(
     main: (&'a str, Option<M>, style::Action),
     others: Vec<(&'a str, Option<M>)>,
 ) -> Element<'a, M> {
-    let entries: Vec<Entry> = others
+    row![menu(others), action(main.0, main.1, main.2)]
+        .spacing(6)
+        .align_y(Alignment::Center)
+        .into()
+}
+
+/// A "More" dropdown of actions. Actions without a message are left out;
+/// with none left it is drawn disabled.
+pub fn menu<'a, M: Clone + 'a>(actions: Vec<(&'a str, Option<M>)>) -> Element<'a, M> {
+    let usable: Vec<(&'a str, M)> = actions
+        .into_iter()
+        .filter_map(|(label, m)| m.map(|m| (label, m)))
+        .collect();
+    if usable.is_empty() {
+        return disabled("More".into(), Length::Fixed(MORE_WIDTH));
+    }
+    let entries: Vec<Entry> = usable
         .iter()
         .enumerate()
         .map(|(index, (label, _))| Entry {
@@ -229,21 +245,12 @@ pub fn more_actions<'a, M: Clone + 'a>(
             label: label.to_string(),
         })
         .collect();
-    let messages: Vec<Option<M>> = others.into_iter().map(|(_, m)| m).collect();
-    let more: Element<'a, M> = if messages.iter().any(Option::is_none) {
-        disabled("More".into(), Length::Fixed(MORE_WIDTH))
-    } else {
-        let messages: Vec<M> = messages.into_iter().flatten().collect();
-        pick_list(entries, None::<Entry>, move |e: Entry| messages[e.index].clone())
-            .placeholder("More")
-            .text_size(13)
-            .padding([5, 10])
-            .width(MORE_WIDTH)
-            .into()
-    };
-    row![more, action(main.0, main.1, main.2)]
-        .spacing(6)
-        .align_y(Alignment::Center)
+    let messages: Vec<M> = usable.into_iter().map(|(_, m)| m).collect();
+    pick_list(entries, None::<Entry>, move |e: Entry| messages[e.index].clone())
+        .placeholder("More")
+        .text_size(13)
+        .padding([5, 10])
+        .width(MORE_WIDTH)
         .into()
 }
 

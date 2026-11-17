@@ -10,7 +10,8 @@ import "IcsParse.js" as Ics
 Scope {
     id: root
 
-    property var icsUrls: []         // ICS feed URLs, one per line in calendar.url
+    property var icsUrls: []         // ICS feed URLs of the feeds that are on, in calendar.url order
+    property var icsColors: []       // per feed: a Theme.base colour name, or "" for the colour by position
     property var events: []          // array of {start: Date, end: Date, summary, location, allDay: bool, calIndex: int}
     property date selectedDate: new Date()
     // Today's date, refreshed when the day changes. Bindings that read this
@@ -52,7 +53,11 @@ Scope {
         id: urlFile
         path: Quickshell.env("HOME") + "/.config/quickshell/calendar.url"
         watchChanges: true
-        onLoaded: root.icsUrls = root._parseUrlList(text())
+        onLoaded: {
+            const feeds = Ics.parseFeedList(text());
+            root.icsColors = feeds.map(f => f.color);
+            root.icsUrls = feeds.map(f => f.url);
+        }
         onFileChanged: reload()
     }
 
@@ -92,12 +97,6 @@ Scope {
         fetcher.running = true;
     }
 
-    function _parseUrlList(text) {
-        if (!text) return [];
-        return text.split(/\r?\n/)
-            .map(l => l.trim())
-            .filter(l => l !== "" && l.indexOf("#") !== 0);
-    }
 
     // Last good parse of each feed, by URL. A feed whose fetch fails (offline
     // at resume, server down) keeps showing these instead of going blank.
@@ -134,6 +133,8 @@ Scope {
     // Accent color of the feed an event came from.
     function colorFor(calIndex) {
         if (calIndex === undefined || calIndex < 0) return root.feedColors[0];
+        const named = root.icsColors[calIndex];
+        if (named && Theme.base[named] !== undefined) return Theme.base[named];
         return root.feedColors[calIndex % root.feedColors.length];
     }
     function eventsOnDay(day) {
