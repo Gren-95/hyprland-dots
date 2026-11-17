@@ -18,7 +18,7 @@ DEPS_REQUIRED=(
     firefox brightnessctl playerctl powerprofilesctl upower mpv
     gpu-screen-recorder inotifywait gnome-keyring-daemon nm-applet nmcli
     notify-send busctl gsettings jq curl pactl wpctl bluetoothctl python3 fish ranger
-    hyprshutdown timeshift fzf gnome-font-viewer
+    hyprshutdown timeshift fzf
 )
 
 DEPS_OPTIONAL=(
@@ -34,6 +34,7 @@ DEPS_OPTIONAL=(
     evtest               # quickshell/SuperWatch.qml (falls back to a timer without it)
     zoxide               # fish/config.fish (skipped when missing)
     disktree             # scripts/disktree.sh, fish disktree function
+    unsquashfs           # thumbnailers/appimage-thumbnailer (AppImage icons)
 )
 
 DEPS_DNF=(
@@ -42,7 +43,7 @@ DEPS_DNF=(
     swappy tesseract tesseract-langpack-est ImageMagick wl-clipboard firefox
     brightnessctl playerctl powerprofilesctl gpu-screen-recorder
     network-manager-applet libnotify upower mpv bc curl
-    gnome-keyring jq inotify-tools pulseaudio-utils bluez hyprshutdown timeshift fzf gnome-font-viewer
+    gnome-keyring jq inotify-tools pulseaudio-utils bluez hyprshutdown timeshift fzf gnome-font-viewer squashfs-tools
     fish ranger python3 python3-pillow python3-numpy python3-gobject unzip liberation-sans-fonts
 )
 

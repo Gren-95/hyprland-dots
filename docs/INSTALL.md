@@ -62,8 +62,8 @@ sudo dnf install hyprland hyprland-devel quickshell kitty nautilus cliphist awww
   brightnessctl playerctl powerprofilesctl gpu-screen-recorder \
   network-manager-applet libnotify upower mpv bc curl gnome-keyring \
   jq inotify-tools pulseaudio-utils bluez hyprshutdown timeshift fzf \
-  gnome-font-viewer fish ranger python3 python3-pillow python3-numpy \
-  python3-gobject unzip liberation-sans-fonts
+  gnome-font-viewer squashfs-tools fish ranger python3 python3-pillow \
+  python3-numpy python3-gobject unzip liberation-sans-fonts
 ```
 
 Optional extras are listed under [Dependencies](#dependencies) and in
@@ -124,7 +124,7 @@ The setup script will:
 - Create required user directories (`~/Pictures/Screenshots`, `~/Music`, etc.)
 - Install Iosevka Nerd Font
 - Set script permissions and enable the tracked git hooks
-- Link the Nautilus thumbnailers (3MF, PSD, STL, GLB, OBJ, WOFF2), and install the programs the 3D ones run to `/usr/local/bin` (sudo)
+- Link the Nautilus thumbnailers (3MF, PSD, STL, GLB, OBJ, WOFF2, AppImage), and install the programs the 3D and AppImage ones run to `/usr/local/bin` (sudo)
 - Install and enable the systemd user units (`dots.sh units`)
 - Configure the GTK theme (and the Tailscale operator when Tailscale is installed)
 - Optionally set up the Immich CLI, Jellyfin music sync and Gcode Viewer (skipped with `--yes`)

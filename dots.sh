@@ -1098,8 +1098,9 @@ setup_thumbnailers() {
 
 # Thumbnailer programs. The file manager's thumbnail sandbox only sees /usr,
 # so the scripts the .thumbnailer files call are installed to /usr/local/bin
-# with sudo. model-thumbnailer renders STL, GLB and OBJ models.
-SANDBOX_THUMBNAILERS=(model-thumbnailer)
+# with sudo. model-thumbnailer renders STL, GLB and OBJ models;
+# appimage-thumbnailer shows the icon packed in an AppImage.
+SANDBOX_THUMBNAILERS=(model-thumbnailer appimage-thumbnailer)
 # Programs from earlier versions, removed on install.
 RETIRED_THUMBNAILERS=(stl-thumbnailer)
 

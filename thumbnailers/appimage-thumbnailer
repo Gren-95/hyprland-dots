@@ -1,0 +1,117 @@
+#!/usr/bin/python3
+"""Nautilus thumbnail for an AppImage: the app's own icon.
+
+Usage: appimage-thumbnailer <input.AppImage> <output.png> [size]
+
+The AppImage is never run. A type 2 AppImage is an ELF runtime followed by a
+squashfs image; the image starts where the ELF section headers end. unsquashfs
+reads `.DirIcon` (the icon at the image root) from that offset, following it
+when it is a symlink to the real icon file. Images without `.DirIcon` use the
+root icon named by the `Icon=` key of their top-level .desktop file.
+
+Runs inside the file manager's thumbnail sandbox, which only sees /usr, so it
+is installed to /usr/local/bin by `dots.sh setup` and only uses programs from
+/usr/bin (unsquashfs from squashfs-tools, magick from ImageMagick).
+"""
+import os
+import struct
+import subprocess
+import sys
+import tempfile
+
+MAX_LINK_HOPS = 4
+
+
+def squashfs_offset(path):
+    with open(path, "rb") as f:
+        head = f.read(64)
+    if head[:4] != b"\x7fELF":
+        raise ValueError("not an ELF AppImage")
+    if head[4] == 2:  # 64-bit
+        shoff, = struct.unpack_from("<Q", head, 0x28)
+        shentsize, shnum = struct.unpack_from("<HH", head, 0x3A)
+    else:
+        shoff, = struct.unpack_from("<I", head, 0x20)
+        shentsize, shnum = struct.unpack_from("<HH", head, 0x2E)
+    return shoff + shentsize * shnum
+
+
+def extract(appimage, offset, member, dest):
+    """Extract one path from the squashfs image into dest; return its path."""
+    subprocess.run(
+        ["unsquashfs", "-q", "-n", "-o", str(offset), "-d", dest, "-f", appimage, member],
+        check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20,
+    )
+    return os.path.join(dest, member)
+
+
+def resolve(appimage, offset, member, workdir):
+    """Extract member, following symlinks inside the image; return a non-empty
+    regular file or None."""
+    for _ in range(MAX_LINK_HOPS):
+        try:
+            path = extract(appimage, offset, member, workdir)
+        except subprocess.CalledProcessError:
+            return None
+        if not os.path.islink(path):
+            if os.path.isfile(path) and os.path.getsize(path) > 0:
+                return path
+            return None
+        # Resolve the link inside the image, never on the host.
+        target = os.readlink(path)
+        member = os.path.normpath(os.path.join(os.path.dirname(member), target)).lstrip("/")
+        os.unlink(path)
+    return None
+
+
+def desktop_icon_name(appimage, offset, workdir):
+    """Icon= of the top-level .desktop file, the key AppImage launchers read
+    when an image has no .DirIcon."""
+    listing = subprocess.run(
+        ["unsquashfs", "-o", str(offset), "-lc", appimage],
+        check=True, capture_output=True, text=True, timeout=20,
+    ).stdout
+    for line in listing.splitlines():
+        member = line.removeprefix("squashfs-root/")
+        if "/" in member or not member.endswith(".desktop"):
+            continue
+        path = resolve(appimage, offset, member, workdir)
+        if path is None:
+            continue
+        with open(path, encoding="utf-8", errors="replace") as f:
+            for entry in f:
+                if entry.startswith("Icon="):
+                    return entry[5:].strip()
+    return None
+
+
+def icon_file(appimage, workdir):
+    offset = squashfs_offset(appimage)
+    path = resolve(appimage, offset, ".DirIcon", workdir)
+    if path:
+        return path
+    name = desktop_icon_name(appimage, offset, workdir)
+    if name and "/" not in name:
+        for ext in ("png", "svg", "xpm"):
+            path = resolve(appimage, offset, f"{name}.{ext}", workdir)
+            if path:
+                return path
+    raise ValueError("no icon in the AppImage")
+
+
+def main():
+    if len(sys.argv) < 3:
+        sys.exit("usage: appimage-thumbnailer <input.AppImage> <output.png> [size]")
+    appimage, output = sys.argv[1], sys.argv[2]
+    size = int(sys.argv[3]) if len(sys.argv) > 3 else 256
+    with tempfile.TemporaryDirectory() as workdir:
+        icon = icon_file(appimage, os.path.join(workdir, "root"))
+        subprocess.run(
+            ["magick", "-background", "none", "-density", "384", icon + "[0]",
+             "-thumbnail", f"{size}x{size}", f"png:{output}"],
+            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20,
+        )
+
+
+if __name__ == "__main__":
+    main()
