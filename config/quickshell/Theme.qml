@@ -10,23 +10,25 @@ Singleton {
     property string fontFamily: "Iosevka Nerd Font"
     property string accentPrimaryName: "orange"
     property string accentAutoHex: ""   // wallpaper-extracted (AccentService)
+    // The accent colour replaces every decorative accent (see `accent`).
+    property bool accentEverywhere: true
     property real animScale: 1.0    // 0 = animations off (instant)
     property real radiusScale: 1.0
     // The highlight/selection accent — used for selected rows, focused
     // cards, active pills. Semantic accents (red=danger, green=ok, …) stay.
     readonly property color accentPrimary: {
         switch (accentPrimaryName) {
-        case "green":  return accent.green;
-        case "red":    return accent.red;
-        case "orange": return accent.orange;
-        case "yellow": return accent.yellow;
-        case "purple": return accent.purple;
-        case "pink":   return accent.pink;
-        case "teal":   return accent.teal;
-        case "slate":  return accent.slate;
-        case "auto":   return accentAutoHex !== "" ? accentAutoHex : accent.blue;
+        case "green":  return base.green;
+        case "red":    return base.red;
+        case "orange": return base.orange;
+        case "yellow": return base.yellow;
+        case "purple": return base.purple;
+        case "pink":   return base.pink;
+        case "teal":   return base.teal;
+        case "slate":  return base.slate;
+        case "auto":   return accentAutoHex !== "" ? accentAutoHex : base.blue;
         }
-        return accent.blue;
+        return base.blue;
     }
 
     // Surfaces
@@ -58,10 +60,10 @@ Singleton {
     // Base of every dimming layer and drop shadow; pair with alpha().
     readonly property color scrim: "#000000"
 
-    // Accents
-    readonly property QtObject accent: QtObject {
+    // The fixed colours behind `accent` and `accentPrimary`.
+    readonly property QtObject base: QtObject {
         readonly property color blue:   "#4c9aff"
-        readonly property color blueBright: "#6fb0ff"   // icon tint on dark surfaces
+        readonly property color blueBright: "#6fb0ff"
         readonly property color green:  "#2ee59d"
         readonly property color red:    "#ff4d5e"
         readonly property color orange: "#ff7a1a"
@@ -70,6 +72,26 @@ Singleton {
         readonly property color pink:   "#ff6fb5"
         readonly property color teal:   "#2ee6d6"
         readonly property color slate:  "#94a3b8"
+        readonly property color blueDeep:   "#1d4ed8"
+        readonly property color purpleDeep: "#7c3aed"
+    }
+
+    // Accents. With accentEverywhere the decorative ones (blue, orange,
+    // purple, pink, teal, slate and their variants) all become accentPrimary;
+    // red, green and yellow always keep their colour, as they mean danger,
+    // success and warning.
+    readonly property QtObject accent: QtObject {
+        readonly property bool mono: accentEverywhere
+        readonly property color blue:   mono ? accentPrimary : base.blue
+        readonly property color blueBright: mono ? Qt.lighter(accentPrimary, 1.15) : base.blueBright   // icon tint on dark surfaces
+        readonly property color green:  base.green
+        readonly property color red:    base.red
+        readonly property color orange: mono ? accentPrimary : base.orange
+        readonly property color yellow: base.yellow
+        readonly property color purple: mono ? accentPrimary : base.purple
+        readonly property color pink:   mono ? accentPrimary : base.pink
+        readonly property color teal:   mono ? accentPrimary : base.teal
+        readonly property color slate:  mono ? accentPrimary : base.slate
         // "Deep" variants back a filled control — an active toggle, the hover
         // state of a destructive button. "Soft" variants are for text and
         // glyphs sitting on a dark surface, where the base accent reads too
@@ -77,8 +99,8 @@ Singleton {
         // they were named here.
         readonly property color redDeep:    "#7f1d1d"
         readonly property color redSoft:    "#f87171"
-        readonly property color blueDeep:   "#1d4ed8"
-        readonly property color purpleDeep: "#7c3aed"
+        readonly property color blueDeep:   mono ? Qt.darker(accentPrimary, 1.8) : base.blueDeep
+        readonly property color purpleDeep: mono ? Qt.darker(accentPrimary, 1.8) : base.purpleDeep
     }
 
     // `c` with its alpha replaced by `a` (0..1).

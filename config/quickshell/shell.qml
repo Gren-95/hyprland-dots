@@ -37,6 +37,7 @@ Scope {
     Binding { target: Theme; property: "fontFamily";        value: settingsStore.fontFamily }
     Binding { target: Theme; property: "accentPrimaryName"; value: settingsStore.accentPrimaryName }
     Binding { target: Theme; property: "accentAutoHex";      value: settingsStore.accentAutoHex }
+    Binding { target: Theme; property: "accentEverywhere";   value: settingsStore.accentEverywhere }
     Binding { target: Theme; property: "animScale";         value: settingsStore.animScale }
     Binding { target: Theme; property: "radiusScale";       value: settingsStore.radiusScale }
 

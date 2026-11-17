@@ -253,13 +253,21 @@ pub const PANELS: &[Panel] = &[
         sections: &[
             Section {
                 title: "Colour",
-                settings: &[choice(
-                    "accent-primary",
-                    "Accent colour",
-                    "Highlight colour of the shell",
-                    ACCENTS,
-                    "orange",
-                )],
+                settings: &[
+                    choice(
+                        "accent-primary",
+                        "Accent colour",
+                        "Highlight colour of the shell",
+                        ACCENTS,
+                        "orange",
+                    ),
+                    toggle(
+                        "accent-everywhere",
+                        "Accent everywhere",
+                        "Use the accent colour for every coloured icon and highlight; red, green and yellow keep their meaning",
+                        true,
+                    ),
+                ],
             },
             Section {
                 title: "Text",

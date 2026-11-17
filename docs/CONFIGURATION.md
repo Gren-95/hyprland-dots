@@ -103,6 +103,7 @@ The ones most worth knowing:
 | `weather-fahrenheit` | `0` | `1` for °F and mph |
 | `wallpaper-dir` | `~/Pictures/wallpapers` | Folder the wallpaper deck deals from |
 | `accent-primary` | `orange` | Highlight colour: `orange`, `blue`, `green`, `red`, `yellow`, `purple`, `pink`, `teal`, `slate`, or `auto` (taken from the wallpaper) |
+| `accent-everywhere` | `1` | The accent colour replaces the other decorative accents (blue, purple, teal, pink, slate, orange); red, green and yellow keep their colour |
 | `idle-stay-awake` | `0` | The Stay Awake toggle (written by the day panel switch) |
 | `idle-inhibit-media`, `idle-inhibit-power` | `0` | Stay Awake while media plays / while on AC |
 | `battery-critical-pct`, `battery-critical-action` | `5`, `suspend` | At this level a 15 s countdown suspends unless you plug in; `none` or `0` turns it off |

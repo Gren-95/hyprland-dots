@@ -41,6 +41,7 @@ Scope {
     property int barHeight: 36
     property string accentPrimaryName: "orange"  // Theme.accentPrimary (highlights); "auto" = from wallpaper
     property string accentAutoHex: ""          // cached wallpaper-extracted accent
+    property bool accentEverywhere: true       // accent replaces the decorative accents
     property int spotlightCap: 60              // launcher results shown
     property int osdDuration: 1500             // ms the volume/brightness OSD stays
     property int sysmonInterval: 1500          // ms between system-monitor refreshes
@@ -141,6 +142,7 @@ Scope {
         { name: "barHeight",            file: "bar-height",             type: "int"  },
         { name: "accentPrimaryName",    file: "accent-primary",         type: "string" },
         { name: "accentAutoHex",        file: "accent-auto-hex",        type: "string" },
+        { name: "accentEverywhere",     file: "accent-everywhere",      type: "bool" },
         { name: "spotlightCap",         file: "spotlight-cap",          type: "int"  },
         { name: "osdDuration",          file: "osd-duration",           type: "int"  },
         { name: "sysmonInterval",       file: "sysmon-interval",        type: "int"  },
