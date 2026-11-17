@@ -5,6 +5,7 @@
 
 use iced::widget::{Column, container, row, slider, text, toggler};
 use iced::{Alignment, Element, Length, Task};
+use lucide_iced::bytes as ico;
 
 use crate::style::{self, Action};
 use crate::system::{self, args};
@@ -177,13 +178,13 @@ fn wpctl(list: Vec<String>) -> Task<Msg> {
     Task::perform(system::run("wpctl", list, None), |r| Msg::Done(r.map(|_| ())))
 }
 
-fn device_glyph(node: &Node, input: bool) -> &'static str {
+fn device_glyph(node: &Node, input: bool) -> crate::ui::Icon {
     if input {
-        "󰍬"
+        ico::MIC
     } else if node.name.starts_with("bluez") {
-        "󰋋"
+        ico::HEADPHONES
     } else {
-        "󰓃"
+        ico::SPEAKER
     }
 }
 
@@ -261,7 +262,7 @@ impl State {
         let mut apps: Vec<Element<'a, Msg>> = snap
             .apps
             .iter()
-            .map(|n| volume_row("󰎆", n.label.clone(), n, max))
+            .map(|n| volume_row(ico::AUDIO_LINES, n.label.clone(), n, max))
             .collect();
         if apps.is_empty() {
             apps.push(ui::note("Nothing is playing"));
@@ -287,21 +288,26 @@ impl State {
             .collect();
         if let Some(default) = nodes.iter().find(|n| n.is_default) {
             // The switch is on while the sound is on; off mutes.
-            rows.push(volume_row(if input { "󰍬" } else { "󰕾" }, "Volume".into(), default, max));
+            rows.push(volume_row(
+                if input { ico::MIC } else { ico::VOLUME_2 },
+                "Volume".into(),
+                default,
+                max,
+            ));
         }
         rows
     }
 }
 
 /// A volume slider with its label, percentage and mute switch.
-fn volume_row<'a>(glyph: &'static str, label: String, n: &Node, max: f32) -> Element<'a, Msg> {
+fn volume_row<'a>(glyph: crate::ui::Icon, label: String, n: &Node, max: f32) -> Element<'a, Msg> {
     let id = n.id;
     let bar = slider(0.0..=max, n.volume.min(max), move |v| Msg::Volume(id, v))
         .on_release(Msg::VolumeCommit)
         .step(0.01_f32)
         .width(Length::FillPortion(3));
     let line = row![
-        text(glyph).font(style::GLYPH_FONT).size(18).width(26).center(),
+        container(crate::ui::icon(glyph, 18.0)).width(26).center_x(26),
         text(label).size(14).color(style::FG).width(Length::FillPortion(2)),
         bar,
         text(format!("{}%", (n.volume * 100.0).round()))

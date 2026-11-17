@@ -2,6 +2,7 @@
 
 use iced::widget::{Column, text_input};
 use iced::{Element, Task};
+use lucide_iced::bytes as ico;
 
 use crate::style::Action;
 use crate::system::{self, args};
@@ -311,7 +312,7 @@ impl State {
         let idle = self.busy.is_none();
         let toggle = iced::widget::toggler(snap.wifi_enabled).on_toggle_maybe(idle.then_some(Msg::SetWifi));
         let mut wifi = vec![ui::item(
-            "󰖩",
+            ico::WIFI,
             "Wi-Fi".into(),
             if snap.wifi_enabled { "On".into() } else { "Off".into() },
             vec![
@@ -360,7 +361,7 @@ impl State {
                     } else {
                         format!("{} · {}", w.connection, w.state)
                     };
-                    ui::item("󰈀", w.device.clone(), detail, vec![])
+                    ui::item(ico::ETHERNET_PORT, w.device.clone(), detail, vec![])
                 })
                 .collect();
             body = ui::section(body, "Wired", rows);
@@ -380,7 +381,7 @@ impl State {
                     } else {
                         "Off"
                     };
-                    ui::item("󰦝", v.name.clone(), state.into(), vec![toggle.into()])
+                    ui::item(ico::SHIELD, v.name.clone(), state.into(), vec![toggle.into()])
                 })
                 .collect();
             body = ui::section(body, "VPN", rows);
@@ -390,16 +391,16 @@ impl State {
 
     fn network_row<'a>(&'a self, n: &'a Wifi, saved: bool) -> Element<'a, Msg> {
         let glyph = match n.signal {
-            75.. => "󰤨",
-            50..=74 => "󰤥",
-            25..=49 => "󰤢",
-            _ => "󰤟",
+            75.. => ico::WIFI,
+            50..=74 => ico::WIFI_HIGH,
+            25..=49 => ico::WIFI_LOW,
+            _ => ico::WIFI_ZERO,
         };
         let mut detail = vec![format!("{}%", n.signal)];
         detail.push(if n.security.is_empty() {
             "Open".into()
         } else {
-            format!("󰌾 {}", n.security)
+            n.security.clone()
         });
         if n.in_use {
             detail.insert(0, "Connected".into());

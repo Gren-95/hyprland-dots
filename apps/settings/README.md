@@ -67,7 +67,9 @@ states and layout.
 ## Build
 
 `dots.sh setup` builds it and installs `~/.local/bin/settings` plus the
-`dots-settings.desktop` launcher entry. By hand:
+`dots-settings.desktop` launcher entry. A clean build needs network access:
+the `lucide-iced` crate downloads the newest Lucide icon set from GitHub in
+its build script (the icons are not pinned to a Lucide version). By hand:
 
 ```bash
 cd apps/settings

@@ -5,11 +5,13 @@
 
 use iced::widget::{Column, Space, button, column, container, row, scrollable, text, text_input, tooltip};
 use iced::{Alignment, Element, Length};
+use lucide_iced::bytes as ico;
 
 use crate::app::{Layout, Message, SEARCH_ID};
 use crate::schema::PANELS;
 use crate::search;
 use crate::style;
+use crate::ui;
 
 /// `panel` is the open panel, `query` the text in the search field.
 pub fn view<'a>(panel: usize, query: &'a str, layout: Layout) -> Element<'a, Message> {
@@ -60,8 +62,8 @@ fn panel_entry<'a>(i: usize, selected: bool) -> button::Button<'a, Message> {
     .style(style::nav(selected))
 }
 
-fn glyph<'a>(g: &'static str) -> text::Text<'a> {
-    text(g).font(style::GLYPH_FONT).size(18).width(26).center()
+fn glyph<'a>(g: crate::ui::Icon) -> Element<'a, Message> {
+    container(ui::icon(g, 18.0)).width(26).center_x(26).into()
 }
 
 /// The panel list under group headers.
@@ -114,7 +116,7 @@ fn results<'a>(open: usize, query: &str) -> Column<'a, Message> {
 /// Icons only; the search glyph widens the sidebar so the field fits.
 fn compact<'a>(open: usize) -> Element<'a, Message> {
     let search = with_tooltip(
-        button(glyph("󰍉"))
+        button(glyph(ico::SEARCH))
             .on_press(Message::FocusSearch)
             .padding([9, 12])
             .style(style::nav(false)),

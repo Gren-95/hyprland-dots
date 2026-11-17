@@ -6,6 +6,7 @@
 
 use iced::widget::Column;
 use iced::{Element, Length, Task};
+use lucide_iced::bytes as ico;
 use serde_json::{Map, Value as Json};
 
 use crate::store::{Kind, Store, Value};
@@ -27,7 +28,7 @@ const HIDDEN: (&str, &str) = ("hidden", "Hidden");
 struct Module {
     id: &'static str,
     label: &'static str,
-    glyph: &'static str,
+    glyph: crate::ui::Icon,
     default: &'static str,
     places: &'static [(&'static str, &'static str)],
 }
@@ -36,42 +37,42 @@ const MODULES: &[Module] = &[
     Module {
         id: "bell",
         label: "Notifications",
-        glyph: "󰂚",
+        glyph: ico::BELL,
         default: "bar",
         places: &[ON_BAR, HIDDEN],
     },
     Module {
         id: "quickactions",
         label: "Quick Actions button",
-        glyph: "󰍜",
+        glyph: ico::MENU,
         default: "bar",
         places: &[ON_BAR, HIDDEN],
     },
     Module {
         id: "network",
         label: "Bluetooth",
-        glyph: "󰂯",
+        glyph: ico::BLUETOOTH,
         default: "bar",
         places: &[ON_BAR, IN_PANEL, HIDDEN],
     },
     Module {
         id: "audiopower",
         label: "Sound",
-        glyph: "󰕾",
+        glyph: ico::VOLUME_2,
         default: "bar",
         places: &[ON_BAR, IN_PANEL, HIDDEN],
     },
     Module {
         id: "battery",
         label: "Battery",
-        glyph: "󰁹",
+        glyph: ico::BATTERY_FULL,
         default: "bar",
         places: &[ON_BAR, IN_PANEL, HIDDEN],
     },
     Module {
         id: "mic",
         label: "Microphone (while in use)",
-        glyph: "󰍬",
+        glyph: ico::MIC,
         default: "bar",
         places: &[ON_BAR, HIDDEN],
     },
@@ -79,15 +80,15 @@ const MODULES: &[Module] = &[
 
 /// Quick Actions items: (key, label, glyph, default). The shell's
 /// `qaPlacementOf(key)`; clipboard defaults to the bar.
-const ACTIONS: &[(&str, &str, &str, &str)] = &[
-    ("mic", "Microphone", "󰍬", "overflow"),
-    ("activityicons", "Activity icons", "󰈈", "overflow"),
-    ("clipboard", "Clipboard", "󰅍", "bar"),
-    ("screenshot", "Screenshot", "󰹑", "overflow"),
-    ("record", "Record", "󰕧", "overflow"),
-    ("colorpicker", "Color picker", "󰈊", "overflow"),
-    ("keybinds", "Keybinds", "󰋖", "overflow"),
-    ("iconscursors", "Icons & cursors", "󰀻", "overflow"),
+const ACTIONS: &[(&str, &str, crate::ui::Icon, &str)] = &[
+    ("mic", "Microphone", ico::MIC, "overflow"),
+    ("activityicons", "Activity icons", ico::EYE, "overflow"),
+    ("clipboard", "Clipboard", ico::CLIPBOARD, "bar"),
+    ("screenshot", "Screenshot", ico::CAMERA, "overflow"),
+    ("record", "Record", ico::VIDEO, "overflow"),
+    ("colorpicker", "Color picker", ico::PIPETTE, "overflow"),
+    ("keybinds", "Keybinds", ico::CIRCLE_QUESTION_MARK, "overflow"),
+    ("iconscursors", "Icons & cursors", ico::SHAPES, "overflow"),
 ];
 
 #[derive(Debug, Clone, Default)]
@@ -247,7 +248,7 @@ impl State {
             (HIDDEN.1, !s.activity, Some(Msg::Activity(false))),
         ];
         modules.push(ui::item(
-            "󰈈",
+            ico::EYE,
             "Activity icons".into(),
             String::new(),
             vec![ui::choice(activity, width)],
@@ -282,7 +283,7 @@ impl State {
                     .iter()
                     .map(|(v, l)| (*l, current == *v, Some(Msg::Place(TRAY, key.clone(), v))))
                     .collect();
-                ui::item("󰀻", key.clone(), detail, vec![ui::choice(items, width)])
+                ui::item(ico::APP_WINDOW, key.clone(), detail, vec![ui::choice(items, width)])
             })
             .collect();
         if rows.is_empty() {

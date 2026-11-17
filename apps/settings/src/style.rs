@@ -25,8 +25,6 @@ pub const FONT_BOLD: iced::Font = iced::Font {
     weight: iced::font::Weight::Bold,
     ..FONT
 };
-/// Sidebar glyphs come from the shell's Nerd Font.
-pub const GLYPH_FONT: iced::Font = iced::Font::with_name("Iosevka Nerd Font");
 pub const RADIUS: f32 = 10.0;
 
 /// 0xrrggbb to a colour.

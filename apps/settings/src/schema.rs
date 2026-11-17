@@ -3,13 +3,14 @@
 //! config/quickshell/Settings.qml; a test checks every file here exists there.
 
 use crate::store::{Kind, Value, home};
+use lucide_iced::bytes as ico;
 
 pub struct Panel {
     /// Name for `settings --panel <id>`.
     pub id: &'static str,
     pub title: &'static str,
-    /// Nerd Font glyph for the sidebar.
-    pub glyph: &'static str,
+    /// Lucide icon for the sidebar.
+    pub glyph: crate::ui::Icon,
     /// The sidebar group it is listed under.
     pub group: Group,
     /// What the panel shows.
@@ -358,7 +359,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "network",
         title: "Network",
-        glyph: "󰖩",
+        glyph: ico::WIFI,
         group: Group::Connections,
         page: Page::Network,
         keywords: "wifi wi-fi wireless wlan internet ethernet wired vpn wireguard",
@@ -367,7 +368,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "bluetooth",
         title: "Bluetooth",
-        glyph: "󰂯",
+        glyph: ico::BLUETOOTH,
         group: Group::Connections,
         page: Page::Bluetooth,
         keywords: "devices headphones headset airpods speaker mouse keyboard pair",
@@ -376,7 +377,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "sound",
         title: "Sound",
-        glyph: "󰓃",
+        glyph: ico::SPEAKER,
         group: Group::InputOutput,
         page: Page::Sound,
         keywords: "audio speakers headphones microphone mic input output volume mute apps",
@@ -385,7 +386,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "keyboard",
         title: "Keyboard",
-        glyph: "󰌌",
+        glyph: ico::KEYBOARD,
         group: Group::InputOutput,
         page: Page::Keyboard,
         keywords: "layout language xkb input repeat delay caps lock num lock typing",
@@ -394,7 +395,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "mouse",
         title: "Mouse & touchpad",
-        glyph: "󰍽",
+        glyph: ico::MOUSE,
         group: Group::InputOutput,
         page: Page::Mouse,
         keywords: "pointer cursor speed acceleration scroll wheel touchpad trackpad tap click gestures swipe left-handed",
@@ -403,7 +404,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "osd",
         title: "Volume & OSD",
-        glyph: "󰕾",
+        glyph: ico::VOLUME_2,
         group: Group::InputOutput,
         page: Page::Settings,
         keywords: "",
@@ -473,7 +474,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "appearance",
         title: "Appearance",
-        glyph: "󰏘",
+        glyph: ico::PALETTE,
         group: Group::Appearance,
         page: Page::Settings,
         keywords: "",
@@ -584,7 +585,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "bar",
         title: "Bar",
-        glyph: "󰕮",
+        glyph: ico::PANEL_TOP,
         group: Group::Appearance,
         page: Page::Settings,
         keywords: "",
@@ -650,7 +651,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "baritems",
         title: "Bar items",
-        glyph: "󰍜",
+        glyph: ico::MENU,
         group: Group::Appearance,
         page: Page::BarItems,
         keywords: "bar modules quick actions tray icons hide show overflow placement layout",
@@ -659,7 +660,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "clock",
         title: "Clock & weather",
-        glyph: "󰥔",
+        glyph: ico::CLOCK,
         group: Group::Workspace,
         page: Page::Settings,
         keywords: "time date weather temperature forecast location fahrenheit",
@@ -696,7 +697,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "calendar",
         title: "Calendar",
-        glyph: "󰃭",
+        glyph: ico::CALENDAR,
         group: Group::Workspace,
         page: Page::Calendar,
         keywords: "ics webcal feeds events google outlook",
@@ -725,7 +726,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "notifications",
         title: "Notifications",
-        glyph: "󰂚",
+        glyph: ico::BELL,
         group: Group::Workspace,
         page: Page::Settings,
         keywords: "",
@@ -829,7 +830,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "launcher",
         title: "Launcher & clipboard",
-        glyph: "󰀻",
+        glyph: ico::LAYOUT_GRID,
         group: Group::Workspace,
         page: Page::Settings,
         keywords: "",
@@ -869,7 +870,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "recording",
         title: "Screenshots & recording",
-        glyph: "󰕧",
+        glyph: ico::VIDEO,
         group: Group::System,
         page: Page::Settings,
         keywords: "screenshot capture grim picture record video gpu-screen-recorder screencast",
@@ -1002,7 +1003,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "sysmon",
         title: "System monitor",
-        glyph: "󰍛",
+        glyph: ico::CPU,
         group: Group::System,
         page: Page::Settings,
         keywords: "",
@@ -1056,7 +1057,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "lock",
         title: "Lock & idle",
-        glyph: "󰌾",
+        glyph: ico::LOCK,
         group: Group::System,
         page: Page::Lock,
         keywords: "idle dim lock screen off suspend sleep lid hyprlock hypridle stay awake timeout",
@@ -1130,7 +1131,7 @@ pub const PANELS: &[Panel] = &[
     Panel {
         id: "power",
         title: "Power",
-        glyph: "󰂄",
+        glyph: ico::BATTERY_CHARGING,
         group: Group::System,
         page: Page::Settings,
         keywords: "battery critical suspend",

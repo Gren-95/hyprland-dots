@@ -3,6 +3,7 @@
 //! on a socket; scripts/airpods.sh wraps that and the audio codec, the same
 //! script the shell's Bluetooth flyout uses.
 
+use lucide_iced::bytes as ico;
 use std::path::PathBuf;
 
 use iced::Element;
@@ -157,7 +158,7 @@ pub fn rows<'a, M: Clone + 'a>(a: &'a AirPods, idle: bool, on_action: impl Fn(Ac
     .flatten()
     .collect();
     let mut rows = vec![ui::item(
-        "󰋋",
+        ico::HEADPHONES,
         a.name.clone(),
         if battery.is_empty() {
             "Battery unknown".into()
@@ -183,7 +184,7 @@ pub fn rows<'a, M: Clone + 'a>(a: &'a AirPods, idle: bool, on_action: impl Fn(Ac
             })
             .collect();
         rows.push(ui::item(
-            "󰟎",
+            ico::EAR,
             "Noise control".into(),
             String::new(),
             vec![ui::choice(modes, Length::Fixed(220.0))],
@@ -193,7 +194,7 @@ pub fn rows<'a, M: Clone + 'a>(a: &'a AirPods, idle: bool, on_action: impl Fn(Ac
         let flip = on_action(Action::Conversation(!on));
         let toggle = toggler(on).on_toggle_maybe(idle.then_some(move |_| flip.clone()));
         rows.push(ui::item(
-            "󰗋",
+            ico::MESSAGE_CIRCLE,
             "Conversation awareness".into(),
             "Lowers the volume when you start talking".into(),
             vec![toggle.into()],
@@ -210,13 +211,13 @@ pub fn rows<'a, M: Clone + 'a>(a: &'a AirPods, idle: bool, on_action: impl Fn(Ac
         })
         .collect();
     rows.push(ui::item(
-        "󰎈",
+        ico::AUDIO_WAVEFORM,
         "Codec".into(),
         String::new(),
         vec![ui::choice(codecs, Length::Fixed(220.0))],
     ));
     rows.push(ui::item(
-        "󰑓",
+        ico::ROTATE_CCW,
         "One bud silent?".into(),
         "Resets the audio connection".into(),
         vec![ui::action(

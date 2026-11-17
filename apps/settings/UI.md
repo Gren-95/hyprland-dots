@@ -90,7 +90,10 @@ text.
 
 - Colours come from `src/style.rs`, which mirrors
   `config/quickshell/Theme.qml`. The accent follows the shell's accent.
-- Text font is Adwaita Sans; glyphs (sidebar, list rows) use the Nerd Font.
+- Text font is Adwaita Sans. Icons are Lucide line icons (`lucide-iced`,
+  `ui::icon`): they take the colour of the text around them, so a selected
+  sidebar entry's icon is the accent. Pick the icon whose plain meaning fits
+  the row; the same thing gets the same icon everywhere.
 - Spacing steps: 2, 6, 8, 10, 12, 14, 28 px. Cards have a 10 px radius,
   controls 7–8 px.
 - Red, green and yellow mean danger, success and warning; do not use them

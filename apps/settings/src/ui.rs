@@ -8,6 +8,15 @@ use iced::{Alignment, Element, Length};
 
 use crate::style;
 
+/// A Lucide icon's SVG bytes (`lucide_iced::bytes::*`).
+pub type Icon = &'static [u8];
+
+/// An icon drawn in the colour of the text around it (the accent in a
+/// selected sidebar entry, muted in a row), like a glyph.
+pub fn icon<'a, M: 'a>(icon: Icon, size: f32) -> Element<'a, M> {
+    lucide_iced::themed_icon(icon, size)
+}
+
 /// A section header followed by a card holding `rows`.
 pub fn section<'a, M: 'a>(body: Column<'a, M>, title: &str, rows: Vec<Element<'a, M>>) -> Column<'a, M> {
     body.push(Space::new().height(8))
@@ -22,19 +31,14 @@ pub fn section<'a, M: 'a>(body: Column<'a, M>, title: &str, rows: Vec<Element<'a
 
 /// A list row: glyph, a title with a muted line under it, and controls on
 /// the right.
-pub fn item<'a, M: 'a>(
-    glyph: &'static str,
-    title: String,
-    detail: String,
-    controls: Vec<Element<'a, M>>,
-) -> Element<'a, M> {
+pub fn item<'a, M: 'a>(glyph: Icon, title: String, detail: String, controls: Vec<Element<'a, M>>) -> Element<'a, M> {
     let mut info = column![text(title).size(14).color(style::FG)]
         .spacing(2)
         .width(Length::Fill);
     if !detail.is_empty() {
         info = info.push(text(detail).size(12).color(style::MUTED_DEEP));
     }
-    let line = row![text(glyph).font(style::GLYPH_FONT).size(18).width(26).center(), info]
+    let line = row![container(icon(glyph, 18.0)).width(26).center_x(26), info]
         .extend(controls)
         .spacing(12)
         .align_y(Alignment::Center);
@@ -92,10 +96,11 @@ pub fn segmented<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>, widt
 pub fn multi_select<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>, width: Length) -> Element<'a, M> {
     let count = items.len();
     let buttons = items.into_iter().enumerate().map(|(i, (label, on, on_press))| {
-        let mark = text(if on { "󰄬" } else { "" }).font(style::GLYPH_FONT).size(GROUP_TEXT);
-        let content = row![mark, text(label).size(GROUP_TEXT)]
-            .spacing(6)
-            .align_y(Alignment::Center);
+        let mut content = row![].spacing(6).align_y(Alignment::Center);
+        if on {
+            content = content.push(icon(lucide_iced::bytes::CHECK, GROUP_TEXT));
+        }
+        let content = content.push(text(label).size(GROUP_TEXT));
         button(container(content).center_x(Length::Fill))
             .on_press_maybe(on_press)
             .padding([8, 10])

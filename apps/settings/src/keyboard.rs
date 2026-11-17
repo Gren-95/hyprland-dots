@@ -1,6 +1,7 @@
 //! Keyboard panel: layouts, the layout switch shortcut, Caps Lock, Num Lock
 //! and key repeat, stored and applied through hypr.rs.
 
+use lucide_iced::bytes as ico;
 use std::fmt;
 
 use iced::widget::{Column, column, container, pick_list, row, slider, text, text_input, toggler};
@@ -254,19 +255,19 @@ impl State {
             "Keys",
             vec![
                 ui::item(
-                    "󰌌",
+                    ico::KEYBOARD,
                     "Switch layout with".into(),
                     "Cycles through the layouts above".into(),
                     vec![pick_list(switch, current, |p| Msg::Switch(p.0)).width(220).into()],
                 ),
                 ui::item(
-                    "󰘲",
+                    ico::ARROW_BIG_UP,
                     "Caps Lock key".into(),
                     "What the Caps Lock key does".into(),
                     vec![ui::choice(caps, Length::Fixed(220.0))],
                 ),
                 ui::item(
-                    "󰎠",
+                    ico::HASH,
                     "Num Lock on at start".into(),
                     "Turn Num Lock on when Hyprland starts".into(),
                     vec![toggler(k.numlock).on_toggle(Msg::Numlock).into()],
@@ -327,7 +328,7 @@ impl State {
                     ("Up", (i > 0).then_some(Msg::MoveUp(i)), Action::Normal),
                     (remove, (count > 1).then_some(Msg::Remove(i)), Action::Danger),
                 ]);
-                ui::item("󰌌", self.name_of(layout, variant), detail, vec![buttons])
+                ui::item(ico::KEYBOARD, self.name_of(layout, variant), detail, vec![buttons])
             })
             .collect();
         let matches = find(&self.catalog, &self.filter)

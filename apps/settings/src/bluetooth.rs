@@ -3,6 +3,7 @@
 
 use iced::widget::{Column, container, text_input};
 use iced::{Element, Task};
+use lucide_iced::bytes as ico;
 
 use crate::airpods::{self, AirPods};
 use crate::style::Action;
@@ -199,16 +200,16 @@ fn rename(mac: &str, name: &str) -> Result<(), String> {
     .map(|_| ())
 }
 
-fn glyph(icon: &str) -> &'static str {
+fn glyph(icon: &str) -> crate::ui::Icon {
     match icon {
-        i if i.starts_with("audio-head") => "󰋋",
-        i if i.starts_with("audio") => "󰓃",
-        "input-mouse" => "󰍽",
-        "input-keyboard" => "󰌌",
-        "input-gaming" => "󰊴",
-        "phone" => "󰏲",
-        "computer" => "󰇄",
-        _ => "󰂯",
+        i if i.starts_with("audio-head") => ico::HEADPHONES,
+        i if i.starts_with("audio") => ico::SPEAKER,
+        "input-mouse" => ico::MOUSE,
+        "input-keyboard" => ico::KEYBOARD,
+        "input-gaming" => ico::GAMEPAD_2,
+        "phone" => ico::SMARTPHONE,
+        "computer" => ico::MONITOR,
+        _ => ico::BLUETOOTH,
     }
 }
 
@@ -301,7 +302,7 @@ impl State {
             body,
             "Bluetooth",
             vec![ui::item(
-                "󰂯",
+                ico::BLUETOOTH,
                 "Bluetooth".into(),
                 if snap.powered { "On".into() } else { "Off".into() },
                 vec![power.into()],
@@ -339,7 +340,7 @@ impl State {
 
         let scan_label = if self.scanning { "Scanning…" } else { "Scan" };
         let mut nearby = vec![ui::item(
-            "󰂰",
+            ico::BLUETOOTH_SEARCHING,
             "Nearby devices".into(),
             "Put the device in pairing mode, then scan".into(),
             vec![ui::action(
