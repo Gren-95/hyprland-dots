@@ -19,6 +19,8 @@ hl.config({
         -- Palette from quickshell/Theme.qml: the focused window carries
         -- accentPrimary (orange -> yellow), unfocused ones fade back to
         -- Theme.borderStrong so focus is the only thing that draws the eye.
+        -- This is the default until Quickshell starts: HyprBorder.qml then
+        -- sets the active border to the accent colour the user picked.
         col = {
             active_border = {
                 colors = {"rgba(ff7a1aee)", "rgba(ffc531ee)"},

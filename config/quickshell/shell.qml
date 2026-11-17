@@ -46,6 +46,7 @@ Scope {
     EventToasts {}
     WeatherService { id: weatherService }
     AccentService { id: accentService }
+    HyprBorder {}
     Notifications { id: notifService }
     GameModeService { id: gameMode; notifs: notifService }
     Binding { target: TailscaleService; property: "paused"; value: gameMode.active }

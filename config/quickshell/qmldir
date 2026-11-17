@@ -39,6 +39,7 @@ IcsCalendar IcsCalendar.qml
 IdleService IdleService.qml
 Keybinds Keybinds.qml
 IconsCursors IconsCursors.qml
+HyprBorder HyprBorder.qml
 ThemeSource ThemeSource.qml
 MediaCard MediaCard.qml
 NotifBell NotifBell.qml
