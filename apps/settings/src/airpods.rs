@@ -6,7 +6,8 @@
 use std::path::PathBuf;
 
 use iced::Element;
-use iced::widget::{row, toggler};
+use iced::Length;
+use iced::widget::toggler;
 
 use crate::style;
 use crate::system::{self, args};
@@ -174,18 +175,18 @@ pub fn rows<'a, M: Clone + 'a>(a: &'a AirPods, idle: bool, on_action: impl Fn(Ac
             .iter()
             .filter(|(n, _, _)| *n != 1 || a.allow_off)
             .map(|(n, key, label)| {
-                let kind = if a.listening_mode == Some(*n) {
-                    style::Action::Primary
-                } else {
-                    style::Action::Normal
-                };
-                ui::action(label, idle.then(|| on_action(Action::Mode(key))), kind)
-            });
+                (
+                    *label,
+                    a.listening_mode == Some(*n),
+                    idle.then(|| on_action(Action::Mode(key))),
+                )
+            })
+            .collect();
         rows.push(ui::item(
             "󰟎",
             "Noise control".into(),
             String::new(),
-            vec![row(modes).spacing(6).into()],
+            vec![ui::segmented(modes, Length::Shrink)],
         ));
         let on = a.conversation.unwrap_or(false);
         // A toggle only ever flips, so its message is known up front.
@@ -198,19 +199,21 @@ pub fn rows<'a, M: Clone + 'a>(a: &'a AirPods, idle: bool, on_action: impl Fn(Ac
             vec![toggle.into()],
         ));
     }
-    let codecs = CODECS.iter().map(|(key, profile, label)| {
-        let kind = if a.profile == *profile {
-            style::Action::Primary
-        } else {
-            style::Action::Normal
-        };
-        ui::action(label, idle.then(|| on_action(Action::Codec(key))), kind)
-    });
+    let codecs = CODECS
+        .iter()
+        .map(|(key, profile, label)| {
+            (
+                *label,
+                a.profile == *profile,
+                idle.then(|| on_action(Action::Codec(key))),
+            )
+        })
+        .collect();
     rows.push(ui::item(
         "󰎈",
         "Codec".into(),
         String::new(),
-        vec![row(codecs).spacing(6).into()],
+        vec![ui::segmented(codecs, Length::Shrink)],
     ));
     rows.push(ui::item(
         "󰑓",

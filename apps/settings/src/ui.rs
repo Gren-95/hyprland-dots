@@ -1,7 +1,7 @@
 //! Pieces every panel is built from: section headers, cards, list rows and
 //! small action buttons.
 
-use iced::widget::{Column, Space, button, column, container, row, text};
+use iced::widget::{Column, Row, Space, TextInput, button, column, container, row, text};
 use iced::{Alignment, Element, Length};
 
 use crate::style;
@@ -58,4 +58,46 @@ pub fn action<'a, M: Clone + 'a>(label: &'a str, on_press: Option<M>, kind: styl
         .padding([5, 12])
         .style(style::action(kind))
         .into()
+}
+
+/// Height of every part of a joined group, so they line up.
+const GROUP_TEXT: f32 = 14.0;
+
+/// A segmented control: joined buttons, one per option, the selected one
+/// filled. Each item is (label, selected, message when pressed).
+pub fn segmented<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>, width: Length) -> Element<'a, M> {
+    let count = items.len();
+    let buttons = items.into_iter().enumerate().map(|(i, (label, selected, on_press))| {
+        button(text(label).size(GROUP_TEXT).center().width(Length::Fill))
+            .on_press_maybe(on_press)
+            .padding([8, 12])
+            .width(Length::Fill)
+            .style(style::segment(selected, style::Joint::of(i, count)))
+            .into()
+    });
+    // Overlap by one pixel so neighbours share a single border line.
+    Row::with_children(buttons).spacing(-1.0).width(width).into()
+}
+
+/// An input group: a text field with buttons joined to its right.
+pub fn input_group<'a, M: Clone + 'a>(
+    field: TextInput<'a, M>,
+    buttons: Vec<(&'a str, Option<M>, style::Action)>,
+) -> Element<'a, M> {
+    let count = buttons.len() + 1;
+    let field = field
+        .size(GROUP_TEXT)
+        .padding([8, 10])
+        .width(Length::Fill)
+        .style(style::field_at(style::Joint::of(0, count)));
+    let mut group = row![field].spacing(-1.0).align_y(Alignment::Center);
+    for (i, (label, on_press, kind)) in buttons.into_iter().enumerate() {
+        group = group.push(
+            button(text(label).size(GROUP_TEXT))
+                .on_press_maybe(on_press)
+                .padding([8, 14])
+                .style(style::action_at(kind, style::Joint::of(i + 1, count))),
+        );
+    }
+    group.into()
 }

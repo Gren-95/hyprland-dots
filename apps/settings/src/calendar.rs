@@ -172,17 +172,10 @@ impl State {
         }
         let field = text_input("https://… or webcal://… (.ics link)", &self.draft)
             .on_input(Msg::Draft)
-            .on_submit(Msg::Add)
-            .padding([7, 10])
-            .style(style::field)
-            .width(Length::Fill);
-        let add = ui::action(
-            "Add",
-            (!self.draft.trim().is_empty()).then_some(Msg::Add),
-            Action::Primary,
-        );
+            .on_submit(Msg::Add);
+        let add = (!self.draft.trim().is_empty()).then_some(Msg::Add);
         rows.push(
-            container(row![field, add].spacing(8).align_y(Alignment::Center))
+            container(ui::input_group(field, vec![("Add", add, Action::Primary)]))
                 .padding([8, 14])
                 .into(),
         );

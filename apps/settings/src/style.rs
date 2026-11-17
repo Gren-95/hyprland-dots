@@ -93,6 +93,15 @@ pub fn sidebar(_: &Theme) -> container::Style {
 /// Text fields (search and entries): a rounded well, outlined in the accent when
 /// focused.
 pub fn field(theme: &Theme, status: text_input::Status) -> text_input::Style {
+    field_at(Joint::Alone)(theme, status)
+}
+
+/// A text field that is part of an input group.
+pub fn field_at(joint: Joint) -> impl Fn(&Theme, text_input::Status) -> text_input::Style {
+    move |theme, status| field_style(theme, status, joint)
+}
+
+fn field_style(theme: &Theme, status: text_input::Status, joint: Joint) -> text_input::Style {
     let accent = theme.palette().primary;
     let outline = match status {
         text_input::Status::Focused { .. } => accent,
@@ -104,7 +113,7 @@ pub fn field(theme: &Theme, status: text_input::Status) -> text_input::Style {
         border: Border {
             color: outline,
             width: 1.0,
-            radius: border::radius(8.0),
+            radius: joint.radius(8.0),
         },
         icon: MUTED_DEEP,
         placeholder: MUTED_DEEP,
@@ -138,6 +147,48 @@ pub enum Action {
 }
 
 pub fn action(kind: Action) -> impl Fn(&Theme, button::Status) -> button::Style {
+    action_at(kind, Joint::Alone)
+}
+
+/// Where a control sits in a group of joined controls (Bootstrap's button
+/// and input groups): only the group's outer corners are rounded.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Joint {
+    Alone,
+    First,
+    Middle,
+    Last,
+}
+
+impl Joint {
+    /// The joint of item `index` in a group of `count`.
+    pub fn of(index: usize, count: usize) -> Joint {
+        match (index, count) {
+            (_, 0 | 1) => Joint::Alone,
+            (0, _) => Joint::First,
+            (i, n) if i + 1 == n => Joint::Last,
+            _ => Joint::Middle,
+        }
+    }
+
+    pub fn radius(self, r: f32) -> border::Radius {
+        let (left, right) = match self {
+            Joint::Alone => (r, r),
+            Joint::First => (r, 0.0),
+            Joint::Middle => (0.0, 0.0),
+            Joint::Last => (0.0, r),
+        };
+        border::Radius {
+            top_left: left,
+            bottom_left: left,
+            top_right: right,
+            bottom_right: right,
+        }
+    }
+}
+
+/// An action button that is part of a group.
+pub fn action_at(kind: Action, joint: Joint) -> impl Fn(&Theme, button::Status) -> button::Style {
     move |theme, status| {
         let accent = theme.palette().primary;
         let hovered = matches!(status, button::Status::Hovered | button::Status::Pressed);
@@ -156,11 +207,17 @@ pub fn action(kind: Action) -> impl Fn(&Theme, button::Status) -> button::Style 
             border: Border {
                 color: BORDER_SUBTLE,
                 width: 1.0,
-                radius: border::radius(7.0),
+                radius: joint.radius(7.0),
             },
             ..button::Style::default()
         }
     }
+}
+
+/// One option of a segmented control: the selected one filled with the
+/// accent, the others like a plain button.
+pub fn segment(selected: bool, joint: Joint) -> impl Fn(&Theme, button::Status) -> button::Style {
+    action_at(if selected { Action::Primary } else { Action::Normal }, joint)
 }
 
 /// A round colour swatch.
@@ -225,5 +282,22 @@ mod tests {
         assert_eq!(accent("orange", ""), rgb(0xff7a1a));
         assert_eq!(accent("auto", "#4c9aff"), rgb(0x4c9aff));
         assert_eq!(accent("auto", "nonsense"), rgb(0xff7a1a));
+    }
+}
+
+#[cfg(test)]
+mod joint_tests {
+    use super::*;
+
+    #[test]
+    fn rounds_only_outer_corners() {
+        assert_eq!(Joint::of(0, 1), Joint::Alone);
+        assert_eq!(Joint::of(0, 3), Joint::First);
+        assert_eq!(Joint::of(1, 3), Joint::Middle);
+        assert_eq!(Joint::of(2, 3), Joint::Last);
+        let first = Joint::First.radius(8.0);
+        assert_eq!((first.top_left, first.top_right), (8.0, 0.0));
+        let last = Joint::Last.radius(8.0);
+        assert_eq!((last.bottom_left, last.bottom_right), (0.0, 8.0));
     }
 }

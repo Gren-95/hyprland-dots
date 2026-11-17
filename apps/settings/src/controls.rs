@@ -11,6 +11,7 @@ use crate::reveal;
 use crate::schema::{Control, Setting};
 use crate::store::Value;
 use crate::style;
+use crate::ui;
 
 /// Width of a control beside its label.
 const CONTROL_WIDTH: f32 = 300.0;
@@ -108,6 +109,16 @@ fn control<'a>(s: &'static Setting, value: Value, draft: Option<&'a String>, sta
             .step(*step);
             slider_row(bar.into(), label, width)
         }
+        (Control::Choice(options), Value::Text(current)) if fits_segments(options) => {
+            let items = options
+                .iter()
+                .map(|(value, label)| {
+                    let msg = Message::Set(file, Value::Text(value.to_string()));
+                    (*label, *value == current, Some(msg))
+                })
+                .collect();
+            ui::segmented(items, width)
+        }
         (Control::Choice(options), Value::Text(current)) => {
             let choices: Vec<Choice> = options.iter().map(|(value, label)| Choice { value, label }).collect();
             let selected = choices.iter().find(|c| c.value == current).cloned();
@@ -156,6 +167,11 @@ fn control<'a>(s: &'static Setting, value: Value, draft: Option<&'a String>, sta
     }
 }
 
+/// Few short options fit a segmented control; more stay a dropdown.
+fn fits_segments(options: &[(&str, &str)]) -> bool {
+    options.len() <= 4 && options.iter().map(|(_, label)| label.chars().count()).sum::<usize>() <= 30
+}
+
 /// A slider with its value written beside it.
 fn slider_row<'a>(bar: Element<'a, Message>, value: String, width: Length) -> Element<'a, Message> {
     row![bar, text(value).size(13).color(style::FG_MUTED).width(72)]
@@ -163,4 +179,24 @@ fn slider_row<'a>(bar: Element<'a, Message>, value: String, width: Length) -> El
         .width(width)
         .align_y(Alignment::Center)
         .into()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn short_choices_become_segments() {
+        assert!(fits_segments(&[("center", "Top centre"), ("right", "Top right")]));
+        assert!(fits_segments(&[("png", "PNG"), ("jpg", "JPEG")]));
+        let audio = [
+            ("none", "None"),
+            ("output", "System sound"),
+            ("input", "Microphone"),
+            ("both", "System sound and microphone"),
+        ];
+        assert!(!fits_segments(&audio));
+        let five = [("a", "A"), ("b", "B"), ("c", "C"), ("d", "D"), ("e", "E")];
+        assert!(!fits_segments(&five));
+    }
 }

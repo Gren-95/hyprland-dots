@@ -1,9 +1,9 @@
 //! Network panel: Wi-Fi, wired devices and VPN connections through nmcli.
 
-use iced::widget::{Column, row, text_input};
-use iced::{Alignment, Element, Length, Task};
+use iced::widget::{Column, text_input};
+use iced::{Element, Task};
 
-use crate::style::{self, Action};
+use crate::style::Action;
 use crate::system::{self, args};
 use crate::ui;
 
@@ -386,22 +386,15 @@ impl State {
         let field = text_input("Password", &self.password)
             .secure(true)
             .on_input(Msg::Password)
-            .on_submit(Msg::SubmitPassword)
-            .padding([7, 10])
-            .style(style::field)
-            .width(Length::Fill);
+            .on_submit(Msg::SubmitPassword);
         let ok = (!self.password.is_empty()).then_some(Msg::SubmitPassword);
-        iced::widget::container(
-            row![
-                field,
-                ui::action("Cancel", Some(Msg::CancelPassword), Action::Normal),
-                ui::action("Connect", ok, Action::Primary)
-            ]
-            .spacing(8)
-            .align_y(Alignment::Center),
-        )
-        .padding([4, 14])
-        .into()
+        let buttons = vec![
+            ("Cancel", Some(Msg::CancelPassword), Action::Normal),
+            ("Connect", ok, Action::Primary),
+        ];
+        iced::widget::container(ui::input_group(field, buttons))
+            .padding([4, 14])
+            .into()
     }
 }
 
