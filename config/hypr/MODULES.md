@@ -15,9 +15,14 @@ the modules. Split for readability — every module is small and self-contained.
 | `rules.lua` | Window rules | `hl.window_rule()` entries — float/tile overrides, opacity for specific apps. |
 | `autostart.lua` | exec-once + env vars | Cursor theme/size, Qt platform theme, QML import path. Starts `restart.sh` (which fans out to everything else, including the nm-applet tray app). |
 
-`hyprland-gui.lua` (not a module) is written by HyprMod and loaded last, so its
-values win: gaps, border size, rounding, blur, shadow and cursor options live
-there.
+`hyprland-gui.lua` (not a module) is written by HyprMod and loaded after the
+modules, so its values win: gaps, border size, rounding, blur, shadow and
+cursor options live there.
+
+`settings.lua` is written by the settings app (`apps/settings`, Keyboard panel
+for now) and loaded last with `pcall`, so it wins over both and may be missing.
+It and its source `settings.json` are gitignored: they hold this machine's
+choices (keyboard layouts, repeat, Caps Lock), applied live with `hyprctl eval`.
 
 The other `hypr/*.conf` files (hypridle, hyprlock, hyprqt6engine)
 are separate tools that still use hyprlang — do not convert them to Lua.

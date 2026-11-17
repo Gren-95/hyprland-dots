@@ -16,6 +16,7 @@ shell show in the app too.
 | `network` | Wi-Fi on/off, nearby networks (connect, disconnect, forget, scan), wired devices, VPN connections — through `nmcli` |
 | `sound` | Output and input device, their volume and mute, and the volume of every app playing — through `pw-dump` and `wpctl` |
 | `bluetooth` | Bluetooth on/off, paired devices (connect, disconnect, forget, battery), scanning and pairing — through `bluetoothctl`. Connected AirPods get battery per bud and case, noise control, conversation awareness, codec and an audio reset, through librepods and `config/scripts/airpods.sh` |
+| `keyboard` | Keyboard layouts (search the XKB list, add, remove, reorder), layout switch shortcut, Caps Lock key, Num Lock at start, key repeat delay and speed — written to `config/hypr/settings.lua` (gitignored, loaded last) and applied with `hyprctl eval` |
 | `appearance` | Accent colour, font and text size, corner roundness, animation speed, wallpaper folder |
 | `bar` | Height, opacity, window title width, workspace icons, activity icons, scroll action |
 | `clock` | 24-hour clock, seconds, date format |
@@ -81,6 +82,8 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/audio.rs` | Sound panel: pw-dump parsing, wpctl actions, view |
 | `src/airpods.rs` | AirPods section of the Bluetooth panel: librepods state, airpods.sh actions |
 | `src/calendar.rs` | Calendar feeds: reading, adding and removing lines of calendar.url |
+| `src/hypr.rs` | Hyprland settings the app owns: settings.json, the generated settings.lua, `hyprctl eval` |
+| `src/keyboard.rs` | Keyboard panel and the XKB layout list |
 | `src/system.rs` | Running nmcli and bluetoothctl on a background thread |
 | `src/ui.rs` | Shared pieces: section cards, list rows, action buttons |
 | `src/reveal.rs` | Scrolling a panel to a setting's row (a widget operation) |

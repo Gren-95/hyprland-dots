@@ -5,13 +5,15 @@
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
+use iced::keyboard as keys;
 use iced::widget::{Column, Space, column, container, responsive, row, scrollable, text};
-use iced::{Element, Length, Subscription, Task, Theme, keyboard};
+use iced::{Element, Length, Subscription, Task, Theme};
 
 use crate::audio;
 use crate::bluetooth;
 use crate::calendar;
 use crate::controls;
+use crate::keyboard;
 use crate::network;
 use crate::reveal;
 use crate::schema::{PANELS, Page, Panel, Section, all_settings};
@@ -80,6 +82,7 @@ pub struct App {
     bluetooth: bluetooth::State,
     audio: audio::State,
     calendar: calendar::State,
+    keyboard: keyboard::State,
     error: Option<String>,
 }
 
@@ -104,6 +107,7 @@ pub enum Message {
     Bluetooth(bluetooth::Msg),
     Audio(audio::Msg),
     Calendar(calendar::Msg),
+    Keyboard(keyboard::Msg),
 }
 
 impl App {
@@ -124,6 +128,7 @@ impl App {
             bluetooth: bluetooth::State::default(),
             audio: audio::State::default(),
             calendar: calendar::State::default(),
+            keyboard: keyboard::State::default(),
             error: None,
         };
         app.reload();
@@ -142,6 +147,7 @@ impl App {
                 self.calendar.update(calendar::Msg::Refresh);
                 Task::none()
             }
+            Page::Keyboard => self.keyboard.update(keyboard::Msg::Load).map(Message::Keyboard),
         }
     }
 
@@ -184,10 +190,10 @@ impl App {
     }
 
     pub fn subscription(&self) -> Subscription<Message> {
-        let keys = keyboard::listen().filter_map(|event| match event {
-            keyboard::Event::KeyPressed { key, modifiers, .. } => match key.as_ref() {
-                keyboard::Key::Character("f") if modifiers.command() => Some(Message::FocusSearch),
-                keyboard::Key::Named(keyboard::key::Named::Escape) => Some(Message::ClearSearch),
+        let keys = keys::listen().filter_map(|event| match event {
+            keys::Event::KeyPressed { key, modifiers, .. } => match key.as_ref() {
+                keys::Key::Character("f") if modifiers.command() => Some(Message::FocusSearch),
+                keys::Key::Named(keys::key::Named::Escape) => Some(Message::ClearSearch),
                 _ => None,
             },
             _ => None,
@@ -205,6 +211,7 @@ impl App {
             }
             Page::Calendar => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Calendar(calendar::Msg::Refresh))),
+            Page::Keyboard => {}
         }
         Subscription::batch(subscriptions)
     }
@@ -222,6 +229,7 @@ impl App {
             Message::Bluetooth(msg) => return self.bluetooth.update(msg).map(Message::Bluetooth),
             Message::Audio(msg) => return self.audio.update(msg).map(Message::Audio),
             Message::Calendar(msg) => self.calendar.update(msg),
+            Message::Keyboard(msg) => return self.keyboard.update(msg).map(Message::Keyboard),
             Message::Search(query) => {
                 self.query = query;
                 self.searching = true;
@@ -328,6 +336,9 @@ impl App {
                     options = self.section(options, section, layout);
                 }
                 column![feeds, options].into()
+            }
+            Page::Keyboard => {
+                Element::from(self.keyboard.view(page_column(panel.title, layout))).map(Message::Keyboard)
             }
         };
         // One scroll position per panel.

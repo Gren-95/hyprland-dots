@@ -30,6 +30,8 @@ pub enum Page {
     Sound,
     /// Calendar feeds (calendar.rs), then the panel's settings.
     Calendar,
+    /// Keyboard layouts and repeat in Hyprland (keyboard.rs, hypr.rs).
+    Keyboard,
 }
 
 pub struct Section {
@@ -277,6 +279,14 @@ pub const PANELS: &[Panel] = &[
         glyph: "󰂯",
         page: Page::Bluetooth,
         keywords: "devices headphones headset airpods speaker mouse keyboard pair",
+        sections: &[],
+    },
+    Panel {
+        id: "keyboard",
+        title: "Keyboard",
+        glyph: "󰌌",
+        page: Page::Keyboard,
+        keywords: "layout language xkb input repeat delay caps lock num lock typing",
         sections: &[],
     },
     Panel {
