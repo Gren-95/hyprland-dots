@@ -27,6 +27,7 @@ Dependencies and manual setup. The one-command install is in the [README](../REA
 - `inotify-tools` — dotfile hot-reload daemon
 - `fish` `fzf` — shell, fuzzy finder (the `kb` keybind search)
 - `ranger` — TUI file manager
+- `gnome-font-viewer` — font previews in Nautilus (TTF, OTF, WOFF; WOFF2 through `thumbnailers/woff2.thumbnailer`)
 - `mpv` `network-manager-applet` `libnotify` `upower` — music player, tray network applet, notifications, battery
 - Optional, per feature: `zoxide` (directory jumping), `wayvnc` (remote access, `Super+Ctrl+R`), `btop`
   (TUI system monitor), `hyprsunset` (night light), `tailscale`, `docker` (Windows VM, games browser),
@@ -61,8 +62,8 @@ sudo dnf install hyprland hyprland-devel quickshell kitty nautilus cliphist awww
   brightnessctl playerctl powerprofilesctl gpu-screen-recorder \
   network-manager-applet libnotify upower mpv bc curl gnome-keyring \
   jq inotify-tools pulseaudio-utils bluez hyprshutdown timeshift fzf \
-  fish ranger python3 python3-pillow python3-numpy python3-gobject \
-  unzip liberation-sans-fonts
+  gnome-font-viewer fish ranger python3 python3-pillow python3-numpy \
+  python3-gobject unzip liberation-sans-fonts
 ```
 
 Optional extras are listed under [Dependencies](#dependencies) and in
@@ -123,7 +124,7 @@ The setup script will:
 - Create required user directories (`~/Pictures/Screenshots`, `~/Music`, etc.)
 - Install Iosevka Nerd Font
 - Set script permissions and enable the tracked git hooks
-- Link the Nautilus thumbnailers (3MF, PSD, STL, GLB, OBJ), and install the programs the 3D ones run to `/usr/local/bin` (sudo)
+- Link the Nautilus thumbnailers (3MF, PSD, STL, GLB, OBJ, WOFF2), and install the programs the 3D ones run to `/usr/local/bin` (sudo)
 - Install and enable the systemd user units (`dots.sh units`)
 - Configure the GTK theme (and the Tailscale operator when Tailscale is installed)
 - Optionally set up the Immich CLI, Jellyfin music sync and Gcode Viewer (skipped with `--yes`)
