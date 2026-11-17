@@ -57,6 +57,7 @@ Scope {
     Clipboard { id: clipboard }
     Osd { id: osd }
     Keybinds { id: keybinds }
+    IconsCursors { id: iconsCursors }
     WorkspaceOverview { id: workspaceOverview }
     ScreenRecorder { id: recorder }
     PolkitPrompt { id: polkit }
@@ -133,6 +134,7 @@ Scope {
                 // invisible item puts the flyout at a garbage position.
                 clipboard.anchorBar = Qt.binding(() => shellRoot.activeBar);
                 keybinds.anchorBar = Qt.binding(() => shellRoot.activeBar);
+                iconsCursors.anchorBar = Qt.binding(() => shellRoot.activeBar);
                 sysmon.anchorBar = Qt.binding(() => shellRoot.activeBar);
             }
 
@@ -500,6 +502,7 @@ Scope {
                     gameLauncherRef: gameLauncher
                     clipboardRef: clipboard
                     keybindsRef: keybinds
+                    iconsCursorsRef: iconsCursors
                     sysmonRef: sysmon
                     dayPanelRef: dayPanel
                     wallpaperDeckRef: wallpaperDeck

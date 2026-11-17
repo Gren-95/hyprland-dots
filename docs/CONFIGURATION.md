@@ -114,6 +114,7 @@ The ones most worth knowing:
 | `bar-placement.json`, `tray-placement.json`, `qa-placement.json` | empty | Per item `"bar"`, `"overflow"` or `"hidden"` for bar modules, tray apps and Quick Actions items |
 | `flyout-sizes.json` | empty | Per flyout `{ "w": …, "h": … }` size overrides |
 | `hidden-apps.json` | empty | Apps hidden from the launcher (managed with `Ctrl+D` there) |
+| `icon-theme-recents.json`, `cursor-theme-recents.json` | empty | Recently applied themes, listed first in the Icons & cursors popup |
 
 ### Calendar feeds
 

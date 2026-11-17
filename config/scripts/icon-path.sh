@@ -6,15 +6,16 @@
 # For the Sound popup's app rows (quickshell/AudioAppRow.qml): Quickshell's
 # image://icon provider drew nothing when the icon name reached the image
 # through a binding, so the row resolves a real file and loads it with file://.
-# Looks in the user's icons, then Papirus-Dark, Papirus and hicolor at sizes
-# that render sharply at 30 px, then /usr/share/pixmaps.
+# Looks in the user's icons, then the current icon theme (icon-theme.sh get)
+# and hicolor at sizes that render sharply at 30 px, then /usr/share/pixmaps.
 set -uo pipefail
 
 name=${1:-}
 [[ -n $name && $name != */* ]] || exit 0
 
+current=$(bash "$(dirname "${BASH_SOURCE[0]}")/icon-theme.sh" get)
 for base in "$HOME/.local/share/icons" /usr/share/icons; do
-    for theme in Papirus-Dark Papirus hicolor; do
+    for theme in "$current" hicolor; do
         for size in 48x48 64x64 scalable 128x128 32x32 256x256; do
             for ext in svg png; do
                 f="$base/$theme/$size/apps/$name.$ext"

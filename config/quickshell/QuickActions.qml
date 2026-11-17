@@ -44,6 +44,7 @@ Item {
         { glyph: "󰕧", label: "Record",       accent: Theme.accent.red, action: "record", cmd: ["bash", Paths.scripts + "/screenrecord.sh"] },
         { glyph: "󰈊", label: "Color picker", accent: Theme.accent.pink, action: "colorpicker", cmd: ["hyprpicker", "-a"] },
         { glyph: "󰋖", label: "Keybinds",     accent: Theme.accent.blue, action: "keybinds" },
+        { glyph: "󰀻", label: "Icons & cursors", accent: Theme.accent.purple, action: "iconscursors" },
     ]
 
     // What renders in the panel: entries placed in "overflow" (the default).
@@ -157,6 +158,9 @@ Item {
         } else if (entry.action === "keybinds") {
             actions.popupOpen = false;
             keybinds.toggle();
+        } else if (entry.action === "iconscursors") {
+            actions.popupOpen = false;
+            iconsCursors.toggle();
         } else if (entry.action === "clipboard") {
             actions.popupOpen = false;
             clipboard.openMenu();

@@ -129,7 +129,8 @@ systemctl --user restart battery-notify.service power-auto.service \
 ################################################################################
 nmcli radio wifi on >/dev/null 2>&1
 gsettings set org.gnome.desktop.interface gtk-theme "Adwaita" >/dev/null 2>&1
-gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark" >/dev/null 2>&1
+# The icon theme the Icon theme popup picked (scripts/icon-theme.sh).
+gsettings set org.gnome.desktop.interface icon-theme "$(bash "$SCRIPTS_DIR/icon-theme.sh" get)" >/dev/null 2>&1
 gsettings set org.gnome.desktop.interface color-scheme "prefer-dark" >/dev/null 2>&1
 hyprctl eval 'hl.monitor({output="FALLBACK", mode="1920x1080@60", position="auto", scale=1})' >/dev/null 2>&1
 # The wallpaper is NOT changed here: `awww restore` (above, once the daemon's
