@@ -10,7 +10,22 @@ pub struct Panel {
     pub title: &'static str,
     /// Nerd Font glyph for the sidebar.
     pub glyph: &'static str,
+    /// What the panel shows.
+    pub page: Page,
+    /// More words search finds the panel by.
+    pub keywords: &'static str,
+    /// The settings of a `Page::Settings` panel.
     pub sections: &'static [Section],
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Page {
+    /// Settings from the Quickshell settings store.
+    Settings,
+    /// Wi-Fi, wired and VPN (network.rs).
+    Network,
+    /// Bluetooth devices (bluetooth.rs).
+    Bluetooth,
 }
 
 pub struct Section {
@@ -204,9 +219,27 @@ const ACCENTS: &[(&str, &str)] = &[
 
 pub const PANELS: &[Panel] = &[
     Panel {
+        id: "network",
+        title: "Network",
+        glyph: "󰖩",
+        page: Page::Network,
+        keywords: "wifi wi-fi wireless wlan internet ethernet wired vpn wireguard",
+        sections: &[],
+    },
+    Panel {
+        id: "bluetooth",
+        title: "Bluetooth",
+        glyph: "󰂯",
+        page: Page::Bluetooth,
+        keywords: "devices headphones headset airpods speaker mouse keyboard pair",
+        sections: &[],
+    },
+    Panel {
         id: "appearance",
         title: "Appearance",
         glyph: "󰏘",
+        page: Page::Settings,
+        keywords: "",
         sections: &[
             Section {
                 title: "Colour",
@@ -278,6 +311,8 @@ pub const PANELS: &[Panel] = &[
         id: "bar",
         title: "Bar",
         glyph: "󰕮",
+        page: Page::Settings,
+        keywords: "",
         sections: &[
             Section {
                 title: "Size",
@@ -349,6 +384,8 @@ pub const PANELS: &[Panel] = &[
         id: "clock",
         title: "Clock & calendar",
         glyph: "󰥔",
+        page: Page::Settings,
+        keywords: "",
         sections: &[
             Section {
                 title: "Clock",
@@ -391,6 +428,8 @@ pub const PANELS: &[Panel] = &[
         id: "notifications",
         title: "Notifications",
         glyph: "󰂚",
+        page: Page::Settings,
+        keywords: "",
         sections: &[
             Section {
                 title: "Toasts",
@@ -490,6 +529,8 @@ pub const PANELS: &[Panel] = &[
         id: "launcher",
         title: "Launcher & clipboard",
         glyph: "󰀻",
+        page: Page::Settings,
+        keywords: "",
         sections: &[
             Section {
                 title: "Launcher",
@@ -527,6 +568,8 @@ pub const PANELS: &[Panel] = &[
         id: "sound",
         title: "Volume & OSD",
         glyph: "󰕾",
+        page: Page::Settings,
+        keywords: "",
         sections: &[
             Section {
                 title: "Steps",
@@ -594,6 +637,8 @@ pub const PANELS: &[Panel] = &[
         id: "sysmon",
         title: "System monitor",
         glyph: "󰍛",
+        page: Page::Settings,
+        keywords: "",
         sections: &[
             Section {
                 title: "Refresh",
@@ -628,6 +673,8 @@ pub const PANELS: &[Panel] = &[
         id: "weather",
         title: "Weather",
         glyph: "󰖐",
+        page: Page::Settings,
+        keywords: "",
         sections: &[Section {
             title: "Weather",
             settings: &[
@@ -646,6 +693,8 @@ pub const PANELS: &[Panel] = &[
         id: "power",
         title: "Power & idle",
         glyph: "󰂄",
+        page: Page::Settings,
+        keywords: "",
         sections: &[
             Section {
                 title: "Battery",

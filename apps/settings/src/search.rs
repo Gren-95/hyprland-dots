@@ -47,7 +47,7 @@ pub fn search(query: &str) -> Vec<PanelMatches> {
         .iter()
         .enumerate()
         .filter_map(|(i, panel)| {
-            if contains_all(panel.title, query) || contains_all(panel.id, query) {
+            if contains_all(&format!("{} {} {}", panel.title, panel.id, panel.keywords), query) {
                 return Some(PanelMatches {
                     panel: i,
                     settings: Vec::new(),
@@ -111,6 +111,14 @@ mod tests {
         // Words from the panel name and a setting together find the setting.
         let found = files("bar height");
         assert_eq!(found, ["bar-height"]);
+    }
+
+    #[test]
+    fn finds_panels_by_keyword() {
+        let ids: Vec<_> = search("wifi").iter().map(|m| PANELS[m.panel].id).collect();
+        assert_eq!(ids, ["network"]);
+        let ids: Vec<_> = search("headphones").iter().map(|m| PANELS[m.panel].id).collect();
+        assert_eq!(ids, ["bluetooth"]);
     }
 
     #[test]

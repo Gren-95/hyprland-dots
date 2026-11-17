@@ -1,9 +1,10 @@
 # Settings
 
 A settings app for this Hyprland setup, written in Rust with
-[iced](https://iced.rs). A sidebar of panels, like GNOME Settings, over the
-Quickshell settings store in `~/.config/quickshell/settings/` (one small file
-per setting, see [`config/quickshell/Settings.qml`](../../config/quickshell/Settings.qml)).
+[iced](https://iced.rs). A sidebar of panels, like GNOME Settings: Network
+and Bluetooth, and the rest over the Quickshell settings store in
+`~/.config/quickshell/settings/` (one small file per setting, see
+[`config/quickshell/Settings.qml`](../../config/quickshell/Settings.qml)).
 Quickshell watches those files, so a change in the app shows in the shell at
 once. The app reads the files again every second, so changes made in the
 shell show in the app too.
@@ -12,6 +13,8 @@ shell show in the app too.
 
 | Name | Settings |
 |------|----------|
+| `network` | Wi-Fi on/off, nearby networks (connect, disconnect, forget, scan), wired devices, VPN connections — through `nmcli` |
+| `bluetooth` | Bluetooth on/off, paired devices (connect, disconnect, forget, battery), scanning and pairing — through `bluetoothctl` |
 | `appearance` | Accent colour, font and text size, corner roundness, animation speed, wallpaper folder |
 | `bar` | Height, opacity, window title width, workspace icons, activity icons, scroll action |
 | `clock` | 24-hour clock, seconds, date format, first day of the week, calendar feed refresh |
@@ -41,6 +44,10 @@ shows only icons and widens while you search.
 
 Sliders write when released. Text fields write on Enter.
 
+The Network and Bluetooth panels ask `nmcli` and `bluetoothctl` again every
+three seconds while open. A Wi-Fi password is handed to `nmcli --ask` on
+stdin, so it never appears in the process list.
+
 ## Build
 
 `dots.sh setup` builds it and installs `~/.local/bin/settings` plus the
@@ -65,6 +72,10 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/sidebar.rs` | Panel list and search results |
 | `src/search.rs` | Which panels and settings match a search |
 | `src/controls.rs` | A setting as a row: label, help and its control |
+| `src/network.rs` | Network panel: nmcli output parsing, actions, view |
+| `src/bluetooth.rs` | Bluetooth panel: bluetoothctl output parsing, actions, view |
+| `src/system.rs` | Running nmcli and bluetoothctl on a background thread |
+| `src/ui.rs` | Shared pieces: section cards, list rows, action buttons |
 | `src/reveal.rs` | Scrolling a panel to a setting's row (a widget operation) |
 | `src/style.rs` | Colours from `config/quickshell/Theme.qml` and widget styles |
 

@@ -108,9 +108,9 @@ mod tests {
         assert!(run(&["-p"]).unwrap_err().contains("needs a panel name"));
         assert!(run(&["-s"]).unwrap_err().contains("needs the text"));
         assert!(
-            run(&["-p", "bluetooth"])
+            run(&["-p", "frobnicator"])
                 .unwrap_err()
-                .contains("unknown panel: bluetooth")
+                .contains("unknown panel: frobnicator")
         );
         assert!(run(&["--frobnicate"]).unwrap_err().contains("unknown argument"));
     }

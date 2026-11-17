@@ -1,5 +1,6 @@
-//! The window: the sidebar (sidebar.rs) and the open panel's settings, read
-//! from and written to the Quickshell settings store.
+//! The window: the sidebar (sidebar.rs) and the open panel: settings read
+//! from and written to the Quickshell settings store, or the Network and
+//! Bluetooth pages (network.rs, bluetooth.rs).
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -7,15 +8,20 @@ use std::time::{Duration, Instant};
 use iced::widget::{Column, Space, column, container, responsive, row, scrollable, text};
 use iced::{Element, Length, Subscription, Task, Theme, keyboard};
 
+use crate::bluetooth;
 use crate::controls;
+use crate::network;
 use crate::reveal;
-use crate::schema::{PANELS, Panel, Section, all_settings};
+use crate::schema::{PANELS, Page, Panel, Section, all_settings};
 use crate::sidebar;
 use crate::store::{Store, Value};
 use crate::style;
+use crate::ui;
 
 /// How often the files are read again, so changes made in the shell show up.
 const RELOAD_EVERY: Duration = Duration::from_secs(1);
+/// How often the open Network or Bluetooth page asks the system again.
+const SYSTEM_REFRESH_EVERY: Duration = Duration::from_secs(3);
 pub const SEARCH_ID: &str = "search";
 /// How long a revealed setting stays outlined (cleared on the next reload
 /// tick after it).
@@ -68,6 +74,8 @@ pub struct App {
     searching: bool,
     /// Setting a search result pointed at, outlined until the time passes.
     highlight: Option<(&'static str, Instant)>,
+    network: network::State,
+    bluetooth: bluetooth::State,
     error: Option<String>,
 }
 
@@ -88,10 +96,14 @@ pub enum Message {
     /// A search result: open the panel, scroll to the setting, outline it.
     Reveal(usize, &'static str),
     Reload,
+    Network(network::Msg),
+    Bluetooth(bluetooth::Msg),
 }
 
 impl App {
-    pub fn new(panel: usize, query: String, store: Store) -> Self {
+    /// The app, and the first refresh of its panel when that shows system
+    /// state.
+    pub fn new(panel: usize, query: String, store: Store) -> (Self, Task<Message>) {
         let searching = !query.is_empty();
         let mut app = App {
             panel,
@@ -102,10 +114,22 @@ impl App {
             query,
             searching,
             highlight: None,
+            network: network::State::default(),
+            bluetooth: bluetooth::State::default(),
             error: None,
         };
         app.reload();
-        app
+        let task = app.refresh_page();
+        (app, task)
+    }
+
+    /// Ask the system again, when the open panel shows system state.
+    fn refresh_page(&mut self) -> Task<Message> {
+        match PANELS[self.panel].page {
+            Page::Settings => Task::none(),
+            Page::Network => self.network.update(network::Msg::Refresh).map(Message::Network),
+            Page::Bluetooth => self.bluetooth.update(bluetooth::Msg::Refresh).map(Message::Bluetooth),
+        }
     }
 
     fn reload(&mut self) {
@@ -155,7 +179,16 @@ impl App {
             },
             _ => None,
         });
-        Subscription::batch([iced::time::every(RELOAD_EVERY).map(|_| Message::Reload), keys])
+        let mut subscriptions = vec![iced::time::every(RELOAD_EVERY).map(|_| Message::Reload), keys];
+        // Subscription::map takes only closures that capture nothing.
+        match PANELS[self.panel].page {
+            Page::Settings => {}
+            Page::Network => subscriptions
+                .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Network(network::Msg::Refresh))),
+            Page::Bluetooth => subscriptions
+                .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Bluetooth(bluetooth::Msg::Refresh))),
+        }
+        Subscription::batch(subscriptions)
     }
 
     pub fn update(&mut self, message: Message) -> Task<Message> {
@@ -165,7 +198,10 @@ impl App {
                 // The results stay in a full sidebar; a compact one folds
                 // back to give the panel its room.
                 self.searching = false;
+                return self.refresh_page();
             }
+            Message::Network(msg) => return self.network.update(msg).map(Message::Network),
+            Message::Bluetooth(msg) => return self.bluetooth.update(msg).map(Message::Bluetooth),
             Message::Search(query) => {
                 self.query = query;
                 self.searching = true;
@@ -234,19 +270,24 @@ impl App {
     }
 
     fn panel_view(&self, panel: &'static Panel, layout: Layout) -> Element<'_, Message> {
-        let (padding, title_size) = if layout.stacked { (16, 20) } else { (28, 24) };
-        let mut body = column![text(panel.title).font(style::FONT_BOLD).size(title_size)]
-            .spacing(10)
-            .padding(padding)
-            .max_width(760);
-        for section in panel.sections {
-            body = self.section(body, section, layout);
-        }
-        if let Some(error) = &self.error {
-            body = body.push(text(error).color(style::RED));
-        }
+        let content: Element<'_, Message> = match panel.page {
+            Page::Settings => {
+                let mut body = page_column(panel.title, layout);
+                for section in panel.sections {
+                    body = self.section(body, section, layout);
+                }
+                if let Some(error) = &self.error {
+                    body = body.push(text(error).color(style::RED));
+                }
+                body.into()
+            }
+            Page::Network => Element::from(self.network.view(page_column(panel.title, layout))).map(Message::Network),
+            Page::Bluetooth => {
+                Element::from(self.bluetooth.view(page_column(panel.title, layout))).map(Message::Bluetooth)
+            }
+        };
         // One scroll position per panel.
-        scrollable(container(body).center_x(Length::Fill))
+        scrollable(container(content).center_x(Length::Fill))
             .id(panel.id)
             .height(Length::Fill)
             .into()
@@ -264,15 +305,17 @@ impl App {
             let highlighted = self.highlight.is_some_and(|(file, _)| file == s.file);
             controls::setting_row(s, value, self.drafts.get(s.file), layout.stacked, highlighted)
         });
-        body.push(Space::new().height(8))
-            .push(
-                text(section.title.to_uppercase())
-                    .font(style::FONT_BOLD)
-                    .size(11)
-                    .color(style::MUTED_DEEP),
-            )
-            .push(container(column(rows).spacing(2)).padding(6).style(style::card))
+        ui::section(body, section.title, rows.collect())
     }
+}
+
+/// A panel's column, starting with its title.
+fn page_column<'a, M: 'a>(title: &'static str, layout: Layout) -> Column<'a, M> {
+    let (padding, title_size) = if layout.stacked { (16, 20) } else { (28, 24) };
+    column![text(title).font(style::FONT_BOLD).size(title_size)]
+        .spacing(10)
+        .padding(padding)
+        .max_width(760)
 }
 
 #[cfg(test)]

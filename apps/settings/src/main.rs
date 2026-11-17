@@ -2,13 +2,17 @@
 
 mod app;
 mod args;
+mod bluetooth;
 mod controls;
+mod network;
 mod reveal;
 mod schema;
 mod search;
 mod sidebar;
 mod store;
 mod style;
+mod system;
+mod ui;
 
 use std::process::ExitCode;
 

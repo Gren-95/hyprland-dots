@@ -122,6 +122,42 @@ pub fn highlight(theme: &Theme) -> container::Style {
     }
 }
 
+/// What a small action button does, for its colour.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Action {
+    Normal,
+    /// The main thing to do (connect, pair): accent.
+    Primary,
+    /// Removes something (forget): red text.
+    Danger,
+}
+
+pub fn action(kind: Action) -> impl Fn(&Theme, button::Status) -> button::Style {
+    move |theme, status| {
+        let accent = theme.palette().primary;
+        let hovered = matches!(status, button::Status::Hovered | button::Status::Pressed);
+        let (background, text_color) = match (kind, status) {
+            (_, button::Status::Disabled) => (BG_HOVER, MUTED_DEEP),
+            (Action::Primary, _) => (
+                if hovered { Color { a: 0.85, ..accent } } else { accent },
+                rgb(0x0c0a09),
+            ),
+            (Action::Danger, _) => (if hovered { BG_ACTIVE } else { BG_HOVER }, RED),
+            (Action::Normal, _) => (if hovered { BG_ACTIVE } else { BG_HOVER }, FG_MUTED),
+        };
+        button::Style {
+            background: Some(Background::Color(background)),
+            text_color,
+            border: Border {
+                color: BORDER_SUBTLE,
+                width: 1.0,
+                radius: border::radius(7.0),
+            },
+            ..button::Style::default()
+        }
+    }
+}
+
 /// The line between the sidebar and the panel.
 pub fn divider(_: &Theme) -> container::Style {
     container::Style {
