@@ -320,11 +320,6 @@ a value change.
   (`PopupCard edge: "right"`) that opens once `screenshot.sh` echoes the
   saved path. Buttons: Edit (swappy), OCR (screenshot-ocr.sh), Reveal
   (nautilus), Done. Keys `E/O/R`, `Enter`=Edit.
-- **`IconsCursors`** (Quick Actions "Icons & cursors" tile) — two tabs of
-  installed icon and cursor themes, each row showing the same eight samples
-  drawn from that theme; recently applied themes first, then by name. Each
-  tab is a `ThemeSource` over `scripts/icon-theme.sh` or
-  `scripts/cursor-theme.sh` (`list`, `get`, `set <id>`).
 - **`WorkspaceOverview`** (`Super+Tab`) — full-width top drawer strip of
   workspace cards with live grim thumbnails. Click-away closes via focus
   grab; Super release commits the highlighted workspace.

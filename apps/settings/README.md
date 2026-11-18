@@ -19,6 +19,7 @@ shell show in the app too.
 | `keyboard` | Keyboard layouts (search the XKB list, add, remove, reorder), layout switch shortcut, Caps Lock key, Num Lock at start, key repeat delay and speed — written to `config/hypr/settings.lua` (gitignored, loaded last) and applied with `hyprctl eval` |
 | `mouse` | Pointer speed, acceleration, left-handed, natural scrolling and scroll speed for mice; tap to click, natural scrolling, off while typing, right-click method, middle click and scroll speed for touchpads; workspace swipe direction and distance — Hyprland options saved to `config/hypr/settings.lua` |
 | `appearance` | Accent colour, font and text size, corner roundness, animation speed, wallpaper folder |
+| `themes` | Icon and cursor themes with previews, recently used first; applied through `config/scripts/icon-theme.sh` and `cursor-theme.sh` (the Quick Actions tile opens this panel) |
 | `bar` | Height, opacity, window title width, workspace icons, activity icons, scroll action |
 | `baritems` | Where each bar module, Quick Actions item and tray app shows: on the bar, in Quick Actions or hidden (the shell's placement files); tray apps are read live over D-Bus |
 | `clock` | 24-hour clock, seconds, date format; weather location and Fahrenheit (`-p weather` opens it too) |
@@ -99,6 +100,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/hypr.rs` | Hyprland settings the app owns: settings.json, the generated settings.lua, `hyprctl eval` |
 | `src/hyprpage.rs` | Panels of plain Hyprland options declared as rows (Mouse & touchpad) |
 | `src/mouse.rs` | The Mouse & touchpad rows |
+| `src/themes.rs` | Icons & cursors panel |
 | `src/idle.rs` | Idle times: the variables in hypridle.conf |
 | `src/placement.rs` | Bar items panel: placement files and the live tray list |
 | `src/keyboard.rs` | Keyboard panel and the XKB layout list |

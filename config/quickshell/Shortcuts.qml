@@ -18,7 +18,6 @@ Scope {
     property var gameLauncherRef
     property var clipboardRef
     property var keybindsRef
-    property var iconsCursorsRef
     property var sysmonRef
     property var dayPanelRef
     property var wallpaperDeckRef
@@ -47,8 +46,6 @@ Scope {
           run: () => sc.clipboardRef.toggle() },
         { name: "keybinds", description: "Toggle keybinds viewer",
           run: () => sc.keybindsRef.toggle() },
-        { name: "iconscursors", description: "Toggle the icon and cursor theme picker",
-          run: () => sc.iconsCursorsRef.toggle() },
         { name: "powermenu", description: "Toggle the power popup (battery, profile, session actions)",
           run: () => sc.powerModRef.toggleOpen() },
         { name: "sysmon", description: "Toggle system monitor",

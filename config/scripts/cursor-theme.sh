@@ -6,8 +6,8 @@
 #   cursor-theme.sh get         {"apps": <XCURSOR_THEME>, "hyprland": <HYPRCURSOR_THEME>}
 #   cursor-theme.sh set <id>    switch to the theme with that directory name
 #
-# The Cursors tab of the Icons & cursors popup (quickshell/IconThemes.qml)
-# calls all three; `list` is cursor-previews.py.
+# The settings app's Icons & cursors panel (apps/settings, themes.rs) calls
+# all three; `list` is cursor-previews.py.
 #
 # The themes live in the hl.env lines of config/hypr/modules/autostart.lua.
 # An XCursor theme is for apps and for Hyprland: `set` writes it to both

@@ -6,7 +6,8 @@
 #   icon-theme.sh get         name of the current icon theme
 #   icon-theme.sh set <id>    switch to the theme with that directory name
 #
-# The Icon theme popup (quickshell/IconThemes.qml) calls all three.
+# The settings app's Icons & cursors panel (apps/settings, themes.rs) calls
+# all three.
 # `list` prints [{id, name, comment, samples: [file, ...]}], one sample per
 # slot in SAMPLE_SLOTS, taken from the theme itself (not from the themes it
 # inherits) so every pack shows its own art. Themes with fewer than

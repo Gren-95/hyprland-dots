@@ -63,6 +63,8 @@ pub enum Page {
     BarItems,
     /// Idle timings from hypridle.conf (idle.rs), then the panel's settings.
     Lock,
+    /// Icon and cursor themes (themes.rs).
+    Themes,
 }
 
 pub struct Section {
@@ -581,6 +583,15 @@ pub const PANELS: &[Panel] = &[
                 )],
             },
         ],
+    },
+    Panel {
+        id: "themes",
+        title: "Icons & cursors",
+        glyph: ico::SHAPES,
+        group: Group::Appearance,
+        page: Page::Themes,
+        keywords: "icon theme cursor pointer papirus breeze adwaita hyprcursor xcursor",
+        sections: &[],
     },
     Panel {
         id: "bar",

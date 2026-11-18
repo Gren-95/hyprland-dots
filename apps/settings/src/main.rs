@@ -23,6 +23,7 @@ mod sidebar;
 mod store;
 mod style;
 mod system;
+mod themes;
 mod ui;
 
 use std::process::ExitCode;

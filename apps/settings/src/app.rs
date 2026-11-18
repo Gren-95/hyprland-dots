@@ -24,6 +24,7 @@ use crate::schema::{PANELS, Page, Panel, Section, all_settings};
 use crate::sidebar;
 use crate::store::{Store, Value};
 use crate::style;
+use crate::themes;
 use crate::ui;
 
 /// How often the files are read again, so changes made in the shell show up.
@@ -92,6 +93,7 @@ pub struct App {
     mouse: hyprpage::State,
     placement: placement::State,
     idle: idle::State,
+    themes: themes::State,
     /// Installed font families, loaded once at start for the Font picker.
     fonts: Vec<&'static str>,
     error: Option<String>,
@@ -128,6 +130,7 @@ pub enum Message {
     Mouse(hyprpage::Msg),
     Placement(placement::Msg),
     Idle(idle::Msg),
+    Themes(themes::Msg),
     Fonts(Vec<&'static str>),
 }
 
@@ -153,6 +156,7 @@ impl App {
             mouse: hyprpage::State::default(),
             placement: placement::State::default(),
             idle: idle::State::default(),
+            themes: themes::State::default(),
             fonts: Vec::new(),
             error: None,
         };
@@ -182,6 +186,7 @@ impl App {
                 .map(Message::Mouse),
             Page::BarItems => self.placement.update(placement::Msg::Refresh).map(Message::Placement),
             Page::Lock => self.idle.update(idle::Msg::Load).map(Message::Idle),
+            Page::Themes => self.themes.update(themes::Msg::Load).map(Message::Themes),
         }
     }
 
@@ -246,7 +251,7 @@ impl App {
             }
             Page::Calendar => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Calendar(calendar::Msg::Refresh))),
-            Page::Keyboard | Page::Mouse | Page::Lock => {}
+            Page::Keyboard | Page::Mouse | Page::Lock | Page::Themes => {}
             Page::BarItems => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Placement(placement::Msg::Refresh))),
         }
@@ -270,6 +275,7 @@ impl App {
             Message::Mouse(msg) => return self.mouse.update(msg, mouse::SECTIONS).map(Message::Mouse),
             Message::Placement(msg) => return self.placement.update(msg).map(Message::Placement),
             Message::Idle(msg) => return self.idle.update(msg).map(Message::Idle),
+            Message::Themes(msg) => return self.themes.update(msg).map(Message::Themes),
             Message::Search(query) => {
                 self.query = query;
                 self.searching = true;
@@ -410,6 +416,7 @@ impl App {
                 let times = Element::from(self.idle.view(page_column(panel.title, layout))).map(Message::Idle);
                 self.with_settings(times, panel, layout)
             }
+            Page::Themes => Element::from(self.themes.view(page_column(panel.title, layout))).map(Message::Themes),
         };
         // One scroll position per panel.
         scrollable(container(content).center_x(Length::Fill))

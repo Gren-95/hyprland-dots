@@ -6,8 +6,8 @@ Usage: cursor-previews.py
 Prints a JSON array, sorted by name:
   [{"id", "name", "comment", "kind": "xcursor" | "hyprcursor", "samples": [file, ...]}]
 
-Called by `cursor-theme.sh list` for the Cursors tab of the Icons & cursors
-popup (quickshell/IconThemes.qml). XCursor themes are directories with a
+Called by `cursor-theme.sh list` for the settings app's Icons & cursors
+panel (apps/settings, themes.rs). XCursor themes are directories with a
 `cursors/` folder of Xcursor files; Hyprcursor themes have a `manifest.hl`
 and zipped `.hlc` cursors. Previews are written to
 $XDG_CACHE_HOME/dots/cursor-previews/<theme>/ (PNG from Xcursor files, the
