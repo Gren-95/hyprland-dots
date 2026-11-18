@@ -35,7 +35,8 @@ panel or a setting; the shared pieces in `src/ui.rs`, `src/controls.rs` and
 | A number in a range | Slider with its value and unit beside it |
 | One out of a long list (fonts, keyboard layouts) | Search picker: a search field with up to eight matches under it, fonts drawn in themselves (`ui::search_picker`) |
 | Free text | Text field, applied on Enter |
-| A path or a link | Text field; links are shortened when they hold tokens |
+| A folder | Text field joined to a Browse… button that opens a folder chooser (`Control::Folder`, zenity) |
+| A link | Text field; links are shortened when they hold tokens |
 
 **Multi-select is the exception to the dropdown rule:** a dropdown holds one
 pick, so several on/off options stay a button group however many there are.

@@ -113,6 +113,10 @@ pub enum Control {
     Toggles(&'static [Toggle]),
     /// An installed font family, picked from a search list.
     Font,
+    /// A folder: a text field with a Browse button (zenity).
+    Folder {
+        placeholder: &'static str,
+    },
     /// A list of texts (JSON array), shown as removable pills with an input
     /// group to add one.
     Pills {
@@ -159,6 +163,7 @@ impl Control {
             Control::Toggles(_) => "a group of switches",
             Control::NumberChoice(_) => "a choice of numbers",
             Control::Font => "a font picker",
+            Control::Folder { .. } => "a folder",
             Control::Pills { .. } => "a list of texts",
             Control::Pair { .. } => "a pair of switches",
         }
@@ -171,7 +176,11 @@ impl Setting {
             Control::Toggle => Kind::Bool,
             Control::Number { .. } | Control::NumberChoice(_) => Kind::Int,
             Control::Scale { .. } => Kind::Real,
-            Control::Choice(_) | Control::Entry { .. } | Control::Pair { .. } | Control::Font => Kind::Text,
+            Control::Choice(_)
+            | Control::Entry { .. }
+            | Control::Pair { .. }
+            | Control::Font
+            | Control::Folder { .. } => Kind::Text,
             Control::Toggles(_) => Kind::Bool,
             Control::Flags(_) | Control::Pills { .. } => Kind::Json,
         }
@@ -345,6 +354,23 @@ const HALF_HOURS: &[(&str, &str)] = &[
     ("23:00", "23:00"),
     ("23:30", "23:30"),
 ];
+
+/// A folder setting under $HOME by default.
+const fn folder(
+    file: &'static str,
+    label: &'static str,
+    help: &'static str,
+    placeholder: &'static str,
+    default: &'static str,
+) -> Setting {
+    Setting {
+        file,
+        label,
+        help,
+        control: Control::Folder { placeholder },
+        default: Default::HomePath(default),
+    }
+}
 
 const ACCENTS: &[(&str, &str)] = &[
     ("auto", "From wallpaper"),
@@ -585,12 +611,12 @@ pub const PANELS: &[Panel] = &[
             },
             Section {
                 title: "Wallpaper",
-                settings: &[entry(
+                settings: &[folder(
                     "wallpaper-dir",
                     "Wallpaper folder",
                     "Where the wallpaper deck deals cards from",
                     "~/Pictures/wallpapers",
-                    Default::HomePath("Pictures/wallpapers"),
+                    "Pictures/wallpapers",
                 )],
             },
         ],
@@ -900,12 +926,12 @@ pub const PANELS: &[Panel] = &[
             Section {
                 title: "Screenshots",
                 settings: &[
-                    entry(
+                    folder(
                         "shot-dir",
                         "Folder",
                         "Where screenshots are saved",
                         "~/Pictures/Screenshots",
-                        Default::HomePath("Pictures/Screenshots"),
+                        "Pictures/Screenshots",
                     ),
                     choice(
                         "shot-format",
@@ -942,12 +968,12 @@ pub const PANELS: &[Panel] = &[
             Section {
                 title: "Recording files",
                 settings: &[
-                    entry(
+                    folder(
                         "record-dir",
                         "Folder",
                         "Where recordings are saved",
                         "~/Videos/Recordings",
-                        Default::HomePath("Videos/Recordings"),
+                        "Videos/Recordings",
                     ),
                     choice(
                         "record-container",

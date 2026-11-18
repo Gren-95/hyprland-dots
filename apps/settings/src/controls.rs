@@ -170,6 +170,23 @@ fn control<'a>(
                 _ => input.into(),
             }
         }
+        (Control::Folder { placeholder }, Value::Text(current)) => {
+            let shown = draft.map(String::as_str).unwrap_or(&current);
+            let field = text_input(placeholder, shown)
+                .on_input(move |t| Message::Draft(file, t))
+                .on_submit(Message::Submit(file));
+            let group = container(ui::input_group(
+                field,
+                vec![("Browse…", Some(Message::Browse(file)), style::Action::Normal)],
+            ))
+            .width(width);
+            match draft {
+                Some(d) if *d != current => column![group, text("Press Enter to apply").size(11).color(style::YELLOW)]
+                    .spacing(4)
+                    .into(),
+                _ => group.into(),
+            }
+        }
         (Control::Flags(flags), Value::Json(map)) => {
             let items = flags
                 .iter()
