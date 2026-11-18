@@ -58,7 +58,6 @@ Scope {
     GameLauncher { id: gameLauncher }
     Clipboard { id: clipboard }
     Osd { id: osd }
-    Keybinds { id: keybinds }
     WorkspaceOverview { id: workspaceOverview }
     ScreenRecorder { id: recorder }
     PolkitPrompt { id: polkit }
@@ -134,7 +133,6 @@ Scope {
                 // overflow chevron, then bar-center (null). Anchoring to an
                 // invisible item puts the flyout at a garbage position.
                 clipboard.anchorBar = Qt.binding(() => shellRoot.activeBar);
-                keybinds.anchorBar = Qt.binding(() => shellRoot.activeBar);
                 sysmon.anchorBar = Qt.binding(() => shellRoot.activeBar);
             }
 
@@ -501,7 +499,6 @@ Scope {
                     gameModeRef: gameMode
                     gameLauncherRef: gameLauncher
                     clipboardRef: clipboard
-                    keybindsRef: keybinds
                     sysmonRef: sysmon
                     dayPanelRef: dayPanel
                     wallpaperDeckRef: wallpaperDeck

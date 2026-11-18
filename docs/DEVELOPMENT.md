@@ -29,8 +29,8 @@ bash docs/check-keybinds.sh   # KEYBINDS.md matches keys.lua
 ./dots.sh status
 ```
 
-The QML JavaScript helpers (`config/quickshell/IcsParse.js`,
-`config/quickshell/KeybindSearch.js`) have unit tests in `tests/`. Neither CI
+The QML JavaScript helper `config/quickshell/IcsParse.js` has unit tests in
+`tests/`; the settings app has its own (`cargo test` in `apps/settings`). Neither CI
 nor the hook runs them yet; run them by hand after changing either file:
 
 ```bash

@@ -5,7 +5,7 @@ Dependencies and manual setup. The one-command install is in the [README](../REA
 ## Dependencies
 
 - `hyprland` + `hyprland-devel` — compositor
-- `quickshell` — bar, OSD, notifications, launcher, clipboard, power menu, keybinds viewer, workspace overview
+- `quickshell` — bar, OSD, notifications, launcher, clipboard, power menu, workspace overview
 - `kitty` — terminal
 - `nautilus` — file manager
 - `cliphist` + `wl-clipboard` — clipboard history (Quickshell shows the picker)

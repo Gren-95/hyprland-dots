@@ -3,7 +3,7 @@
 #
 # Hyprland's Lua config registers every bind as a Lua closure, so `hyprctl
 # binds -j` reports dispatcher="__lua" and arg="<callback index>" for all of
-# them — useless for the Quickshell keybind viewer, which groups and labels
+# them — useless for the settings app's shortcuts panel, which groups and labels
 # binds by dispatcher. This re-derives the real action by parsing the Lua
 # source and merges it back in, keyed on (modmask, key).
 #

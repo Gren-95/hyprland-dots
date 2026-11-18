@@ -43,7 +43,7 @@ Item {
         { glyph: "󰹑", label: "Screenshot",   accent: Theme.accent.blueBright, action: "screenshot", cmd: ["bash", Paths.scripts + "/screenshot.sh"] },
         { glyph: "󰕧", label: "Record",       accent: Theme.accent.red, action: "record", cmd: ["bash", Paths.scripts + "/screenrecord.sh"] },
         { glyph: "󰈊", label: "Color picker", accent: Theme.accent.pink, action: "colorpicker", cmd: ["hyprpicker", "-a"] },
-        { glyph: "󰋖", label: "Keybinds",     accent: Theme.accent.blue, action: "keybinds" },
+        { glyph: "󰋖", label: "Keybinds",     accent: Theme.accent.blue, action: "keybinds", cmd: [Paths.home + "/.local/bin/settings", "-p", "shortcuts"] },
         { glyph: "󰀻", label: "Icons & cursors", accent: Theme.accent.purple, action: "iconscursors", cmd: [Paths.home + "/.local/bin/settings", "-p", "themes"] },
     ]
 
@@ -155,9 +155,6 @@ Item {
                 actions.micSrc.audio.muted = !actions.micSrc.audio.muted;
         } else if (entry.action === "activityicons") {
             settingsStore.activityIconsVisible = !settingsStore.activityIconsVisible;
-        } else if (entry.action === "keybinds") {
-            actions.popupOpen = false;
-            keybinds.toggle();
         } else if (entry.action === "clipboard") {
             actions.popupOpen = false;
             clipboard.openMenu();

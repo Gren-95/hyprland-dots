@@ -25,7 +25,7 @@ hl.bind(var_mainMod .. " + CTRL + R", hl.dsp.exec_cmd("bash ~/.config/scripts/wa
 hl.bind(var_mainMod .. " + B", hl.dsp.exec_cmd(var_externalscript1))
 hl.bind(var_mainMod .. " + SHIFT + E", hl.dsp.global("quickshell:powermenu"))
 hl.bind("CTRL + ALT + Delete", hl.dsp.global("quickshell:powermenu"))
-hl.bind(var_mainMod .. " + F1", hl.dsp.global("quickshell:keybinds"))
+hl.bind(var_mainMod .. " + F1", hl.dsp.exec_cmd("~/.local/bin/settings -p shortcuts"))
 hl.bind(var_mainMod .. " + M", hl.dsp.global("quickshell:sysmon"))
 hl.bind(var_mainMod .. " + A", hl.dsp.global("quickshell:quickactions"))
 hl.bind(var_mainMod .. " + S", hl.dsp.global("quickshell:audiopower"))

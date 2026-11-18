@@ -37,7 +37,6 @@ GameLauncher GameLauncher.qml
 GameModeService GameModeService.qml
 IcsCalendar IcsCalendar.qml
 IdleService IdleService.qml
-Keybinds Keybinds.qml
 HyprBorder HyprBorder.qml
 MediaCard MediaCard.qml
 NotifBell NotifBell.qml

@@ -52,7 +52,7 @@ menus are unaffected.
 $EDITOR config/hypr/modules/keys.lua
 ```
 
-Press `Super+F1` in session to view all active keybinds.
+Press `Super+F1` to open the settings app's Keyboard shortcuts panel: every active bind, searchable and runnable. A bind moved to other keys there is kept in the gitignored `config/hypr/settings.lua`, so `keys.lua` stays as it is.
 
 ## OSD
 

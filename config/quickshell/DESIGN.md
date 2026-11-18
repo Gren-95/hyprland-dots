@@ -12,9 +12,9 @@ add a new modal" or "where do I change X" — not a tutorial.
 | **Primitives** | `BarFlyout.qml`, `PopupCard.qml`, `SproutBg.qml` | The flyout envelope, the top-drawer envelope, the speech-bubble shape |
 | **Bar items** | `BarIcon.qml`, `BarSep.qml`, `BarHover.qml`, `BarTooltip.qml`, `WorkspaceStrip.qml`, `StatusIndicators.qml`, `QuickActionIcon.qml`, `TrayItem.qml` | Leaf widgets that sit on the top bar (hover highlight, tooltip, activity dots, promoted Quick Actions items, tray icons) |
 | **Bar modules** | `ConnectivityModule.qml`, `SoundModule.qml`, `PowerModule.qml`, `NotifBell.qml`, `QuickActions.qml`, `ServicesModule.qml` | Bar entry points that open their own flyout |
-| **Flyout modals** | `Spotlight.qml`, `Clipboard.qml`, `Keybinds.qml`, `DayPanel.qml`, `SystemMonitor.qml`, `GameLauncher.qml` | Scope-level services whose UI opens as a centred flyout |
+| **Flyout modals** | `Spotlight.qml`, `Clipboard.qml`, `DayPanel.qml`, `SystemMonitor.qml`, `GameLauncher.qml` | Scope-level services whose UI opens as a centred flyout |
 | **Services (headless)** | `IcsCalendar.qml`, `Notifications.qml`, `WeatherService.qml`, `IdleService.qml`, `AccentService.qml`, `SuperWatch.qml`, `GameModeService.qml`, `RemoteSyncStatus.qml`, `EventToasts.qml` | State and system plumbing with no surface of their own; panes read them (EventToasts turns charger/VPN/audio/layout changes into toasts) |
-| **JavaScript helpers** | `IcsParse.js`, `KeybindSearch.js` | Pure logic with no QML types (ICS parsing and recurrence, keybind combo search); unit-tested under node in `tests/` |
+| **JavaScript helpers** | `IcsParse.js` | Pure logic with no QML types (ICS parsing and recurrence); unit-tested under node in `tests/` |
 | **Panes** | `CalendarPane.qml`, `EventsPane.qml`, `NotifPane.qml`, `MediaCard.qml`, `WeatherCard.qml`, `BatteryCard.qml`, `DayCard.qml`, `DayCell.qml`, `DayScroll.qml` | Views over a service, composed into a flyout |
 | **Drawers & overlays** | `WorkspaceOverview.qml` (top drawer strip), `WallpaperDeck.qml` (card fan), `PolkitPrompt.qml` (top-center drawer), `ScreenshotActions.qml` (top-right sheet), `ScreenRecorder.qml`, `Osd.qml`, `RegionSelector.qml` | Everything not anchored to a specific bar icon |
 | **Reusable widgets** | `AirPodsControls` (AirPods section of a Bluetooth row), `VolumeLine` (icon, label and slider line of the Sound popup), `PinButton`, `VolumeSlider`, `BrightnessRow`, `ProfileSelector`, `QaTile`, `SysGauge`, `SysGraph`, `Spinner`, `ThinScrollBar`, `LazyView`, `Launcher*` (Spotlight parts), `*Row` files | Pieces composed into modules; `LazyView` builds a modal's window only while it is open |
@@ -147,7 +147,7 @@ directly — it breaks the `open: mod.popupOpen` binding and the popup can't
 reopen.
 
 **Bar wiring for Scope-level modals**: modals instantiated in `shell.qml`
-(Spotlight, Clipboard, Keybinds, SystemMonitor, DayPanel) expose an
+(Spotlight, Clipboard, SystemMonitor, DayPanel) expose an
 `anchorBar` property, bound once to the active bar from the bar's
 `Component.onCompleted`. Their flyout binds
 `open: root.open && root.anchorBar !== null`. DayPanel also keeps
@@ -250,7 +250,7 @@ opacity `0 → 1`, `transformOrigin: Item.Center` for flyouts (`Item.Top` for dr
 
 What opens what from the bar: launcher icon → Spotlight · clock and bell →
 DayPanel (same surface) · Quick Actions chevron → QuickActions, whose tiles
-open Clipboard and Keybinds · own icons → ConnectivityModule, SoundModule ·
+open Clipboard (the Keybinds tile opens the settings app) · own icons → ConnectivityModule, SoundModule ·
 battery icon → PowerModule. SystemMonitor has no bar opener (`Super+M` or
 Spotlight).
 

@@ -1,9 +1,9 @@
-//! Key-combo search, the same rules as the Super+F1 keybinds viewer
-//! (config/quickshell/KeybindSearch.js and Keybinds.qml): a query made of
+//! Key-combo search for the Keyboard shortcuts panel (ported from the old
+//! Quickshell keybinds viewer, which this panel replaced): a query made of
 //! modifier words and at most one key ("super s", "Super+Shift+S",
 //! "ctrl alt del") finds binds on that combo, exact matches first, then
 //! binds with more modifiers. Anything else, or a combo nothing has, is a
-//! text search. Keep the two in step.
+//! text search.
 
 /// Modifier words people type, with the name the viewer shows.
 const MODIFIERS: &[(&str, &str)] = &[
@@ -37,7 +37,7 @@ fn norm_key(k: &str) -> String {
         .map_or(low, |(_, v)| v.to_string())
 }
 
-/// A key as the viewer shows it (Keybinds.qml `_prettyKey`).
+/// A key as the panel shows it.
 pub fn pretty_key(key: &str) -> String {
     let mut k = key.strip_prefix("XF86").unwrap_or(key).to_string();
     for prefix in ["Audio", "Mon"] {
@@ -137,7 +137,7 @@ pub fn filter_by_combo(entries: &[Entry], combo: &Combo) -> Vec<usize> {
 mod tests {
     use super::*;
 
-    /// The cases of tests/keybind-search.test.js.
+    /// The cases the old viewer's node tests checked.
     fn entries() -> Vec<(Entry<'static>, &'static str)> {
         let e = |mods: Vec<&'static str>, key: &str, raw: &'static str, name: &'static str| {
             (

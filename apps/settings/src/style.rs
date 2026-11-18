@@ -233,6 +233,29 @@ pub fn pill(theme: &Theme) -> container::Style {
     }
 }
 
+/// A filter pill: the picked one filled with the accent.
+pub fn filter_pill(picked: bool) -> impl Fn(&Theme, button::Status) -> button::Style {
+    move |theme, status| {
+        let accent = theme.palette().primary;
+        let hovered = matches!(status, button::Status::Hovered | button::Status::Pressed);
+        let (background, text_color, outline) = if picked {
+            (accent, rgb(0x0c0a09), accent)
+        } else {
+            (if hovered { BG_ACTIVE } else { BG_HOVER }, FG_MUTED, BORDER_SUBTLE)
+        };
+        button::Style {
+            background: Some(Background::Color(background)),
+            text_color,
+            border: Border {
+                color: outline,
+                width: 1.0,
+                radius: border::radius(12.0),
+            },
+            ..button::Style::default()
+        }
+    }
+}
+
 /// The × inside a pill.
 pub fn pill_close(_: &Theme, status: button::Status) -> button::Style {
     let hovered = matches!(status, button::Status::Hovered | button::Status::Pressed);

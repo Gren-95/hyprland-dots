@@ -69,7 +69,6 @@ QS_LABELS = {
     "calendar": (QS, "Toggle the day panel (calendar + notifications)"),
     "quickactions": (QS, "Quick actions panel"),
     "bluetooth": (QS, "Bluetooth flyout (paired and nearby devices)"),
-    "keybinds": (QS, "Keybinds viewer (live, searchable)"),
     "sysmon": (QS, "System monitor (CPU / RAM / temps / fans / uptime)"),
     "audiopower": (QS, "Sound popup (volume, devices, per-app mixer)"),
     "wallpaper": (QS, "Wallpaper deck - hold Super, W deals the next card, release applies"),
@@ -82,6 +81,7 @@ QS_LABELS = {
     "screenshot-region": (CAP, "Screenshot region → file + clipboard"),
 }
 EXEC_LABELS = [  # (substring of arg, category, label)
+    ("settings -p shortcuts", APP, "Keyboard shortcuts (settings app): search, run and change binds"),
     ("default-app.sh run terminal", APP, "Open terminal (default app)"),
     ("default-app.sh run filemanager", APP, "Open file manager (default app)"),
     ("default-app.sh run", APP, "Open default app"),

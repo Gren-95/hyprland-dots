@@ -9,6 +9,8 @@ use iced::widget::{Column, Row, column, container, row, text, text_input};
 use iced::{Alignment, Element, Length, Task};
 use serde_json::Value as Json;
 
+use lucide_iced::bytes as ico;
+
 use crate::hypr::{self, Rebind, Settings};
 use crate::keysearch;
 use crate::style::{self, Action};
@@ -119,6 +121,84 @@ pub struct Bind {
     pub action: String,
     pub locked: bool,
     pub repeating: bool,
+    /// One of CATEGORIES (the old keybinds viewer's grouping).
+    pub category: &'static str,
+    /// Keyboard keys: can be moved. Mouse binds and switches are listed only.
+    pub editable: bool,
+    /// Closing windows and power actions: Run asks first.
+    pub dangerous: bool,
+}
+
+/// Categories, in pill order: (name, label, icon).
+pub const CATEGORIES: &[(&str, &str, crate::ui::Icon)] = &[
+    ("apps", "Apps", ico::ROCKET),
+    ("window", "Windows", ico::APP_WINDOW),
+    ("workspace", "Workspaces", ico::LAYERS),
+    ("shell", "Shell", ico::PANEL_TOP),
+    ("audio", "Audio", ico::VOLUME_2),
+    ("brightness", "Brightness", ico::SUN),
+    ("capture", "Capture", ico::CAMERA),
+    ("clipboard", "Clipboard", ico::CLIPBOARD),
+    ("power", "Power", ico::POWER),
+    ("other", "Other", ico::SETTINGS),
+];
+
+/// A bind's category from its dispatcher and argument (as the old keybinds viewer grouped them).
+pub fn classify(dispatcher: &str, arg: &str) -> &'static str {
+    let (d, a) = (dispatcher.to_lowercase(), arg.to_lowercase());
+    let any = |words: &[&str]| words.iter().any(|w| a.contains(w));
+    if d == "exec" {
+        if any(&["wpctl", "pactl", "playerctl"]) {
+            return "audio";
+        }
+        if any(&["brightnessctl", "backlight"]) {
+            return "brightness";
+        }
+        if any(&[
+            "grim",
+            "slurp",
+            "swappy",
+            "screenshot",
+            "hyprshot",
+            "wf-recorder",
+            "screenrecord",
+        ]) {
+            return "capture";
+        }
+        if any(&["wl-copy", "cliphist", "wofi", "rofi"]) {
+            return "clipboard";
+        }
+        if any(&["systemctl", "loginctl", "powermenu", "hyprctl dispatch exit"]) {
+            return "power";
+        }
+        if any(&["firefox", "kitty", "nautilus", "hyprpicker", "default-app"]) {
+            return "apps";
+        }
+        if a.contains("quickshell") {
+            return "shell";
+        }
+    }
+    if d == "global" {
+        return "shell";
+    }
+    if d.contains("workspace") {
+        return "workspace";
+    }
+    let window = [
+        "movewindow",
+        "movefocus",
+        "swapwindow",
+        "resizeactive",
+        "togglefloating",
+        "fullscreen",
+        "killactive",
+        "togglesplit",
+        "pseudo",
+    ];
+    if window.iter().any(|w| d.contains(w)) {
+        return "window";
+    }
+    "other"
 }
 
 /// "SUPER + CTRL + R" from a modmask and a key.
@@ -149,14 +229,17 @@ pub fn parse_binds(json: &str) -> Result<Vec<Bind>, String> {
     Ok(v.as_array()
         .ok_or("hypr-binds.sh: not a list")?
         .iter()
-        .filter(|b| !b["mouse"].as_bool().unwrap_or(false))
         .filter(|b| b["submap"].as_str().unwrap_or("").is_empty())
         .filter_map(|b| {
             let key = b["key"].as_str()?;
-            if key.starts_with("switch:") || key.starts_with("mouse") {
-                return None;
-            }
+            let editable =
+                !b["mouse"].as_bool().unwrap_or(false) && !key.starts_with("switch:") && !key.starts_with("mouse");
+            let dispatcher = b["dispatcher"].as_str().unwrap_or_default();
+            let category = classify(dispatcher, b["arg"].as_str().unwrap_or_default());
             Some(Bind {
+                category,
+                editable,
+                dangerous: dispatcher == "killactive" || category == "power",
                 combo: combo_of(b["modmask"].as_u64().unwrap_or(0), key),
                 description: b["description"].as_str().unwrap_or_default().to_string(),
                 action: b["lua"].as_str().unwrap_or_default().to_string(),
@@ -167,7 +250,7 @@ pub fn parse_binds(json: &str) -> Result<Vec<Bind>, String> {
         .collect())
 }
 
-/// A bind's modifiers and key as the Super+F1 viewer shows them.
+/// A bind's modifiers and key as the old keybinds viewer shows them.
 fn shown(b: &Bind) -> (Vec<&'static str>, String, &str) {
     let mut parts: Vec<&str> = b.combo.split(" + ").collect();
     let raw_key = parts.pop().unwrap_or_default();
@@ -178,7 +261,7 @@ fn shown(b: &Bind) -> (Vec<&'static str>, String, &str) {
     (mods, keysearch::pretty_key(raw_key), raw_key)
 }
 
-/// The binds a search finds, the way the Super+F1 viewer finds them: a key
+/// The binds a search finds, the way the old keybinds viewer finds them: a key
 /// combo ("super s") by its keys, exact matches first; anything else, or a
 /// combo nothing has, as text in the keys, description or action.
 pub fn filter<'a>(binds: &'a [Bind], query: &str) -> Vec<(usize, &'a Bind)> {
@@ -249,6 +332,10 @@ pub struct State {
     loaded: bool,
     query: String,
     editor: Option<Editor>,
+    /// The category pill picked; None shows all.
+    category: Option<&'static str>,
+    /// Dangerous bind whose Run was picked once.
+    confirming: Option<usize>,
     error: Option<String>,
 }
 
@@ -264,6 +351,11 @@ pub enum Msg {
     Save,
     Cancel,
     Reset(usize),
+    /// A category pill; None is All.
+    Category(Option<&'static str>),
+    /// Run a bind now; dangerous ones need a second Run.
+    Run(usize),
+    Ran(Result<(), String>),
     Applied(Result<(), String>),
 }
 
@@ -336,13 +428,23 @@ impl State {
     }
 
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
+        if !matches!(msg, Msg::Run(_) | Msg::Load | Msg::Loaded(_)) {
+            self.confirming = None;
+        }
         match msg {
             Msg::Load => {
                 return Task::perform(system::spawn(load), |r| {
                     Msg::Loaded(r.unwrap_or_else(|| Err("loading stopped unexpectedly".into())))
                 });
             }
-            Msg::Loaded(Ok((binds, moved))) => {
+            Msg::Loaded(Ok((mut binds, moved))) => {
+                let rank = |c: &str| {
+                    CATEGORIES
+                        .iter()
+                        .position(|(n, ..)| *n == c)
+                        .unwrap_or(CATEGORIES.len())
+                };
+                binds.sort_by(|a, b| rank(a.category).cmp(&rank(b.category)).then(a.combo.cmp(&b.combo)));
                 self.binds = binds;
                 self.moved = moved;
                 self.loaded = true;
@@ -403,6 +505,26 @@ impl State {
                 self.error = r.err();
                 return self.update(Msg::Load);
             }
+            Msg::Category(c) => self.category = c,
+            Msg::Run(i) => {
+                let Some(b) = self.binds.get(i) else {
+                    return Task::none();
+                };
+                if b.dangerous && self.confirming != Some(i) {
+                    self.confirming = Some(i);
+                    return Task::none();
+                }
+                self.confirming = None;
+                let action = b.action.clone();
+                if !hypr::valid_action(&action) {
+                    self.error = Some(format!("Cannot run this bind: {action}"));
+                    return Task::none();
+                }
+                return Task::perform(system::run("hyprctl", vec!["dispatch".into(), action], None), |r| {
+                    Msg::Ran(r.map(|_| ()))
+                });
+            }
+            Msg::Ran(r) => self.error = r.err(),
         }
         Task::none()
     }
@@ -418,9 +540,12 @@ impl State {
             .on_input(Msg::Search)
             .padding([7, 10])
             .style(style::field);
-        body = body.push(search);
+        body = body.push(search).push(self.pills());
         let mut rows: Vec<Element<'a, Msg>> = Vec::new();
-        for (i, b) in filter(&self.binds, &self.query) {
+        let shown = filter(&self.binds, &self.query)
+            .into_iter()
+            .filter(|(_, b)| self.category.is_none_or(|c| b.category == c));
+        for (i, b) in shown {
             rows.push(self.bind_row(i, b));
             if let Some(editor) = self.editor.as_ref().filter(|e| e.index == i) {
                 rows.push(self.editor_view(editor));
@@ -439,16 +564,49 @@ impl State {
             .width(Length::Fill);
         if let Some(original) = moved {
             info = info.push(text(format!("Was {original}")).size(12).color(style::MUTED_DEEP));
+        } else if !b.editable {
+            info = info.push(text("Mouse or switch: shown only").size(12).color(style::MUTED_DEEP));
         }
-        let mut buttons = Vec::new();
-        if moved.is_some() {
-            buttons.push(("↺", Some(Msg::Reset(i)), Action::Normal));
-        }
-        buttons.push(("Change", Some(Msg::Edit(i)), Action::Normal));
-        let line = row![info, keycaps(&b.combo), ui::button_group(buttons)]
-            .spacing(12)
-            .align_y(Alignment::Center);
+        let run_label = if self.confirming == Some(i) {
+            "Run — sure?"
+        } else {
+            "Run"
+        };
+        let runnable = hypr::valid_action(&b.action).then_some(Msg::Run(i));
+        // UI.md: one main action, the rest in More.
+        let controls: Element<'a, Msg> = if b.editable {
+            let mut more = vec![(run_label, runnable)];
+            if moved.is_some() {
+                more.push(("Reset keys", Some(Msg::Reset(i))));
+            }
+            ui::more_actions(("Change", Some(Msg::Edit(i)), Action::Normal), more)
+        } else {
+            ui::action(run_label, runnable, Action::Normal)
+        };
+        let icon = CATEGORIES
+            .iter()
+            .find(|(n, ..)| *n == b.category)
+            .map_or(ico::SETTINGS, |(.., ic)| *ic);
+        let line = row![
+            container(ui::icon(icon, 16.0)).width(22).center_x(22),
+            info,
+            keycaps(&b.combo),
+            controls
+        ]
+        .spacing(12)
+        .align_y(Alignment::Center);
         container(line).padding([8, 14]).into()
+    }
+
+    /// All, then one pill per category that has binds.
+    fn pills<'a>(&'a self) -> Element<'a, Msg> {
+        let mut items = vec![("All", self.category.is_none(), Some(Msg::Category(None)))];
+        for (name, label, _) in CATEGORIES {
+            if self.binds.iter().any(|b| b.category == *name) {
+                items.push((*label, self.category == Some(*name), Some(Msg::Category(Some(*name)))));
+            }
+        }
+        ui::pills(items)
     }
 
     fn editor_view<'a>(&'a self, e: &'a Editor) -> Element<'a, Msg> {
@@ -554,21 +712,35 @@ mod tests {
     #[test]
     fn keeps_keyboard_binds_only() {
         let json = r#"[
-          {"modmask":64,"key":"R","description":"Open the app launcher","lua":"hl.dsp.global(\"quickshell:spotlight\")","locked":false,"repeat":false,"mouse":false,"submap":""},
+          {"modmask":64,"key":"R","description":"Open the app launcher","dispatcher":"global","arg":"quickshell:spotlight","lua":"hl.dsp.global(\"quickshell:spotlight\")","locked":false,"repeat":false,"mouse":false,"submap":""},
           {"modmask":64,"key":"mouse:272","lua":"hl.dsp.window.drag()","mouse":true,"submap":""},
           {"modmask":0,"key":"switch:on:Lid Switch","lua":"hl.dsp.exec_cmd(\"x\")","mouse":false,"submap":""},
           {"modmask":0,"key":"XF86AudioMute","lua":"hl.dsp.exec_cmd(\"m\")","locked":true,"repeat":false,"mouse":false,"submap":""}
         ]"#;
         let binds = parse_binds(json).unwrap();
-        assert_eq!(binds.len(), 2);
+        assert_eq!(binds.len(), 4);
         assert_eq!(binds[0].combo, "SUPER + R");
-        assert!(binds[1].locked);
+        assert_eq!(binds[0].category, "shell");
+        assert!(binds[0].editable && !binds[1].editable && !binds[2].editable);
+        assert!(binds[3].locked);
+        let binds: Vec<Bind> = binds.into_iter().filter(|b| b.editable).collect();
         assert_eq!(filter(&binds, "launcher").len(), 1);
         assert_eq!(filter(&binds, "super r").len(), 1);
         assert_eq!(filter(&binds, "Super+R").len(), 1);
         // A combo nothing has falls back to text: "mute" is in the action.
         assert_eq!(filter(&binds, "mute").len(), 1);
         assert_eq!(filter(&binds, "").len(), 2);
+    }
+
+    #[test]
+    fn classifies_like_the_viewer() {
+        assert_eq!(classify("exec", "wpctl set-volume"), "audio");
+        assert_eq!(classify("exec", "bash ~/.config/scripts/screenshot.sh"), "capture");
+        assert_eq!(classify("exec", "systemctl suspend"), "power");
+        assert_eq!(classify("global", "quickshell:spotlight"), "shell");
+        assert_eq!(classify("workspace", "2"), "workspace");
+        assert_eq!(classify("killactive", ""), "window");
+        assert_eq!(classify("pass", ""), "other");
     }
 
     #[test]

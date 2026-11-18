@@ -29,7 +29,7 @@ Modals reachable from keybindings or the bar:
     <td align="center" width="33%" valign="top"><img src="screenshots/gallery/daypanel.png" width="100%"/><br><strong>Day Panel</strong><br>calendar, weather, media, notifications<br><kbd>Super</kbd>+<kbd>N</kbd> / <kbd>Super</kbd>+<kbd>D</kbd></td>
   </tr>
   <tr>
-    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/keybinds.png" width="100%"/><br><strong>Keybinds Viewer</strong><br>search, filter, click to run<br><kbd>Super</kbd>+<kbd>F1</kbd></td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/keybinds.png" width="100%"/><br><strong>Keyboard shortcuts</strong><br>search, filter, run, rebind (settings app)<br><kbd>Super</kbd>+<kbd>F1</kbd></td>
     <td align="center" width="33%" valign="top"><img src="screenshots/gallery/wallpaper.png" width="100%"/><br><strong>Wallpaper Deck</strong><br>hold <kbd>Super</kbd>, tap <kbd>W</kbd> to deal, release to apply</td>
     <td align="center" width="33%" valign="top"><img src="screenshots/gallery/toast.png" width="100%"/><br><strong>Notification Toast</strong><br>auto-shown on incoming notification</td>
   </tr>

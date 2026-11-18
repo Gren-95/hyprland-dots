@@ -25,7 +25,7 @@ All notification calls go through `lib/notify.sh`. Daemons use `set -uo pipefail
 
 | File | Purpose |
 |---|---|
-| `hypr-binds.sh` | Emits `hyprctl binds -j` with the real dispatcher/arg filled in. Lua-registered binds all report `__lua`, so this re-derives each action from `hypr/**/*.lua` and merges it back, keyed on (modmask, key). Used by the Quickshell keybinds viewer, the `kb` fish function and `docs/gen-keybinds.sh`. |
+| `hypr-binds.sh` | Emits `hyprctl binds -j` with the real dispatcher/arg filled in. Lua-registered binds all report `__lua`, so this re-derives each action from `hypr/**/*.lua` and merges it back, keyed on (modmask, key). Used by the settings app's Keyboard shortcuts panel, the `kb` fish function and `docs/gen-keybinds.sh`. |
 | `extract.sh` | Unpacks every archive in the cwd (or a given path): `.zip`, `.tar.gz`, `.tar.bz2`, `.rar`, `.7z`. |
 | `ledvance.sh` | Pairs a Tuya/Ledvance LED through the upstream pairing script. Reads `LEDVANCE_USER`, `LEDVANCE_PASSWORD` and `LEDVANCE_PATH` from `util.env` itself; fish deliberately does not export the password. |
 | `util.env.example` | Template for the gitignored `util.env` (Ledvance credentials, `RPGMDECRYPT_PATH`). Copy to `util.env` and fill in; `fish/conf.d/util-env.fish` loads the non-secret keys into fish. |
