@@ -10,6 +10,7 @@ use iced::{Alignment, Element, Length, Task};
 use serde_json::Value as Json;
 
 use crate::hypr::{self, Rebind, Settings};
+use crate::keysearch;
 use crate::style::{self, Action};
 use crate::system;
 use crate::ui;
@@ -166,15 +167,54 @@ pub fn parse_binds(json: &str) -> Result<Vec<Bind>, String> {
         .collect())
 }
 
-/// Binds whose description, keys or action contain every word.
+/// A bind's modifiers and key as the Super+F1 viewer shows them.
+fn shown(b: &Bind) -> (Vec<&'static str>, String, &str) {
+    let mut parts: Vec<&str> = b.combo.split(" + ").collect();
+    let raw_key = parts.pop().unwrap_or_default();
+    let mods = parts
+        .iter()
+        .filter_map(|p| MODS.iter().position(|(m, _)| m == p).map(|i| MOD_LABELS[i]))
+        .collect();
+    (mods, keysearch::pretty_key(raw_key), raw_key)
+}
+
+/// The binds a search finds, the way the Super+F1 viewer finds them: a key
+/// combo ("super s") by its keys, exact matches first; anything else, or a
+/// combo nothing has, as text in the keys, description or action.
 pub fn filter<'a>(binds: &'a [Bind], query: &str) -> Vec<(usize, &'a Bind)> {
-    let words: Vec<String> = query.split_whitespace().map(str::to_lowercase).collect();
+    let q = query.trim().to_lowercase();
+    if q.is_empty() {
+        return binds.iter().enumerate().collect();
+    }
+    if let Some(combo) = keysearch::parse_combo_query(&q) {
+        let shown: Vec<_> = binds.iter().map(shown).collect();
+        let entries: Vec<keysearch::Entry> = shown
+            .iter()
+            .map(|(mods, key, raw)| keysearch::Entry {
+                mods: mods.clone(),
+                key: key.clone(),
+                raw_key: raw,
+            })
+            .collect();
+        let hits = keysearch::filter_by_combo(&entries, &combo);
+        if !hits.is_empty() {
+            return hits.into_iter().map(|i| (i, &binds[i])).collect();
+        }
+    }
     binds
         .iter()
         .enumerate()
         .filter(|(_, b)| {
-            let hay = format!("{} {} {}", b.description, b.combo, b.action).to_lowercase();
-            words.iter().all(|w| hay.contains(w))
+            let (mods, key, _) = shown(b);
+            let pretty = mods
+                .into_iter()
+                .map(String::from)
+                .chain(std::iter::once(key))
+                .collect::<Vec<_>>()
+                .join("+");
+            [pretty, b.combo.clone(), b.description.clone(), b.action.clone()]
+                .iter()
+                .any(|field| field.to_lowercase().contains(&q))
         })
         .collect()
 }
@@ -374,7 +414,7 @@ impl State {
         if !self.loaded {
             return ui::section(body, "Shortcuts", vec![ui::note("Loading…")]);
         }
-        let search = text_input("Search shortcuts: what they do or their keys", &self.query)
+        let search = text_input("Search: what it does, or keys like super s", &self.query)
             .on_input(Msg::Search)
             .padding([7, 10])
             .style(style::field);
@@ -525,6 +565,10 @@ mod tests {
         assert!(binds[1].locked);
         assert_eq!(filter(&binds, "launcher").len(), 1);
         assert_eq!(filter(&binds, "super r").len(), 1);
+        assert_eq!(filter(&binds, "Super+R").len(), 1);
+        // A combo nothing has falls back to text: "mute" is in the action.
+        assert_eq!(filter(&binds, "mute").len(), 1);
+        assert_eq!(filter(&binds, "").len(), 2);
     }
 
     #[test]

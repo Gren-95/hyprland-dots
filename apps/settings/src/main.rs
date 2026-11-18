@@ -13,6 +13,7 @@ mod hypr;
 mod hyprpage;
 mod idle;
 mod keyboard;
+mod keysearch;
 mod mouse;
 mod network;
 mod placement;

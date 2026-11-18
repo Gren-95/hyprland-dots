@@ -102,6 +102,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/hyprpage.rs` | Panels of plain Hyprland options declared as rows (Mouse & touchpad) |
 | `src/mouse.rs` | The Mouse & touchpad rows |
 | `src/shortcuts.rs` | Keyboard shortcuts panel |
+| `src/keysearch.rs` | Key-combo search, the rules of the Super+F1 viewer |
 | `src/themes.rs` | Icons & cursors panel |
 | `src/idle.rs` | Idle times: the variables in hypridle.conf |
 | `src/placement.rs` | Bar items panel: placement files and the live tray list |

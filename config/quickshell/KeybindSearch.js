@@ -5,6 +5,9 @@
 // A query made of modifier words and at most one key, separated by spaces or
 // "+", is read as a key combo: "super s", "Super+Shift+S", "ctrl alt delete".
 // Anything else is left to the viewer's text search.
+//
+// The settings app's Keyboard shortcuts panel has the same rules in Rust
+// (apps/settings/src/keysearch.rs, same test cases); keep the two in step.
 
 const MODIFIERS = {
     super: "Super", win: "Super", windows: "Super", meta: "Super", mod: "Super", mainmod: "Super",
