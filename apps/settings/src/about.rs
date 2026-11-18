@@ -74,7 +74,6 @@ impl State {
             return ui::section(body, "This system", vec![ui::note("Loading…")]);
         };
         body = body.push(hero(i)).push(heading("Hardware")).push(hardware(i));
-        body = ui::section(body, "Memory", memory_rows(i));
         if !i.disks.is_empty() {
             body = ui::section(body, "Storage", i.disks.iter().map(disk).collect());
         }
@@ -153,6 +152,27 @@ fn chip<'a>(glyph: ui::Icon, label: String) -> Element<'a, Msg> {
     .into()
 }
 
+/// "16 GiB LPDDR5", or the usable size when the firmware does not say.
+fn memory_value(i: &Info) -> String {
+    match &i.modules {
+        Some(m) => format!("{} {}", memory::bytes(m.installed), m.kind).trim().to_string(),
+        None => memory::kib(i.memory.total),
+    }
+}
+
+/// "3.8 GiB of 15.0 GiB in use" and "6400 MT/s · 8 soldered chips".
+fn memory_detail(i: &Info, used: u64) -> String {
+    let usage = format!("{} of {} in use", memory::kib(used), memory::kib(i.memory.total));
+    let Some(m) = &i.modules else { return usage };
+    let what = if m.soldered { "soldered chip" } else { "module" };
+    let layout = format!("{} {what}{}", m.count, if m.count == 1 { "" } else { "s" });
+    let hardware = match m.speed {
+        Some(speed) => format!("{speed} MT/s · {layout}"),
+        None => layout,
+    };
+    format!("{usage}\n{hardware}")
+}
+
 /// Processor, memory and graphics side by side.
 fn hardware(i: &Info) -> Element<'_, Msg> {
     let used = i.memory.used();
@@ -174,53 +194,13 @@ fn hardware(i: &Info) -> Element<'_, Msg> {
         tile(
             ico::MEMORY_STICK,
             "Memory",
-            memory::kib(i.memory.total),
-            format!("{} in use", memory::kib(used)),
+            memory_value(i),
+            memory_detail(i, used),
             Some(bar(memory_share, style::meter(memory_share))),
         ),
         tile(ico::MONITOR, "Graphics", gpu_names, gpu_detail, None),
     ];
     Row::with_children(tiles).spacing(10).height(TILE).into()
-}
-
-/// The modules, what is in use and cached, swap and zswap.
-fn memory_rows(i: &Info) -> Vec<Element<'_, Msg>> {
-    let m = &i.memory;
-    let mut rows = Vec::new();
-    if let Some(modules) = &i.modules {
-        rows.extend(facts([
-            (ico::MEMORY_STICK, "Type", memory::modules_kind(modules)),
-            (ico::LAYERS, "Installed", memory::modules_layout(modules)),
-        ]));
-    }
-    rows.extend(facts([
-        (
-            ico::ACTIVITY,
-            "In use",
-            format!("{} of {} usable", memory::kib(m.used()), memory::kib(m.total)),
-        ),
-        (
-            ico::DATABASE,
-            "Cache",
-            format!("{}, given back when apps need it", memory::kib(m.cache)),
-        ),
-        (ico::CIRCLE_CHECK, "Available", memory::kib(m.available)),
-    ]));
-    for swap in &i.swaps {
-        let label = if swap.zram { "Swap (zram)" } else { "Swap (disk)" };
-        let value = format!(
-            "{} of {} used · {}",
-            memory::kib(swap.used),
-            memory::kib(swap.size),
-            swap.name
-        );
-        rows.push(fact(ico::ARROW_LEFT_RIGHT, label, value, None));
-    }
-    if m.zswapped > 0 {
-        let value = format!("{} kept in {}", memory::kib(m.zswapped), memory::kib(m.zswap));
-        rows.push(fact(ico::SHRINK, "Zswap", value, None));
-    }
-    rows
 }
 
 fn disk(d: &Disk) -> Element<'_, Msg> {

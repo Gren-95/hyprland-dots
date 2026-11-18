@@ -10,8 +10,8 @@ use crate::style;
 use crate::sysinfo::{Battery, Network};
 use crate::ui;
 
-/// Height of a tile: two lines of value, a meter and a detail.
-pub const TILE: f32 = 124.0;
+/// Height of a tile: two lines of value, a meter and two lines of detail.
+pub const TILE: f32 = 140.0;
 
 pub fn heading<'a, M: 'a>(title: &str) -> Element<'a, M> {
     column![
