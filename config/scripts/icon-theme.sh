@@ -16,7 +16,7 @@
 # The current theme lives in config/gtk-3.0/settings.ini. `set` writes it
 # there, in config/gtk-4.0/settings.ini, in config/hypr/hyprqt6engine.conf
 # (Qt apps) and in gsettings (GTK 4 through the settings portal). Running
-# apps keep the old icons until they restart.
+# apps keep the old icons until they restart; Quickshell is restarted here.
 set -uo pipefail
 
 GTK3_INI="$HOME/.config/gtk-3.0/settings.ini"
@@ -130,6 +130,25 @@ apply() {
     sed -i --follow-symlinks "s/^gtk-icon-theme-name=.*/gtk-icon-theme-name=$id/" "$GTK3_INI" "$GTK4_INI"
     sed -i --follow-symlinks "s/^\([[:space:]]*icon_theme[[:space:]]*=\).*/\1 $id/" "$QT_CONF"
     gsettings set org.gnome.desktop.interface icon-theme "$id"
+    restart_shell
+}
+
+# Quickshell picks its icon theme once, at start (from hyprqt6engine.conf),
+# so the launcher, bar and tray keep the old icons until it restarts. Start
+# it the way restart.sh does.
+restart_shell() {
+    local pid running=""
+    # Match the process by name and arguments, not with pkill -f, which would
+    # also match any other command line that contains the same text.
+    for pid in $(pgrep -x qs); do
+        if tr '\0' ' ' <"/proc/$pid/cmdline" 2>/dev/null | grep -qF -- "-p $HOME/.config/quickshell/shell.qml"; then
+            kill "$pid" && running=1
+        fi
+    done
+    [[ -n $running ]] || return 0
+    # Let the old instance release its layer surfaces and IPC socket.
+    sleep 0.5
+    QT_QPA_PLATFORMTHEME=hyprqt6engine setsid -f qs -p "$HOME/.config/quickshell/shell.qml" -d >/dev/null 2>&1
 }
 
 case ${1:-} in
