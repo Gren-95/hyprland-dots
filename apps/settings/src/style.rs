@@ -349,6 +349,28 @@ pub fn meter(share: f32) -> impl Fn(&Theme) -> progress_bar::Style {
     }
 }
 
+/// A meter where low is bad (battery charge and health): red under `red`,
+/// yellow under `yellow`, green above.
+pub fn health_meter(share: f32, red: f32, yellow: f32) -> impl Fn(&Theme) -> progress_bar::Style {
+    move |_| {
+        let bar = if share < red {
+            RED
+        } else if share < yellow {
+            YELLOW
+        } else {
+            GREEN
+        };
+        progress_bar::Style {
+            background: Background::Color(BG_ACTIVE),
+            bar: Background::Color(bar),
+            border: Border {
+                radius: border::radius(3.0),
+                ..Border::default()
+            },
+        }
+    }
+}
+
 /// A sidebar entry; the selected one gets the accent rail colour as text.
 pub fn nav(selected: bool) -> impl Fn(&Theme, button::Status) -> button::Style {
     move |theme, status| {

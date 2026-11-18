@@ -26,6 +26,7 @@ mod shortcuts;
 mod sidebar;
 mod store;
 mod style;
+mod sysinfo;
 mod system;
 mod themes;
 mod ui;

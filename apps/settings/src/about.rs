@@ -1,50 +1,20 @@
-//! About panel: what the system is, shown as a header with the distro logo,
-//! hardware tiles, storage meters and software versions, plus a button that
-//! copies it all as text for bug reports.
-
-use std::path::{Path, PathBuf};
+//! About panel: a header with the distro logo, hardware and battery tiles,
+//! storage meters, the network, software versions and the dots repository,
+//! plus a button that copies it all as text for bug reports. The facts come
+//! from sysinfo.rs.
 
 use iced::widget::{Column, Row, Space, column, container, image, progress_bar, row, svg, text};
 use iced::{Alignment, Element, Length, Task};
 use lucide_iced::bytes as ico;
 
 use crate::style::{self, Action};
-use crate::system::{self, args};
+use crate::sysinfo::{self, Battery, Disk, Info, Network, Repo, duration, gib};
+use crate::system;
 use crate::ui;
 
 const LOGO: f32 = 84.0;
-/// Height of a hardware tile: two lines of value, a meter and a detail.
+/// Height of a tile: two lines of value, a meter and a detail.
 const TILE: f32 = 124.0;
-
-/// One mounted disk, as df shows it.
-#[derive(Debug, Clone, PartialEq, Default)]
-pub struct Disk {
-    pub mount: String,
-    pub size: String,
-    pub avail: String,
-    /// Share in use, 0..1.
-    pub used: f32,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct Info {
-    pub logo: Option<PathBuf>,
-    pub system: String,
-    pub computer: String,
-    pub host: String,
-    pub uptime_secs: u64,
-    pub cpu: String,
-    pub threads: usize,
-    pub gpus: Vec<String>,
-    pub mem_total_kib: u64,
-    pub mem_avail_kib: u64,
-    pub disks: Vec<Disk>,
-    pub kernel: String,
-    pub hyprland: String,
-    pub quickshell: String,
-    pub dots: String,
-    pub app: String,
-}
 
 #[derive(Default)]
 pub struct State {
@@ -59,245 +29,27 @@ pub enum Msg {
     Loaded(Box<Info>),
     Copy,
     Copied(Result<(), String>),
-}
-
-fn read(path: &str) -> String {
-    std::fs::read_to_string(path).unwrap_or_default().trim().to_string()
-}
-
-/// A value from `KEY=value` or `KEY="value"` lines (os-release).
-pub fn os_release_value(text: &str, key: &str) -> String {
-    text.lines()
-        .find_map(|l| l.strip_prefix(&format!("{key}=")))
-        .map(|v| v.trim_matches('"').to_string())
-        .unwrap_or_default()
-}
-
-/// The first "model name" of /proc/cpuinfo and the number of threads.
-pub fn cpu(cpuinfo: &str) -> (String, usize) {
-    let model = cpuinfo
-        .lines()
-        .find_map(|l| {
-            l.strip_prefix("model name")
-                .and_then(|r| r.split_once(':'))
-                .map(|(_, v)| cpu_name(v.trim()))
-        })
-        .unwrap_or_default();
-    let threads = cpuinfo.lines().filter(|l| l.starts_with("processor")).count();
-    (model, threads)
-}
-
-/// A /proc/meminfo field in KiB.
-pub fn meminfo_kib(meminfo: &str, key: &str) -> u64 {
-    meminfo
-        .lines()
-        .find_map(|l| l.strip_prefix(&format!("{key}:")))
-        .and_then(|v| v.split_whitespace().next()?.parse().ok())
-        .unwrap_or(0)
-}
-
-/// An lspci device name without the trailing "(rev 04)" and the vendor's
-/// "Corporation".
-pub fn gpu_name(name: &str) -> String {
-    let name = name.rfind(" (rev ").map_or(name, |i| &name[..i]);
-    name.replace(" Corporation", "")
-}
-
-/// A CPU model without the (R) and (TM) marks.
-pub fn cpu_name(model: &str) -> String {
-    model.replace("(R)", "").replace("(TM)", "")
-}
-
-fn gib(kib: u64) -> String {
-    format!("{:.1} GiB", kib as f64 / 1024.0 / 1024.0)
-}
-
-/// Seconds as "3 days 4 h", "2 h 5 min" or "12 min".
-pub fn duration(secs: u64) -> String {
-    let (days, hours, mins) = (secs / 86400, secs / 3600 % 24, secs / 60 % 60);
-    match (days, hours) {
-        (0, 0) => format!("{mins} min"),
-        (0, h) => format!("{h} h {mins} min"),
-        (1, h) => format!("1 day {h} h"),
-        (d, h) => format!("{d} days {h} h"),
-    }
-}
-
-/// `df -h --output=source,target,size,avail,pcent`: the root and /home and
-/// /mnt mounts, once per device.
-pub fn disks(df: &str) -> Vec<Disk> {
-    let mut seen = std::collections::HashSet::new();
-    df.lines()
-        .skip(1)
-        .filter_map(|l| {
-            let f: Vec<&str> = l.split_whitespace().collect();
-            let (source, mount) = (*f.first()?, *f.get(1)?);
-            let wanted = mount == "/" || mount.starts_with("/home") || mount.starts_with("/mnt");
-            (wanted && seen.insert(source.to_string())).then(|| Disk {
-                mount: mount.to_string(),
-                size: f.get(2).unwrap_or(&"").to_string(),
-                avail: f.get(3).unwrap_or(&"").to_string(),
-                used: f
-                    .get(4)
-                    .and_then(|p| p.trim_end_matches('%').parse::<f32>().ok())
-                    .unwrap_or(0.0)
-                    / 100.0,
-            })
-        })
-        .collect()
-}
-
-/// The distro logo named by os-release LOGO: the largest hicolor icon, or
-/// one in pixmaps.
-fn logo(name: &str) -> Option<PathBuf> {
-    if name.is_empty() {
-        return None;
-    }
-    let hicolor = Path::new("/usr/share/icons/hicolor");
-    let sizes = ["scalable", "512x512", "256x256", "128x128", "96x96", "64x64", "48x48"];
-    let candidates = sizes
-        .iter()
-        .flat_map(|s| ["svg", "png"].map(|ext| hicolor.join(s).join("apps").join(format!("{name}.{ext}"))))
-        .chain(["svg", "png"].map(|ext| Path::new("/usr/share/pixmaps").join(format!("{name}.{ext}"))));
-    candidates.into_iter().find(|p| p.is_file())
-}
-
-fn run(program: &str, list: &[&str]) -> String {
-    system::run_blocking(program, &args(list), None)
-        .map(|s| s.trim().to_string())
-        .unwrap_or_default()
-}
-
-/// The dots repository: where ~/.config/hypr really lives, two levels up.
-fn repo() -> Option<PathBuf> {
-    let hypr = std::fs::canonicalize(crate::store::home().join(".config/hypr")).ok()?;
-    Some(hypr.parent()?.parent()?.to_path_buf())
-}
-
-fn dots() -> String {
-    let Some(dir) = repo() else { return String::new() };
-    let dir = dir.to_string_lossy().into_owned();
-    let commit = run("git", &["-C", &dir, "log", "-1", "--format=%h %s"]);
-    let changed = !run("git", &["-C", &dir, "status", "--porcelain"]).is_empty();
-    format!("{commit}{}", if changed { " (changed files)" } else { "" })
-}
-
-fn load() -> Info {
-    let os = read("/etc/os-release");
-    let meminfo = read("/proc/meminfo");
-    let (cpu, threads) = cpu(&read("/proc/cpuinfo"));
-    let df = run(
-        "df",
-        &[
-            "-h",
-            "--output=source,target,size,avail,pcent",
-            "-x",
-            "tmpfs",
-            "-x",
-            "devtmpfs",
-            "-x",
-            "efivarfs",
-        ],
-    );
-    let hyprland = system::run_blocking("hyprctl", &args(&["version", "-j"]), None)
-        .ok()
-        .and_then(|j| serde_json::from_str::<serde_json::Value>(&j).ok())
-        .and_then(|v| v["tag"].as_str().map(String::from))
-        .unwrap_or_default();
-    let quickshell = run("qs", &["--version"]);
-    let quickshell = quickshell
-        .split(" (")
-        .next()
-        .unwrap_or_default()
-        .trim_start_matches("Quickshell ")
-        .to_string();
-    Info {
-        logo: logo(&os_release_value(&os, "LOGO")),
-        system: os_release_value(&os, "PRETTY_NAME"),
-        computer: format!(
-            "{} {}",
-            read("/sys/class/dmi/id/sys_vendor"),
-            read("/sys/class/dmi/id/product_name")
-        )
-        .trim()
-        .to_string(),
-        host: run("hostname", &[]),
-        uptime_secs: read("/proc/uptime")
-            .split('.')
-            .next()
-            .and_then(|s| s.parse().ok())
-            .unwrap_or(0),
-        cpu,
-        threads,
-        gpus: run("lspci", &[])
-            .lines()
-            .filter(|l| l.contains("VGA") || l.contains("3D controller"))
-            .filter_map(|l| l.split_once(": ").map(|(_, g)| gpu_name(g)))
-            .collect(),
-        mem_total_kib: meminfo_kib(&meminfo, "MemTotal"),
-        mem_avail_kib: meminfo_kib(&meminfo, "MemAvailable"),
-        disks: disks(&df),
-        kernel: run("uname", &["-r"]),
-        hyprland,
-        quickshell,
-        dots: dots(),
-        app: env!("CARGO_PKG_VERSION").to_string(),
-    }
-}
-
-/// Everything as plain text, one fact per line, empty ones left out.
-pub fn as_text(i: &Info) -> String {
-    let disks: Vec<String> = i
-        .disks
-        .iter()
-        .map(|d| format!("{} {} ({} free)", d.mount, d.size, d.avail))
-        .collect();
-    let facts = [
-        ("Computer", i.computer.clone()),
-        ("Name", i.host.clone()),
-        ("System", i.system.clone()),
-        ("Kernel", i.kernel.clone()),
-        ("Hyprland", i.hyprland.clone()),
-        ("Quickshell", i.quickshell.clone()),
-        (
-            "Processor",
-            if i.cpu.is_empty() {
-                String::new()
-            } else {
-                format!("{} ({} threads)", i.cpu, i.threads)
-            },
-        ),
-        ("Graphics", i.gpus.join(", ")),
-        (
-            "Memory",
-            if i.mem_total_kib == 0 {
-                String::new()
-            } else {
-                gib(i.mem_total_kib)
-            },
-        ),
-        ("Disks", disks.join(", ")),
-        ("Dots", i.dots.clone()),
-        ("Settings app", i.app.clone()),
-    ];
-    facts
-        .iter()
-        .filter(|(_, v)| !v.is_empty())
-        .map(|(k, v)| format!("{k}: {v}\n"))
-        .collect()
+    /// Open a web page in the browser.
+    Open(String),
+    Opened(Result<(), String>),
 }
 
 impl State {
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
         match msg {
-            Msg::Load => return Task::perform(system::spawn(load), |i| Msg::Loaded(Box::new(i.unwrap_or_default()))),
+            Msg::Load => {
+                return Task::perform(system::spawn(sysinfo::load), |i| {
+                    Msg::Loaded(Box::new(i.unwrap_or_default()))
+                });
+            }
             Msg::Loaded(i) => {
                 self.info = Some(*i);
                 self.copied = false;
             }
             Msg::Copy => {
                 if let Some(i) = &self.info {
-                    return Task::perform(system::run("wl-copy", vec![], Some(as_text(i))), |r| {
+                    let text = sysinfo::as_text(i);
+                    return Task::perform(system::run("wl-copy", vec![], Some(text)), |r| {
                         Msg::Copied(r.map(|_| ()))
                     });
                 }
@@ -306,6 +58,10 @@ impl State {
                 self.copied = r.is_ok();
                 self.error = r.err();
             }
+            Msg::Open(url) => {
+                return Task::perform(system::run("xdg-open", vec![url], None), |r| Msg::Opened(r.map(|_| ())));
+            }
+            Msg::Opened(r) => self.error = r.err(),
         }
         Task::none()
     }
@@ -317,24 +73,27 @@ impl State {
         let Some(i) = &self.info else {
             return ui::section(body, "This system", vec![ui::note("Loading…")]);
         };
-        body = body.push(hero(i));
-        body = body.push(heading("Hardware")).push(hardware(i));
+        body = body.push(hero(i)).push(heading("Hardware")).push(hardware(i));
+        if let Some(b) = &i.battery {
+            body = battery(body, b);
+        }
         if !i.disks.is_empty() {
             body = ui::section(body, "Storage", i.disks.iter().map(disk).collect());
         }
+        if let Some(n) = &i.network {
+            body = ui::section(body, "Network", network(n));
+        }
         let software = [
-            (ico::BOX, "Kernel", i.kernel.as_str()),
-            (ico::LAYOUT_GRID, "Hyprland", i.hyprland.as_str()),
-            (ico::PANELS_TOP_LEFT, "Quickshell", i.quickshell.as_str()),
-            (ico::GIT_COMMIT_HORIZONTAL, "Dots", i.dots.as_str()),
-            (ico::SETTINGS, "Settings app", i.app.as_str()),
+            (ico::BOX, "Kernel", i.kernel.clone()),
+            (ico::LAYOUT_GRID, "Hyprland", i.hyprland.clone()),
+            (ico::PANELS_TOP_LEFT, "Quickshell", i.quickshell.clone()),
+            (ico::PACKAGE, "Packages", sysinfo::packages_text(&i.packages)),
+            (ico::SETTINGS, "Settings app", i.app.clone()),
         ];
-        let rows = software
-            .into_iter()
-            .filter(|(_, _, v)| !v.is_empty())
-            .map(|(g, k, v)| fact(g, k, v))
-            .collect();
-        body = ui::section(body, "Software", rows);
+        body = ui::section(body, "Software", facts(software));
+        if let Some(r) = &i.repo {
+            body = ui::section(body, "Dots repository", repo(r));
+        }
         let label = if self.copied {
             "Copied to the clipboard"
         } else {
@@ -365,7 +124,7 @@ fn heading<'a>(title: &str) -> Element<'a, Msg> {
     .into()
 }
 
-/// Logo, system name, computer, and chips for the host name and uptime.
+/// Logo, system name, computer, and chips for the host name, uptime and IP.
 fn hero(i: &Info) -> Element<'_, Msg> {
     let logo: Element<'_, Msg> = match &i.logo {
         Some(p) if p.extension().is_some_and(|e| e == "svg") => {
@@ -381,11 +140,17 @@ fn hero(i: &Info) -> Element<'_, Msg> {
     if i.uptime_secs > 0 {
         chips = chips.push(chip(ico::CLOCK, format!("Up {}", duration(i.uptime_secs))));
     }
+    if let Some(address) = i.network.as_ref().and_then(|n| n.addresses.first()) {
+        chips = chips.push(chip(
+            ico::NETWORK,
+            address.split('/').next().unwrap_or_default().to_string(),
+        ));
+    }
     let info = column![
         text(i.system.clone()).font(style::FONT_BOLD).size(26).color(style::FG),
         text(i.computer.clone()).size(14).color(style::FG_MUTED),
         Space::new().height(6),
-        chips,
+        chips.wrap(),
     ]
     .spacing(2);
     container(
@@ -410,6 +175,11 @@ fn chip<'a>(glyph: ui::Icon, label: String) -> Element<'a, Msg> {
     .into()
 }
 
+/// A usage bar drawn with one of the style::*_meter looks.
+fn bar<'a>(share: f32, look: impl Fn(&iced::Theme) -> progress_bar::Style + 'a) -> Element<'a, Msg> {
+    progress_bar(0.0..=1.0, share).girth(6).style(look).into()
+}
+
 /// Processor, memory and graphics side by side.
 fn hardware(i: &Info) -> Element<'_, Msg> {
     let used = i.mem_total_kib.saturating_sub(i.mem_avail_kib);
@@ -418,6 +188,8 @@ fn hardware(i: &Info) -> Element<'_, Msg> {
     } else {
         used as f32 / i.mem_total_kib as f32
     };
+    let gpu_names = i.gpus.iter().map(|g| g.name.clone()).collect::<Vec<_>>().join("\n");
+    let gpu_detail = i.gpus.iter().map(sysinfo::gpu_detail).collect::<Vec<_>>().join("\n");
     let tiles = [
         tile(
             ico::CPU,
@@ -431,15 +203,77 @@ fn hardware(i: &Info) -> Element<'_, Msg> {
             "Memory",
             gib(i.mem_total_kib),
             format!("{} in use", gib(used)),
-            Some(memory_share),
+            Some(bar(memory_share, style::meter(memory_share))),
         ),
-        tile(ico::MONITOR, "Graphics", i.gpus.join("\n"), String::new(), None),
+        tile(ico::MONITOR, "Graphics", gpu_names, gpu_detail, None),
     ];
     Row::with_children(tiles).spacing(10).height(TILE).into()
 }
 
-fn tile<'a>(glyph: ui::Icon, label: &'a str, value: String, detail: String, share: Option<f32>) -> Element<'a, Msg> {
-    let mut col = column![
+/// Charge and health tiles, then the rest of what the battery reports.
+fn battery<'a>(body: Column<'a, Msg>, b: &'a Battery) -> Column<'a, Msg> {
+    let health = b.health();
+    let charge = b.percent as f32 / 100.0;
+    let limit = match b.limit {
+        (Some(start), Some(end)) => format!(" · charges {start}–{end} %"),
+        (None, Some(end)) => format!(" · charges to {end} %"),
+        _ => String::new(),
+    };
+    let cycles = b.cycles.map(|c| format!(" · {c} cycles")).unwrap_or_default();
+    let tiles = Row::with_children([
+        tile(
+            ico::BATTERY_CHARGING,
+            "Charge",
+            format!("{} %", b.percent),
+            format!("{}{limit}", b.status),
+            Some(bar(charge, style::health_meter(charge, 0.2, 0.4))),
+        ),
+        tile(
+            ico::HEART_PULSE,
+            "Health",
+            format!("{:.0} %", health * 100.0),
+            format!("{:.1} of {:.1} Wh when new{cycles}", b.full_wh, b.design_wh),
+            Some(bar(health, style::health_meter(health, 0.5, 0.8))),
+        ),
+    ])
+    .spacing(10)
+    .height(TILE);
+    let model = [b.model.as_str(), b.technology.as_str()]
+        .iter()
+        .filter(|s| !s.is_empty())
+        .copied()
+        .collect::<Vec<_>>()
+        .join(" · ");
+    let rows = facts([
+        (
+            ico::ZAP,
+            "Power",
+            b.power_w.map(|w| format!("{w:.1} W")).unwrap_or_default(),
+        ),
+        (
+            ico::THERMOMETER,
+            "Temperature",
+            b.temp_c.map(|t| format!("{t:.1} °C")).unwrap_or_default(),
+        ),
+        (ico::BATTERY, "Model", model),
+        (ico::CALENDAR, "Made", b.made.clone()),
+    ]);
+    let body = body.push(heading("Battery")).push(tiles);
+    if rows.is_empty() {
+        body
+    } else {
+        body.push(container(column(rows).spacing(2)).padding(6).style(style::card))
+    }
+}
+
+fn tile<'a>(
+    glyph: ui::Icon,
+    label: &'a str,
+    value: String,
+    detail: String,
+    meter: Option<Element<'a, Msg>>,
+) -> Element<'a, Msg> {
+    let col = column![
         row![
             ui::icon(glyph, 16.0),
             text(label.to_uppercase())
@@ -451,25 +285,14 @@ fn tile<'a>(glyph: ui::Icon, label: &'a str, value: String, detail: String, shar
         .align_y(Alignment::Center),
         text(value).size(14).color(style::FG),
     ]
+    .push(meter)
+    .push((!detail.is_empty()).then(|| text(detail).size(12).color(style::MUTED_DEEP)))
     .spacing(8);
-    if let Some(s) = share {
-        col = col.push(meter(s));
-    }
-    if !detail.is_empty() {
-        col = col.push(text(detail).size(12).color(style::MUTED_DEEP));
-    }
     container(col)
         .padding([14, 16])
         .width(Length::Fill)
         .height(Length::Fill)
         .style(style::card)
-        .into()
-}
-
-fn meter<'a>(share: f32) -> Element<'a, Msg> {
-    progress_bar(0.0..=1.0, share)
-        .girth(6)
-        .style(style::meter(share))
         .into()
 }
 
@@ -483,7 +306,7 @@ fn disk(d: &Disk) -> Element<'_, Msg> {
                     .size(12)
                     .color(style::MUTED_DEEP),
             ],
-            meter(d.used),
+            bar(d.used, style::meter(d.used)),
         ]
         .spacing(8),
     ]
@@ -492,67 +315,76 @@ fn disk(d: &Disk) -> Element<'_, Msg> {
     container(line).padding([10, 14]).into()
 }
 
-fn fact<'a>(glyph: ui::Icon, label: &'a str, value: &'a str) -> Element<'a, Msg> {
+fn network(n: &Network) -> Vec<Element<'_, Msg>> {
+    let glyph = if n.kind == "Wi-Fi" {
+        ico::WIFI
+    } else {
+        ico::ETHERNET_PORT
+    };
+    let connection = [n.connection.as_str(), n.device.as_str()]
+        .iter()
+        .filter(|s| !s.is_empty())
+        .copied()
+        .collect::<Vec<_>>()
+        .join(" · ");
+    facts([
+        (glyph, n.kind.as_str(), connection),
+        (ico::NETWORK, "Address", n.addresses.join("\n")),
+        (ico::ROUTER, "Gateway", n.gateway.clone()),
+        (ico::BOOK_OPEN, "DNS", n.dns.join("\n")),
+    ])
+}
+
+fn plural(n: usize, word: &str) -> String {
+    format!("{n} {word}{}", if n == 1 { "" } else { "s" })
+}
+
+fn repo(r: &Repo) -> Vec<Element<'_, Msg>> {
+    let open = r
+        .url
+        .as_ref()
+        .map(|u| ui::action("Open on GitHub", Some(Msg::Open(u.clone())), Action::Normal));
+    let commit = if r.when.is_empty() {
+        r.commit.clone()
+    } else {
+        format!("{}\n{}", r.commit, r.when)
+    };
+    let mut state = Vec::new();
+    if r.unpushed > 0 {
+        state.push(format!("{} not pushed", plural(r.unpushed, "commit")));
+    }
+    if r.changed > 0 {
+        state.push(format!("{} not committed", plural(r.changed, "changed file")));
+    }
+    let state = if state.is_empty() {
+        "Everything pushed".to_string()
+    } else {
+        state.join(" · ")
+    };
+    vec![
+        fact(ico::GIT_FORK, "Repository", r.slug.clone(), open),
+        fact(ico::GIT_BRANCH, "Branch", r.branch.clone(), None),
+        fact(ico::GIT_COMMIT_HORIZONTAL, "Last commit", commit, None),
+        fact(ico::UPLOAD, "State", state, None),
+    ]
+}
+
+/// Fact rows for the non-empty values.
+fn facts<'a, const N: usize>(list: [(ui::Icon, &'a str, String); N]) -> Vec<Element<'a, Msg>> {
+    list.into_iter()
+        .filter(|(_, _, v)| !v.is_empty())
+        .map(|(g, k, v)| fact(g, k, v, None))
+        .collect()
+}
+
+fn fact<'a>(glyph: ui::Icon, label: &'a str, value: String, control: Option<Element<'a, Msg>>) -> Element<'a, Msg> {
     let line = row![
         container(ui::icon(glyph, 18.0)).width(26).center_x(26),
         text(label).size(14).color(style::FG).width(130),
         text(value).size(14).color(style::FG_MUTED).width(Length::Fill),
     ]
+    .push(control)
     .spacing(12)
     .align_y(Alignment::Center);
     container(line).padding([10, 14]).into()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn reads_system_files() {
-        assert_eq!(
-            os_release_value("NAME=\"Nobara\"\nPRETTY_NAME=\"Nobara Linux 44\"\n", "PRETTY_NAME"),
-            "Nobara Linux 44"
-        );
-        let info = "processor\t: 0\nmodel name\t: Intel i5\nprocessor\t: 1\nmodel name\t: Intel i5\n";
-        assert_eq!(cpu(info), ("Intel i5".to_string(), 2));
-        assert_eq!(meminfo_kib("MemTotal:       15686628 kB\n", "MemTotal"), 15686628);
-        assert_eq!(gib(15686628), "15.0 GiB");
-        assert_eq!(meminfo_kib("nothing", "MemTotal"), 0);
-        assert_eq!(
-            gpu_name("Intel Raptor Lake-P [Iris Xe Graphics] (rev 04)"),
-            "Intel Raptor Lake-P [Iris Xe Graphics]"
-        );
-        assert_eq!(gpu_name("Intel Corporation Arc"), "Intel Arc");
-        assert_eq!(
-            cpu_name("13th Gen Intel(R) Core(TM) i5-1345U"),
-            "13th Gen Intel Core i5-1345U"
-        );
-        assert_eq!(gpu_name("NVIDIA AD107M"), "NVIDIA AD107M");
-    }
-
-    #[test]
-    fn formats_uptime() {
-        assert_eq!(duration(720), "12 min");
-        assert_eq!(duration(7500), "2 h 5 min");
-        assert_eq!(duration(86400 + 3 * 3600), "1 day 3 h");
-        assert_eq!(duration(3 * 86400), "3 days 0 h");
-    }
-
-    #[test]
-    fn lists_each_disk_once() {
-        let df = "Filesystem Mounted Size Avail Use%\n/dev/nvme0n1p3 / 460G 145G 68%\n/dev/nvme0n1p3 /home 460G 145G 68%\n/dev/sda1 /mnt/DATA 1.4T 393G 70%\n/dev/nvme0n1p1 /boot 1G 500M 50%\n";
-        let list = disks(df);
-        assert_eq!(list.len(), 2);
-        assert_eq!(list[1].mount, "/mnt/DATA");
-        assert!((list[0].used - 0.68).abs() < 1e-6);
-    }
-
-    #[test]
-    fn copies_known_facts_only() {
-        let info = Info {
-            kernel: "6.1".into(),
-            ..Info::default()
-        };
-        assert_eq!(as_text(&info), "Kernel: 6.1\n");
-    }
 }
