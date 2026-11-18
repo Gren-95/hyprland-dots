@@ -638,6 +638,12 @@ pub const PANELS: &[Panel] = &[
                         0.1,
                         false,
                     ),
+                    toggle(
+                        "animations",
+                        "Animations",
+                        "Animate the shell, windows and GTK apps; off makes everything instant",
+                        true,
+                    ),
                     scale(
                         "anim-scale",
                         "Animation speed",

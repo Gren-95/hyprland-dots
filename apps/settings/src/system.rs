@@ -61,8 +61,38 @@ pub async fn spawn<T: Send + 'static>(work: impl FnOnce() -> T + Send + 'static)
 /// and argument under ~/.config/scripts).
 const AFTER_WRITE: &[(&str, &str, &str)] = &[("night-", "night.sh", "apply")];
 
-/// Run what a written setting needs, on its own thread (which also reaps it).
-pub fn after_write(file: &str) {
+/// Animations switched on or off everywhere: the shell reads the setting
+/// itself; Hyprland's animations:enabled (kept in settings.lua, the same
+/// option the Windows panel shows) and GTK's enable-animations follow it.
+fn apply_animations(on: bool) {
+    let _ = crate::hypr::update_blocking(
+        |s| {
+            s.options.insert("animations:enabled".into(), serde_json::json!(on));
+        },
+        "",
+    );
+    let _ = run_blocking(
+        "gsettings",
+        &args(&[
+            "set",
+            "org.gnome.desktop.interface",
+            "enable-animations",
+            if on { "true" } else { "false" },
+        ]),
+        None,
+    );
+}
+
+/// Run what a written setting needs, each on its own thread. The window
+/// lets them run; the CLI waits for the returned threads before it exits.
+pub fn after_write(file: &str) -> Vec<std::thread::JoinHandle<()>> {
+    let mut work = Vec::new();
+    if file == "animations" {
+        let on = crate::store::Store::new(crate::store::Store::default_dir())
+            .read(file, crate::store::Kind::Bool)
+            .is_none_or(|v| v == crate::store::Value::Bool(true));
+        work.push(std::thread::spawn(move || apply_animations(on)));
+    }
     for (prefix, script, arg) in AFTER_WRITE {
         if file.starts_with(prefix) {
             let path = crate::store::home()
@@ -70,11 +100,12 @@ pub fn after_write(file: &str) {
                 .join(script)
                 .to_string_lossy()
                 .into_owned();
-            std::thread::spawn(move || {
+            work.push(std::thread::spawn(move || {
                 let _ = run_blocking("bash", &[path, arg.to_string()], None);
-            });
+            }));
         }
     }
+    work
 }
 
 /// Shorthand for an argument list.

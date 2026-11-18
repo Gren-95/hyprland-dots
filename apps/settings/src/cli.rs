@@ -98,7 +98,9 @@ pub fn set(store: &Store, key: &str, input: &str) -> Result<(), String> {
     store
         .write(file, &value)
         .map_err(|e| format!("could not save {file}: {e}"))?;
-    crate::system::after_write(file);
+    for work in crate::system::after_write(file) {
+        let _ = work.join();
+    }
     Ok(())
 }
 

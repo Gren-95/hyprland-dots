@@ -38,7 +38,7 @@ Scope {
     Binding { target: Theme; property: "accentPrimaryName"; value: settingsStore.accentPrimaryName }
     Binding { target: Theme; property: "accentAutoHex";      value: settingsStore.accentAutoHex }
     Binding { target: Theme; property: "accentEverywhere";   value: settingsStore.accentEverywhere }
-    Binding { target: Theme; property: "animScale";         value: settingsStore.animScale }
+    Binding { target: Theme; property: "animScale";         value: settingsStore.animations ? settingsStore.animScale : 0 }
     Binding { target: Theme; property: "radiusScale";       value: settingsStore.radiusScale }
 
     IdleService { id: idleService }

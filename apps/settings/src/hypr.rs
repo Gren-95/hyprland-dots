@@ -343,21 +343,23 @@ pub async fn update(change: impl FnOnce(&mut Settings) + Send + 'static) -> Resu
 /// `update`, plus `extra` Lua run on the live Hyprland after it (a key bind
 /// moving: the old keys unbound, the new ones bound).
 pub async fn update_with(change: impl FnOnce(&mut Settings) + Send + 'static, extra: String) -> Result<(), String> {
-    let lua = system::spawn(move || -> Result<String, String> {
-        let mut settings = Settings::load();
-        change(&mut settings);
-        write(
-            &dir().join("settings.json"),
-            &serde_json::to_string_pretty(&settings.json()).unwrap_or_default(),
-        )
-        .map_err(|e| format!("Could not save settings.json: {e}"))?;
-        write(&dir().join("settings.lua"), &settings.lua()?)
-            .map_err(|e| format!("Could not save settings.lua: {e}"))?;
-        Ok(settings.live_lua()? + &extra)
-    })
-    .await
-    .unwrap_or_else(|| Err("saving stopped unexpectedly".into()))?;
-    system::run("hyprctl", vec!["eval".into(), lua], None).await.map(|_| ())
+    system::spawn(move || update_blocking(change, &extra))
+        .await
+        .unwrap_or_else(|| Err("saving stopped unexpectedly".into()))
+}
+
+/// `update_with` on the calling thread.
+pub fn update_blocking(change: impl FnOnce(&mut Settings), extra: &str) -> Result<(), String> {
+    let mut settings = Settings::load();
+    change(&mut settings);
+    write(
+        &dir().join("settings.json"),
+        &serde_json::to_string_pretty(&settings.json()).unwrap_or_default(),
+    )
+    .map_err(|e| format!("Could not save settings.json: {e}"))?;
+    write(&dir().join("settings.lua"), &settings.lua()?).map_err(|e| format!("Could not save settings.lua: {e}"))?;
+    let lua = settings.live_lua()? + extra;
+    system::run_blocking("hyprctl", &["eval".to_string(), lua], None).map(|_| ())
 }
 
 /// One Lua value: numbers, booleans and plain strings only.

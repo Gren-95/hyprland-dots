@@ -260,7 +260,8 @@ impl App {
             Ok(()) => {
                 self.values.insert(file, value);
                 self.error = None;
-                crate::system::after_write(file);
+                // Runs on; the window does not wait for it.
+                drop(crate::system::after_write(file));
             }
             Err(e) => self.error = Some(format!("Could not save {file}: {e}")),
         }

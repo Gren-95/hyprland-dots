@@ -59,6 +59,7 @@ Scope {
     property bool clockShowSeconds: false
     property string clockDateFormat: "ddd, dd MMM"
     property real animScale: 1.0               // multiplies Theme.duration; 0 = instant
+    property bool animations: true             // off: shell, Hyprland and GTK animations all off
     property real radiusScale: 1.0             // multiplies Theme.radius
     property real barOpacity: 1.0
     property int batteryCriticalPct: 5         // countdown-to-action level; 0 = off
@@ -195,6 +196,7 @@ Scope {
         { name: "clockShowSeconds",     file: "clock-seconds",          type: "bool" },
         { name: "clockDateFormat",      file: "clock-date-format",      type: "string" },
         { name: "animScale",            file: "anim-scale",             type: "real" },
+        { name: "animations",           file: "animations",             type: "bool" },
         { name: "radiusScale",          file: "radius-scale",           type: "real" },
         { name: "barOpacity",           file: "bar-opacity",            type: "real" },
         { name: "batteryCriticalPct",   file: "battery-critical-pct",   type: "int"  },

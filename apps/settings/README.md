@@ -19,7 +19,7 @@ shell show in the app too.
 | `keyboard` | Keyboard layouts (search the XKB list, add, remove, reorder), layout switch shortcut, Caps Lock key, Num Lock at start, key repeat delay and speed — written to `config/hypr/settings.lua` (gitignored, loaded last) and applied with `hyprctl eval` |
 | `shortcuts` | Every key bind with its keys (search, change with modifiers and a searchable key list, reset); moves are kept in `config/hypr/settings.lua` as `hl.unbind` + `hl.bind`, `keys.lua` is not edited |
 | `mouse` | Pointer speed, acceleration, left-handed, natural scrolling and scroll speed for mice; tap to click, natural scrolling, off while typing, right-click method, middle click and scroll speed for touchpads; workspace swipe direction and distance — Hyprland options saved to `config/hypr/settings.lua` |
-| `appearance` | Accent colour, font and text size, corner roundness, animation speed, wallpaper folder |
+| `appearance` | Accent colour, font and text size, corner roundness, animations on or off (shell, Hyprland and GTK together) and their speed, wallpaper folder |
 | `themes` | Icon and cursor themes with previews, recently used first; applied through `config/scripts/icon-theme.sh` and `cursor-theme.sh` (the Quick Actions tile opens this panel) |
 | `windows` | Gaps, border width, corner rounding, animations, blur, shadows, unfocused opacity, tiling layout, focus follows mouse, resize by border — Hyprland options in `config/hypr/settings.lua` (they win over HyprMod's `hyprland-gui.lua`) |
 | `bar` | Height, opacity, window title width, workspace icons, activity icons, scroll action |
