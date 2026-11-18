@@ -13,6 +13,7 @@ use crate::audio;
 use crate::bluetooth;
 use crate::calendar;
 use crate::controls;
+use crate::defaultapps;
 use crate::hyprpage;
 use crate::idle;
 use crate::keyboard;
@@ -96,6 +97,7 @@ pub struct App {
     idle: idle::State,
     themes: themes::State,
     shortcuts: shortcuts::State,
+    default_apps: defaultapps::State,
     /// Installed font families, loaded once at start for the Font picker.
     fonts: Vec<&'static str>,
     error: Option<String>,
@@ -138,6 +140,7 @@ pub enum Message {
     Idle(idle::Msg),
     Themes(themes::Msg),
     Shortcuts(shortcuts::Msg),
+    DefaultApps(defaultapps::Msg),
     Fonts(Vec<&'static str>),
 }
 
@@ -165,6 +168,7 @@ impl App {
             idle: idle::State::default(),
             themes: themes::State::default(),
             shortcuts: shortcuts::State::default(),
+            default_apps: defaultapps::State::default(),
             fonts: Vec::new(),
             error: None,
         };
@@ -196,6 +200,10 @@ impl App {
             Page::Lock => self.idle.update(idle::Msg::Load).map(Message::Idle),
             Page::Themes => self.themes.update(themes::Msg::Load).map(Message::Themes),
             Page::Shortcuts => self.shortcuts.update(shortcuts::Msg::Load).map(Message::Shortcuts),
+            Page::DefaultApps => self
+                .default_apps
+                .update(defaultapps::Msg::Load)
+                .map(Message::DefaultApps),
         }
     }
 
@@ -260,7 +268,7 @@ impl App {
             }
             Page::Calendar => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Calendar(calendar::Msg::Refresh))),
-            Page::Keyboard | Page::Mouse | Page::Lock | Page::Themes | Page::Shortcuts => {}
+            Page::Keyboard | Page::Mouse | Page::Lock | Page::Themes | Page::Shortcuts | Page::DefaultApps => {}
             Page::BarItems => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Placement(placement::Msg::Refresh))),
         }
@@ -286,6 +294,7 @@ impl App {
             Message::Idle(msg) => return self.idle.update(msg).map(Message::Idle),
             Message::Themes(msg) => return self.themes.update(msg).map(Message::Themes),
             Message::Shortcuts(msg) => return self.shortcuts.update(msg).map(Message::Shortcuts),
+            Message::DefaultApps(msg) => return self.default_apps.update(msg).map(Message::DefaultApps),
             Message::Search(query) => {
                 self.query = query;
                 self.searching = true;
@@ -450,6 +459,9 @@ impl App {
             Page::Themes => Element::from(self.themes.view(page_column(panel.title, layout))).map(Message::Themes),
             Page::Shortcuts => {
                 Element::from(self.shortcuts.view(page_column(panel.title, layout))).map(Message::Shortcuts)
+            }
+            Page::DefaultApps => {
+                Element::from(self.default_apps.view(page_column(panel.title, layout))).map(Message::DefaultApps)
             }
         };
         // One scroll position per panel.

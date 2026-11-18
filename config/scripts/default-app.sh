@@ -49,7 +49,10 @@ conf_set() {
 # something else (a browser's "make me default" prompt) changes it behind us.
 xdg_get() {
     case "$1" in
-        browser) xdg-settings get default-web-browser 2>/dev/null || true ;;
+        # The https handler, not `xdg-settings get default-web-browser`: that
+        # one can name a stale entry (an app that once registered for http)
+        # while links already open in another browser.
+        browser) xdg-mime query default x-scheme-handler/https 2>/dev/null || true ;;
         filemanager) xdg-mime query default inode/directory 2>/dev/null || true ;;
     esac
 }

@@ -8,6 +8,7 @@ mod bluetooth;
 mod calendar;
 mod cli;
 mod controls;
+mod defaultapps;
 mod fonts;
 mod hypr;
 mod hyprpage;

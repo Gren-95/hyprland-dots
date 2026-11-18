@@ -67,6 +67,8 @@ pub enum Page {
     Themes,
     /// Key binds moved to other keys (shortcuts.rs).
     Shortcuts,
+    /// Which app fills each role (defaultapps.rs).
+    DefaultApps,
 }
 
 pub struct Section {
@@ -914,6 +916,15 @@ pub const PANELS: &[Panel] = &[
                 )],
             },
         ],
+    },
+    Panel {
+        id: "apps",
+        title: "Default apps",
+        glyph: ico::APP_WINDOW,
+        group: Group::Workspace,
+        page: Page::DefaultApps,
+        keywords: "default applications browser mail terminal editor files image viewer video music pdf open with",
+        sections: &[],
     },
     Panel {
         id: "recording",

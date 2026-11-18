@@ -28,6 +28,7 @@ shell show in the app too.
 | `notifications` | Toast position, time, count and width; history; auto-dismiss; system event toasts |
 | `launcher` | Results shown, calculator, clipboard thumbnails |
 | `osd` | Volume and brightness steps, maximum volume, on-screen display |
+| `apps` | Default apps: browser, mail, terminal, text editor, files, images, video, music, PDF — the first four through `config/scripts/default-app.sh`, the rest as XDG mime defaults (`xdg-mime`); choices are the installed apps that handle each |
 | `recording` | Screenshots (folder, PNG or JPEG, cursor, clipboard, actions sheet) and screen recording (folder, file type, frame rate, quality, codec, cursor, sound) — read by `config/scripts/lib/screenshot.sh` and `screenrecord.sh` |
 | `sysmon` | System monitor refresh interval and sections |
 | `lock` | Idle times (dim, lock, screen off, suspend) edited in `config/hypr/hypridle.conf`, which then restarts hypridle; stay awake; what the lid does; lock screen parts |
@@ -101,6 +102,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/hypr.rs` | Hyprland settings the app owns: settings.json, the generated settings.lua, `hyprctl eval` |
 | `src/hyprpage.rs` | Panels of plain Hyprland options declared as rows (Mouse & touchpad) |
 | `src/mouse.rs` | The Mouse & touchpad rows |
+| `src/defaultapps.rs` | Default apps panel: desktop entries, roles |
 | `src/shortcuts.rs` | Keyboard shortcuts panel |
 | `src/keysearch.rs` | Key-combo search, the rules of the Super+F1 viewer |
 | `src/themes.rs` | Icons & cursors panel |
