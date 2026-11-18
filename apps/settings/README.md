@@ -27,7 +27,7 @@ shell show in the app too.
 | `clock` | 24-hour clock, seconds, date format; weather location and Fahrenheit (`-p weather` opens it too) |
 | `calendar` | ICS feeds of the day panel (`~/.config/quickshell/calendar.url`; links shown shortened as they hold private tokens): add, switch on and off, name, colour, replace the link, move up, remove; first day of the week, feed refresh interval |
 | `notifications` | Do not disturb, by hand or every day between two times; toast position, time, count, width and sound; history; auto-dismiss; system event toasts; per app: show, no toasts or mute |
-| `launcher` | Results shown, calculator, clipboard thumbnails |
+| `launcher` | Results shown; calculator and quick actions among the results; clipboard thumbnails; apps hidden from the launcher (Ctrl+D there), each with Show again |
 | `osd` | Volume and brightness steps, maximum volume, on-screen display |
 | `apps` | Default apps: browser, mail, terminal, text editor, files, images, video, music, PDF — the first four through `config/scripts/default-app.sh`, the rest as XDG mime defaults (`xdg-mime`); choices are the installed apps that handle each |
 | `recording` | Screenshots (folder, PNG or JPEG, cursor, clipboard, actions sheet) and screen recording (folder, file type, frame rate, quality, codec, cursor, sound) — read by `config/scripts/lib/screenshot.sh` and `screenrecord.sh` |
@@ -104,6 +104,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/hypr.rs` | Hyprland settings the app owns: settings.json, the generated settings.lua, `hyprctl eval` |
 | `src/hyprpage.rs` | Panels of plain Hyprland options declared as rows (Mouse & touchpad) |
 | `src/about.rs` | About panel |
+| `src/hiddenapps.rs` | Hidden apps on the Launcher panel |
 | `src/notifapps.rs` | Per-app notification rules on the Notifications panel |
 | `src/power.rs` | Battery block on the Power panel |
 | `src/memory.rs` | Memory modules (udev), use (/proc/meminfo) and swap |

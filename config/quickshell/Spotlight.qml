@@ -80,7 +80,7 @@ Scope {
         const q = root.query.trim().toLowerCase();
         // Picking a default, or editing what is hidden, is a list of apps
         // and nothing else.
-        if (root.pickRole !== "" || root.manageHidden || !q) return [];
+        if (root.pickRole !== "" || root.manageHidden || !q || !settingsStore.spotlightActions) return [];
         return shellActions.filter(a =>
             a.name.toLowerCase().includes(q)
             || (a.keywords && a.keywords.indexOf(q) >= 0)

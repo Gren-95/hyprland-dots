@@ -15,6 +15,7 @@ use crate::bluetooth;
 use crate::calendar;
 use crate::controls;
 use crate::defaultapps;
+use crate::hiddenapps;
 use crate::hyprpage;
 use crate::idle;
 use crate::keyboard;
@@ -106,6 +107,7 @@ pub struct App {
     about: about::State,
     power: power::State,
     notif_apps: notifapps::State,
+    hidden_apps: hiddenapps::State,
     /// Installed font families, loaded once at start for the Font picker.
     fonts: Vec<&'static str>,
     error: Option<String>,
@@ -153,6 +155,7 @@ pub enum Message {
     About(about::Msg),
     Power(power::Msg),
     NotifApps(notifapps::Msg),
+    HiddenApps(hiddenapps::Msg),
     Fonts(Vec<&'static str>),
 }
 
@@ -185,6 +188,7 @@ impl App {
             about: about::State::default(),
             power: power::State::default(),
             notif_apps: notifapps::State::default(),
+            hidden_apps: hiddenapps::State::default(),
             fonts: Vec::new(),
             error: None,
         };
@@ -200,6 +204,7 @@ impl App {
     fn refresh_page(&mut self) -> Task<Message> {
         match PANELS[self.panel].page {
             Page::Settings => Task::none(),
+            Page::Launcher => self.hidden_apps.update(hiddenapps::Msg::Load).map(Message::HiddenApps),
             Page::Notifications => {
                 self.notif_apps.update(notifapps::Msg::Load);
                 Task::none()
@@ -285,6 +290,7 @@ impl App {
         // Subscription::map takes only closures that capture nothing.
         match PANELS[self.panel].page {
             Page::Settings => {}
+            Page::Launcher => {}
             Page::Notifications => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::NotifApps(notifapps::Msg::Load))),
             Page::Power => {
@@ -337,6 +343,7 @@ impl App {
             Message::About(msg) => return self.about.update(msg).map(Message::About),
             Message::Power(msg) => return self.power.update(msg).map(Message::Power),
             Message::NotifApps(msg) => self.notif_apps.update(msg),
+            Message::HiddenApps(msg) => return self.hidden_apps.update(msg).map(Message::HiddenApps),
             Message::Search(query) => {
                 self.query = query;
                 self.searching = true;
@@ -465,6 +472,23 @@ impl App {
                 for section in panel.sections {
                     body = self.section(body, section, layout);
                 }
+                if let Some(error) = &self.error {
+                    body = body.push(text(error).color(style::RED));
+                }
+                body.into()
+            }
+            Page::Launcher => {
+                let mut body = page_column(panel.title, layout);
+                for section in panel.sections {
+                    body = self.section(body, section, layout);
+                }
+                let hidden = self
+                    .hidden_apps
+                    .rows()
+                    .into_iter()
+                    .map(|r| r.map(Message::HiddenApps))
+                    .collect();
+                body = ui::section(body, "Hidden apps", hidden);
                 if let Some(error) = &self.error {
                     body = body.push(text(error).color(style::RED));
                 }

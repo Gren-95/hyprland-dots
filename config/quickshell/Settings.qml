@@ -87,6 +87,7 @@ Scope {
     property bool workspaceGlyphs: true        // icons vs plain numbers in the strip
     property bool workspaceWindowIcons: false  // tiny app icons inside each pill
     property bool spotlightCalc: true          // inline calculator row
+    property bool spotlightActions: true       // quick actions (Do not disturb, Game mode…) among the results
     property bool clipboardThumbs: true        // image thumbnails in history
     property string barWheelAction: "workspace" // bar-background wheel: workspace|volume|none
     property int volumeStep: 5                 // % per wheel tick / arrow press
@@ -222,6 +223,7 @@ Scope {
         { name: "workspaceGlyphs",      file: "workspace-glyphs",       type: "bool" },
         { name: "workspaceWindowIcons", file: "workspace-window-icons", type: "bool" },
         { name: "spotlightCalc",        file: "spotlight-calc",         type: "bool" },
+        { name: "spotlightActions",     file: "spotlight-actions",      type: "bool" },
         { name: "clipboardThumbs",      file: "clipboard-thumbs",       type: "bool" },
         { name: "barWheelAction",       file: "bar-wheel-action",       type: "string" },
         { name: "volumeStep",           file: "volume-step",            type: "int"  },

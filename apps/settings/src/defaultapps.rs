@@ -195,7 +195,7 @@ fn app_dirs() -> Vec<PathBuf> {
 }
 
 /// Every installed app, once each (the first directory wins).
-fn installed() -> Vec<App> {
+pub fn installed() -> Vec<App> {
     let mut seen = HashSet::new();
     let mut apps = Vec::new();
     for dir in app_dirs() {

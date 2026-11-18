@@ -67,6 +67,8 @@ pub enum Page {
     Themes,
     /// Key binds moved to other keys (shortcuts.rs).
     Shortcuts,
+    /// Launcher settings followed by the hidden apps (hiddenapps.rs).
+    Launcher,
     /// Notification settings followed by per-app rules (notifapps.rs).
     Notifications,
     /// Which app fills each role (defaultapps.rs).
@@ -953,8 +955,8 @@ pub const PANELS: &[Panel] = &[
         title: "Launcher & clipboard",
         glyph: ico::LAYOUT_GRID,
         group: Group::Workspace,
-        page: Page::Settings,
-        keywords: "",
+        page: Page::Launcher,
+        keywords: "spotlight search hidden apps calculator quick actions clipboard",
         sections: &[
             Section {
                 title: "Launcher",
@@ -969,12 +971,24 @@ pub const PANELS: &[Panel] = &[
                         "",
                         60,
                     ),
-                    toggle(
-                        "spotlight-calc",
-                        "Calculator",
-                        "Show the answer when the search is a sum",
-                        true,
-                    ),
+                    Setting {
+                        file: "spotlight-calc",
+                        label: "Also show",
+                        help: "Besides apps: the answer when the search is a sum, and quick actions like Do not disturb",
+                        control: Control::Toggles(&[
+                            Toggle {
+                                file: "spotlight-calc",
+                                label: "Calculator",
+                                default: true,
+                            },
+                            Toggle {
+                                file: "spotlight-actions",
+                                label: "Quick actions",
+                                default: true,
+                            },
+                        ]),
+                        default: Default::Bool(true),
+                    },
                 ],
             },
             Section {
