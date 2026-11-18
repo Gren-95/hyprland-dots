@@ -8,8 +8,9 @@ use iced::{Alignment, Element, Length, Task};
 use lucide_iced::bytes as ico;
 
 use crate::infoview::{TILE, bar, fact, facts, heading, tile};
+use crate::memory;
 use crate::style::{self, Action};
-use crate::sysinfo::{self, Disk, Info, Repo, duration, gib};
+use crate::sysinfo::{self, Disk, Info, Repo, duration};
 use crate::system;
 use crate::ui;
 
@@ -73,6 +74,7 @@ impl State {
             return ui::section(body, "This system", vec![ui::note("Loading…")]);
         };
         body = body.push(hero(i)).push(heading("Hardware")).push(hardware(i));
+        body = ui::section(body, "Memory", memory_rows(i));
         if !i.disks.is_empty() {
             body = ui::section(body, "Storage", i.disks.iter().map(disk).collect());
         }
@@ -153,11 +155,11 @@ fn chip<'a>(glyph: ui::Icon, label: String) -> Element<'a, Msg> {
 
 /// Processor, memory and graphics side by side.
 fn hardware(i: &Info) -> Element<'_, Msg> {
-    let used = i.mem_total_kib.saturating_sub(i.mem_avail_kib);
-    let memory_share = if i.mem_total_kib == 0 {
+    let used = i.memory.used();
+    let memory_share = if i.memory.total == 0 {
         0.0
     } else {
-        used as f32 / i.mem_total_kib as f32
+        used as f32 / i.memory.total as f32
     };
     let gpu_names = i.gpus.iter().map(|g| g.name.clone()).collect::<Vec<_>>().join("\n");
     let gpu_detail = i.gpus.iter().map(sysinfo::gpu_detail).collect::<Vec<_>>().join("\n");
@@ -172,13 +174,53 @@ fn hardware(i: &Info) -> Element<'_, Msg> {
         tile(
             ico::MEMORY_STICK,
             "Memory",
-            gib(i.mem_total_kib),
-            format!("{} in use", gib(used)),
+            memory::kib(i.memory.total),
+            format!("{} in use", memory::kib(used)),
             Some(bar(memory_share, style::meter(memory_share))),
         ),
         tile(ico::MONITOR, "Graphics", gpu_names, gpu_detail, None),
     ];
     Row::with_children(tiles).spacing(10).height(TILE).into()
+}
+
+/// The modules, what is in use and cached, swap and zswap.
+fn memory_rows(i: &Info) -> Vec<Element<'_, Msg>> {
+    let m = &i.memory;
+    let mut rows = Vec::new();
+    if let Some(modules) = &i.modules {
+        rows.extend(facts([
+            (ico::MEMORY_STICK, "Type", memory::modules_kind(modules)),
+            (ico::LAYERS, "Installed", memory::modules_layout(modules)),
+        ]));
+    }
+    rows.extend(facts([
+        (
+            ico::ACTIVITY,
+            "In use",
+            format!("{} of {} usable", memory::kib(m.used()), memory::kib(m.total)),
+        ),
+        (
+            ico::DATABASE,
+            "Cache",
+            format!("{}, given back when apps need it", memory::kib(m.cache)),
+        ),
+        (ico::CIRCLE_CHECK, "Available", memory::kib(m.available)),
+    ]));
+    for swap in &i.swaps {
+        let label = if swap.zram { "Swap (zram)" } else { "Swap (disk)" };
+        let value = format!(
+            "{} of {} used · {}",
+            memory::kib(swap.used),
+            memory::kib(swap.size),
+            swap.name
+        );
+        rows.push(fact(ico::ARROW_LEFT_RIGHT, label, value, None));
+    }
+    if m.zswapped > 0 {
+        let value = format!("{} kept in {}", memory::kib(m.zswapped), memory::kib(m.zswap));
+        rows.push(fact(ico::SHRINK, "Zswap", value, None));
+    }
+    rows
 }
 
 fn disk(d: &Disk) -> Element<'_, Msg> {

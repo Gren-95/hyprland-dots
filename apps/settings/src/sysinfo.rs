@@ -5,6 +5,10 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
+use serde_json::{Value as Json, json};
+
+use crate::infocache;
+use crate::memory::{self, Modules, Swap, Usage};
 use crate::system::{self, args};
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -96,8 +100,9 @@ pub struct Info {
     pub cpu: String,
     pub threads: usize,
     pub gpus: Vec<Gpu>,
-    pub mem_total_kib: u64,
-    pub mem_avail_kib: u64,
+    pub memory: Usage,
+    pub modules: Option<Modules>,
+    pub swaps: Vec<Swap>,
     pub disks: Vec<Disk>,
     pub battery: Option<Battery>,
     pub network: Option<Network>,
@@ -145,19 +150,6 @@ pub fn cpu(cpuinfo: &str) -> (String, usize) {
         .unwrap_or_default();
     let threads = cpuinfo.lines().filter(|l| l.starts_with("processor")).count();
     (model, threads)
-}
-
-/// A /proc/meminfo field in KiB.
-pub fn meminfo_kib(meminfo: &str, key: &str) -> u64 {
-    meminfo
-        .lines()
-        .find_map(|l| l.strip_prefix(&format!("{key}:")))
-        .and_then(|v| v.split_whitespace().next()?.parse().ok())
-        .unwrap_or(0)
-}
-
-pub fn gib(kib: u64) -> String {
-    format!("{:.1} GiB", kib as f64 / 1024.0 / 1024.0)
 }
 
 /// Seconds as "3 days 4 h", "2 h 5 min" or "12 min".
@@ -431,10 +423,125 @@ fn logo(name: &str) -> Option<PathBuf> {
     candidates.into_iter().find(|p| p.is_file())
 }
 
-pub fn load() -> Info {
+/// Facts that only change with a reboot or an update, gathered fresh.
+struct Fixed {
+    logo: Option<PathBuf>,
+    system: String,
+    computer: String,
+    cpu: String,
+    threads: usize,
+    gpus: Vec<Gpu>,
+    modules: Option<Modules>,
+    kernel: String,
+    quickshell: String,
+}
+
+fn fixed() -> Fixed {
     let os = read("/etc/os-release");
-    let meminfo = read("/proc/meminfo");
     let (cpu, threads) = cpu(&read("/proc/cpuinfo"));
+    let quickshell = run("qs", &["--version"]);
+    let vendor = read("/sys/class/dmi/id/sys_vendor");
+    Fixed {
+        logo: logo(&os_release_value(&os, "LOGO")),
+        system: os_release_value(&os, "PRETTY_NAME"),
+        computer: format!("{vendor} {}", read("/sys/class/dmi/id/product_name"))
+            .trim()
+            .to_string(),
+        cpu,
+        threads,
+        gpus: gpus(),
+        modules: memory::parse_modules(&run(
+            "udevadm",
+            &["info", "--query=property", "--path=/sys/devices/virtual/dmi/id"],
+        )),
+        kernel: run("uname", &["-r"]),
+        quickshell: quickshell
+            .split(" (")
+            .next()
+            .unwrap_or_default()
+            .trim_start_matches("Quickshell ")
+            .to_string(),
+    }
+}
+
+fn fixed_to_json(f: &Fixed) -> Json {
+    let gpus: Vec<Json> = f
+        .gpus
+        .iter()
+        .map(|g| json!({"name": g.name, "chip": g.chip, "driver": g.driver}))
+        .collect();
+    json!({
+        "logo": f.logo.as_ref().map(|p| p.to_string_lossy().into_owned()),
+        "system": f.system, "computer": f.computer, "cpu": f.cpu, "threads": f.threads, "gpus": gpus,
+        "modules": f.modules.as_ref().map(memory::modules_to_json),
+        "kernel": f.kernel, "quickshell": f.quickshell,
+    })
+}
+
+fn fixed_from_json(v: &Json) -> Option<Fixed> {
+    let s = |k: &str| v[k].as_str().map(String::from);
+    let gpus = v["gpus"]
+        .as_array()?
+        .iter()
+        .map(|g| Gpu {
+            name: g["name"].as_str().unwrap_or_default().into(),
+            chip: g["chip"].as_str().unwrap_or_default().into(),
+            driver: g["driver"].as_str().unwrap_or_default().into(),
+        })
+        .collect();
+    Some(Fixed {
+        logo: v["logo"].as_str().map(PathBuf::from),
+        system: s("system")?,
+        computer: s("computer")?,
+        cpu: s("cpu")?,
+        threads: v["threads"].as_u64()? as usize,
+        gpus,
+        modules: memory::modules_from_json(&v["modules"]),
+        kernel: s("kernel")?,
+        quickshell: s("quickshell")?,
+    })
+}
+
+/// Fixed facts, made again after a reboot or a new version of this app.
+fn cached_fixed() -> Fixed {
+    let key = format!(
+        "{} {}",
+        read("/proc/sys/kernel/random/boot_id"),
+        env!("CARGO_PKG_VERSION")
+    );
+    let value = infocache::cached("about-fixed", &key, || fixed_to_json(&fixed()));
+    fixed_from_json(&value).unwrap_or_else(fixed)
+}
+
+/// Package counts, counted again when the RPM database or a Flatpak
+/// installation changes.
+fn cached_packages() -> Vec<(&'static str, usize)> {
+    let watched = [
+        PathBuf::from("/var/lib/rpm/rpmdb.sqlite"),
+        PathBuf::from("/var/lib/flatpak/app"),
+        crate::store::home().join(".local/share/flatpak/app"),
+    ];
+    let make = || Json::Array(packages().into_iter().map(|(k, n)| json!([k, n])).collect());
+    let value = infocache::cached("about-packages", &infocache::mtimes_key(&watched), make);
+    value
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|p| {
+            let kind = match p[0].as_str()? {
+                "RPM" => "RPM",
+                "Flatpak" => "Flatpak",
+                _ => return None,
+            };
+            Some((kind, p[1].as_u64()? as usize))
+        })
+        .collect()
+}
+
+/// Everything About shows: the slow, rarely changing facts from the cache,
+/// the rest read now.
+pub fn load() -> Info {
+    let fixed = cached_fixed();
     let df = run(
         "df",
         &[
@@ -448,45 +555,33 @@ pub fn load() -> Info {
             "efivarfs",
         ],
     );
-    let hyprland = serde_json::from_str::<serde_json::Value>(&run("hyprctl", &["version", "-j"]))
+    let hyprland = serde_json::from_str::<Json>(&run("hyprctl", &["version", "-j"]))
         .ok()
         .and_then(|v| v["tag"].as_str().map(String::from))
         .unwrap_or_default();
-    let quickshell = run("qs", &["--version"]);
-    let quickshell = quickshell
-        .split(" (")
-        .next()
-        .unwrap_or_default()
-        .trim_start_matches("Quickshell ")
-        .to_string();
     Info {
-        logo: logo(&os_release_value(&os, "LOGO")),
-        system: os_release_value(&os, "PRETTY_NAME"),
-        computer: format!(
-            "{} {}",
-            read("/sys/class/dmi/id/sys_vendor"),
-            read("/sys/class/dmi/id/product_name")
-        )
-        .trim()
-        .to_string(),
+        logo: fixed.logo,
+        system: fixed.system,
+        computer: fixed.computer,
         host: run("hostname", &[]),
         uptime_secs: read("/proc/uptime")
             .split('.')
             .next()
             .and_then(|s| s.parse().ok())
             .unwrap_or(0),
-        cpu,
-        threads,
-        gpus: gpus(),
-        mem_total_kib: meminfo_kib(&meminfo, "MemTotal"),
-        mem_avail_kib: meminfo_kib(&meminfo, "MemAvailable"),
+        cpu: fixed.cpu,
+        threads: fixed.threads,
+        gpus: fixed.gpus,
+        memory: memory::parse_usage(&read("/proc/meminfo")),
+        modules: fixed.modules,
+        swaps: memory::parse_swaps(&read("/proc/swaps")),
         disks: disks(&df),
         battery: battery(),
         network: network(),
-        kernel: run("uname", &["-r"]),
+        kernel: fixed.kernel,
         hyprland,
-        quickshell,
-        packages: packages(),
+        quickshell: fixed.quickshell,
+        packages: cached_packages(),
         repo: repo(),
         app: env!("CARGO_PKG_VERSION").to_string(),
     }
@@ -509,6 +604,22 @@ pub fn gpu_detail(gpu: &Gpu) -> String {
         .copied()
         .collect::<Vec<_>>()
         .join(" · ")
+}
+
+/// "15.0 GiB usable (LPDDR5 · 6400 MT/s, 16 GiB in 8 soldered chips), swap 30.6 GiB".
+fn memory_text(i: &Info) -> String {
+    if i.memory.total == 0 {
+        return String::new();
+    }
+    let mut s = format!("{} usable", memory::kib(i.memory.total));
+    if let Some(m) = &i.modules {
+        s = format!("{s} ({}, {})", memory::modules_kind(m), memory::modules_layout(m));
+    }
+    let swap: u64 = i.swaps.iter().map(|w| w.size).sum();
+    if swap > 0 {
+        s = format!("{s}, swap {}", memory::kib(swap));
+    }
+    s
 }
 
 /// Everything as plain text, one fact per line, empty ones left out.
@@ -537,14 +648,7 @@ pub fn as_text(i: &Info) -> String {
                 .collect::<Vec<_>>()
                 .join(", "),
         ),
-        (
-            "Memory",
-            if i.mem_total_kib == 0 {
-                String::new()
-            } else {
-                gib(i.mem_total_kib)
-            },
-        ),
+        ("Memory", memory_text(i)),
         (
             "Disks",
             i.disks
@@ -604,8 +708,6 @@ mod tests {
         let info =
             "processor\t: 0\nmodel name\t: Intel(R) Core(TM) i5\nprocessor\t: 1\nmodel name\t: Intel(R) Core(TM) i5\n";
         assert_eq!(cpu(info), ("Intel Core i5".to_string(), 2));
-        assert_eq!(meminfo_kib("MemTotal:       15686628 kB\n", "MemTotal"), 15686628);
-        assert_eq!(gib(15686628), "15.0 GiB");
     }
 
     #[test]
