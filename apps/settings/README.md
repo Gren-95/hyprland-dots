@@ -33,7 +33,7 @@ shell show in the app too.
 | `recording` | Screenshots (folder, PNG or JPEG, cursor, clipboard, actions sheet) and screen recording (folder, file type, frame rate, quality, codec, cursor, sound) — read by `config/scripts/lib/screenshot.sh` and `screenrecord.sh` |
 | `sysmon` | System monitor refresh interval and sections |
 | `lock` | Idle times (dim, lock, screen off, suspend) edited in `config/hypr/hypridle.conf`, which then restarts hypridle; stay awake; what the lid does; lock screen parts |
-| `about` | Computer, system, kernel, Hyprland and Quickshell versions, processor, graphics, memory, disks, the dots commit; Copy as text for bug reports |
+| `about` | Header with the distro logo, system, computer, host name and uptime; processor, memory and graphics tiles; disk usage meters; kernel, Hyprland, Quickshell, dots commit and app version; Copy as text for bug reports |
 | `power` | Critical battery level and action |
 
 ## Usage

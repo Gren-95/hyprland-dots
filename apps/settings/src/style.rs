@@ -1,7 +1,7 @@
 //! Colours and widget styles, taken from config/quickshell/Theme.qml so the
 //! app looks like the shell.
 
-use iced::widget::{button, container, text_input};
+use iced::widget::{button, container, progress_bar, text_input};
 use iced::{Background, Border, Color, Theme, border};
 
 pub const BG: Color = rgb(0x1c1917);
@@ -308,6 +308,44 @@ pub fn card(_: &Theme) -> container::Style {
             radius: border::radius(RADIUS),
         },
         ..container::Style::default()
+    }
+}
+
+/// The About header: a card washed with the accent from the left.
+pub fn hero(theme: &Theme) -> container::Style {
+    let accent = theme.palette().primary;
+    let wash = iced::gradient::Linear::new(iced::Degrees(90.0))
+        .add_stop(0.0, Color { a: 0.22, ..accent })
+        .add_stop(1.0, BG_ALT);
+    container::Style {
+        background: Some(Background::Gradient(wash.into())),
+        border: Border {
+            color: Color { a: 0.35, ..accent },
+            width: 1.0,
+            radius: border::radius(RADIUS + 4.0),
+        },
+        ..container::Style::default()
+    }
+}
+
+/// A usage meter: accent, yellow past 80 %, red past 90 %.
+pub fn meter(share: f32) -> impl Fn(&Theme) -> progress_bar::Style {
+    move |theme| {
+        let bar = if share >= 0.9 {
+            RED
+        } else if share >= 0.8 {
+            YELLOW
+        } else {
+            theme.palette().primary
+        };
+        progress_bar::Style {
+            background: Background::Color(BG_ACTIVE),
+            bar: Background::Color(bar),
+            border: Border {
+                radius: border::radius(3.0),
+                ..Border::default()
+            },
+        }
     }
 }
 
