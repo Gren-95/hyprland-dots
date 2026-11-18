@@ -20,6 +20,7 @@ use crate::idle;
 use crate::keyboard;
 use crate::mouse;
 use crate::network;
+use crate::notifapps;
 use crate::placement;
 use crate::power;
 use crate::reveal;
@@ -104,6 +105,7 @@ pub struct App {
     windows: hyprpage::State,
     about: about::State,
     power: power::State,
+    notif_apps: notifapps::State,
     /// Installed font families, loaded once at start for the Font picker.
     fonts: Vec<&'static str>,
     error: Option<String>,
@@ -150,6 +152,7 @@ pub enum Message {
     Windows(hyprpage::Msg),
     About(about::Msg),
     Power(power::Msg),
+    NotifApps(notifapps::Msg),
     Fonts(Vec<&'static str>),
 }
 
@@ -181,6 +184,7 @@ impl App {
             windows: hyprpage::State::default(),
             about: about::State::default(),
             power: power::State::default(),
+            notif_apps: notifapps::State::default(),
             fonts: Vec::new(),
             error: None,
         };
@@ -196,6 +200,10 @@ impl App {
     fn refresh_page(&mut self) -> Task<Message> {
         match PANELS[self.panel].page {
             Page::Settings => Task::none(),
+            Page::Notifications => {
+                self.notif_apps.update(notifapps::Msg::Load);
+                Task::none()
+            }
             Page::Network => self.network.update(network::Msg::Refresh).map(Message::Network),
             Page::Bluetooth => self.bluetooth.update(bluetooth::Msg::Refresh).map(Message::Bluetooth),
             Page::Sound => self.audio.update(audio::Msg::Refresh).map(Message::Audio),
@@ -277,6 +285,8 @@ impl App {
         // Subscription::map takes only closures that capture nothing.
         match PANELS[self.panel].page {
             Page::Settings => {}
+            Page::Notifications => subscriptions
+                .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::NotifApps(notifapps::Msg::Load))),
             Page::Power => {
                 subscriptions.push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Power(power::Msg::Refresh)))
             }
@@ -326,6 +336,7 @@ impl App {
             Message::Windows(msg) => return self.windows.update(msg, windows::SECTIONS).map(Message::Windows),
             Message::About(msg) => return self.about.update(msg).map(Message::About),
             Message::Power(msg) => return self.power.update(msg).map(Message::Power),
+            Message::NotifApps(msg) => self.notif_apps.update(msg),
             Message::Search(query) => {
                 self.query = query;
                 self.searching = true;
@@ -454,6 +465,23 @@ impl App {
                 for section in panel.sections {
                     body = self.section(body, section, layout);
                 }
+                if let Some(error) = &self.error {
+                    body = body.push(text(error).color(style::RED));
+                }
+                body.into()
+            }
+            Page::Notifications => {
+                let mut body = page_column(panel.title, layout);
+                for section in panel.sections {
+                    body = self.section(body, section, layout);
+                }
+                let apps = self
+                    .notif_apps
+                    .rows()
+                    .into_iter()
+                    .map(|r| r.map(Message::NotifApps))
+                    .collect();
+                body = ui::section(body, "Apps", apps);
                 if let Some(error) = &self.error {
                     body = body.push(text(error).color(style::RED));
                 }

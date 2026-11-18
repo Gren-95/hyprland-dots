@@ -16,7 +16,70 @@ Scope {
     property var activeList: []
     property var historyList: []
     property int maxHistory: settingsStore.notifHistoryCap
-    property bool dnd: false
+    // Do not disturb: switched by hand (kept in the settings store, so the
+    // settings app and a restart see it) or by the daily schedule. `quiet`
+    // is what actually holds toasts back.
+    readonly property bool dnd: settingsStore.dnd
+    property bool scheduledQuiet: false
+    // Turning DND off inside the scheduled window skips the rest of it.
+    property double _scheduleSkippedUntil: 0
+    readonly property bool quiet: dnd || scheduledQuiet
+    function setDnd(on) {
+        if (!on && scheduledQuiet) {
+            _scheduleSkippedUntil = _windowEnd(new Date()).getTime();
+            scheduledQuiet = false;
+        }
+        settingsStore.dnd = on;
+    }
+    function _minutes(hhmm) {
+        const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || "");
+        return m ? Number(m[1]) * 60 + Number(m[2]) : -1;
+    }
+    // Whether `now` falls in the from-to window; a window may run past
+    // midnight (22:00-07:00).
+    function _inWindow(now) {
+        const from = _minutes(settingsStore.dndFrom), to = _minutes(settingsStore.dndTo);
+        if (from < 0 || to < 0 || from === to) return false;
+        const t = now.getHours() * 60 + now.getMinutes();
+        return from < to ? (t >= from && t < to) : (t >= from || t < to);
+    }
+    function _windowEnd(now) {
+        const end = new Date(now);
+        const to = _minutes(settingsStore.dndTo);
+        end.setHours(Math.floor(to / 60), to % 60, 0, 0);
+        if (end <= now) end.setDate(end.getDate() + 1);
+        return end;
+    }
+    function _checkSchedule() {
+        const now = new Date();
+        scheduledQuiet = settingsStore.dndSchedule && _inWindow(now) && now.getTime() >= _scheduleSkippedUntil;
+    }
+    Timer {
+        interval: 30000; repeat: true; running: true; triggeredOnStart: true
+        onTriggered: root._checkSchedule()
+    }
+    Connections {
+        target: settingsStore
+        function onDndScheduleChanged() { root._checkSchedule(); }
+        function onDndFromChanged() { root._checkSchedule(); }
+        function onDndToChanged() { root._checkSchedule(); }
+    }
+
+    // Per-app rules from the settings app: "quiet" files a notification
+    // without a toast, "mute" drops it. Every sender is remembered so the
+    // settings app can list it.
+    function _appRule(appName) { return (settingsStore.notifAppRules || {})[appName] || ""; }
+    function _remember(appName) {
+        if (!appName) return;
+        const seen = settingsStore.notifAppsSeen || [];
+        if (seen.indexOf(appName) < 0) settingsStore.notifAppsSeen = [...seen, appName].sort();
+    }
+    function _playSound(n) {
+        if (!settingsStore.notifSounds) return;
+        // An app that asks for silence (the suppress-sound hint) gets it.
+        if (n.hints && n.hints["suppress-sound"]) return;
+        Cmd.run(["pw-play", "/usr/share/sounds/freedesktop/stereo/message.oga"]);
+    }
     property int unreadCount: 0
     // Bound to the day panel's open state (DayPanel owns the surface). Reading
     // the panel is what marks history seen and collapses the app groups.
@@ -286,10 +349,15 @@ Scope {
             n.bodyChanged.connect(() => root._refresh(n));
             // Carried over from the previous config generation: it already had
             // its showing, so file it in history rather than toasting it a
-            // second time. Anything arriving under DND takes the same path —
-            // DND suppresses the interruption, not the notification.
-            if (n.lastGeneration || root.dnd) { root._pushHistory(n); return; }
+            // second time. Anything arriving under DND, or from an app set to
+            // "quiet", takes the same path — those suppress the interruption,
+            // not the notification. A muted app's notification is dropped.
+            root._remember(n.appName);
+            const rule = root._appRule(n.appName);
+            if (rule === "mute") { n.dismiss(); return; }
+            if (n.lastGeneration || root.quiet || rule === "quiet") { root._pushHistory(n); return; }
             root._push(n);
+            root._playSound(n);
         }
     }
 

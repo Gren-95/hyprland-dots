@@ -70,6 +70,13 @@ Scope {
     property bool notifAutoExpire: true        // matched notifications leave the center on their own
     property var notifAutoExpireRules: ["Claude Code"]   // texts; a notification whose appName or summary contains one expires
     property int notifAutoExpireDelay: 10000   // ms a matched notification survives in the center
+    property bool dnd: false                   // do not disturb, switched by hand
+    property bool dndSchedule: false           // also quiet between dndFrom and dndTo every day
+    property string dndFrom: "22:00"
+    property string dndTo: "07:00"
+    property bool notifSounds: false           // a sound with each toast
+    property var notifAppRules: ({})           // appName -> "quiet" (no toast) | "mute" (dropped)
+    property var notifAppsSeen: []             // appNames that sent notifications, for the settings app
     property bool weekStartMonday: true
     property int windowTitleWidth: 400         // bar window-title cap; 0 = hidden
     property int osdBottomMargin: 60
@@ -198,6 +205,13 @@ Scope {
         { name: "notifAutoExpire",      file: "notif-auto-expire",      type: "bool" },
         { name: "notifAutoExpireRules", file: "notif-auto-expire-rules.json", type: "json" },
         { name: "notifAutoExpireDelay", file: "notif-auto-expire-delay", type: "int"  },
+        { name: "dnd",                  file: "dnd",                    type: "bool" },
+        { name: "dndSchedule",          file: "dnd-schedule",           type: "bool" },
+        { name: "dndFrom",              file: "dnd-from",               type: "string" },
+        { name: "dndTo",                file: "dnd-to",                 type: "string" },
+        { name: "notifSounds",          file: "notif-sounds",           type: "bool" },
+        { name: "notifAppRules",        file: "notif-app-rules.json",   type: "json" },
+        { name: "notifAppsSeen",        file: "notif-apps-seen.json",   type: "json" },
         { name: "weekStartMonday",      file: "week-start-monday",      type: "bool" },
         { name: "windowTitleWidth",     file: "window-title-width",     type: "int"  },
         { name: "osdBottomMargin",      file: "osd-bottom-margin",      type: "int"  },

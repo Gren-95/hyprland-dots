@@ -25,9 +25,9 @@ Scope {
         if (!notifs) return;
         if (active) {
             _dndBefore = notifs.dnd;
-            notifs.dnd = true;
+            notifs.setDnd(true);
         } else {
-            notifs.dnd = _dndBefore;
+            notifs.setDnd(_dndBefore);
         }
     }
 

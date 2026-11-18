@@ -22,7 +22,7 @@ Item {
     Connections {
         target: bell.notifs
         function onUnreadCountChanged() {
-            if (bell.notifs && bell.notifs.unreadCount > bell._lastCount && !bell.notifs.dnd)
+            if (bell.notifs && bell.notifs.unreadCount > bell._lastCount && !bell.notifs.quiet)
                 ringAnim.restart();
             bell._lastCount = bell.notifs ? bell.notifs.unreadCount : 0;
         }
@@ -34,9 +34,9 @@ Item {
         spacing: Theme.spacing.xs
         Text {
             id: bellGlyph
-            text: bell.notifs && bell.notifs.dnd ? "󰂛"
+            text: bell.notifs && bell.notifs.quiet ? "󰂛"
                 : (bell.notifs && bell.notifs.unreadCount > 0 ? "󰂞" : "󰂚")
-            color: bell.notifs && bell.notifs.dnd ? Theme.accent.orange : Theme.fg
+            color: bell.notifs && bell.notifs.quiet ? Theme.accent.orange : Theme.fg
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.md
             transformOrigin: Item.Top
@@ -52,7 +52,7 @@ Item {
         }
         Rectangle {
             id: badge
-            visible: bell.notifs && bell.notifs.unreadCount > 0 && !bell.notifs.dnd
+            visible: bell.notifs && bell.notifs.unreadCount > 0 && !bell.notifs.quiet
             implicitWidth: cnt.implicitWidth + 8
             implicitHeight: 14
             radius: 7 * Theme.radiusScale
@@ -88,7 +88,7 @@ Item {
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         onClicked: (e) => {
             if (!bell.notifs) return;
-            if (e.button === Qt.RightButton) bell.notifs.dnd = !bell.notifs.dnd;
+            if (e.button === Qt.RightButton) bell.notifs.setDnd(!bell.notifs.quiet);
             else if (bell.panel) bell.panel.toggleFrom(bell.visible ? bell : null);
         }
     }

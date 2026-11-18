@@ -118,7 +118,7 @@ Scope {
                     { name: "Sound",          glyph: "󰕾", accent: Theme.accent.blue,   keywords: "audio volume output input",       isToggle: false, run: () => soundMod.toggleOpen() },
                     { name: "Power",          glyph: "󰐥", accent: Theme.accent.red,    keywords: "battery profile sleep reboot shutdown session", isToggle: false, run: () => powerMod.toggleOpen(batteryIcon.visible ? batteryIcon : null) },
                     { name: "Do Not Disturb", glyph: "󰂛", accent: Theme.accent.orange, keywords: "dnd mute quiet notifications",    isToggle: true,
-                      state: () => notifService.dnd, run: () => notifService.dnd = !notifService.dnd },
+                      state: () => notifService.quiet, run: () => notifService.setDnd(!notifService.quiet) },
                     { name: "Game mode",      glyph: "󰊖", accent: Theme.accent.green,  keywords: "gaming performance bar dnd animations", isToggle: true,
                       state: () => gameMode.active, run: () => gameMode.toggle() },
                     { name: "Stay Awake",     glyph: "󰒲", accent: Theme.accent.purple, keywords: "idle sleep inhibit caffeine",     isToggle: true,

@@ -67,6 +67,8 @@ pub enum Page {
     Themes,
     /// Key binds moved to other keys (shortcuts.rs).
     Shortcuts,
+    /// Notification settings followed by per-app rules (notifapps.rs).
+    Notifications,
     /// Which app fills each role (defaultapps.rs).
     DefaultApps,
     /// Window gaps, borders, effects and focus in Hyprland (windows.rs).
@@ -278,6 +280,34 @@ const fn scale(
         default: Default::Real(1.0),
     }
 }
+
+/// Whole hours of a day, for do not disturb times.
+const HOURS: &[(&str, &str)] = &[
+    ("00:00", "00:00"),
+    ("01:00", "01:00"),
+    ("02:00", "02:00"),
+    ("03:00", "03:00"),
+    ("04:00", "04:00"),
+    ("05:00", "05:00"),
+    ("06:00", "06:00"),
+    ("07:00", "07:00"),
+    ("08:00", "08:00"),
+    ("09:00", "09:00"),
+    ("10:00", "10:00"),
+    ("11:00", "11:00"),
+    ("12:00", "12:00"),
+    ("13:00", "13:00"),
+    ("14:00", "14:00"),
+    ("15:00", "15:00"),
+    ("16:00", "16:00"),
+    ("17:00", "17:00"),
+    ("18:00", "18:00"),
+    ("19:00", "19:00"),
+    ("20:00", "20:00"),
+    ("21:00", "21:00"),
+    ("22:00", "22:00"),
+    ("23:00", "23:00"),
+];
 
 const fn choice(
     file: &'static str,
@@ -793,9 +823,34 @@ pub const PANELS: &[Panel] = &[
         title: "Notifications",
         glyph: ico::BELL,
         group: Group::Workspace,
-        page: Page::Settings,
-        keywords: "",
+        page: Page::Notifications,
+        keywords: "dnd do not disturb quiet mute sound per app",
         sections: &[
+            Section {
+                title: "Do not disturb",
+                settings: &[
+                    toggle(
+                        "dnd",
+                        "Do not disturb",
+                        "Hold toasts back; notifications still go to the history",
+                        false,
+                    ),
+                    toggle(
+                        "dnd-schedule",
+                        "Every day",
+                        "Turn do not disturb on between the times below",
+                        false,
+                    ),
+                    choice("dnd-from", "From", "When the quiet time starts", HOURS, "22:00"),
+                    choice(
+                        "dnd-to",
+                        "Until",
+                        "When it ends, the next day if earlier",
+                        HOURS,
+                        "07:00",
+                    ),
+                ],
+            },
             Section {
                 title: "Toasts",
                 settings: &[
@@ -827,6 +882,7 @@ pub const PANELS: &[Panel] = &[
                         5,
                     ),
                     number("toast-width", "Width", "Width of a toast", 300, 600, 10, "px", 380),
+                    toggle("notif-sounds", "Sound", "Play a sound with each toast", false),
                 ],
             },
             Section {

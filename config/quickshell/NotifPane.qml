@@ -34,8 +34,8 @@ Item {
                     glyph: on ? "󰂛" : "󰂚"
                     label: "Do Not Disturb"
                     accent: Theme.accent.orange
-                    on: pane.notifs ? pane.notifs.dnd : false
-                    onToggled: pane.notifs.dnd = !pane.notifs.dnd
+                    on: pane.notifs ? pane.notifs.quiet : false
+                    onToggled: pane.notifs.setDnd(!pane.notifs.quiet)
                 }
                 PaneToggle {
                     glyph: on ? "󰒲" : "󰒳"

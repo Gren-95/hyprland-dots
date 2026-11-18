@@ -21,6 +21,7 @@ mod keysearch;
 mod memory;
 mod mouse;
 mod network;
+mod notifapps;
 mod placement;
 mod power;
 mod reveal;
