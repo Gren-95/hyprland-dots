@@ -16,6 +16,8 @@ pub struct Snapshot {
     pub vpns: Vec<Vpn>,
     /// Names of saved Wi-Fi connections.
     pub saved: Vec<String>,
+    /// Addresses, gateway and DNS of the connection the default route uses.
+    pub details: Option<crate::sysinfo::Network>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -59,7 +61,7 @@ pub struct State {
 #[derive(Debug, Clone)]
 pub enum Msg {
     Refresh,
-    Refreshed(Result<Snapshot, String>),
+    Refreshed(Result<Box<Snapshot>, String>),
     SetWifi(bool),
     Rescan,
     Connect(String),
@@ -195,12 +197,16 @@ fn snapshot() -> Result<Snapshot, String> {
         wired,
         vpns,
         saved,
+        details: crate::sysinfo::network(),
     })
 }
 
 fn refresh() -> Task<Msg> {
     Task::perform(system::spawn(snapshot), |r| {
-        Msg::Refreshed(r.unwrap_or_else(|| Err("nmcli stopped unexpectedly".into())))
+        Msg::Refreshed(
+            r.unwrap_or_else(|| Err("nmcli stopped unexpectedly".into()))
+                .map(Box::new),
+        )
     })
 }
 
@@ -216,7 +222,7 @@ impl State {
         }
         match msg {
             Msg::Refresh => return refresh(),
-            Msg::Refreshed(Ok(snapshot)) => self.snapshot = Some(snapshot),
+            Msg::Refreshed(Ok(snapshot)) => self.snapshot = Some(*snapshot),
             Msg::Refreshed(Err(e)) => self.error = Some(e),
             Msg::SetWifi(on) => {
                 self.busy = Some("wifi".into());
@@ -385,6 +391,9 @@ impl State {
                 })
                 .collect();
             body = ui::section(body, "VPN", rows);
+        }
+        if let Some(details) = &snap.details {
+            body = ui::section(body, "Connection details", crate::infoview::network(details));
         }
         body
     }

@@ -284,7 +284,7 @@ pub fn parse_battery(get: impl Fn(&str) -> Option<String>) -> Option<Battery> {
     })
 }
 
-fn battery() -> Option<Battery> {
+pub fn battery() -> Option<Battery> {
     let dir = std::fs::read_dir("/sys/class/power_supply")
         .ok()?
         .flatten()
@@ -335,7 +335,7 @@ fn repo() -> Option<Repo> {
 }
 
 /// The interface the default route uses, with its addresses, gateway and DNS.
-fn network() -> Option<Network> {
+pub fn network() -> Option<Network> {
     let route: serde_json::Value = serde_json::from_str(&run("ip", &["-j", "route", "get", "1.1.1.1"])).ok()?;
     let device = route[0]["dev"].as_str()?.to_string();
     let addrs: serde_json::Value = serde_json::from_str(&run("ip", &["-j", "addr", "show", "dev", &device])).ok()?;

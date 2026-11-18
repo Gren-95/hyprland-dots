@@ -21,6 +21,7 @@ use crate::keyboard;
 use crate::mouse;
 use crate::network;
 use crate::placement;
+use crate::power;
 use crate::reveal;
 use crate::schema::{PANELS, Page, Panel, Section, all_settings};
 use crate::shortcuts;
@@ -102,6 +103,7 @@ pub struct App {
     default_apps: defaultapps::State,
     windows: hyprpage::State,
     about: about::State,
+    power: power::State,
     /// Installed font families, loaded once at start for the Font picker.
     fonts: Vec<&'static str>,
     error: Option<String>,
@@ -147,6 +149,7 @@ pub enum Message {
     DefaultApps(defaultapps::Msg),
     Windows(hyprpage::Msg),
     About(about::Msg),
+    Power(power::Msg),
     Fonts(Vec<&'static str>),
 }
 
@@ -177,6 +180,7 @@ impl App {
             default_apps: defaultapps::State::default(),
             windows: hyprpage::State::default(),
             about: about::State::default(),
+            power: power::State::default(),
             fonts: Vec::new(),
             error: None,
         };
@@ -217,6 +221,7 @@ impl App {
                 .update(hyprpage::Msg::Load, windows::SECTIONS)
                 .map(Message::Windows),
             Page::About => self.about.update(about::Msg::Load).map(Message::About),
+            Page::Power => self.power.update(power::Msg::Refresh).map(Message::Power),
         }
     }
 
@@ -272,6 +277,9 @@ impl App {
         // Subscription::map takes only closures that capture nothing.
         match PANELS[self.panel].page {
             Page::Settings => {}
+            Page::Power => {
+                subscriptions.push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Power(power::Msg::Refresh)))
+            }
             Page::Network => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Network(network::Msg::Refresh))),
             Page::Bluetooth => subscriptions
@@ -317,6 +325,7 @@ impl App {
             Message::DefaultApps(msg) => return self.default_apps.update(msg).map(Message::DefaultApps),
             Message::Windows(msg) => return self.windows.update(msg, windows::SECTIONS).map(Message::Windows),
             Message::About(msg) => return self.about.update(msg).map(Message::About),
+            Message::Power(msg) => return self.power.update(msg).map(Message::Power),
             Message::Search(query) => {
                 self.query = query;
                 self.searching = true;
@@ -487,6 +496,10 @@ impl App {
             }
             Page::Windows => Element::from(self.windows.view(page_column(panel.title, layout), windows::SECTIONS))
                 .map(Message::Windows),
+            Page::Power => {
+                let battery = Element::from(self.power.view(page_column(panel.title, layout))).map(Message::Power);
+                self.with_settings(battery, panel, layout)
+            }
             Page::About => Element::from(self.about.view(page_column(panel.title, layout))).map(Message::About),
         };
         // One scroll position per panel.

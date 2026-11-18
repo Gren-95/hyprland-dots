@@ -73,6 +73,8 @@ pub enum Page {
     Windows,
     /// What the system is (about.rs).
     About,
+    /// The battery above the power settings (power.rs).
+    Power,
 }
 
 pub struct Section {
@@ -1205,10 +1207,10 @@ pub const PANELS: &[Panel] = &[
         title: "Power",
         glyph: ico::BATTERY_CHARGING,
         group: Group::System,
-        page: Page::Settings,
-        keywords: "battery critical suspend",
+        page: Page::Power,
+        keywords: "battery critical suspend health charge cycles capacity temperature",
         sections: &[Section {
-            title: "Battery",
+            title: "Low battery",
             settings: &[
                 number(
                     "battery-critical-pct",

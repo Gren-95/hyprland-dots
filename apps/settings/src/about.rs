@@ -1,20 +1,19 @@
-//! About panel: a header with the distro logo, hardware and battery tiles,
-//! storage meters, the network, software versions and the dots repository,
-//! plus a button that copies it all as text for bug reports. The facts come
-//! from sysinfo.rs.
+//! About panel: a header with the distro logo, hardware tiles, storage
+//! meters, software versions and the dots repository, plus a button that
+//! copies it all as text for bug reports (battery and network included,
+//! though Power and Network show those). The facts come from sysinfo.rs.
 
-use iced::widget::{Column, Row, Space, column, container, image, progress_bar, row, svg, text};
+use iced::widget::{Column, Row, Space, column, container, image, row, svg, text};
 use iced::{Alignment, Element, Length, Task};
 use lucide_iced::bytes as ico;
 
+use crate::infoview::{TILE, bar, fact, facts, heading, tile};
 use crate::style::{self, Action};
-use crate::sysinfo::{self, Battery, Disk, Info, Network, Repo, duration, gib};
+use crate::sysinfo::{self, Disk, Info, Repo, duration, gib};
 use crate::system;
 use crate::ui;
 
 const LOGO: f32 = 84.0;
-/// Height of a tile: two lines of value, a meter and a detail.
-const TILE: f32 = 124.0;
 
 #[derive(Default)]
 pub struct State {
@@ -74,14 +73,8 @@ impl State {
             return ui::section(body, "This system", vec![ui::note("Loading…")]);
         };
         body = body.push(hero(i)).push(heading("Hardware")).push(hardware(i));
-        if let Some(b) = &i.battery {
-            body = battery(body, b);
-        }
         if !i.disks.is_empty() {
             body = ui::section(body, "Storage", i.disks.iter().map(disk).collect());
-        }
-        if let Some(n) = &i.network {
-            body = ui::section(body, "Network", network(n));
         }
         let software = [
             (ico::BOX, "Kernel", i.kernel.clone()),
@@ -113,18 +106,7 @@ impl State {
     }
 }
 
-fn heading<'a>(title: &str) -> Element<'a, Msg> {
-    column![
-        Space::new().height(8),
-        text(title.to_uppercase())
-            .font(style::FONT_BOLD)
-            .size(11)
-            .color(style::MUTED_DEEP)
-    ]
-    .into()
-}
-
-/// Logo, system name, computer, and chips for the host name, uptime and IP.
+/// Logo, system name, computer, and chips for the host name and uptime.
 fn hero(i: &Info) -> Element<'_, Msg> {
     let logo: Element<'_, Msg> = match &i.logo {
         Some(p) if p.extension().is_some_and(|e| e == "svg") => {
@@ -139,12 +121,6 @@ fn hero(i: &Info) -> Element<'_, Msg> {
     }
     if i.uptime_secs > 0 {
         chips = chips.push(chip(ico::CLOCK, format!("Up {}", duration(i.uptime_secs))));
-    }
-    if let Some(address) = i.network.as_ref().and_then(|n| n.addresses.first()) {
-        chips = chips.push(chip(
-            ico::NETWORK,
-            address.split('/').next().unwrap_or_default().to_string(),
-        ));
     }
     let info = column![
         text(i.system.clone()).font(style::FONT_BOLD).size(26).color(style::FG),
@@ -173,11 +149,6 @@ fn chip<'a>(glyph: ui::Icon, label: String) -> Element<'a, Msg> {
     .padding([4, 10])
     .style(style::pill)
     .into()
-}
-
-/// A usage bar drawn with one of the style::*_meter looks.
-fn bar<'a>(share: f32, look: impl Fn(&iced::Theme) -> progress_bar::Style + 'a) -> Element<'a, Msg> {
-    progress_bar(0.0..=1.0, share).girth(6).style(look).into()
 }
 
 /// Processor, memory and graphics side by side.
@@ -210,92 +181,6 @@ fn hardware(i: &Info) -> Element<'_, Msg> {
     Row::with_children(tiles).spacing(10).height(TILE).into()
 }
 
-/// Charge and health tiles, then the rest of what the battery reports.
-fn battery<'a>(body: Column<'a, Msg>, b: &'a Battery) -> Column<'a, Msg> {
-    let health = b.health();
-    let charge = b.percent as f32 / 100.0;
-    let limit = match b.limit {
-        (Some(start), Some(end)) => format!(" · charges {start}–{end} %"),
-        (None, Some(end)) => format!(" · charges to {end} %"),
-        _ => String::new(),
-    };
-    let cycles = b.cycles.map(|c| format!(" · {c} cycles")).unwrap_or_default();
-    let tiles = Row::with_children([
-        tile(
-            ico::BATTERY_CHARGING,
-            "Charge",
-            format!("{} %", b.percent),
-            format!("{}{limit}", b.status),
-            Some(bar(charge, style::health_meter(charge, 0.2, 0.4))),
-        ),
-        tile(
-            ico::HEART_PULSE,
-            "Health",
-            format!("{:.0} %", health * 100.0),
-            format!("{:.1} of {:.1} Wh when new{cycles}", b.full_wh, b.design_wh),
-            Some(bar(health, style::health_meter(health, 0.5, 0.8))),
-        ),
-    ])
-    .spacing(10)
-    .height(TILE);
-    let model = [b.model.as_str(), b.technology.as_str()]
-        .iter()
-        .filter(|s| !s.is_empty())
-        .copied()
-        .collect::<Vec<_>>()
-        .join(" · ");
-    let rows = facts([
-        (
-            ico::ZAP,
-            "Power",
-            b.power_w.map(|w| format!("{w:.1} W")).unwrap_or_default(),
-        ),
-        (
-            ico::THERMOMETER,
-            "Temperature",
-            b.temp_c.map(|t| format!("{t:.1} °C")).unwrap_or_default(),
-        ),
-        (ico::BATTERY, "Model", model),
-        (ico::CALENDAR, "Made", b.made.clone()),
-    ]);
-    let body = body.push(heading("Battery")).push(tiles);
-    if rows.is_empty() {
-        body
-    } else {
-        body.push(container(column(rows).spacing(2)).padding(6).style(style::card))
-    }
-}
-
-fn tile<'a>(
-    glyph: ui::Icon,
-    label: &'a str,
-    value: String,
-    detail: String,
-    meter: Option<Element<'a, Msg>>,
-) -> Element<'a, Msg> {
-    let col = column![
-        row![
-            ui::icon(glyph, 16.0),
-            text(label.to_uppercase())
-                .font(style::FONT_BOLD)
-                .size(10)
-                .color(style::MUTED_DEEP)
-        ]
-        .spacing(8)
-        .align_y(Alignment::Center),
-        text(value).size(14).color(style::FG),
-    ]
-    .push(meter)
-    .push((!detail.is_empty()).then(|| text(detail).size(12).color(style::MUTED_DEEP)))
-    .spacing(8);
-    container(col)
-        .padding([14, 16])
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .style(style::card)
-        .into()
-}
-
 fn disk(d: &Disk) -> Element<'_, Msg> {
     let line = row![
         container(ui::icon(ico::HARD_DRIVE, 18.0)).width(26).center_x(26),
@@ -313,26 +198,6 @@ fn disk(d: &Disk) -> Element<'_, Msg> {
     .spacing(12)
     .align_y(Alignment::Center);
     container(line).padding([10, 14]).into()
-}
-
-fn network(n: &Network) -> Vec<Element<'_, Msg>> {
-    let glyph = if n.kind == "Wi-Fi" {
-        ico::WIFI
-    } else {
-        ico::ETHERNET_PORT
-    };
-    let connection = [n.connection.as_str(), n.device.as_str()]
-        .iter()
-        .filter(|s| !s.is_empty())
-        .copied()
-        .collect::<Vec<_>>()
-        .join(" · ");
-    facts([
-        (glyph, n.kind.as_str(), connection),
-        (ico::NETWORK, "Address", n.addresses.join("\n")),
-        (ico::ROUTER, "Gateway", n.gateway.clone()),
-        (ico::BOOK_OPEN, "DNS", n.dns.join("\n")),
-    ])
 }
 
 fn plural(n: usize, word: &str) -> String {
@@ -367,24 +232,4 @@ fn repo(r: &Repo) -> Vec<Element<'_, Msg>> {
         fact(ico::GIT_COMMIT_HORIZONTAL, "Last commit", commit, None),
         fact(ico::UPLOAD, "State", state, None),
     ]
-}
-
-/// Fact rows for the non-empty values.
-fn facts<'a, const N: usize>(list: [(ui::Icon, &'a str, String); N]) -> Vec<Element<'a, Msg>> {
-    list.into_iter()
-        .filter(|(_, _, v)| !v.is_empty())
-        .map(|(g, k, v)| fact(g, k, v, None))
-        .collect()
-}
-
-fn fact<'a>(glyph: ui::Icon, label: &'a str, value: String, control: Option<Element<'a, Msg>>) -> Element<'a, Msg> {
-    let line = row![
-        container(ui::icon(glyph, 18.0)).width(26).center_x(26),
-        text(label).size(14).color(style::FG).width(130),
-        text(value).size(14).color(style::FG_MUTED).width(Length::Fill),
-    ]
-    .push(control)
-    .spacing(12)
-    .align_y(Alignment::Center);
-    container(line).padding([10, 14]).into()
 }
