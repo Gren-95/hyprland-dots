@@ -21,6 +21,7 @@ use crate::network;
 use crate::placement;
 use crate::reveal;
 use crate::schema::{PANELS, Page, Panel, Section, all_settings};
+use crate::shortcuts;
 use crate::sidebar;
 use crate::store::{Store, Value};
 use crate::style;
@@ -94,6 +95,7 @@ pub struct App {
     placement: placement::State,
     idle: idle::State,
     themes: themes::State,
+    shortcuts: shortcuts::State,
     /// Installed font families, loaded once at start for the Font picker.
     fonts: Vec<&'static str>,
     error: Option<String>,
@@ -131,6 +133,7 @@ pub enum Message {
     Placement(placement::Msg),
     Idle(idle::Msg),
     Themes(themes::Msg),
+    Shortcuts(shortcuts::Msg),
     Fonts(Vec<&'static str>),
 }
 
@@ -157,6 +160,7 @@ impl App {
             placement: placement::State::default(),
             idle: idle::State::default(),
             themes: themes::State::default(),
+            shortcuts: shortcuts::State::default(),
             fonts: Vec::new(),
             error: None,
         };
@@ -187,6 +191,7 @@ impl App {
             Page::BarItems => self.placement.update(placement::Msg::Refresh).map(Message::Placement),
             Page::Lock => self.idle.update(idle::Msg::Load).map(Message::Idle),
             Page::Themes => self.themes.update(themes::Msg::Load).map(Message::Themes),
+            Page::Shortcuts => self.shortcuts.update(shortcuts::Msg::Load).map(Message::Shortcuts),
         }
     }
 
@@ -251,7 +256,7 @@ impl App {
             }
             Page::Calendar => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Calendar(calendar::Msg::Refresh))),
-            Page::Keyboard | Page::Mouse | Page::Lock | Page::Themes => {}
+            Page::Keyboard | Page::Mouse | Page::Lock | Page::Themes | Page::Shortcuts => {}
             Page::BarItems => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Placement(placement::Msg::Refresh))),
         }
@@ -276,6 +281,7 @@ impl App {
             Message::Placement(msg) => return self.placement.update(msg).map(Message::Placement),
             Message::Idle(msg) => return self.idle.update(msg).map(Message::Idle),
             Message::Themes(msg) => return self.themes.update(msg).map(Message::Themes),
+            Message::Shortcuts(msg) => return self.shortcuts.update(msg).map(Message::Shortcuts),
             Message::Search(query) => {
                 self.query = query;
                 self.searching = true;
@@ -417,6 +423,9 @@ impl App {
                 self.with_settings(times, panel, layout)
             }
             Page::Themes => Element::from(self.themes.view(page_column(panel.title, layout))).map(Message::Themes),
+            Page::Shortcuts => {
+                Element::from(self.shortcuts.view(page_column(panel.title, layout))).map(Message::Shortcuts)
+            }
         };
         // One scroll position per panel.
         scrollable(container(content).center_x(Length::Fill))

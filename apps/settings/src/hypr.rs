@@ -170,6 +170,83 @@ pub struct Settings {
     /// ("input:touchpad:tap_to_click"). Options not here keep the value of
     /// the tracked config.
     pub options: BTreeMap<String, Json>,
+    /// Key binds moved to other keys, by their original combo
+    /// ("SUPER + R").
+    pub binds: BTreeMap<String, Rebind>,
+}
+
+/// A key bind on other keys: the new combo, its action (one `hl.dsp.*` call)
+/// and the flags it had.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Rebind {
+    pub combo: String,
+    pub action: String,
+    pub locked: bool,
+    pub repeating: bool,
+}
+
+/// A combo is modifiers and a key name joined by " + ", from the shortcut
+/// panel's own lists; nothing that could end a Lua string.
+pub fn valid_combo(combo: &str) -> bool {
+    !combo.is_empty() && combo.chars().all(|c| c.is_ascii_alphanumeric() || " +_".contains(c))
+}
+
+/// An action as hypr-binds.sh reports it: one `hl.dsp.*(...)` call on one
+/// line, taken from the user's own Lua config.
+pub fn valid_action(action: &str) -> bool {
+    action.starts_with("hl.dsp.") && action.ends_with(')') && !action.contains('\n')
+}
+
+fn bind_options(locked: bool, repeating: bool) -> String {
+    let mut opts = Vec::new();
+    if locked {
+        opts.push("locked = true");
+    }
+    if repeating {
+        opts.push("repeating = true");
+    }
+    if opts.is_empty() {
+        String::new()
+    } else {
+        format!(", {{ {} }}", opts.join(", "))
+    }
+}
+
+/// `hl.bind` for one bind on the given keys.
+pub fn bind_lua(combo: &str, action: &str, locked: bool, repeating: bool) -> Result<String, String> {
+    if !valid_combo(combo) || !valid_action(action) {
+        return Err(format!("unexpected key bind: {combo} → {action}"));
+    }
+    Ok(format!(
+        "hl.bind(\"{combo}\", {action}{})",
+        bind_options(locked, repeating)
+    ))
+}
+
+/// `hl.unbind` for a combo.
+pub fn unbind_lua(combo: &str) -> Result<String, String> {
+    if !valid_combo(combo) {
+        return Err(format!("unexpected key combo: {combo}"));
+    }
+    Ok(format!("hl.unbind(\"{combo}\")"))
+}
+
+/// The moved binds: each original combo unbound, the action bound to its new
+/// keys.
+pub fn binds_lua(binds: &BTreeMap<String, Rebind>) -> Result<String, String> {
+    let mut out = String::new();
+    for (original, b) in binds {
+        out.push_str(&format!(
+            "{}\n{}\n",
+            unbind_lua(original)?,
+            bind_lua(&b.combo, &b.action, b.locked, b.repeating)?
+        ));
+    }
+    Ok(if out.is_empty() {
+        out
+    } else {
+        format!("\n-- Key binds moved to other keys.\n{out}")
+    })
 }
 
 /// A Hyprland option's value now: the saved one, else the running one.
@@ -198,6 +275,24 @@ impl Settings {
             .unwrap_or(Json::Null);
         Settings {
             keyboard: Keyboard::from_json(&saved["keyboard"]).unwrap_or_else(Keyboard::live),
+            binds: saved["binds"]
+                .as_object()
+                .map(|o| {
+                    o.iter()
+                        .filter_map(|(k, v)| {
+                            Some((
+                                k.clone(),
+                                Rebind {
+                                    combo: v["combo"].as_str()?.to_string(),
+                                    action: v["action"].as_str()?.to_string(),
+                                    locked: v["locked"].as_bool().unwrap_or(false),
+                                    repeating: v["repeating"].as_bool().unwrap_or(false),
+                                },
+                            ))
+                        })
+                        .collect()
+                })
+                .unwrap_or_default(),
             options: saved["options"]
                 .as_object()
                 .map(|o| o.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
@@ -211,27 +306,51 @@ impl Settings {
             self.keyboard.lua()?,
             options_lua(&self.options)?
         ))
+        .and_then(|head| Ok(head + &binds_lua(&self.binds)?))
     }
 
     fn json(&self) -> Json {
-        json!({ "keyboard": self.keyboard.to_json(), "options": self.options })
+        let binds: serde_json::Map<String, Json> = self
+            .binds
+            .iter()
+            .map(|(k, b)| {
+                (
+                    k.clone(),
+                    json!({"combo": b.combo, "action": b.action, "locked": b.locked, "repeating": b.repeating}),
+                )
+            })
+            .collect();
+        json!({ "keyboard": self.keyboard.to_json(), "options": self.options, "binds": binds })
+    }
+
+    /// The part re-applied on every save. Binds are left out: binding the
+    /// same keys again would run the action twice; they change one at a time
+    /// through `update`'s extra Lua.
+    fn live_lua(&self) -> Result<String, String> {
+        Ok(format!("{}{}", self.keyboard.lua()?, options_lua(&self.options)?))
     }
 }
 
 /// Change the saved settings and apply them. Each panel changes only its
 /// part, on top of what is on disk now, so panels do not undo each other.
 pub async fn update(change: impl FnOnce(&mut Settings) + Send + 'static) -> Result<(), String> {
+    update_with(change, String::new()).await
+}
+
+/// `update`, plus `extra` Lua run on the live Hyprland after it (a key bind
+/// moving: the old keys unbound, the new ones bound).
+pub async fn update_with(change: impl FnOnce(&mut Settings) + Send + 'static, extra: String) -> Result<(), String> {
     let lua = system::spawn(move || -> Result<String, String> {
         let mut settings = Settings::load();
         change(&mut settings);
-        let lua = settings.lua()?;
         write(
             &dir().join("settings.json"),
             &serde_json::to_string_pretty(&settings.json()).unwrap_or_default(),
         )
         .map_err(|e| format!("Could not save settings.json: {e}"))?;
-        write(&dir().join("settings.lua"), &lua).map_err(|e| format!("Could not save settings.lua: {e}"))?;
-        Ok(lua)
+        write(&dir().join("settings.lua"), &settings.lua()?)
+            .map_err(|e| format!("Could not save settings.lua: {e}"))?;
+        Ok(settings.live_lua()? + &extra)
     })
     .await
     .unwrap_or_else(|| Err("saving stopped unexpectedly".into()))?;
@@ -377,6 +496,31 @@ mod tests {
         let mut o = BTreeMap::new();
         o.insert("input:accel_profile".to_string(), json!("a\"b"));
         assert!(options_lua(&o).is_err());
+    }
+
+    #[test]
+    fn renders_moved_binds() {
+        let mut binds = BTreeMap::new();
+        binds.insert(
+            "SUPER + R".to_string(),
+            Rebind {
+                combo: "SUPER + D".into(),
+                action: "hl.dsp.global(\"quickshell:spotlight\")".into(),
+                locked: false,
+                repeating: false,
+            },
+        );
+        let lua = binds_lua(&binds).unwrap();
+        assert!(
+            lua.contains("hl.unbind(\"SUPER + R\")\nhl.bind(\"SUPER + D\", hl.dsp.global(\"quickshell:spotlight\"))\n")
+        );
+        assert_eq!(
+            bind_lua("XF86AudioMute", "hl.dsp.exec_cmd(\"x\")", true, true).unwrap(),
+            "hl.bind(\"XF86AudioMute\", hl.dsp.exec_cmd(\"x\"), { locked = true, repeating = true })"
+        );
+        assert!(bind_lua("SUPER + \")", "hl.dsp.x()", false, false).is_err());
+        assert!(bind_lua("SUPER + R", "os.execute(\"x\")", false, false).is_err());
+        assert_eq!(binds_lua(&BTreeMap::new()).unwrap(), "");
     }
 
     #[test]

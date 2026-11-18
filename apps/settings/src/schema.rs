@@ -65,6 +65,8 @@ pub enum Page {
     Lock,
     /// Icon and cursor themes (themes.rs).
     Themes,
+    /// Key binds moved to other keys (shortcuts.rs).
+    Shortcuts,
 }
 
 pub struct Section {
@@ -392,6 +394,15 @@ pub const PANELS: &[Panel] = &[
         group: Group::InputOutput,
         page: Page::Keyboard,
         keywords: "layout language xkb input repeat delay caps lock num lock typing",
+        sections: &[],
+    },
+    Panel {
+        id: "shortcuts",
+        title: "Keyboard shortcuts",
+        glyph: ico::COMMAND,
+        group: Group::InputOutput,
+        page: Page::Shortcuts,
+        keywords: "keybinds keys bind hotkeys shortcuts super rebind",
         sections: &[],
     },
     Panel {

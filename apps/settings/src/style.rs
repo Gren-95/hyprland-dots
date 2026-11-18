@@ -243,6 +243,19 @@ pub fn pill_close(_: &Theme, status: button::Status) -> button::Style {
     }
 }
 
+/// A key drawn as a keycap in a shortcut.
+pub fn keycap(_: &Theme) -> container::Style {
+    container::Style {
+        background: Some(Background::Color(BG_ACTIVE)),
+        border: Border {
+            color: BORDER,
+            width: 1.0,
+            radius: border::radius(5.0),
+        },
+        ..container::Style::default()
+    }
+}
+
 /// A round colour swatch.
 pub fn dot(color: Color) -> container::Style {
     container::Style {

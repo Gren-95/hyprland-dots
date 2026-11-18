@@ -19,6 +19,7 @@ mod placement;
 mod reveal;
 mod schema;
 mod search;
+mod shortcuts;
 mod sidebar;
 mod store;
 mod style;

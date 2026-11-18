@@ -17,6 +17,7 @@ shell show in the app too.
 | `sound` | Output and input device, their volume and mute, and the volume of every app playing — through `pw-dump` and `wpctl` |
 | `bluetooth` | Bluetooth on/off, paired devices (connect, disconnect, forget, battery), scanning and pairing — through `bluetoothctl`. Connected AirPods get battery per bud and case, noise control, conversation awareness, codec and an audio reset, through librepods and `config/scripts/airpods.sh` |
 | `keyboard` | Keyboard layouts (search the XKB list, add, remove, reorder), layout switch shortcut, Caps Lock key, Num Lock at start, key repeat delay and speed — written to `config/hypr/settings.lua` (gitignored, loaded last) and applied with `hyprctl eval` |
+| `shortcuts` | Every key bind with its keys (search, change with modifiers and a searchable key list, reset); moves are kept in `config/hypr/settings.lua` as `hl.unbind` + `hl.bind`, `keys.lua` is not edited |
 | `mouse` | Pointer speed, acceleration, left-handed, natural scrolling and scroll speed for mice; tap to click, natural scrolling, off while typing, right-click method, middle click and scroll speed for touchpads; workspace swipe direction and distance — Hyprland options saved to `config/hypr/settings.lua` |
 | `appearance` | Accent colour, font and text size, corner roundness, animation speed, wallpaper folder |
 | `themes` | Icon and cursor themes with previews, recently used first; applied through `config/scripts/icon-theme.sh` and `cursor-theme.sh` (the Quick Actions tile opens this panel) |
@@ -100,6 +101,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/hypr.rs` | Hyprland settings the app owns: settings.json, the generated settings.lua, `hyprctl eval` |
 | `src/hyprpage.rs` | Panels of plain Hyprland options declared as rows (Mouse & touchpad) |
 | `src/mouse.rs` | The Mouse & touchpad rows |
+| `src/shortcuts.rs` | Keyboard shortcuts panel |
 | `src/themes.rs` | Icons & cursors panel |
 | `src/idle.rs` | Idle times: the variables in hypridle.conf |
 | `src/placement.rs` | Bar items panel: placement files and the live tray list |

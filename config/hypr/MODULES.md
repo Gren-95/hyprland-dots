@@ -22,7 +22,7 @@ cursor options live there.
 `settings.lua` is written by the settings app (`apps/settings`, Keyboard panel
 for now) and loaded last with `pcall`, so it wins over both and may be missing.
 It and its source `settings.json` are gitignored: they hold this machine's
-choices (keyboard layouts, repeat, Caps Lock), applied live with `hyprctl eval`.
+choices (keyboard layouts, repeat, Caps Lock, mouse and touchpad options, key binds moved to other keys: `hl.unbind` of the old keys, `hl.bind` of the new), applied live with `hyprctl eval`. `KEYBINDS.md` is generated from `keys.lua` and does not show those moves.
 
 The other `hypr/*.conf` files (hypridle, hyprlock, hyprqt6engine)
 are separate tools that still use hyprlang — do not convert them to Lua.
