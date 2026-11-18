@@ -66,6 +66,8 @@ pub struct Network {
     pub addresses: Vec<String>,
     pub gateway: String,
     pub dns: Vec<String>,
+    /// MAC address.
+    pub hardware: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -337,8 +339,13 @@ fn repo() -> Option<Repo> {
 /// The interface the default route uses, with its addresses, gateway and DNS.
 pub fn network() -> Option<Network> {
     let route: serde_json::Value = serde_json::from_str(&run("ip", &["-j", "route", "get", "1.1.1.1"])).ok()?;
-    let device = route[0]["dev"].as_str()?.to_string();
-    let addrs: serde_json::Value = serde_json::from_str(&run("ip", &["-j", "addr", "show", "dev", &device])).ok()?;
+    device_network(route[0]["dev"].as_str()?)
+}
+
+/// One network device: its connection, addresses, gateway, DNS and
+/// hardware address.
+pub fn device_network(device: &str) -> Option<Network> {
+    let addrs: serde_json::Value = serde_json::from_str(&run("ip", &["-j", "addr", "show", "dev", device])).ok()?;
     let addresses = addrs[0]["addr_info"]
         .as_array()
         .into_iter()
@@ -348,23 +355,31 @@ pub fn network() -> Option<Network> {
         .collect();
     let show = run(
         "nmcli",
-        &["-t", "-f", "GENERAL.CONNECTION,IP4.DNS,IP6.DNS", "dev", "show", &device],
+        &[
+            "-t",
+            "-f",
+            "GENERAL.CONNECTION,GENERAL.HWADDR,IP4.GATEWAY,IP6.GATEWAY,IP4.DNS,IP6.DNS",
+            "dev",
+            "show",
+            device,
+        ],
     );
     let field = |prefix: &str| -> Vec<String> {
         show.lines()
             .filter_map(|l| l.split_once(':'))
             .filter(|(k, v)| k.starts_with(prefix) && !v.is_empty())
-            .map(|(_, v)| v.to_string())
+            .map(|(_, v)| v.replace("\\:", ":"))
             .collect()
     };
-    let wireless = Path::new("/sys/class/net").join(&device).join("wireless").exists();
+    let wireless = Path::new("/sys/class/net").join(device).join("wireless").exists();
     Some(Network {
         kind: if wireless { "Wi-Fi" } else { "Wired" }.into(),
         connection: field("GENERAL.CONNECTION").join(""),
         addresses,
-        gateway: route[0]["gateway"].as_str().unwrap_or_default().to_string(),
+        gateway: [field("IP4.GATEWAY"), field("IP6.GATEWAY")].concat().join("\n"),
         dns: [field("IP4.DNS"), field("IP6.DNS")].concat(),
-        device,
+        hardware: field("GENERAL.HWADDR").join(""),
+        device: device.to_string(),
     })
 }
 

@@ -111,6 +111,26 @@ pub fn multi_select<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>, w
     Row::with_children(buttons).spacing(-1.0).width(width).into()
 }
 
+/// A "Details" button that shows or hides more about a row, with a chevron
+/// for its state. It is not an action (UI.md): it does not count toward a
+/// row's buttons.
+pub fn disclosure<'a, M: Clone + 'a>(open: bool, on_press: M) -> Element<'a, M> {
+    let glyph = if open {
+        lucide_iced::bytes::CHEVRON_UP
+    } else {
+        lucide_iced::bytes::CHEVRON_DOWN
+    };
+    button(
+        row![text("Details").size(13), icon(glyph, 14.0)]
+            .spacing(4)
+            .align_y(Alignment::Center),
+    )
+    .on_press(on_press)
+    .padding([5, 10])
+    .style(style::action(style::Action::Normal))
+    .into()
+}
+
 /// Plain action buttons joined into one group: (label, message, kind).
 pub fn button_group<'a, M: Clone + 'a>(buttons: Vec<(&'a str, Option<M>, style::Action)>) -> Element<'a, M> {
     let count = buttons.len();

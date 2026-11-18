@@ -1,6 +1,6 @@
 //! Network panel: Wi-Fi, wired devices and VPN connections through nmcli.
 
-use iced::widget::{Column, text_input};
+use iced::widget::{Column, column, text_input};
 use iced::{Element, Task};
 use lucide_iced::bytes as ico;
 
@@ -17,7 +17,8 @@ pub struct Snapshot {
     /// Names of saved Wi-Fi connections.
     pub saved: Vec<String>,
     /// Addresses, gateway and DNS of the connection the default route uses.
-    pub details: Option<crate::sysinfo::Network>,
+    /// Addresses, gateway and DNS of each connected Wi-Fi and wired device.
+    pub details: Vec<crate::sysinfo::Network>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -55,6 +56,8 @@ pub struct State {
     hidden_password: String,
     /// Network whose Forget was clicked once; a second click forgets it.
     confirming: Option<String>,
+    /// Device whose details are shown.
+    details_open: Option<String>,
     error: Option<String>,
 }
 
@@ -76,6 +79,8 @@ pub enum Msg {
     HiddenPassword(String),
     JoinHidden,
     Done(Result<(), String>),
+    /// Show or hide a device's details.
+    ToggleDetails(String),
 }
 
 /// Split one line of `nmcli -t` output: fields are separated by ':', and
@@ -163,6 +168,17 @@ pub fn parse_wired(output: &str) -> Vec<Wired> {
         .collect()
 }
 
+/// Wi-Fi and ethernet devices of `nmcli -t -f DEVICE,TYPE,STATE,CONNECTION
+/// device status` that are connected.
+pub fn connected_devices(output: &str) -> Vec<String> {
+    output
+        .lines()
+        .map(split_terse)
+        .filter(|f| f.len() >= 3 && (f[1] == "wifi" || f[1] == "ethernet") && f[2] == "connected")
+        .map(|f| f[0].clone())
+        .collect()
+}
+
 fn nmcli(list: &[&str]) -> Result<String, String> {
     system::run_blocking("nmcli", &args(list), None)
 }
@@ -184,20 +200,19 @@ fn snapshot() -> Result<Snapshot, String> {
         Vec::new()
     };
     let (saved, vpns) = parse_connections(&nmcli(&["-t", "-f", "NAME,TYPE,ACTIVE", "connection", "show"])?);
-    let wired = parse_wired(&nmcli(&[
-        "-t",
-        "-f",
-        "DEVICE,TYPE,STATE,CONNECTION",
-        "device",
-        "status",
-    ])?);
+    let status = nmcli(&["-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "device", "status"])?;
+    let wired = parse_wired(&status);
+    let details = connected_devices(&status)
+        .iter()
+        .filter_map(|d| crate::sysinfo::device_network(d))
+        .collect();
     Ok(Snapshot {
         wifi_enabled,
         networks,
         wired,
         vpns,
         saved,
-        details: crate::sysinfo::network(),
+        details,
     })
 }
 
@@ -217,13 +232,23 @@ fn act(list: Vec<String>, stdin: Option<String>) -> Task<Msg> {
 
 impl State {
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
-        if !matches!(msg, Msg::Forget(_) | Msg::Refresh | Msg::Refreshed(_)) {
+        if !matches!(
+            msg,
+            Msg::Forget(_) | Msg::Refresh | Msg::Refreshed(_) | Msg::ToggleDetails(_)
+        ) {
             self.confirming = None;
         }
         match msg {
             Msg::Refresh => return refresh(),
             Msg::Refreshed(Ok(snapshot)) => self.snapshot = Some(*snapshot),
             Msg::Refreshed(Err(e)) => self.error = Some(e),
+            Msg::ToggleDetails(device) => {
+                self.details_open = if self.details_open.as_ref() == Some(&device) {
+                    None
+                } else {
+                    Some(device)
+                };
+            }
             Msg::SetWifi(on) => {
                 self.busy = Some("wifi".into());
                 return act(args(&["radio", "wifi", if on { "on" } else { "off" }]), None);
@@ -333,8 +358,13 @@ impl State {
         if snap.wifi_enabled && snap.networks.is_empty() {
             wifi.push(ui::note("No networks found"));
         }
+        let wifi_device = snap.details.iter().find(|d| d.kind == "Wi-Fi");
         for n in &snap.networks {
-            wifi.push(self.network_row(n, snap.saved.contains(&n.ssid)));
+            let device = wifi_device.filter(|_| n.in_use);
+            wifi.push(self.network_row(n, snap.saved.contains(&n.ssid), device.map(|d| d.device.as_str())));
+            if let Some(d) = device.filter(|d| self.details_open.as_ref() == Some(&d.device)) {
+                wifi.push(crate::infoview::connection_details(d));
+            }
             if self.prompt.as_deref() == Some(n.ssid.as_str()) {
                 wifi.push(self.password_row());
             }
@@ -367,7 +397,16 @@ impl State {
                     } else {
                         format!("{} · {}", w.connection, w.state)
                     };
-                    ui::item(ico::ETHERNET_PORT, w.device.clone(), detail, vec![])
+                    let details = snap.details.iter().find(|d| d.device == w.device);
+                    let open = details.is_some() && self.details_open.as_ref() == Some(&w.device);
+                    let controls = details
+                        .map(|_| vec![ui::disclosure(open, Msg::ToggleDetails(w.device.clone()))])
+                        .unwrap_or_default();
+                    let row = ui::item(ico::ETHERNET_PORT, w.device.clone(), detail, controls);
+                    match details.filter(|_| open) {
+                        Some(d) => column![row, crate::infoview::connection_details(d)].into(),
+                        None => row,
+                    }
                 })
                 .collect();
             body = ui::section(body, "Wired", rows);
@@ -392,13 +431,12 @@ impl State {
                 .collect();
             body = ui::section(body, "VPN", rows);
         }
-        if let Some(details) = &snap.details {
-            body = ui::section(body, "Connection details", crate::infoview::network(details));
-        }
         body
     }
 
-    fn network_row<'a>(&'a self, n: &'a Wifi, saved: bool) -> Element<'a, Msg> {
+    /// A nearby network; `device` is the Wi-Fi device when this is the one in
+    /// use, which gets a Details button.
+    fn network_row<'a>(&'a self, n: &'a Wifi, saved: bool, device: Option<&'a str>) -> Element<'a, Msg> {
         let glyph = match n.signal {
             75.. => ico::WIFI,
             50..=74 => ico::WIFI_HIGH,
@@ -439,7 +477,13 @@ impl State {
             } else {
                 ("Connect", idle.then(|| Msg::Connect(n.ssid.clone())), Action::Primary)
             });
-            vec![ui::button_group(buttons)]
+            let mut controls = Vec::new();
+            if let Some(d) = device {
+                let open = self.details_open.as_deref() == Some(d);
+                controls.push(ui::disclosure(open, Msg::ToggleDetails(d.to_string())));
+            }
+            controls.push(ui::button_group(buttons));
+            controls
         };
         ui::item(glyph, n.ssid.clone(), detail.join(" · "), controls)
     }
@@ -463,6 +507,12 @@ impl State {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn finds_connected_devices() {
+        let status = "wlp0s20f3:wifi:connected:TimeCapsule\nenp0s31f6:ethernet:unavailable:\ndocker0:bridge:connected (externally):docker0\nlo:loopback:connected (externally):lo\n";
+        assert_eq!(connected_devices(status), ["wlp0s20f3"]);
+    }
 
     #[test]
     fn splits_escaped_terse_fields() {

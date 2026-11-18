@@ -115,26 +115,6 @@ pub fn tile<'a, M: 'a>(
         .into()
 }
 
-pub fn network<'a, M: 'a>(n: &'a Network) -> Vec<Element<'a, M>> {
-    let glyph = if n.kind == "Wi-Fi" {
-        ico::WIFI
-    } else {
-        ico::ETHERNET_PORT
-    };
-    let connection = [n.connection.as_str(), n.device.as_str()]
-        .iter()
-        .filter(|s| !s.is_empty())
-        .copied()
-        .collect::<Vec<_>>()
-        .join(" · ");
-    facts([
-        (glyph, n.kind.as_str(), connection),
-        (ico::NETWORK, "Address", n.addresses.join("\n")),
-        (ico::ROUTER, "Gateway", n.gateway.clone()),
-        (ico::BOOK_OPEN, "DNS", n.dns.join("\n")),
-    ])
-}
-
 /// Fact rows for the non-empty values.
 pub fn facts<'a, M: 'a, const N: usize>(list: [(ui::Icon, &'a str, String); N]) -> Vec<Element<'a, M>> {
     list.into_iter()
@@ -158,4 +138,24 @@ pub fn fact<'a, M: 'a>(
     .spacing(12)
     .align_y(Alignment::Center);
     container(line).padding([10, 14]).into()
+}
+
+/// A device's addresses, gateway, DNS, hardware address and interface,
+/// for the Details under a connected network row.
+pub fn connection_details<'a, M: 'a>(n: &'a Network) -> Element<'a, M> {
+    let rows = facts([
+        (ico::NETWORK, "Address", n.addresses.join("\n")),
+        (ico::ROUTER, "Gateway", n.gateway.clone()),
+        (ico::BOOK_OPEN, "DNS", n.dns.join("\n")),
+        (ico::TAG, "Hardware address", n.hardware.clone()),
+        (ico::CABLE, "Interface", n.device.clone()),
+    ]);
+    container(column(rows).spacing(0))
+        .padding(iced::Padding {
+            top: 0.0,
+            right: 0.0,
+            bottom: 6.0,
+            left: 38.0,
+        })
+        .into()
 }

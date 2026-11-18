@@ -107,3 +107,10 @@ text.
 - Ctrl+F focuses search, Escape empties it, Enter submits a text field.
 - Below 820 px the sidebar shows icons only; below 640 px of panel width
   controls stack under their labels. Nothing may need horizontal scrolling.
+
+## Details
+
+- More about a row that most people do not need (a connection's addresses,
+  gateway, DNS) hides behind a **Details** button with a chevron
+  (`ui::disclosure`), opening below the row, indented under its title.
+- Details is not an action: it does not count toward the two-button limit.
