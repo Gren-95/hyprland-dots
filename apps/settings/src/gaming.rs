@@ -1,13 +1,16 @@
 //! Gaming panel: the game mode switch (scripts/gamemode.sh, whose state is
-//! $XDG_RUNTIME_DIR/gamemode) and Hyprland's display options for games. What
-//! game mode does is ordinary settings (schema.rs).
+//! $XDG_RUNTIME_DIR/gamemode), connected controllers with their battery
+//! (joysticks in /proc/bus/input/devices, batteries from UPower) and
+//! Hyprland's display options for games. What game mode does is ordinary
+//! settings (schema.rs).
 
 use iced::widget::toggler;
 use iced::{Element, Task};
 use lucide_iced::bytes as ico;
 
 use crate::hyprpage::{Row, Section};
-use crate::system;
+use crate::style::Action;
+use crate::system::{self, args};
 use crate::ui;
 
 /// Hyprland options that matter in games.
@@ -39,10 +42,99 @@ pub const DISPLAY: &[Section] = &[Section {
     ],
 }];
 
+/// A connected game controller.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Controller {
+    pub name: String,
+    /// Battery percent, when the controller reports one.
+    pub battery: Option<u32>,
+    /// UPower's state: "charging", "discharging", "fully-charged"…
+    pub state: String,
+}
+
+/// Names of the joysticks in /proc/bus/input/devices (a block whose
+/// handlers include jsN), once each.
+pub fn parse_joysticks(devices: &str) -> Vec<String> {
+    let mut names: Vec<String> = Vec::new();
+    for block in devices.split("\n\n") {
+        let name = block
+            .lines()
+            .find_map(|l| l.strip_prefix("N: Name="))
+            .map(|n| n.trim_matches('"').to_string());
+        let js = block
+            .lines()
+            .find_map(|l| l.strip_prefix("H: Handlers="))
+            .is_some_and(|h| h.split_whitespace().any(|w| w.starts_with("js")));
+        if let Some(name) = name.filter(|n| js && !n.is_empty() && !names.contains(n)) {
+            names.push(name);
+        }
+    }
+    names
+}
+
+/// The gaming-input devices of `upower -d`: (model, percent, state).
+pub fn parse_upower(dump: &str) -> Vec<(String, Option<u32>, String)> {
+    dump.split("Device: ")
+        .filter(|b| b.lines().any(|l| l.trim() == "gaming-input"))
+        .map(|b| {
+            let field = |key: &str| {
+                b.lines()
+                    .find_map(|l| l.trim().strip_prefix(key))
+                    .map(|v| v.trim().trim_matches('\'').to_string())
+                    .unwrap_or_default()
+            };
+            let percent = field("percentage:")
+                .split(|c: char| !c.is_ascii_digit())
+                .next()
+                .and_then(|n| n.parse().ok());
+            (field("model:"), percent, field("state:"))
+        })
+        .collect()
+}
+
+/// Joysticks with the battery UPower knows for them (matched by name), and
+/// UPower's controllers that are not joysticks (some report only there).
+pub fn controllers(joysticks: &[String], batteries: &[(String, Option<u32>, String)]) -> Vec<Controller> {
+    let matches = |js: &str, model: &str| !model.is_empty() && (js.contains(model) || model.contains(js));
+    let mut list: Vec<Controller> = joysticks
+        .iter()
+        .map(|name| {
+            let battery = batteries.iter().find(|(m, ..)| matches(name, m));
+            Controller {
+                name: name.clone(),
+                battery: battery.and_then(|b| b.1),
+                state: battery.map(|b| b.2.clone()).unwrap_or_default(),
+            }
+        })
+        .collect();
+    for (model, percent, state) in batteries {
+        if !joysticks.iter().any(|j| matches(j, model)) {
+            let name = if model.is_empty() {
+                "Controller".to_string()
+            } else {
+                model.clone()
+            };
+            list.push(Controller {
+                name,
+                battery: *percent,
+                state: state.clone(),
+            });
+        }
+    }
+    list
+}
+
+fn read_controllers() -> Vec<Controller> {
+    let devices = std::fs::read_to_string("/proc/bus/input/devices").unwrap_or_default();
+    let dump = system::run_blocking("upower", &args(&["-d"]), None).unwrap_or_default();
+    controllers(&parse_joysticks(&devices), &parse_upower(&dump))
+}
+
 #[derive(Default)]
 pub struct State {
     /// None until read.
     on: Option<bool>,
+    controllers: Vec<Controller>,
     busy: bool,
     error: Option<String>,
 }
@@ -50,7 +142,9 @@ pub struct State {
 #[derive(Debug, Clone)]
 pub enum Msg {
     Refresh,
-    Refreshed(bool),
+    Refreshed(bool, Vec<Controller>),
+    /// Show the Bluetooth panel to connect a controller (app.rs handles it).
+    OpenBluetooth,
     Set(bool),
     Done(Result<(), String>),
 }
@@ -75,8 +169,17 @@ fn script() -> String {
 impl State {
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
         match msg {
-            Msg::Refresh => return Task::perform(system::spawn(read_state), |on| Msg::Refreshed(on.unwrap_or(false))),
-            Msg::Refreshed(on) => self.on = Some(on),
+            Msg::Refresh => {
+                return Task::perform(system::spawn(|| (read_state(), read_controllers())), |r| {
+                    let (on, list) = r.unwrap_or_default();
+                    Msg::Refreshed(on, list)
+                });
+            }
+            Msg::Refreshed(on, list) => {
+                self.on = Some(on);
+                self.controllers = list;
+            }
+            Msg::OpenBluetooth => {}
             Msg::Set(on) => {
                 self.busy = true;
                 let arg = if on { "on" } else { "off" };
@@ -91,6 +194,36 @@ impl State {
             }
         }
         Task::none()
+    }
+
+    /// One row per controller, then the button to connect one.
+    pub fn controller_rows(&self) -> Vec<Element<'_, Msg>> {
+        let mut rows: Vec<Element<'_, Msg>> = self
+            .controllers
+            .iter()
+            .map(|c| {
+                let detail = match (c.battery, c.state.as_str()) {
+                    (Some(p), "charging") => format!("{p} % · charging"),
+                    (Some(p), _) => format!("{p} %"),
+                    (None, _) => "Connected".into(),
+                };
+                let glyph = match c.battery {
+                    Some(0..=20) => ico::BATTERY_LOW,
+                    _ => ico::GAMEPAD_2,
+                };
+                ui::item(glyph, c.name.clone(), detail, vec![])
+            })
+            .collect();
+        if rows.is_empty() {
+            rows.push(ui::note("No controller connected"));
+        }
+        rows.push(ui::item(
+            ico::BLUETOOTH,
+            "Wireless controller".into(),
+            "Pair it in Bluetooth".into(),
+            vec![ui::action("Connect…", Some(Msg::OpenBluetooth), Action::Normal)],
+        ));
+        rows
     }
 
     /// The game mode row.
@@ -120,6 +253,24 @@ impl State {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn finds_controllers_and_their_battery() {
+        let devices = "I: Bus=0003\nN: Name=\"AT Translated Set 2 keyboard\"\nH: Handlers=sysrq kbd event3\n\nI: Bus=0005\nN: Name=\"Xbox Wireless Controller\"\nH: Handlers=event20 js0\n\nN: Name=\"Xbox Wireless Controller\"\nH: Handlers=event21 js1\n";
+        let joysticks = parse_joysticks(devices);
+        assert_eq!(joysticks, ["Xbox Wireless Controller"]);
+        let dump = "Device: /org/freedesktop/UPower/devices/battery_BAT0\n  model: DELL\n  battery\n    percentage: 80%\n\nDevice: /org/freedesktop/UPower/devices/gaming_input_ps\n  model: Wireless Controller\n  gaming-input\n    state: charging\n    percentage: 55,5%\n";
+        let batteries = parse_upower(dump);
+        assert_eq!(
+            batteries,
+            [("Wireless Controller".to_string(), Some(55), "charging".to_string())]
+        );
+        let list = controllers(&joysticks, &batteries);
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].battery, Some(55));
+        let wired = controllers(&["8BitDo Pro 2".to_string()], &[]);
+        assert_eq!(wired[0].battery, None);
+    }
 
     #[test]
     fn reads_the_state_file() {

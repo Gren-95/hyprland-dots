@@ -360,6 +360,11 @@ impl App {
             Message::Power(msg) => return self.power.update(msg).map(Message::Power),
             Message::NotifApps(msg) => self.notif_apps.update(msg),
             Message::HiddenApps(msg) => return self.hidden_apps.update(msg).map(Message::HiddenApps),
+            Message::Gaming(gaming::Msg::OpenBluetooth) => {
+                if let Some(i) = crate::schema::panel_index("bluetooth") {
+                    return self.update(Message::SelectPanel(i));
+                }
+            }
             Message::Gaming(msg) => return self.gaming.update(msg).map(Message::Gaming),
             Message::GamingDisplay(msg) => {
                 return self
@@ -504,6 +509,13 @@ impl App {
                 let mut body = page_column(panel.title, layout);
                 let switch = self.gaming.rows().into_iter().map(|r| r.map(Message::Gaming)).collect();
                 body = ui::section(body, "Game mode", switch);
+                let pads = self
+                    .gaming
+                    .controller_rows()
+                    .into_iter()
+                    .map(|r| r.map(Message::Gaming))
+                    .collect();
+                body = ui::section(body, "Controllers", pads);
                 for section in panel.sections {
                     body = self.section(body, section, layout);
                 }
