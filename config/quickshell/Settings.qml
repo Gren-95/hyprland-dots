@@ -60,6 +60,17 @@ Scope {
     property string clockDateFormat: "ddd, dd MMM"
     property real animScale: 1.0               // multiplies Theme.duration; 0 = instant
     property bool animations: true             // off: shell, Hyprland and GTK animations all off
+    // Game mode: what it does (gamemode.sh reads the rest of these files).
+    property bool gamemodeEffects: true
+    property bool gamemodePerformance: true
+    property bool gamemodeHideBar: true
+    property bool gamemodeDnd: true
+    property bool gamemodeSyncs: true
+    property bool gamemodeNight: true
+    property bool gamemodeDocker: true
+    property bool gamemodeAwake: true
+    property bool gamemodeTailscale: true
+    property bool gamemodeFeral: false
     property real radiusScale: 1.0             // multiplies Theme.radius
     property real barOpacity: 1.0
     property int batteryCriticalPct: 5         // countdown-to-action level; 0 = off
@@ -197,6 +208,16 @@ Scope {
         { name: "clockDateFormat",      file: "clock-date-format",      type: "string" },
         { name: "animScale",            file: "anim-scale",             type: "real" },
         { name: "animations",           file: "animations",             type: "bool" },
+        { name: "gamemodeEffects", file: "gamemode-effects", type: "bool" },
+        { name: "gamemodePerformance", file: "gamemode-performance", type: "bool" },
+        { name: "gamemodeHideBar", file: "gamemode-hide-bar", type: "bool" },
+        { name: "gamemodeDnd", file: "gamemode-dnd", type: "bool" },
+        { name: "gamemodeSyncs", file: "gamemode-syncs", type: "bool" },
+        { name: "gamemodeNight", file: "gamemode-night", type: "bool" },
+        { name: "gamemodeDocker", file: "gamemode-docker", type: "bool" },
+        { name: "gamemodeAwake", file: "gamemode-awake", type: "bool" },
+        { name: "gamemodeTailscale", file: "gamemode-tailscale", type: "bool" },
+        { name: "gamemodeFeral", file: "gamemode-feral", type: "bool" },
         { name: "radiusScale",          file: "radius-scale",           type: "real" },
         { name: "barOpacity",           file: "bar-opacity",            type: "real" },
         { name: "batteryCriticalPct",   file: "battery-critical-pct",   type: "int"  },

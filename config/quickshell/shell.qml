@@ -49,7 +49,7 @@ Scope {
     HyprBorder {}
     Notifications { id: notifService }
     GameModeService { id: gameMode; notifs: notifService }
-    Binding { target: TailscaleService; property: "paused"; value: gameMode.active }
+    Binding { target: TailscaleService; property: "paused"; value: gameMode.active && settingsStore.gamemodeTailscale }
     IcsCalendar { id: calService }
     DayPanel { id: dayPanel; cal: calService; notifs: notifService }
     Spotlight { id: spotlight }
@@ -76,7 +76,7 @@ Scope {
             id: bar
             required property var modelData
             screen: modelData
-            visible: !gameMode.active
+            visible: !(gameMode.active && settingsStore.gamemodeHideBar)
 
             // True when this bar's monitor is the focused one. Shared flyouts
             // anchor to the active bar so they open on the current monitor.

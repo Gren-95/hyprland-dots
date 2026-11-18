@@ -67,6 +67,8 @@ pub enum Page {
     Themes,
     /// Key binds moved to other keys (shortcuts.rs).
     Shortcuts,
+    /// The game mode switch, its settings and display options (gaming.rs).
+    Gaming,
     /// Launcher settings followed by the hidden apps (hiddenapps.rs).
     Launcher,
     /// Notification settings followed by per-app rules (notifapps.rs).
@@ -1275,6 +1277,99 @@ pub const PANELS: &[Panel] = &[
                     ]),
                     default: Default::Bool(true),
                 }],
+            },
+        ],
+    },
+    Panel {
+        id: "gaming",
+        title: "Gaming",
+        glyph: ico::GAMEPAD_2,
+        group: Group::System,
+        page: Page::Gaming,
+        keywords: "game mode games steam gamemoderun feral vrr freesync tearing scanout performance",
+        sections: &[
+            Section {
+                title: "While game mode is on",
+                settings: &[
+                    Setting {
+                        file: "gamemode-effects",
+                        label: "Desktop",
+                        help: "Effects off: animations, blur, shadows, gaps and rounding",
+                        control: Control::Toggles(&[
+                            Toggle {
+                                file: "gamemode-effects",
+                                label: "Effects off",
+                                default: true,
+                            },
+                            Toggle {
+                                file: "gamemode-hide-bar",
+                                label: "Hide the bar",
+                                default: true,
+                            },
+                            Toggle {
+                                file: "gamemode-dnd",
+                                label: "Do not disturb",
+                                default: true,
+                            },
+                        ]),
+                        default: Default::Bool(true),
+                    },
+                    Setting {
+                        file: "gamemode-performance",
+                        label: "Power",
+                        help: "The performance power profile, and no dimming or locking",
+                        control: Control::Toggles(&[
+                            Toggle {
+                                file: "gamemode-performance",
+                                label: "Performance",
+                                default: true,
+                            },
+                            Toggle {
+                                file: "gamemode-awake",
+                                label: "Keep screen awake",
+                                default: true,
+                            },
+                        ]),
+                        default: Default::Bool(true),
+                    },
+                    Setting {
+                        file: "gamemode-syncs",
+                        label: "Pause",
+                        help: "Background work paused until game mode ends",
+                        control: Control::Toggles(&[
+                            Toggle {
+                                file: "gamemode-syncs",
+                                label: "Syncs",
+                                default: true,
+                            },
+                            Toggle {
+                                file: "gamemode-night",
+                                label: "Night light",
+                                default: true,
+                            },
+                            Toggle {
+                                file: "gamemode-docker",
+                                label: "Docker",
+                                default: true,
+                            },
+                            Toggle {
+                                file: "gamemode-tailscale",
+                                label: "Tailscale",
+                                default: true,
+                            },
+                        ]),
+                        default: Default::Bool(true),
+                    },
+                ],
+            },
+            Section {
+                title: "Automatic",
+                settings: &[toggle(
+                    "gamemode-feral",
+                    "With Feral GameMode",
+                    "Turn game mode on while a game started with gamemoderun runs (Steam: gamemoderun %command%)",
+                    false,
+                )],
             },
         ],
     },

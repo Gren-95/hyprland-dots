@@ -59,7 +59,10 @@ pub async fn spawn<T: Send + 'static>(work: impl FnOnce() -> T + Send + 'static)
 
 /// Settings a running program has to be told about: (file prefix, script
 /// and argument under ~/.config/scripts).
-const AFTER_WRITE: &[(&str, &str, &str)] = &[("night-", "night.sh", "apply")];
+const AFTER_WRITE: &[(&str, &str, &str)] = &[
+    ("night-", "night.sh", "apply"),
+    ("gamemode-feral", "gamemode.sh", "feral"),
+];
 
 /// Animations switched on or off everywhere: the shell reads the setting
 /// itself; Hyprland's animations:enabled (kept in settings.lua, the same

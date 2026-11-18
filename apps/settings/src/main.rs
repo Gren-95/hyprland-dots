@@ -11,6 +11,7 @@ mod cli;
 mod controls;
 mod defaultapps;
 mod fonts;
+mod gaming;
 mod hiddenapps;
 mod hypr;
 mod hyprpage;

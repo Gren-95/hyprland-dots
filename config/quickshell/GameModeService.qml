@@ -22,7 +22,7 @@ Scope {
     }
 
     onActiveChanged: {
-        if (!notifs) return;
+        if (!notifs || !settingsStore.gamemodeDnd) return;
         if (active) {
             _dndBefore = notifs.dnd;
             notifs.setDnd(true);

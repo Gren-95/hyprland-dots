@@ -15,6 +15,7 @@ use crate::bluetooth;
 use crate::calendar;
 use crate::controls;
 use crate::defaultapps;
+use crate::gaming;
 use crate::hiddenapps;
 use crate::hyprpage;
 use crate::idle;
@@ -108,6 +109,8 @@ pub struct App {
     power: power::State,
     notif_apps: notifapps::State,
     hidden_apps: hiddenapps::State,
+    gaming: gaming::State,
+    gaming_display: hyprpage::State,
     /// Installed font families, loaded once at start for the Font picker.
     fonts: Vec<&'static str>,
     error: Option<String>,
@@ -156,6 +159,8 @@ pub enum Message {
     Power(power::Msg),
     NotifApps(notifapps::Msg),
     HiddenApps(hiddenapps::Msg),
+    Gaming(gaming::Msg),
+    GamingDisplay(hyprpage::Msg),
     Fonts(Vec<&'static str>),
 }
 
@@ -189,6 +194,8 @@ impl App {
             power: power::State::default(),
             notif_apps: notifapps::State::default(),
             hidden_apps: hiddenapps::State::default(),
+            gaming: gaming::State::default(),
+            gaming_display: hyprpage::State::default(),
             fonts: Vec::new(),
             error: None,
         };
@@ -204,6 +211,12 @@ impl App {
     fn refresh_page(&mut self) -> Task<Message> {
         match PANELS[self.panel].page {
             Page::Settings => Task::none(),
+            Page::Gaming => Task::batch([
+                self.gaming.update(gaming::Msg::Refresh).map(Message::Gaming),
+                self.gaming_display
+                    .update(hyprpage::Msg::Load, gaming::DISPLAY)
+                    .map(Message::GamingDisplay),
+            ]),
             Page::Launcher => self.hidden_apps.update(hiddenapps::Msg::Load).map(Message::HiddenApps),
             Page::Notifications => {
                 self.notif_apps.update(notifapps::Msg::Load);
@@ -291,6 +304,8 @@ impl App {
         // Subscription::map takes only closures that capture nothing.
         match PANELS[self.panel].page {
             Page::Settings => {}
+            Page::Gaming => subscriptions
+                .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Gaming(gaming::Msg::Refresh))),
             Page::Launcher => {}
             Page::Notifications => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::NotifApps(notifapps::Msg::Load))),
@@ -345,6 +360,13 @@ impl App {
             Message::Power(msg) => return self.power.update(msg).map(Message::Power),
             Message::NotifApps(msg) => self.notif_apps.update(msg),
             Message::HiddenApps(msg) => return self.hidden_apps.update(msg).map(Message::HiddenApps),
+            Message::Gaming(msg) => return self.gaming.update(msg).map(Message::Gaming),
+            Message::GamingDisplay(msg) => {
+                return self
+                    .gaming_display
+                    .update(msg, gaming::DISPLAY)
+                    .map(Message::GamingDisplay);
+            }
             Message::Search(query) => {
                 self.query = query;
                 self.searching = true;
@@ -477,6 +499,17 @@ impl App {
                     body = body.push(text(error).color(style::RED));
                 }
                 body.into()
+            }
+            Page::Gaming => {
+                let mut body = page_column(panel.title, layout);
+                let switch = self.gaming.rows().into_iter().map(|r| r.map(Message::Gaming)).collect();
+                body = ui::section(body, "Game mode", switch);
+                for section in panel.sections {
+                    body = self.section(body, section, layout);
+                }
+                let display = Element::from(self.gaming_display.view(Column::new().spacing(10), gaming::DISPLAY))
+                    .map(Message::GamingDisplay);
+                body.push(display).into()
             }
             Page::Launcher => {
                 let mut body = page_column(panel.title, layout);
