@@ -9,6 +9,7 @@ use iced::keyboard as keys;
 use iced::widget::{Column, Space, column, container, responsive, row, scrollable, text};
 use iced::{Element, Length, Subscription, Task, Theme};
 
+use crate::about;
 use crate::audio;
 use crate::bluetooth;
 use crate::calendar;
@@ -100,6 +101,7 @@ pub struct App {
     shortcuts: shortcuts::State,
     default_apps: defaultapps::State,
     windows: hyprpage::State,
+    about: about::State,
     /// Installed font families, loaded once at start for the Font picker.
     fonts: Vec<&'static str>,
     error: Option<String>,
@@ -144,6 +146,7 @@ pub enum Message {
     Shortcuts(shortcuts::Msg),
     DefaultApps(defaultapps::Msg),
     Windows(hyprpage::Msg),
+    About(about::Msg),
     Fonts(Vec<&'static str>),
 }
 
@@ -173,6 +176,7 @@ impl App {
             shortcuts: shortcuts::State::default(),
             default_apps: defaultapps::State::default(),
             windows: hyprpage::State::default(),
+            about: about::State::default(),
             fonts: Vec::new(),
             error: None,
         };
@@ -212,6 +216,7 @@ impl App {
                 .windows
                 .update(hyprpage::Msg::Load, windows::SECTIONS)
                 .map(Message::Windows),
+            Page::About => self.about.update(about::Msg::Load).map(Message::About),
         }
     }
 
@@ -282,7 +287,8 @@ impl App {
             | Page::Themes
             | Page::Shortcuts
             | Page::DefaultApps
-            | Page::Windows => {}
+            | Page::Windows
+            | Page::About => {}
             Page::BarItems => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Placement(placement::Msg::Refresh))),
         }
@@ -310,6 +316,7 @@ impl App {
             Message::Shortcuts(msg) => return self.shortcuts.update(msg).map(Message::Shortcuts),
             Message::DefaultApps(msg) => return self.default_apps.update(msg).map(Message::DefaultApps),
             Message::Windows(msg) => return self.windows.update(msg, windows::SECTIONS).map(Message::Windows),
+            Message::About(msg) => return self.about.update(msg).map(Message::About),
             Message::Search(query) => {
                 self.query = query;
                 self.searching = true;
@@ -480,6 +487,7 @@ impl App {
             }
             Page::Windows => Element::from(self.windows.view(page_column(panel.title, layout), windows::SECTIONS))
                 .map(Message::Windows),
+            Page::About => Element::from(self.about.view(page_column(panel.title, layout))).map(Message::About),
         };
         // One scroll position per panel.
         scrollable(container(content).center_x(Length::Fill))

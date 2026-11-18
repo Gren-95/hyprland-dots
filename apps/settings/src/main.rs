@@ -1,5 +1,6 @@
 //! Settings app for the Hyprland dots. See apps/settings/README.md.
 
+mod about;
 mod airpods;
 mod app;
 mod args;

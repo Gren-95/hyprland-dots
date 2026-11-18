@@ -33,6 +33,7 @@ shell show in the app too.
 | `recording` | Screenshots (folder, PNG or JPEG, cursor, clipboard, actions sheet) and screen recording (folder, file type, frame rate, quality, codec, cursor, sound) — read by `config/scripts/lib/screenshot.sh` and `screenrecord.sh` |
 | `sysmon` | System monitor refresh interval and sections |
 | `lock` | Idle times (dim, lock, screen off, suspend) edited in `config/hypr/hypridle.conf`, which then restarts hypridle; stay awake; what the lid does; lock screen parts |
+| `about` | Computer, system, kernel, Hyprland and Quickshell versions, processor, graphics, memory, disks, the dots commit; Copy as text for bug reports |
 | `power` | Critical battery level and action |
 
 ## Usage
@@ -102,6 +103,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/calendar.rs` | Calendar feeds: the calendar.url line format, editing it |
 | `src/hypr.rs` | Hyprland settings the app owns: settings.json, the generated settings.lua, `hyprctl eval` |
 | `src/hyprpage.rs` | Panels of plain Hyprland options declared as rows (Mouse & touchpad) |
+| `src/about.rs` | About panel |
 | `src/windows.rs` | The Windows rows |
 | `src/mouse.rs` | The Mouse & touchpad rows |
 | `src/defaultapps.rs` | Default apps panel: desktop entries, roles |

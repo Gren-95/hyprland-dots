@@ -71,6 +71,8 @@ pub enum Page {
     DefaultApps,
     /// Window gaps, borders, effects and focus in Hyprland (windows.rs).
     Windows,
+    /// What the system is (about.rs).
+    About,
 }
 
 pub struct Section {
@@ -1247,6 +1249,15 @@ pub const PANELS: &[Panel] = &[
                 ),
             ],
         }],
+    },
+    Panel {
+        id: "about",
+        title: "About",
+        glyph: ico::INFO,
+        group: Group::System,
+        page: Page::About,
+        keywords: "system version hardware computer kernel cpu gpu memory disk bug report",
+        sections: &[],
     },
 ];
 
