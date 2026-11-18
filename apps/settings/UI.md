@@ -49,7 +49,9 @@ text.
 - **Two buttons:** one joined group (`ui::button_group`), the main action
   last.
 - **More than two:** the main action as a button, everything else in a
-  "More" dropdown next to it (`ui::more_actions`). The main action is what
+  "More" dropdown next to it (`ui::more_actions`, which falls back to a
+  joined pair when there is only one other action). Never a dropdown with a
+  single entry. The main action is what
   most people come for: Connect, Pair, Add.
 - **A text field with buttons** (add a feed, a password, a name) is one
   input group (`ui::input_group`, `ui::fields_group`): field first, Cancel

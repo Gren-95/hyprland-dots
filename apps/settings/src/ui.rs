@@ -221,11 +221,16 @@ pub fn choice<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>, width: 
 const MORE_WIDTH: f32 = 128.0;
 
 /// The main action as a button with the other actions in a "More" dropdown
-/// beside it (UI.md: more than two buttons on a row).
+/// beside it (UI.md: more than two buttons on a row). With one other action
+/// the two are a joined button group instead.
 pub fn more_actions<'a, M: Clone + 'a>(
     main: (&'a str, Option<M>, style::Action),
     others: Vec<(&'a str, Option<M>)>,
 ) -> Element<'a, M> {
+    // Two actions in all: a joined pair, no menu with one entry in it.
+    if let [(label, on_press)] = others.as_slice() {
+        return button_group(vec![(*label, on_press.clone(), style::Action::Normal), main]);
+    }
     row![menu(others), action(main.0, main.1, main.2)]
         .spacing(6)
         .align_y(Alignment::Center)
