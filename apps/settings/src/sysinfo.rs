@@ -502,10 +502,13 @@ fn fixed_from_json(v: &Json) -> Option<Fixed> {
     })
 }
 
+/// Version of the cached fixed facts; raise it when their JSON changes.
+const FIXED_FORMAT: u32 = 2;
+
 /// Fixed facts, made again after a reboot or a new version of this app.
 fn cached_fixed() -> Fixed {
     let key = format!(
-        "{} {}",
+        "{} {} {FIXED_FORMAT}",
         read("/proc/sys/kernel/random/boot_id"),
         env!("CARGO_PKG_VERSION")
     );
@@ -606,7 +609,7 @@ pub fn gpu_detail(gpu: &Gpu) -> String {
         .join(" · ")
 }
 
-/// "15.0 GiB usable (LPDDR5 · 6400 MT/s, 16 GiB in 8 soldered chips), swap 30.6 GiB".
+/// "15.0 GiB usable (LPDDR5 · 6400 MT/s, 16 GiB, soldered, 8 chips), swap 30.6 GiB".
 fn memory_text(i: &Info) -> String {
     if i.memory.total == 0 {
         return String::new();

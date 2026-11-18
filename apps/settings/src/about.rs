@@ -160,15 +160,13 @@ fn memory_value(i: &Info) -> String {
     }
 }
 
-/// "3.8 GiB of 15.0 GiB in use" and "6400 MT/s · 8 soldered chips".
+/// "3.8 GiB of 15.0 GiB in use" and "6400 MT/s · soldered, 8 chips".
 fn memory_detail(i: &Info, used: u64) -> String {
     let usage = format!("{} of {} in use", memory::kib(used), memory::kib(i.memory.total));
     let Some(m) = &i.modules else { return usage };
-    let what = if m.soldered { "soldered chip" } else { "module" };
-    let layout = format!("{} {what}{}", m.count, if m.count == 1 { "" } else { "s" });
     let hardware = match m.speed {
-        Some(speed) => format!("{speed} MT/s · {layout}"),
-        None => layout,
+        Some(speed) => format!("{speed} MT/s · {}", memory::mounting_text(m)),
+        None => memory::mounting_text(m),
     };
     format!("{usage}\n{hardware}")
 }

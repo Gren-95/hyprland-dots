@@ -4,6 +4,44 @@
 
 use serde_json::{Value as Json, json};
 
+/// How the memory sits on the board.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub enum Mounting {
+    /// Chips soldered to the board: it cannot be upgraded.
+    Soldered,
+    /// Modules in sockets (DIMM, SODIMM): they can be swapped or added.
+    Socketed,
+    #[default]
+    Unknown,
+}
+
+impl Mounting {
+    /// From a firmware form factor ("Row Of Chips", "SODIMM", "DIMM").
+    pub fn from_form_factor(form: &str) -> Mounting {
+        if form == "Row Of Chips" {
+            Mounting::Soldered
+        } else if form.contains("DIMM") {
+            Mounting::Socketed
+        } else {
+            Mounting::Unknown
+        }
+    }
+
+    fn id(self) -> &'static str {
+        match self {
+            Mounting::Soldered => "soldered",
+            Mounting::Socketed => "socketed",
+            Mounting::Unknown => "unknown",
+        }
+    }
+
+    fn from_id(id: &str) -> Option<Mounting> {
+        [Mounting::Soldered, Mounting::Socketed, Mounting::Unknown]
+            .into_iter()
+            .find(|m| m.id() == id)
+    }
+}
+
 /// The installed memory, as the firmware describes it.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Modules {
@@ -16,8 +54,9 @@ pub struct Modules {
     pub count: usize,
     /// Bytes installed, all modules together.
     pub installed: u64,
-    /// Chips soldered to the board rather than sticks.
-    pub soldered: bool,
+    pub mounting: Mounting,
+    /// Memory slots or chip positions the board has.
+    pub slots: Option<usize>,
     /// Most the board takes, in bytes.
     pub max: Option<u64>,
 }
@@ -62,18 +101,24 @@ pub fn parse_modules(props: &str) -> Option<Modules> {
             .find_map(|l| l.strip_prefix(&format!("{key}=")))
             .map(str::trim)
     };
-    let mut m = Modules::default();
-    for i in 0.. {
+    let mut m = Modules {
+        slots: get("MEMORY_ARRAY_NUM_DEVICES").and_then(|s| s.parse().ok()),
+        ..Modules::default()
+    };
+    // Empty slots are listed too, without a size; stop after the last device.
+    let listed = |i: usize| props.lines().any(|l| l.starts_with(&format!("MEMORY_DEVICE_{i}_")));
+    for i in (0..).take_while(|i| listed(*i)) {
         let field = |name: &str| get(&format!("MEMORY_DEVICE_{i}_{name}"));
-        let Some(size) = field("SIZE") else { break };
-        let Ok(size) = size.parse::<u64>() else { continue };
+        let Some(size) = field("SIZE").and_then(|s| s.parse::<u64>().ok()) else {
+            continue;
+        };
         m.count += 1;
         m.installed += size;
         if m.kind.is_empty() {
             m.kind = field("TYPE").unwrap_or_default().to_string();
             m.speed = field("SPEED_MTS").and_then(|s| s.parse().ok());
             m.configured = field("CONFIGURED_SPEED_MTS").and_then(|s| s.parse().ok());
-            m.soldered = field("FORM_FACTOR") == Some("Row Of Chips");
+            m.mounting = Mounting::from_form_factor(field("FORM_FACTOR").unwrap_or_default());
         }
     }
     m.max = get("MEMORY_ARRAY_MAX_CAPACITY").and_then(|s| s.parse().ok());
@@ -147,15 +192,22 @@ pub fn modules_kind(m: &Modules) -> String {
     s
 }
 
-/// "16 GiB in 8 soldered chips · board takes up to 16 GiB".
+/// "soldered, 8 chips", "socketed, 2 of 4 slots used" or "2 modules".
+pub fn mounting_text(m: &Modules) -> String {
+    let plural = |n: usize, word: &str| format!("{n} {word}{}", if n == 1 { "" } else { "s" });
+    match (m.mounting, m.slots) {
+        (Mounting::Soldered, _) => format!("soldered, {}", plural(m.count, "chip")),
+        (Mounting::Socketed, Some(slots)) if slots >= m.count => {
+            format!("socketed, {} of {} used", m.count, plural(slots, "slot"))
+        }
+        (Mounting::Socketed, _) => format!("socketed, {}", plural(m.count, "module")),
+        (Mounting::Unknown, _) => plural(m.count, "module"),
+    }
+}
+
+/// "16 GiB, soldered, 8 chips · board takes up to 16 GiB".
 pub fn modules_layout(m: &Modules) -> String {
-    let what = if m.soldered { "soldered chip" } else { "module" };
-    let mut s = format!(
-        "{} in {} {what}{}",
-        bytes(m.installed),
-        m.count,
-        if m.count == 1 { "" } else { "s" }
-    );
+    let mut s = format!("{}, {}", bytes(m.installed), mounting_text(m));
     if let Some(max) = m.max.filter(|max| *max > 0) {
         s = format!("{s} · board takes up to {}", bytes(max));
     }
@@ -164,7 +216,7 @@ pub fn modules_layout(m: &Modules) -> String {
 
 pub fn modules_to_json(m: &Modules) -> Json {
     json!({"kind": m.kind, "speed": m.speed, "configured": m.configured, "count": m.count,
-           "installed": m.installed, "soldered": m.soldered, "max": m.max})
+           "installed": m.installed, "mounting": m.mounting.id(), "slots": m.slots, "max": m.max})
 }
 
 pub fn modules_from_json(v: &Json) -> Option<Modules> {
@@ -174,7 +226,8 @@ pub fn modules_from_json(v: &Json) -> Option<Modules> {
         configured: v["configured"].as_u64().map(|n| n as u32),
         count: v["count"].as_u64()? as usize,
         installed: v["installed"].as_u64()?,
-        soldered: v["soldered"].as_bool()?,
+        mounting: Mounting::from_id(v["mounting"].as_str()?)?,
+        slots: v["slots"].as_u64().map(|n| n as usize),
         max: v["max"].as_u64(),
     })
 }
@@ -188,14 +241,23 @@ mod tests {
     #[test]
     fn reads_modules_from_udev() {
         let m = parse_modules(UDEV).unwrap();
-        assert_eq!((m.count, m.installed, m.soldered), (2, 4 << 30, true));
+        assert_eq!((m.count, m.installed, m.mounting), (2, 4 << 30, Mounting::Soldered));
         assert_eq!(modules_kind(&m), "LPDDR5 · 6400 MT/s, running at 4800 MT/s");
         assert_eq!(
             modules_layout(&m),
-            "4 GiB in 2 soldered chips · board takes up to 16 GiB"
+            "4 GiB, soldered, 2 chips · board takes up to 16 GiB"
         );
         assert_eq!(modules_from_json(&modules_to_json(&m)), Some(m));
         assert_eq!(parse_modules("ID_FOO=1\n"), None);
+    }
+
+    #[test]
+    fn tells_socketed_memory_and_free_slots() {
+        let props = "MEMORY_ARRAY_NUM_DEVICES=4\nMEMORY_DEVICE_0_SIZE=8589934592\nMEMORY_DEVICE_0_FORM_FACTOR=SODIMM\nMEMORY_DEVICE_0_TYPE=DDR5\nMEMORY_DEVICE_1_PRESENT=0\nMEMORY_DEVICE_1_FORM_FACTOR=SODIMM\nMEMORY_DEVICE_2_SIZE=8589934592\nMEMORY_DEVICE_2_FORM_FACTOR=SODIMM\nMEMORY_DEVICE_3_PRESENT=0\n";
+        let m = parse_modules(props).unwrap();
+        assert_eq!((m.count, m.installed, m.mounting), (2, 16 << 30, Mounting::Socketed));
+        assert_eq!(mounting_text(&m), "socketed, 2 of 4 slots used");
+        assert_eq!(Mounting::from_form_factor("Other"), Mounting::Unknown);
     }
 
     #[test]
