@@ -41,7 +41,10 @@ fn dir() -> PathBuf {
 fn getoption(name: &str) -> Option<Json> {
     let out = system::run_blocking("hyprctl", &args(&["getoption", name, "-j"]), None).ok()?;
     let v: Json = serde_json::from_str(&out).ok()?;
-    ["str", "int", "bool", "float"].iter().find_map(|k| v.get(*k).cloned())
+    // "css" is a list of numbers ("2 2 2 2"), as gaps report themselves.
+    ["str", "int", "bool", "float", "css"]
+        .iter()
+        .find_map(|k| v.get(*k).cloned())
 }
 
 fn option_str(name: &str) -> String {

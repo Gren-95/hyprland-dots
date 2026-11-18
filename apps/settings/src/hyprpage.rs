@@ -25,6 +25,8 @@ pub enum Format {
     Signed,
     /// A multiplier, e.g. 1.5×.
     Times,
+    /// 0..1 as 0%..100%.
+    Percent,
     /// A whole number with a unit.
     Unit(&'static str),
 }
@@ -50,6 +52,13 @@ pub enum Row {
         help: &'static str,
         options: &'static [(&'static str, &'static str)],
     },
+    /// A whole-number option with fixed values: (value, label).
+    IntChoice {
+        option: &'static str,
+        label: &'static str,
+        help: &'static str,
+        options: &'static [(i64, &'static str)],
+    },
     Slider {
         option: &'static str,
         label: &'static str,
@@ -69,6 +78,7 @@ impl Row {
             Row::Toggle { option, .. }
             | Row::Binary { option, .. }
             | Row::Choice { option, .. }
+            | Row::IntChoice { option, .. }
             | Row::Slider { option, .. } => option,
         }
     }
@@ -96,10 +106,25 @@ fn options_of(sections: &'static [Section]) -> Vec<&'static str> {
     sections.iter().flat_map(|s| s.rows.iter()).map(Row::option).collect()
 }
 
+/// A number from an option value: a number, or the first number of a list
+/// like "2 2 2 2" (gaps).
+fn number(value: &Json) -> f64 {
+    value
+        .as_f64()
+        .or_else(|| {
+            value
+                .as_str()
+                .and_then(|s| s.split_whitespace().next())
+                .and_then(|n| n.parse().ok())
+        })
+        .unwrap_or(0.0)
+}
+
 fn format_value(v: f64, format: Format) -> String {
     match format {
         Format::Signed => format!("{:+.0}%", v * 100.0),
         Format::Times => format!("{v:.1}×"),
+        Format::Percent => format!("{:.0}%", v * 100.0),
         Format::Unit(unit) => format!("{v:.0} {unit}"),
     }
 }
@@ -206,6 +231,19 @@ impl State {
                     .collect();
                 (label, help, ui::choice(items, Length::Fixed(300.0)))
             }
+            Row::IntChoice {
+                option,
+                label,
+                help,
+                options,
+            } => {
+                let current = number(value) as i64;
+                let items = options
+                    .iter()
+                    .map(|(v, l)| (*l, *v == current, Some(Msg::Set(option, json!(v)))))
+                    .collect();
+                (label, help, ui::choice(items, Length::Fixed(300.0)))
+            }
             Row::Slider {
                 option,
                 label,
@@ -216,7 +254,7 @@ impl State {
                 format,
                 int,
             } => {
-                let v = value.as_f64().unwrap_or(*min);
+                let v = value.as_f64().unwrap_or_else(|| number(value)).max(*min);
                 let int = *int;
                 let bar = slider(*min..=*max, v.clamp(*min, *max), move |x| Msg::Preview(option, x, int))
                     .step(*step)
@@ -246,6 +284,13 @@ impl State {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reads_numbers_from_lists() {
+        assert_eq!(number(&json!(3)), 3.0);
+        assert_eq!(number(&json!("2 2 2 2")), 2.0);
+        assert_eq!(number(&json!("x")), 0.0);
+    }
 
     #[test]
     fn formats_values() {

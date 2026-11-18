@@ -28,6 +28,7 @@ use crate::store::{Store, Value};
 use crate::style;
 use crate::themes;
 use crate::ui;
+use crate::windows;
 
 /// How often the files are read again, so changes made in the shell show up.
 const RELOAD_EVERY: Duration = Duration::from_secs(1);
@@ -98,6 +99,7 @@ pub struct App {
     themes: themes::State,
     shortcuts: shortcuts::State,
     default_apps: defaultapps::State,
+    windows: hyprpage::State,
     /// Installed font families, loaded once at start for the Font picker.
     fonts: Vec<&'static str>,
     error: Option<String>,
@@ -141,6 +143,7 @@ pub enum Message {
     Themes(themes::Msg),
     Shortcuts(shortcuts::Msg),
     DefaultApps(defaultapps::Msg),
+    Windows(hyprpage::Msg),
     Fonts(Vec<&'static str>),
 }
 
@@ -169,6 +172,7 @@ impl App {
             themes: themes::State::default(),
             shortcuts: shortcuts::State::default(),
             default_apps: defaultapps::State::default(),
+            windows: hyprpage::State::default(),
             fonts: Vec::new(),
             error: None,
         };
@@ -204,6 +208,10 @@ impl App {
                 .default_apps
                 .update(defaultapps::Msg::Load)
                 .map(Message::DefaultApps),
+            Page::Windows => self
+                .windows
+                .update(hyprpage::Msg::Load, windows::SECTIONS)
+                .map(Message::Windows),
         }
     }
 
@@ -268,7 +276,13 @@ impl App {
             }
             Page::Calendar => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Calendar(calendar::Msg::Refresh))),
-            Page::Keyboard | Page::Mouse | Page::Lock | Page::Themes | Page::Shortcuts | Page::DefaultApps => {}
+            Page::Keyboard
+            | Page::Mouse
+            | Page::Lock
+            | Page::Themes
+            | Page::Shortcuts
+            | Page::DefaultApps
+            | Page::Windows => {}
             Page::BarItems => subscriptions
                 .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Placement(placement::Msg::Refresh))),
         }
@@ -295,6 +309,7 @@ impl App {
             Message::Themes(msg) => return self.themes.update(msg).map(Message::Themes),
             Message::Shortcuts(msg) => return self.shortcuts.update(msg).map(Message::Shortcuts),
             Message::DefaultApps(msg) => return self.default_apps.update(msg).map(Message::DefaultApps),
+            Message::Windows(msg) => return self.windows.update(msg, windows::SECTIONS).map(Message::Windows),
             Message::Search(query) => {
                 self.query = query;
                 self.searching = true;
@@ -463,6 +478,8 @@ impl App {
             Page::DefaultApps => {
                 Element::from(self.default_apps.view(page_column(panel.title, layout))).map(Message::DefaultApps)
             }
+            Page::Windows => Element::from(self.windows.view(page_column(panel.title, layout), windows::SECTIONS))
+                .map(Message::Windows),
         };
         // One scroll position per panel.
         scrollable(container(content).center_x(Length::Fill))

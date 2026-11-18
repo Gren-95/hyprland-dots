@@ -69,6 +69,8 @@ pub enum Page {
     Shortcuts,
     /// Which app fills each role (defaultapps.rs).
     DefaultApps,
+    /// Window gaps, borders, effects and focus in Hyprland (windows.rs).
+    Windows,
 }
 
 pub struct Section {
@@ -630,6 +632,15 @@ pub const PANELS: &[Panel] = &[
         group: Group::Appearance,
         page: Page::Themes,
         keywords: "icon theme cursor pointer papirus breeze adwaita hyprcursor xcursor",
+        sections: &[],
+    },
+    Panel {
+        id: "windows",
+        title: "Windows",
+        glyph: ico::APP_WINDOW,
+        group: Group::Appearance,
+        page: Page::Windows,
+        keywords: "gaps border rounding blur shadow animations opacity tiling dwindle master focus follows mouse",
         sections: &[],
     },
     Panel {

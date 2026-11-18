@@ -28,6 +28,7 @@ mod style;
 mod system;
 mod themes;
 mod ui;
+mod windows;
 
 use std::process::ExitCode;
 
