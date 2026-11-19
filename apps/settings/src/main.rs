@@ -38,6 +38,7 @@ mod sysinfo;
 mod system;
 mod themes;
 mod ui;
+mod vpn;
 mod windows;
 
 use std::process::ExitCode;

@@ -13,7 +13,7 @@ shell show in the app too.
 
 | Name | Settings |
 |------|----------|
-| `network` | Wi-Fi on/off, nearby networks (connect, disconnect, forget, scan), wired devices, VPN connections — through `nmcli`; Details on the connected Wi-Fi network or wired device shows its addresses, gateway, DNS, hardware address and interface |
+| `network` | Wi-Fi on/off, nearby networks (connect, disconnect, forget, scan), wired devices, VPN connections (on/off, Details with type, server, address, DNS and Delete; import a WireGuard .conf or OpenVPN .ovpn file; set up WireGuard by hand) — through `nmcli`; Details on the connected Wi-Fi network or wired device shows its addresses, gateway, DNS, hardware address and interface |
 | `sound` | Output and input device, their volume and mute, and the volume of every app playing — through `pw-dump` and `wpctl` |
 | `bluetooth` | Bluetooth on/off, paired devices (connect, disconnect, forget, battery), scanning and pairing — through `bluetoothctl`. Connected AirPods get battery per bud and case, noise control, conversation awareness, codec and an audio reset, through librepods and `config/scripts/airpods.sh` |
 | `keyboard` | Keyboard layouts (search the XKB list, add, remove, reorder), layout switch shortcut, Caps Lock key, Num Lock at start, key repeat delay and speed — written to `config/hypr/settings.lua` (gitignored, loaded last) and applied with `hyprctl eval` |
@@ -108,6 +108,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/proton.rs` | Proton versions on the Gaming panel |
 | `src/gaming.rs` | Game mode switch and the Display rows on the Gaming panel |
 | `src/hiddenapps.rs` | Hidden apps on the Launcher panel |
+| `src/vpn.rs` | VPN section of the Network panel: list, details, import, WireGuard setup |
 | `src/notifapps.rs` | Per-app notification rules on the Notifications panel |
 | `src/power.rs` | Battery block on the Power panel |
 | `src/memory.rs` | Memory modules (udev), use (/proc/meminfo) and swap |

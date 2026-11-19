@@ -13,7 +13,6 @@ pub struct Snapshot {
     pub wifi_enabled: bool,
     pub networks: Vec<Wifi>,
     pub wired: Vec<Wired>,
-    pub vpns: Vec<Vpn>,
     /// Names of saved Wi-Fi connections.
     pub saved: Vec<String>,
     /// Addresses, gateway and DNS of the connection the default route uses.
@@ -37,12 +36,6 @@ pub struct Wired {
     pub connection: String,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Vpn {
-    pub name: String,
-    pub active: bool,
-}
-
 #[derive(Default)]
 pub struct State {
     snapshot: Option<Snapshot>,
@@ -58,6 +51,7 @@ pub struct State {
     confirming: Option<String>,
     /// Device whose details are shown.
     details_open: Option<String>,
+    vpn: crate::vpn::State,
     error: Option<String>,
 }
 
@@ -73,7 +67,7 @@ pub enum Msg {
     CancelPassword,
     Disconnect(String),
     Forget(String),
-    SetVpn(String, bool),
+    Vpn(crate::vpn::Msg),
     /// An action finished; refresh to show its effect.
     HiddenSsid(String),
     HiddenPassword(String),
@@ -131,26 +125,15 @@ pub fn parse_wifi(output: &str) -> Vec<Wifi> {
     networks
 }
 
-/// `nmcli -t -f NAME,TYPE,ACTIVE connection show`: saved Wi-Fi names and
-/// VPN connections (OpenVPN and the like, and WireGuard).
-pub fn parse_connections(output: &str) -> (Vec<String>, Vec<Vpn>) {
-    let mut saved = Vec::new();
-    let mut vpns = Vec::new();
-    for line in output.lines() {
-        let f = split_terse(line);
-        if f.len() < 3 {
-            continue;
-        }
-        match f[1].as_str() {
-            "802-11-wireless" => saved.push(f[0].clone()),
-            "vpn" | "wireguard" => vpns.push(Vpn {
-                name: f[0].clone(),
-                active: f[2] == "yes",
-            }),
-            _ => {}
-        }
-    }
-    (saved, vpns)
+/// `nmcli -t -f NAME,TYPE,ACTIVE connection show`: saved Wi-Fi names. VPNs
+/// are vpn.rs's.
+pub fn parse_connections(output: &str) -> Vec<String> {
+    output
+        .lines()
+        .map(split_terse)
+        .filter(|f| f.len() >= 3 && f[1] == "802-11-wireless")
+        .map(|f| f[0].clone())
+        .collect()
 }
 
 /// `nmcli -t -f DEVICE,TYPE,STATE,CONNECTION device status`: ethernet devices
@@ -199,7 +182,7 @@ fn snapshot() -> Result<Snapshot, String> {
     } else {
         Vec::new()
     };
-    let (saved, vpns) = parse_connections(&nmcli(&["-t", "-f", "NAME,TYPE,ACTIVE", "connection", "show"])?);
+    let saved = parse_connections(&nmcli(&["-t", "-f", "NAME,TYPE,ACTIVE", "connection", "show"])?);
     let status = nmcli(&["-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "device", "status"])?;
     let wired = parse_wired(&status);
     let details = connected_devices(&status)
@@ -210,7 +193,6 @@ fn snapshot() -> Result<Snapshot, String> {
         wifi_enabled,
         networks,
         wired,
-        vpns,
         saved,
         details,
     })
@@ -234,12 +216,14 @@ impl State {
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
         if !matches!(
             msg,
-            Msg::Forget(_) | Msg::Refresh | Msg::Refreshed(_) | Msg::ToggleDetails(_)
+            Msg::Forget(_) | Msg::Refresh | Msg::Refreshed(_) | Msg::ToggleDetails(_) | Msg::Vpn(_)
         ) {
             self.confirming = None;
         }
         match msg {
-            Msg::Refresh => return refresh(),
+            Msg::Refresh => {
+                return Task::batch([refresh(), self.vpn.update(crate::vpn::Msg::Refresh).map(Msg::Vpn)]);
+            }
             Msg::Refreshed(Ok(snapshot)) => self.snapshot = Some(*snapshot),
             Msg::Refreshed(Err(e)) => self.error = Some(e),
             Msg::ToggleDetails(device) => {
@@ -299,11 +283,7 @@ impl State {
                 self.busy = Some(name.clone());
                 return act(vec!["connection".into(), "delete".into(), "id".into(), name], None);
             }
-            Msg::SetVpn(name, on) => {
-                self.busy = Some(name.clone());
-                let verb = if on { "up" } else { "down" };
-                return act(vec!["connection".into(), verb.into(), "id".into(), name], None);
-            }
+            Msg::Vpn(m) => return self.vpn.update(m).map(Msg::Vpn),
             Msg::HiddenSsid(text) => self.hidden_ssid = text,
             Msg::HiddenPassword(text) => self.hidden_password = text,
             Msg::JoinHidden => {
@@ -411,26 +391,8 @@ impl State {
                 .collect();
             body = ui::section(body, "Wired", rows);
         }
-        if !snap.vpns.is_empty() {
-            let rows = snap
-                .vpns
-                .iter()
-                .map(|v| {
-                    let name = v.name.clone();
-                    let toggle = iced::widget::toggler(v.active)
-                        .on_toggle_maybe(idle.then_some(move |on| Msg::SetVpn(name.clone(), on)));
-                    let state = if self.busy.as_deref() == Some(v.name.as_str()) {
-                        "Working…"
-                    } else if v.active {
-                        "Connected"
-                    } else {
-                        "Off"
-                    };
-                    ui::item(ico::SHIELD, v.name.clone(), state.into(), vec![toggle.into()])
-                })
-                .collect();
-            body = ui::section(body, "VPN", rows);
-        }
+        let vpns = self.vpn.rows().into_iter().map(|r| r.map(Msg::Vpn)).collect();
+        body = ui::section(body, "VPN", vpns);
         body
     }
 
@@ -532,23 +494,9 @@ mod tests {
     }
 
     #[test]
-    fn finds_saved_wifi_and_vpns() {
+    fn finds_saved_wifi() {
         let out = "TimeCapsule:802-11-wireless:yes\ndocker0:bridge:yes\nwork:vpn:no\nwg0:wireguard:yes\niPhone :802-11-wireless:no\n";
-        let (saved, vpns) = parse_connections(out);
-        assert_eq!(saved, ["TimeCapsule", "iPhone "]);
-        assert_eq!(
-            vpns,
-            [
-                Vpn {
-                    name: "work".into(),
-                    active: false
-                },
-                Vpn {
-                    name: "wg0".into(),
-                    active: true
-                }
-            ]
-        );
+        assert_eq!(parse_connections(out), ["TimeCapsule", "iPhone "]);
     }
 
     #[test]
