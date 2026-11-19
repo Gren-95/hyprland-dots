@@ -299,6 +299,14 @@ pub fn divider(_: &Theme) -> container::Style {
     }
 }
 
+/// The dimmed window behind a dialog.
+pub fn backdrop(_: &Theme) -> container::Style {
+    container::Style {
+        background: Some(Background::Color(Color { a: 0.6, ..BG_DEEP })),
+        ..container::Style::default()
+    }
+}
+
 pub fn card(_: &Theme) -> container::Style {
     container::Style {
         background: Some(Background::Color(BG_ALT)),

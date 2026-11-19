@@ -14,7 +14,7 @@ use std::io;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
-use iced::widget::{Column, column, container, row, text, text_input, toggler};
+use iced::widget::{Column, column, container, row, text, text_input};
 use iced::{Alignment, Element, Length};
 
 use crate::style::{self, Action};
@@ -388,14 +388,9 @@ impl State {
             ("Move up", (i > 0).then_some(Msg::MoveUp(i))),
             (remove, Some(Msg::Remove(i))),
         ]);
-        let line = row![
-            dot,
-            info,
-            menu,
-            toggler(feed.on).on_toggle(move |on| Msg::Switch(i, on))
-        ]
-        .spacing(14)
-        .align_y(Alignment::Center);
+        let line = row![dot, info, menu, ui::switch(feed.on, Some(move |on| Msg::Switch(i, on)))]
+            .spacing(14)
+            .align_y(Alignment::Center);
         container(line).padding([10, 14]).into()
     }
 

@@ -8,7 +8,6 @@ use std::path::PathBuf;
 
 use iced::Element;
 use iced::Length;
-use iced::widget::toggler;
 
 use crate::style;
 use crate::system::{self, args};
@@ -192,12 +191,12 @@ pub fn rows<'a, M: Clone + 'a>(a: &'a AirPods, idle: bool, on_action: impl Fn(Ac
         let on = a.conversation.unwrap_or(false);
         // A toggle only ever flips, so its message is known up front.
         let flip = on_action(Action::Conversation(!on));
-        let toggle = toggler(on).on_toggle_maybe(idle.then_some(move |_| flip.clone()));
+        let toggle = ui::switch(on, idle.then_some(move |_| flip.clone()));
         rows.push(ui::item(
             ico::MESSAGE_CIRCLE,
             "Conversation awareness".into(),
             "Lowers the volume when you start talking".into(),
-            vec![toggle.into()],
+            vec![toggle],
         ));
     }
     let codecs = CODECS

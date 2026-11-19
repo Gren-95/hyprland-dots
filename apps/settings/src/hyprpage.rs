@@ -4,7 +4,7 @@
 
 use std::collections::HashMap;
 
-use iced::widget::{Column, column, container, row, slider, text, toggler};
+use iced::widget::{Column, column, container, row, slider, text};
 use iced::{Alignment, Element, Length, Task};
 use serde_json::{Value as Json, json};
 
@@ -198,11 +198,7 @@ impl State {
         let (label, help, control): (&str, &str, Element<'a, Msg>) = match r {
             Row::Toggle { option, label, help } => {
                 let on = value.as_bool().unwrap_or(false);
-                (
-                    label,
-                    help,
-                    toggler(on).on_toggle(move |b| Msg::Set(option, json!(b))).into(),
-                )
+                (label, help, ui::switch(on, Some(move |b| Msg::Set(option, json!(b)))))
             }
             Row::Binary {
                 option,

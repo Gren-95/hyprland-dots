@@ -4,7 +4,7 @@
 use lucide_iced::bytes as ico;
 use std::fmt;
 
-use iced::widget::{Column, column, container, pick_list, row, slider, text, text_input, toggler};
+use iced::widget::{Column, column, container, pick_list, row, slider, text, text_input};
 use iced::{Alignment, Element, Length, Task};
 
 use crate::hypr::{Keyboard, Settings};
@@ -270,7 +270,7 @@ impl State {
                     ico::HASH,
                     "Num Lock on at start".into(),
                     "Turn Num Lock on when Hyprland starts".into(),
-                    vec![toggler(k.numlock).on_toggle(Msg::Numlock).into()],
+                    vec![ui::switch(k.numlock, Some(Msg::Numlock))],
                 ),
             ],
         );

@@ -4,7 +4,6 @@
 //! Hyprland's display options for games. What game mode does is ordinary
 //! settings (schema.rs).
 
-use iced::widget::toggler;
 use iced::{Element, Task};
 use lucide_iced::bytes as ico;
 
@@ -239,12 +238,12 @@ impl State {
             (_, Some(true)) => "On: the settings below are in effect",
             (_, Some(false)) => "Off",
         };
-        let switch = toggler(on).on_toggle_maybe((!self.busy && self.on.is_some()).then_some(Msg::Set));
+        let switch = ui::switch(on, (!self.busy && self.on.is_some()).then_some(Msg::Set));
         rows.push(ui::item(
             ico::GAMEPAD_2,
             "Game mode".into(),
             detail.into(),
-            vec![switch.into()],
+            vec![switch],
         ));
         rows
     }

@@ -114,3 +114,25 @@ text.
   gateway, DNS) hides behind a **Details** button with a chevron
   (`ui::disclosure`), opening below the row, indented under its title.
 - Details is not an action: it does not count toward the two-button limit.
+
+## Trees
+
+- Items that belong to a switch above them (the networks under Wi-Fi) hang
+  under it as a tree (`ui::branch`): a guide line with a tick to each item.
+  An item's own extras (details, a password field) stay inside its branch.
+
+## Dialogs
+
+- Something used rarely that needs a few fields (joining a hidden network)
+  opens in a dialog (`ui::modal`) from a button, instead of sitting in the
+  panel. The window behind is dimmed; clicking outside, Cancel or Escape
+  closes it, and its first field has the cursor.
+
+## Keyboard
+
+- Every control is reachable with Tab: build buttons, switches and
+  dropdowns with the `ui` helpers (`ui::action`, `ui::switch`,
+  `ui::button_group`, `ui::choice`…), which wrap them in
+  `focus::focusable`. A control made by hand needs the same wrapper, with
+  the message Enter or Space should send.
+

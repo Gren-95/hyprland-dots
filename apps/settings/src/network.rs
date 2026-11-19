@@ -51,6 +51,8 @@ pub struct State {
     confirming: Option<String>,
     /// Device whose details are shown.
     details_open: Option<String>,
+    /// The hidden network dialog is open.
+    hidden_open: bool,
     vpn: crate::vpn::State,
     error: Option<String>,
 }
@@ -75,6 +77,8 @@ pub enum Msg {
     Done(Result<(), String>),
     /// Show or hide a device's details.
     ToggleDetails(String),
+    /// Open or close the hidden network dialog.
+    HiddenDialog(bool),
 }
 
 /// Split one line of `nmcli -t` output: fields are separated by ':', and
@@ -161,6 +165,9 @@ pub fn connected_devices(output: &str) -> Vec<String> {
         .map(|f| f[0].clone())
         .collect()
 }
+
+/// The name field of the hidden network dialog, focused when it opens.
+const HIDDEN_SSID_ID: &str = "hidden-ssid";
 
 fn nmcli(list: &[&str]) -> Result<String, String> {
     system::run_blocking("nmcli", &args(list), None)
@@ -286,11 +293,20 @@ impl State {
             Msg::Vpn(m) => return self.vpn.update(m).map(Msg::Vpn),
             Msg::HiddenSsid(text) => self.hidden_ssid = text,
             Msg::HiddenPassword(text) => self.hidden_password = text,
+            Msg::HiddenDialog(open) => {
+                self.hidden_open = open;
+                if open {
+                    return iced::widget::operation::focus(HIDDEN_SSID_ID);
+                }
+                self.hidden_ssid.clear();
+                self.hidden_password.clear();
+            }
             Msg::JoinHidden => {
                 let ssid = self.hidden_ssid.trim().to_string();
                 if ssid.is_empty() {
                     return Task::none();
                 }
+                self.hidden_open = false;
                 self.busy = Some(ssid.clone());
                 let password = std::mem::take(&mut self.hidden_password);
                 self.hidden_ssid.clear();
@@ -321,50 +337,38 @@ impl State {
             return ui::section(body, "Wi-Fi", vec![ui::note("Loading…")]);
         };
         let idle = self.busy.is_none();
-        let toggle = iced::widget::toggler(snap.wifi_enabled).on_toggle_maybe(idle.then_some(Msg::SetWifi));
+        let toggle = ui::switch(snap.wifi_enabled, idle.then_some(Msg::SetWifi));
+        let on = idle && snap.wifi_enabled;
         let mut wifi = vec![ui::item(
             ico::WIFI,
             "Wi-Fi".into(),
             if snap.wifi_enabled { "On".into() } else { "Off".into() },
             vec![
-                ui::action(
-                    "Scan",
-                    (idle && snap.wifi_enabled).then_some(Msg::Rescan),
-                    Action::Normal,
-                ),
-                toggle.into(),
+                ui::button_group(vec![
+                    ("Scan", on.then_some(Msg::Rescan), Action::Normal),
+                    ("+ Hidden", on.then_some(Msg::HiddenDialog(true)), Action::Normal),
+                ]),
+                toggle,
             ],
         )];
         if snap.wifi_enabled && snap.networks.is_empty() {
-            wifi.push(ui::note("No networks found"));
+            wifi.push(ui::branch(ui::note("No networks found"), true));
         }
+        // The networks hang under the Wi-Fi switch as a tree; a network's
+        // details or password field stay inside its branch.
         let wifi_device = snap.details.iter().find(|d| d.kind == "Wi-Fi");
-        for n in &snap.networks {
+        let count = snap.networks.len();
+        for (i, n) in snap.networks.iter().enumerate() {
             let device = wifi_device.filter(|_| n.in_use);
-            wifi.push(self.network_row(n, snap.saved.contains(&n.ssid), device.map(|d| d.device.as_str())));
+            let mut branch =
+                column![self.network_row(n, snap.saved.contains(&n.ssid), device.map(|d| d.device.as_str()))];
             if let Some(d) = device.filter(|d| self.details_open.as_ref() == Some(&d.device)) {
-                wifi.push(crate::infoview::connection_details(d));
+                branch = branch.push(crate::infoview::connection_details(d));
             }
             if self.prompt.as_deref() == Some(n.ssid.as_str()) {
-                wifi.push(self.password_row());
+                branch = branch.push(self.password_row());
             }
-        }
-        if snap.wifi_enabled {
-            let join = (idle && !self.hidden_ssid.trim().is_empty()).then_some(Msg::JoinHidden);
-            let fields = vec![
-                text_input("Hidden network name", &self.hidden_ssid)
-                    .on_input(Msg::HiddenSsid)
-                    .on_submit(Msg::JoinHidden),
-                text_input("Password (empty if open)", &self.hidden_password)
-                    .secure(true)
-                    .on_input(Msg::HiddenPassword)
-                    .on_submit(Msg::JoinHidden),
-            ];
-            wifi.push(
-                iced::widget::container(ui::fields_group(fields, vec![("Join", join, Action::Primary)]))
-                    .padding([8, 14])
-                    .into(),
-            );
+            wifi.push(ui::branch(branch.into(), i + 1 == count));
         }
         body = ui::section(body, "Wi-Fi", wifi);
         if !snap.wired.is_empty() {
@@ -448,6 +452,45 @@ impl State {
             controls
         };
         ui::item(glyph, n.ssid.clone(), detail.join(" · "), controls)
+    }
+
+    /// The hidden network dialog, while it is open (app.rs lays it over the
+    /// window).
+    pub fn dialog(&self) -> Option<Element<'_, Msg>> {
+        if !self.hidden_open {
+            return None;
+        }
+        let idle = self.busy.is_none();
+        let join = (idle && !self.hidden_ssid.trim().is_empty()).then_some(Msg::JoinHidden);
+        let content = column![
+            iced::widget::text("Join a hidden network")
+                .size(18)
+                .font(crate::style::FONT_BOLD),
+            iced::widget::text("A network that does not show its name. Type it exactly.")
+                .size(13)
+                .color(crate::style::MUTED_DEEP),
+            text_input("Network name", &self.hidden_ssid)
+                .id(HIDDEN_SSID_ID)
+                .on_input(Msg::HiddenSsid)
+                .on_submit(Msg::JoinHidden)
+                .padding([8, 10])
+                .style(crate::style::field),
+            text_input("Password (empty if open)", &self.hidden_password)
+                .secure(true)
+                .on_input(Msg::HiddenPassword)
+                .on_submit(Msg::JoinHidden)
+                .padding([8, 10])
+                .style(crate::style::field),
+            iced::widget::row![
+                iced::widget::Space::new().width(iced::Length::Fill),
+                ui::button_group(vec![
+                    ("Cancel", Some(Msg::HiddenDialog(false)), Action::Normal),
+                    ("Join", join, Action::Primary),
+                ]),
+            ],
+        ]
+        .spacing(12);
+        Some(content.into())
     }
 
     fn password_row(&self) -> Element<'_, Msg> {

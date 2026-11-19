@@ -59,6 +59,14 @@ shows only icons and widens while you search.
 
 Sliders write when released. Text fields write on Enter.
 
+Keyboard: Tab and Shift+Tab move between controls (sidebar entries,
+buttons, switches, dropdowns, text fields) with a ring around the one in
+focus, and the panel scrolls to keep it in sight; Enter or Space presses
+it (a dropdown steps to its next choice, a switch flips). Alt+Down and
+Alt+Up open the next and previous panel; Page Down, Page Up, Home and End
+scroll the panel; Escape closes a dialog or empties the search. Sliders
+are mouse only.
+
 The Network, Sound and Bluetooth panels ask the system again every three
 seconds while open. Volume sliders stop at the maximum volume set in Volume &
 OSD. A Wi-Fi password is handed to `nmcli --ask` on
@@ -108,6 +116,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/proton.rs` | Proton versions on the Gaming panel |
 | `src/gaming.rs` | Game mode switch and the Display rows on the Gaming panel |
 | `src/hiddenapps.rs` | Hidden apps on the Launcher panel |
+| `src/focus.rs` | Keyboard focus: the focusable wrapper, Tab and scrolling to the focused control |
 | `src/vpn.rs` | VPN section of the Network panel: list, details, import, WireGuard setup |
 | `src/notifapps.rs` | Per-app notification rules on the Notifications panel |
 | `src/power.rs` | Battery block on the Power panel |

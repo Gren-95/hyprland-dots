@@ -8,7 +8,7 @@
 
 use std::path::PathBuf;
 
-use iced::widget::{column, row, text, text_input, toggler};
+use iced::widget::{column, row, text, text_input};
 use iced::{Alignment, Element, Length, Task};
 use lucide_iced::bytes as ico;
 
@@ -447,13 +447,13 @@ impl State {
             "Off"
         };
         let uuid = v.uuid.clone();
-        let switch = toggler(v.active).on_toggle_maybe(idle.then_some(move |on| Msg::Set(uuid.clone(), on)));
+        let switch = ui::switch(v.active, idle.then_some(move |on| Msg::Set(uuid.clone(), on)));
         let open = self.open.as_ref().is_some_and(|(u, _)| *u == v.uuid);
         ui::item(
             if v.active { ico::SHIELD_CHECK } else { ico::SHIELD },
             v.name.clone(),
             format!("{} · {state}", v.kind),
-            vec![ui::disclosure(open, Msg::ToggleDetails(v.uuid.clone())), switch.into()],
+            vec![ui::disclosure(open, Msg::ToggleDetails(v.uuid.clone())), switch],
         )
     }
 

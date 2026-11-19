@@ -297,7 +297,7 @@ impl State {
             return ui::section(body, "Bluetooth", vec![ui::note("Loading…")]);
         };
         let idle = self.busy.is_none();
-        let power = iced::widget::toggler(snap.powered).on_toggle_maybe(idle.then_some(Msg::SetPower));
+        let power = ui::switch(snap.powered, idle.then_some(Msg::SetPower));
         body = ui::section(
             body,
             "Bluetooth",
@@ -305,7 +305,7 @@ impl State {
                 ico::BLUETOOTH,
                 "Bluetooth".into(),
                 if snap.powered { "On".into() } else { "Off".into() },
-                vec![power.into()],
+                vec![power],
             )],
         );
         if !snap.powered {

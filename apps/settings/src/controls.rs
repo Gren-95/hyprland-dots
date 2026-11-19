@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use iced::widget::{button, column, container, pick_list, row, slider, text, text_input, toggler, tooltip};
+use iced::widget::{button, column, container, pick_list, row, slider, text, text_input, tooltip};
 use iced::{Alignment, Element, Length};
 
 use crate::app::Message;
@@ -104,9 +104,7 @@ fn control<'a>(
     };
     let value = values.get(s.file).cloned().unwrap_or_else(|| s.default_value());
     match (&s.control, value) {
-        (Control::Toggle, Value::Bool(on)) => toggler(on)
-            .on_toggle(move |b| Message::Set(file, Value::Bool(b)))
-            .into(),
+        (Control::Toggle, Value::Bool(on)) => ui::switch(on, Some(move |b| Message::Set(file, Value::Bool(b)))),
         (Control::Number { min, max, step, unit }, Value::Int(n)) => {
             let shown = n.clamp(*min, *max) as i32;
             let bar = slider(*min as i32..=*max as i32, shown, move |v| {

@@ -39,6 +39,8 @@ use crate::windows;
 /// How often the files are read again, so changes made in the shell show up.
 const RELOAD_EVERY: Duration = Duration::from_secs(1);
 /// How often the open Network or Bluetooth page asks the system again.
+/// How far Page Up / Page Down scroll a panel.
+const PAGE_SCROLL: f32 = 400.0;
 const SYSTEM_REFRESH_EVERY: Duration = Duration::from_secs(3);
 pub const SEARCH_ID: &str = "search";
 /// How long a revealed setting stays outlined (cleared on the next reload
@@ -132,6 +134,14 @@ pub enum Message {
     FocusSearch,
     /// Escape: empty the search field.
     ClearSearch,
+    /// Tab / Shift+Tab: the next or previous control.
+    FocusNext,
+    FocusPrevious,
+    /// Alt+Down / Alt+Up: the next or previous panel.
+    PanelStep(i32),
+    /// Page Down / Page Up (pages) and Home / End (true: the top).
+    ScrollPage(f32),
+    ScrollEdge(bool),
     /// Add the typed text to a list setting (pills).
     AddPill(&'static str),
     /// Remove one item of a list setting.
@@ -301,6 +311,14 @@ impl App {
             keys::Event::KeyPressed { key, modifiers, .. } => match key.as_ref() {
                 keys::Key::Character("f") if modifiers.command() => Some(Message::FocusSearch),
                 keys::Key::Named(keys::key::Named::Escape) => Some(Message::ClearSearch),
+                keys::Key::Named(keys::key::Named::Tab) if modifiers.shift() => Some(Message::FocusPrevious),
+                keys::Key::Named(keys::key::Named::Tab) => Some(Message::FocusNext),
+                keys::Key::Named(keys::key::Named::ArrowDown) if modifiers.alt() => Some(Message::PanelStep(1)),
+                keys::Key::Named(keys::key::Named::ArrowUp) if modifiers.alt() => Some(Message::PanelStep(-1)),
+                keys::Key::Named(keys::key::Named::PageDown) => Some(Message::ScrollPage(1.0)),
+                keys::Key::Named(keys::key::Named::PageUp) => Some(Message::ScrollPage(-1.0)),
+                keys::Key::Named(keys::key::Named::Home) => Some(Message::ScrollEdge(true)),
+                keys::Key::Named(keys::key::Named::End) => Some(Message::ScrollEdge(false)),
                 _ => None,
             },
             _ => None,
@@ -386,7 +404,31 @@ impl App {
                 self.searching = true;
                 return iced::widget::operation::focus(SEARCH_ID);
             }
+            Message::FocusNext => return crate::focus::next(PANELS[self.panel].id),
+            Message::FocusPrevious => return crate::focus::previous(PANELS[self.panel].id),
+            Message::PanelStep(step) => {
+                let count = PANELS.len() as i32;
+                let next = (self.panel as i32 + step).rem_euclid(count) as usize;
+                return self.update(Message::SelectPanel(next));
+            }
+            Message::ScrollPage(pages) => {
+                let offset = iced::widget::scrollable::AbsoluteOffset {
+                    x: 0.0,
+                    y: pages * PAGE_SCROLL,
+                };
+                return iced::widget::operation::scroll_by(PANELS[self.panel].id, offset);
+            }
+            Message::ScrollEdge(top) => {
+                let y = if top { 0.0 } else { 1.0 };
+                return iced::widget::operation::snap_to(
+                    PANELS[self.panel].id,
+                    iced::widget::scrollable::RelativeOffset { x: None, y: Some(y) },
+                );
+            }
             Message::ClearSearch => {
+                if self.network.dialog().is_some() {
+                    return self.update(Message::Network(network::Msg::HiddenDialog(false)));
+                }
                 self.query.clear();
                 self.searching = false;
             }
@@ -489,12 +531,21 @@ impl App {
                 .width(1)
                 .height(Length::Fill)
                 .style(style::divider);
-            row![
+            let base: Element<'_, Message> = row![
                 sidebar::view(self.panel, &self.query, layout),
                 divider,
                 self.panel_view(&PANELS[self.panel], layout)
             ]
-            .into()
+            .into();
+            // A panel's dialog covers the whole window.
+            match (PANELS[self.panel].page, self.network.dialog()) {
+                (Page::Network, Some(dialog)) => ui::modal(
+                    base,
+                    dialog.map(Message::Network),
+                    Message::Network(network::Msg::HiddenDialog(false)),
+                ),
+                _ => base,
+            }
         })
         .into()
     }

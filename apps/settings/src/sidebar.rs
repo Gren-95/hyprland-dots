@@ -49,9 +49,9 @@ pub fn view<'a>(panel: usize, query: &'a str, layout: Layout) -> Element<'a, Mes
         .into()
 }
 
-fn panel_entry<'a>(i: usize, selected: bool) -> button::Button<'a, Message> {
+fn panel_entry<'a>(i: usize, selected: bool) -> Element<'a, Message> {
     let p = &PANELS[i];
-    button(
+    let entry = button(
         row![glyph(p.glyph), text(p.title).size(14)]
             .spacing(8)
             .align_y(Alignment::Center),
@@ -59,7 +59,8 @@ fn panel_entry<'a>(i: usize, selected: bool) -> button::Button<'a, Message> {
     .on_press(Message::SelectPanel(i))
     .width(Length::Fill)
     .padding([9, 12])
-    .style(style::nav(selected))
+    .style(style::nav(selected));
+    crate::focus::focusable(entry, Some(Message::SelectPanel(i))).into()
 }
 
 fn glyph<'a>(g: crate::ui::Icon) -> Element<'a, Message> {
@@ -102,11 +103,13 @@ fn results<'a>(open: usize, query: &str) -> Column<'a, Message> {
         list = list.push(panel_entry(group.panel, group.panel == open));
         for setting in group.settings {
             // Indented under the panel name, past its glyph.
+            let reveal = Message::Reveal(group.panel, setting.file);
             let entry = button(text(setting.label).size(13))
-                .on_press(Message::Reveal(group.panel, setting.file))
+                .on_press(reveal.clone())
                 .width(Length::Fill)
                 .padding([6, 12])
                 .style(style::nav(false));
+            let entry = crate::focus::focusable(entry, Some(reveal));
             list = list.push(row![Space::new().width(34), entry]);
         }
     }
@@ -121,6 +124,7 @@ fn compact<'a>(open: usize) -> Element<'a, Message> {
             .padding([9, 12])
             .style(style::nav(false)),
         "Search (Ctrl+F)",
+        Message::FocusSearch,
     );
     // Icons only: a thin line between groups instead of their headers.
     let mut entries = column![].spacing(2);
@@ -140,14 +144,14 @@ fn compact<'a>(open: usize) -> Element<'a, Message> {
             .on_press(Message::SelectPanel(i))
             .padding([9, 12])
             .style(style::nav(i == open));
-        entries = entries.push(with_tooltip(entry, PANELS[i].title));
+        entries = entries.push(with_tooltip(entry, PANELS[i].title, Message::SelectPanel(i)));
     }
     column![Space::new().height(8), search, entries].spacing(10).into()
 }
 
-fn with_tooltip<'a>(content: button::Button<'a, Message>, tip: &'a str) -> Element<'a, Message> {
+fn with_tooltip<'a>(content: button::Button<'a, Message>, tip: &'a str, on_key: Message) -> Element<'a, Message> {
     tooltip(
-        content,
+        crate::focus::focusable(content, Some(on_key)),
         container(text(tip).size(13)).padding([4, 8]).style(style::card),
         tooltip::Position::Right,
     )

@@ -3,7 +3,7 @@
 //! characters); `wpctl` reads and sets volume, mute and the defaults, as it
 //! also handles volumes kept on the device route.
 
-use iced::widget::{Column, container, row, slider, text, toggler};
+use iced::widget::{Column, container, row, slider, text};
 use iced::{Alignment, Element, Length, Task};
 use lucide_iced::bytes as ico;
 
@@ -314,7 +314,7 @@ fn volume_row<'a>(glyph: crate::ui::Icon, label: String, n: &Node, max: f32) -> 
             .size(13)
             .color(style::FG_MUTED)
             .width(48),
-        toggler(!n.muted).on_toggle(move |on| Msg::SetMute(id, !on)),
+        ui::switch(!n.muted, Some(move |on: bool| Msg::SetMute(id, !on))),
     ]
     .spacing(12)
     .align_y(Alignment::Center);

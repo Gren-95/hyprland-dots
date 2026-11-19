@@ -10,6 +10,7 @@ mod calendar;
 mod cli;
 mod controls;
 mod defaultapps;
+mod focus;
 mod fonts;
 mod gaming;
 mod hiddenapps;

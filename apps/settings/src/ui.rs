@@ -6,6 +6,7 @@ use std::fmt;
 use iced::widget::{Column, Row, Space, TextInput, button, column, container, pick_list, row, text};
 use iced::{Alignment, Element, Length};
 
+use crate::focus::focusable;
 use crate::style;
 
 /// A Lucide icon's SVG bytes (`lucide_iced::bytes::*`).
@@ -59,10 +60,19 @@ pub fn error<'a, M: 'a>(message: &'a str) -> Element<'a, M> {
 
 /// A small text button; `on_press` None draws it disabled.
 pub fn action<'a, M: Clone + 'a>(label: &'a str, on_press: Option<M>, kind: style::Action) -> Element<'a, M> {
-    button(text(label).size(13))
+    let activate = on_press.clone();
+    let b = button(text(label).size(13))
         .on_press_maybe(on_press)
         .padding([5, 12])
-        .style(style::action(kind))
+        .style(style::action(kind));
+    focusable(b, activate).into()
+}
+
+/// An on/off switch that Tab reaches and Enter or Space flips.
+pub fn switch<'a, M: Clone + 'a>(on: bool, on_toggle: Option<impl Fn(bool) -> M + 'a>) -> Element<'a, M> {
+    let activate = on_toggle.as_ref().map(|f| f(!on));
+    focusable(iced::widget::toggler(on).on_toggle_maybe(on_toggle), activate)
+        .radius(10.0)
         .into()
 }
 
@@ -80,12 +90,13 @@ const GROUP_TEXT: f32 = 14.0;
 pub fn segmented<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>, width: Length) -> Element<'a, M> {
     let count = items.len();
     let buttons = items.into_iter().enumerate().map(|(i, (label, selected, on_press))| {
-        button(text(label).size(GROUP_TEXT).center().width(Length::Fill))
+        let activate = on_press.clone();
+        let b = button(text(label).size(GROUP_TEXT).center().width(Length::Fill))
             .on_press_maybe(on_press)
             .padding([8, 10])
             .width(share(label))
-            .style(style::segment(selected, style::Joint::of(i, count)))
-            .into()
+            .style(style::segment(selected, style::Joint::of(i, count)));
+        focusable(b, activate).into()
     });
     // Overlap by one pixel so neighbours share a single border line.
     Row::with_children(buttons).spacing(-1.0).width(width).into()
@@ -101,12 +112,13 @@ pub fn multi_select<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>, w
             content = content.push(icon(lucide_iced::bytes::CHECK, GROUP_TEXT));
         }
         let content = content.push(text(label).size(GROUP_TEXT));
-        button(container(content).center_x(Length::Fill))
+        let activate = on_press.clone();
+        let b = button(container(content).center_x(Length::Fill))
             .on_press_maybe(on_press)
             .padding([8, 10])
             .width(share(label))
-            .style(style::segment(on, style::Joint::of(i, count)))
-            .into()
+            .style(style::segment(on, style::Joint::of(i, count)));
+        focusable(b, activate).into()
     });
     Row::with_children(buttons).spacing(-1.0).width(width).into()
 }
@@ -120,26 +132,68 @@ pub fn disclosure<'a, M: Clone + 'a>(open: bool, on_press: M) -> Element<'a, M> 
     } else {
         lucide_iced::bytes::CHEVRON_DOWN
     };
-    button(
+    let b = button(
         row![text("Details").size(13), icon(glyph, 14.0)]
             .spacing(4)
             .align_y(Alignment::Center),
     )
-    .on_press(on_press)
+    .on_press(on_press.clone())
     .padding([5, 10])
-    .style(style::action(style::Action::Normal))
+    .style(style::action(style::Action::Normal));
+    focusable(b, Some(on_press)).into()
+}
+
+/// Height from the top of a list row to the middle of its title line, where
+/// a tree branch meets it.
+const BRANCH_AT: f32 = 27.0;
+
+/// `content` as one branch of a tree under the row above it (UI.md: the
+/// networks under the Wi-Fi switch): a guide line down the left with a tick
+/// to the content. `last` ends the guide line at this branch.
+pub fn branch<'a, M: 'a>(content: Element<'a, M>, last: bool) -> Element<'a, M> {
+    let line = |height: Length| container(Space::new()).width(1).height(height).style(style::divider);
+    let guide: Element<'a, M> = if last {
+        column![line(Length::Fixed(BRANCH_AT + 1.0)), Space::new().height(Length::Fill)].into()
+    } else {
+        line(Length::Fill).into()
+    };
+    let tick = column![
+        Space::new().height(BRANCH_AT),
+        container(Space::new()).width(12).height(1).style(style::divider)
+    ];
+    row![
+        Space::new().width(26),
+        guide,
+        tick,
+        container(content).width(Length::Fill)
+    ]
+    .height(Length::Shrink)
     .into()
+}
+
+/// A dialog over the window: `content` in a card in the middle, the rest
+/// dimmed; clicking outside sends `on_close`.
+pub fn modal<'a, M: Clone + 'a>(base: Element<'a, M>, content: Element<'a, M>, on_close: M) -> Element<'a, M> {
+    let card = container(content).padding(20).max_width(460).style(style::card);
+    let dialog = iced::widget::mouse_area(
+        container(iced::widget::opaque(card))
+            .center(Length::Fill)
+            .style(style::backdrop),
+    )
+    .on_press(on_close);
+    iced::widget::stack![base, iced::widget::opaque(dialog)].into()
 }
 
 /// Plain action buttons joined into one group: (label, message, kind).
 pub fn button_group<'a, M: Clone + 'a>(buttons: Vec<(&'a str, Option<M>, style::Action)>) -> Element<'a, M> {
     let count = buttons.len();
     let parts = buttons.into_iter().enumerate().map(|(i, (label, on_press, kind))| {
-        button(text(label).size(13))
+        let activate = on_press.clone();
+        let b = button(text(label).size(13))
             .on_press_maybe(on_press)
             .padding([5, 12])
-            .style(style::action_at(kind, style::Joint::of(i, count)))
-            .into()
+            .style(style::action_at(kind, style::Joint::of(i, count)));
+        focusable(b, activate).into()
     });
     Row::with_children(parts).spacing(-1.0).into()
 }
@@ -212,10 +266,13 @@ pub fn select<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>, width: 
         return disabled(shown, width);
     }
     let messages: Vec<M> = messages.into_iter().flatten().collect();
-    pick_list(entries, selected, move |e: Entry| messages[e.index].clone())
+    // From the keyboard, Enter or Space picks the next option.
+    let next = selected.as_ref().map_or(0, |e| (e.index + 1) % messages.len().max(1));
+    let activate = messages.get(next).cloned();
+    let list = pick_list(entries, selected, move |e: Entry| messages[e.index].clone())
         .text_size(GROUP_TEXT)
-        .width(width)
-        .into()
+        .width(width);
+    focusable(list, activate).into()
 }
 
 /// A greyed-out, inert stand-in for a control.
@@ -311,13 +368,14 @@ pub fn search_picker<'a, M: Clone + 'a>(
         if let Some(font) = m.font {
             label = label.font(font);
         }
-        list = list.push(
+        list = list.push(focusable(
             button(row![label, text(m.detail).size(12).color(style::MUTED_DEEP)].align_y(Alignment::Center))
-                .on_press(m.on_pick)
+                .on_press(m.on_pick.clone())
                 .width(Length::Fill)
                 .padding([6, 12])
                 .style(style::nav(false)),
-        );
+            Some(m.on_pick),
+        ));
     }
     list.into()
 }
@@ -326,11 +384,12 @@ pub fn search_picker<'a, M: Clone + 'a>(
 /// shortcut categories). Each item is (label, picked, message).
 pub fn pills<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>) -> Element<'a, M> {
     let buttons = items.into_iter().map(|(label, picked, on_press)| {
-        button(text(label).size(13))
+        let activate = on_press.clone();
+        let b = button(text(label).size(13))
             .on_press_maybe(on_press)
             .padding([4, 12])
-            .style(style::filter_pill(picked))
-            .into()
+            .style(style::filter_pill(picked));
+        focusable(b, activate).radius(12.0).into()
     });
     Row::with_children(buttons).spacing(6).wrap().into()
 }
