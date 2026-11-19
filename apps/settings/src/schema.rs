@@ -692,7 +692,7 @@ pub const PANELS: &[Panel] = &[
                     scale(
                         "radius-scale",
                         "Corner roundness",
-                        "Multiplies every corner radius",
+                        "Multiplies every corner radius, in the shell and of windows",
                         0.0,
                         2.0,
                         0.1,

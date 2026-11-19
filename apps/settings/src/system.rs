@@ -6,6 +6,8 @@ use std::process::{Command, Stdio};
 
 use iced::futures::channel::oneshot;
 
+use crate::store::{Kind, Store, Value};
+
 /// Run `program` with `args`, feeding `stdin` when given. Ok is stdout, Err
 /// is stderr (or why the program could not run).
 pub async fn run(program: &'static str, args: Vec<String>, stdin: Option<String>) -> Result<String, String> {
@@ -64,16 +66,22 @@ const AFTER_WRITE: &[(&str, &str, &str)] = &[
     ("gamemode-feral", "gamemode.sh", "feral"),
 ];
 
-/// Animations switched on or off everywhere: the shell reads the setting
-/// itself; Hyprland's animations:enabled (kept in settings.lua, the same
-/// option the Windows panel shows) and GTK's enable-animations follow it.
-fn apply_animations(on: bool) {
-    let _ = crate::hypr::update_blocking(
-        |s| {
-            s.options.insert("animations:enabled".into(), serde_json::json!(on));
-        },
-        "",
-    );
+/// Settings that also change something outside the shell, by file: the
+/// shell reads the setting itself, these make Hyprland or GTK follow. Each
+/// gets the stored value. Add a line here for the next one.
+type Apply = (&'static str, Kind, fn(Value));
+
+const APPLY: &[Apply] = &[
+    ("animations", Kind::Bool, apply_animations),
+    ("radius-scale", Kind::Real, apply_rounding),
+];
+
+/// Animations on or off everywhere: Hyprland's animations:enabled (kept in
+/// settings.lua, the option the Windows panel shows) and GTK's
+/// enable-animations.
+fn apply_animations(value: Value) {
+    let on = value != Value::Bool(false);
+    set_hyprland("animations:enabled", serde_json::json!(on));
     let _ = run_blocking(
         "gsettings",
         &args(&[
@@ -86,15 +94,41 @@ fn apply_animations(on: bool) {
     );
 }
 
+/// Window corners in Hyprland, from the shell's corner roundness: the same
+/// 12 px base as the shell's large radius (Theme.radius.lg), times the
+/// scale. The Windows panel shows the result and can fine-tune it.
+fn apply_rounding(value: Value) {
+    let Value::Real(scale) = value else { return };
+    set_hyprland("decoration:rounding", serde_json::json!(window_rounding(scale)));
+}
+
+/// Hyprland's window rounding for a corner roundness scale.
+pub fn window_rounding(scale: f64) -> i64 {
+    (WINDOW_RADIUS * scale).round().max(0.0) as i64
+}
+
+const WINDOW_RADIUS: f64 = 12.0;
+
+/// One Hyprland option, kept in settings.lua and applied now.
+fn set_hyprland(option: &str, value: serde_json::Value) {
+    let option = option.to_string();
+    let _ = crate::hypr::update_blocking(
+        move |s| {
+            s.options.insert(option, value);
+        },
+        "",
+    );
+}
+
 /// Run what a written setting needs, each on its own thread. The window
 /// lets them run; the CLI waits for the returned threads before it exits.
 pub fn after_write(file: &str) -> Vec<std::thread::JoinHandle<()>> {
     let mut work = Vec::new();
-    if file == "animations" {
-        let on = crate::store::Store::new(crate::store::Store::default_dir())
-            .read(file, crate::store::Kind::Bool)
-            .is_none_or(|v| v == crate::store::Value::Bool(true));
-        work.push(std::thread::spawn(move || apply_animations(on)));
+    if let Some((_, kind, apply)) = APPLY.iter().find(|(f, ..)| *f == file) {
+        let (kind, apply) = (*kind, *apply);
+        if let Some(value) = Store::new(Store::default_dir()).read(file, kind) {
+            work.push(std::thread::spawn(move || apply(value)));
+        }
     }
     for (prefix, script, arg) in AFTER_WRITE {
         if file.starts_with(prefix) {
@@ -119,6 +153,14 @@ pub fn args(list: &[&str]) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn window_rounding_follows_the_scale() {
+        assert_eq!(window_rounding(1.0), 12);
+        assert_eq!(window_rounding(0.5), 6);
+        assert_eq!(window_rounding(0.0), 0);
+        assert_eq!(window_rounding(1.55), 19);
+    }
 
     #[test]
     fn returns_stdout_or_the_error() {
