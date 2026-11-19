@@ -1,7 +1,9 @@
 // One Bluetooth device as a card row: icon bubble, name with a state line,
-// battery pill, and a chevron that reveals details (address, trust, forget).
-// A paired device toggles its connection on click; an `available` (unpaired,
-// discovered) device pairs and connects on click.
+// battery pill, and a settings button that opens the device in the settings
+// app (rename, forget, AirPods codec and audio fix live there). A paired
+// device toggles its connection on click; an `available` (unpaired,
+// discovered) device pairs and connects on click. Connected AirPods show
+// their noise control under the row.
 import QtQuick
 import QtQuick.Layouts
 
@@ -10,9 +12,10 @@ Rectangle {
     property var device
     property bool highlighted: false
     property bool available: false
-    property bool expanded: false
     signal hovered()
-    signal expandToggled()
+    function openSettings() {
+        Cmd.run([Paths.home + "/.local/bin/settings", "-p", "bluetooth"]);
+    }
 
     readonly property bool isConnected: !!device && device.connected
     readonly property bool isAirPods: !!device && /airpods/i.test(device.name || device.deviceName || "")
@@ -32,20 +35,16 @@ Rectangle {
         if (n.indexOf("gaming") >= 0 || n.indexOf("joystick") >= 0) return "󰖺";
         return isConnected ? "󰂱" : "󰂯";
     }
-    // Set while a keyboard forget waits for its second press.
-    property bool confirmingForget: false
-    readonly property string stateText: confirmingForget ? "Press Delete again to forget"
-        : isPairing ? "Pairing…"
+    readonly property string stateText: isPairing ? "Pairing…"
         : isConnected ? "Connected"
         : available ? "Click to pair"
         : "Paired"
-    readonly property color stateColor: confirmingForget ? Theme.accent.red
-        : isPairing ? Theme.accent.yellow
+    readonly property color stateColor: isPairing ? Theme.accent.yellow
         : isConnected ? Theme.accent.green
         : Theme.muted
 
     Layout.fillWidth: true
-    implicitHeight: main.implicitHeight + reveal.Layout.preferredHeight
+    implicitHeight: col.implicitHeight
     radius: 10 * Theme.radiusScale
     clip: true
     color: highlighted ? Theme.bgActive : (rowMa.containsMouse ? Theme.bgHover : "transparent")
@@ -203,20 +202,20 @@ Rectangle {
                     implicitHeight: 16
                 }
 
-                // Details button (paired devices only). An info glyph rather
-                // than a chevron: the row itself toggles the connection, so a
-                // chevron would suggest the row expands.
+                // Settings button (paired devices only): the device in the
+                // settings app. A gear rather than a chevron: the row itself
+                // toggles the connection.
                 Rectangle {
                     visible: !dr.available
                     implicitWidth: 30
                     implicitHeight: 30
                     radius: 8 * Theme.radiusScale
-                    color: chevMa.containsMouse || dr.expanded ? Theme.bgActive : "transparent"
+                    color: chevMa.containsMouse ? Theme.bgActive : "transparent"
                     Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
                     Text {
                         anchors.centerIn: parent
-                        text: "󰋽"
-                        color: dr.expanded ? Theme.accentPrimary : Theme.muted
+                        text: "󰒓"
+                        color: chevMa.containsMouse ? Theme.accentPrimary : Theme.muted
                         font.family: Theme.font
                         font.pixelSize: Theme.fontSize.xl
                         Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
@@ -226,7 +225,7 @@ Rectangle {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: dr.expandToggled()
+                        onClicked: dr.openSettings()
                     }
                 }
             }
@@ -240,7 +239,7 @@ Rectangle {
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
                 onClicked: (e) => {
                     if (!dr.device) return;
-                    if (e.button === Qt.RightButton) { dr.expandToggled(); return; }
+                    if (e.button === Qt.RightButton) { dr.openSettings(); return; }
                     if (dr.available) {
                         dr.device.trusted = true;
                         dr.device.pair();
@@ -251,108 +250,14 @@ Rectangle {
             }
         }
 
-        // ----- Details, revealed by the chevron -----
-        Item {
-            id: reveal
+        // ----- AirPods noise control, while connected -----
+        AirPodsControls {
             Layout.fillWidth: true
-            Layout.preferredHeight: dr.expanded && !dr.available ? details.implicitHeight + Theme.spacing.lg : 0
-            clip: true
-            opacity: dr.expanded ? 1.0 : 0.0
-            Behavior on Layout.preferredHeight { NumberAnimation { duration: Theme.duration.slow; easing.type: Theme.easing.standard } }
-            Behavior on opacity { NumberAnimation { duration: Theme.duration.normal } }
-
-            ColumnLayout {
-                id: details
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.leftMargin: Theme.spacing.lg + 42 + Theme.spacing.lg
-                anchors.rightMargin: Theme.spacing.lg
-                spacing: Theme.spacing.md
-
-                GridLayout {
-                    Layout.fillWidth: true
-                    columns: 2
-                    columnSpacing: Theme.spacing.lg
-                    rowSpacing: 3
-                    Text { text: "Address"; color: Theme.muted; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
-                    Text {
-                        Layout.fillWidth: true
-                        horizontalAlignment: Text.AlignRight
-                        text: dr.device ? dr.device.address : ""
-                        color: Theme.fgMuted; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm
-                    }
-                    Text { text: "Trusted"; color: Theme.muted; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm }
-                    Text {
-                        Layout.fillWidth: true
-                        horizontalAlignment: Text.AlignRight
-                        text: dr.device && dr.device.trusted ? "yes" : "no"
-                        color: Theme.fgMuted; font.family: Theme.font; font.pixelSize: Theme.fontSize.sm
-                    }
-                }
-                // AirPods get battery per bud, noise control, codec and a
-                // "Fix audio" action (AirPodsControls.qml).
-                AirPodsControls {
-                    Layout.fillWidth: true
-                    Layout.topMargin: Theme.spacing.sm
-                    Layout.bottomMargin: Theme.spacing.xs
-                    // Use the row's full width, not the indented detail column.
-                    Layout.leftMargin: -(42 + Theme.spacing.lg)
-                    visible: dr.isAirPods && dr.isConnected
-                    device: dr.device
-                }
-                RowLayout {
-                    Layout.fillWidth: true
-                    // Full width under the AirPods section, aligned with it.
-                    Layout.leftMargin: dr.isAirPods && dr.isConnected ? -(42 + Theme.spacing.lg) : 0
-                    spacing: Theme.spacing.md
-                    Rectangle {
-                        Layout.fillWidth: true
-                        implicitHeight: 34
-                        radius: 8 * Theme.radiusScale
-                        color: connMa.containsMouse ? Theme.bgActive : Theme.bgInset
-                        border.color: Theme.borderStrong
-                        border.width: 1
-                        Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
-                        Text {
-                            anchors.centerIn: parent
-                            text: dr.isConnected ? "Disconnect" : "Connect"
-                            color: Theme.fg
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.base
-                        }
-                        MouseArea {
-                            id: connMa
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: { if (dr.device) { if (dr.device.connected) dr.device.disconnect(); else dr.device.connect(); } }
-                        }
-                    }
-                    Rectangle {
-                        Layout.fillWidth: true
-                        implicitHeight: 34
-                        radius: 8 * Theme.radiusScale
-                        color: fgMa.containsMouse ? Theme.accent.redDeep : Theme.bgInset
-                        border.color: Theme.alpha(Theme.accent.red, 0.55)
-                        border.width: 1
-                        Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
-                        Text {
-                            anchors.centerIn: parent
-                            text: "Forget"
-                            color: Theme.accent.redSoft
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize.base
-                        }
-                        MouseArea {
-                            id: fgMa
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: { if (dr.device) dr.device.forget(); }
-                        }
-                    }
-                }
-            }
+            Layout.leftMargin: Theme.spacing.lg
+            Layout.rightMargin: Theme.spacing.lg
+            Layout.bottomMargin: Theme.spacing.md
+            visible: dr.isAirPods && dr.isConnected && live
+            device: dr.device
         }
     }
 }

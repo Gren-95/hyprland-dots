@@ -18,8 +18,6 @@ Item {
     // tabIndex: 0 = power, 1 = scan, then paired devices (connected, then most
     // recently connected first), then discovered (unpaired) devices.
     property int tabIndex: 0
-    // Address of the device whose details are revealed ("" = none).
-    property string expandedAddress: ""
     signal navigateNext()
     signal navigatePrev()
     // With the adapter off only the power button is shown, so it is the only
@@ -109,11 +107,9 @@ Item {
     }
 
     onPopupOpenChanged: {
-        confirmForget = "";
         lockedHeight = 0;
         if (popupOpen) {
             tabIndex = 0;
-            expandedAddress = "";
             lockTimer.restart();
         }
     }
@@ -136,24 +132,13 @@ Item {
         else if (d.connected) d.disconnect();
         else d.connect();
     }
-    function toggleExpand(d) {
-        if (!d || !(d.paired || d.connected)) return;
-        expandedAddress = expandedAddress === d.address ? "" : d.address;
+    // Rename, forget and AirPods extras are in the settings app.
+    function openSettings() {
+        Cmd.run([Paths.home + "/.local/bin/settings", "-p", "bluetooth"]);
+        popupOpen = false;
     }
     function togglePrimary() { if (adapter) adapter.enabled = !adapter.enabled; }
     function toggleSecondary() { if (adapter) adapter.discovering = !adapter.discovering; }
-    // Forgetting unpairs the device, so the keyboard path needs two presses:
-    // the first marks the row, the second (on the same row) forgets it.
-    // Moving the selection or closing the flyout cancels.
-    property string confirmForget: ""
-    onTabIndexChanged: confirmForget = ""
-    function forgetSelected() {
-        const d = selectedDevice;
-        if (!d || !(d.paired || d.connected)) return;
-        if (confirmForget !== d.address) { confirmForget = d.address; return; }
-        confirmForget = "";
-        d.forget();
-    }
 
     Layout.fillHeight: true
     implicitWidth: row.implicitWidth + 20
@@ -222,7 +207,7 @@ Item {
                 else bt.activateDevice(bt.selectedDevice);
                 e.accepted = true;
             } else if (e.key === Qt.Key_D || e.key === Qt.Key_Space) {
-                if (bt.tabIndex >= 2) bt.toggleExpand(bt.selectedDevice);
+                if (bt.tabIndex >= 2) bt.openSettings();
                 e.accepted = true;
             } else if (e.key === Qt.Key_Down || e.key === Qt.Key_J) {
                 if (n > 0) bt.tabIndex = bt.tabIndex < 2 ? 2 :
@@ -234,8 +219,6 @@ Item {
                 if (n > 0) bt.tabIndex = bt.tabIndex < 2 ? (1 + n) :
                     (bt.selectedIndex > 0 ? bt.tabIndex - 1 : 1 + n);
                 e.accepted = true;
-            } else if (e.key === Qt.Key_Delete || e.key === Qt.Key_Backspace) {
-                bt.forgetSelected(); e.accepted = true;
             }
         }
 
@@ -500,10 +483,7 @@ Item {
                                         required property int index
                                         device: modelData
                                         highlighted: bt.selectedIndex === index
-                                        confirmingForget: bt.confirmForget === modelData.address
-                                        expanded: bt.expandedAddress === modelData.address
                                         onHovered: bt.tabIndex = index + 2
-                                        onExpandToggled: bt.toggleExpand(modelData)
                                     }
                                 }
                             }
@@ -577,7 +557,7 @@ Item {
 
             Text {
                 Layout.fillWidth: true
-                text: "↑↓ move · ↵ select · D details · del forget · esc close"
+                text: "↑↓ move · ↵ select · D settings · esc close"
                 color: Theme.mutedDeep
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSize.xs
