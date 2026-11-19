@@ -156,9 +156,11 @@ pub fn rows<'a, M: Clone + 'a>(a: &'a AirPods, idle: bool, on_action: impl Fn(Ac
     .into_iter()
     .flatten()
     .collect();
+    // Shown under the AirPods' own row (bluetooth.rs), so the name is not
+    // repeated.
     let mut rows = vec![ui::item(
-        ico::HEADPHONES,
-        a.name.clone(),
+        ico::BATTERY_MEDIUM,
+        "Battery".into(),
         if battery.is_empty() {
             "Battery unknown".into()
         } else {

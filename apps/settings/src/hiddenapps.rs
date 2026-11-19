@@ -24,6 +24,9 @@ pub struct Hidden {
 #[derive(Default)]
 pub struct State {
     hidden: Option<Vec<Hidden>>,
+    /// The list is open, and its search.
+    open: bool,
+    query: String,
     error: Option<String>,
 }
 
@@ -32,6 +35,8 @@ pub enum Msg {
     Load,
     Loaded(Vec<Hidden>),
     Show(String),
+    Toggle,
+    Query(String),
 }
 
 fn store() -> Store {
@@ -76,6 +81,11 @@ impl State {
         match msg {
             Msg::Load => return iced::Task::perform(system::spawn(load), |l| Msg::Loaded(l.unwrap_or_default())),
             Msg::Loaded(list) => self.hidden = Some(list),
+            Msg::Toggle => {
+                self.open = !self.open;
+                self.query.clear();
+            }
+            Msg::Query(q) => self.query = q,
             Msg::Show(id) => {
                 let mut ids = read_ids();
                 ids.remove(&id);
@@ -103,15 +113,33 @@ impl State {
             Some(list) if list.is_empty() => {
                 rows.push(ui::note("No hidden apps. Hide one with Ctrl+D in the launcher"))
             }
-            Some(list) => rows.extend(list.iter().map(|h| {
-                let detail = if h.name == h.id { String::new() } else { h.id.clone() };
-                ui::item(
+            Some(list) => {
+                let entries = list
+                    .iter()
+                    .filter(|h| ui::matches_query(&h.name, &self.query) || ui::matches_query(&h.id, &self.query))
+                    .map(|h| {
+                        let detail = if h.name == h.id { String::new() } else { h.id.clone() };
+                        ui::item(
+                            ico::EYE_OFF,
+                            h.name.clone(),
+                            detail,
+                            vec![ui::action("Show again", Some(Msg::Show(h.id.clone())), Action::Normal)],
+                        )
+                    })
+                    .collect();
+                let summary = format!("{} hidden from the launcher (Ctrl+D there)", list.len());
+                rows.extend(ui::collapsed_list(
                     ico::EYE_OFF,
-                    h.name.clone(),
-                    detail,
-                    vec![ui::action("Show again", Some(Msg::Show(h.id.clone())), Action::Normal)],
-                )
-            })),
+                    "Hidden apps",
+                    summary,
+                    self.open,
+                    Msg::Toggle,
+                    &self.query,
+                    Msg::Query,
+                    entries,
+                    list.len(),
+                ));
+            }
         }
         rows
     }

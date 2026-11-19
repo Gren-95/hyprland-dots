@@ -197,7 +197,7 @@ impl State {
 
     /// One row per controller, then the button to connect one.
     pub fn controller_rows(&self) -> Vec<Element<'_, Msg>> {
-        let mut rows: Vec<Element<'_, Msg>> = self
+        let pads: Vec<Element<'_, Msg>> = self
             .controllers
             .iter()
             .map(|c| {
@@ -213,15 +213,20 @@ impl State {
                 ui::item(glyph, c.name.clone(), detail, vec![])
             })
             .collect();
-        if rows.is_empty() {
-            rows.push(ui::note("No controller connected"));
-        }
-        rows.push(ui::item(
-            ico::BLUETOOTH,
-            "Wireless controller".into(),
-            "Pair it in Bluetooth".into(),
+        // One row at a glance; connected controllers hang under it.
+        let summary = match pads.len() {
+            0 => "None connected".to_string(),
+            1 => "1 connected".to_string(),
+            n => format!("{n} connected"),
+        };
+        let mut rows = vec![ui::item(
+            ico::GAMEPAD_2,
+            "Controllers".into(),
+            summary,
             vec![ui::action("Connect…", Some(Msg::OpenBluetooth), Action::Normal)],
-        ));
+        )];
+        let count = pads.len();
+        rows.extend(pads.into_iter().enumerate().map(|(i, p)| ui::branch(p, i + 1 == count)));
         rows
     }
 

@@ -20,8 +20,13 @@ dialog, or further down the page.
 - **Rare tasks open on demand.** Joining a hidden network, setting up a
   VPN by hand: a button that opens a dialog or form, not fields always on
   screen.
-- **Lists stay short.** Long lists (devices, Proton versions, hidden apps)
-  start collapsed with a count in the summary row.
+- **Lists stay short.** Long lists (devices, Proton versions, hidden apps,
+  per-app notification rules) start collapsed with a count in the summary
+  row (`ui::collapsed_list`); open, they get a search field from eight
+  entries.
+- **Extras live with their thing.** Controls that belong to one device
+  (AirPods noise control) open under that device's row with Details, not in
+  a section of their own; a section that would only say "none" is one row.
 - **Nothing is lost.** Collapsed does not mean hidden from search or the
   keyboard: Details is a button like any other, and search finds settings
   wherever they are.

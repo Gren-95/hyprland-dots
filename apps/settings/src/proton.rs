@@ -31,6 +31,9 @@ pub struct Tool {
 
 #[derive(Debug, Clone, Default)]
 pub struct Tools {
+    /// Steam is installed (its folder exists); without it the Gaming panel
+    /// leaves the section out.
+    pub steam: bool,
     pub installed: Vec<Tool>,
     /// (app id, tool name): "0" is the default for every game.
     pub mappings: Vec<(String, String)>,
@@ -218,7 +221,11 @@ fn load() -> Tools {
         .into_iter()
         .filter(|(app, _)| app == "0" || games.contains(app))
         .collect();
-    Tools { installed, mappings }
+    Tools {
+        steam: steam_dir().is_dir(),
+        installed,
+        mappings,
+    }
 }
 
 /// The tag of GE-Proton's latest release, from the GitHub API JSON.
@@ -253,6 +260,11 @@ pub enum Msg {
 }
 
 impl State {
+    /// Whether Steam is installed, once known.
+    pub fn has_steam(&self) -> bool {
+        self.tools.as_ref().is_some_and(|t| t.steam)
+    }
+
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
         match msg {
             Msg::Load => return Task::perform(system::spawn(load), |t| Msg::Loaded(t.unwrap_or_default())),
@@ -352,6 +364,7 @@ mod tests {
         assert_eq!(m.len(), 3);
         assert_eq!(m[0], ("0".into(), "GE-Proton11-12-x86_64".into()));
         let tools = Tools {
+            steam: true,
             installed: vec![
                 Tool {
                     internal: "GE-Proton11-12-x86_64".into(),

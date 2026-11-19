@@ -614,8 +614,11 @@ impl App {
                     .map(|r| r.map(Message::Gaming))
                     .collect();
                 body = ui::section(body, "Controllers", pads);
-                let proton = self.proton.rows().into_iter().map(|r| r.map(Message::Proton)).collect();
-                body = ui::section(body, "Steam", proton);
+                // Not everyone has Steam: no section without it.
+                if self.proton.has_steam() {
+                    let proton = self.proton.rows().into_iter().map(|r| r.map(Message::Proton)).collect();
+                    body = ui::section(body, "Steam", proton);
+                }
                 for section in panel.sections {
                     body = self.section(body, section, layout);
                 }

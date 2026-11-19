@@ -19,6 +19,9 @@ const CHOICES: &[(&str, &str)] = &[("", "Show"), ("quiet", "No toasts"), ("mute"
 #[derive(Default)]
 pub struct State {
     apps: Vec<String>,
+    /// The list is open, and its search.
+    open: bool,
+    query: String,
     rules: Map<String, Json>,
     error: Option<String>,
 }
@@ -28,6 +31,8 @@ pub enum Msg {
     Load,
     /// (app name, rule)
     Set(String, &'static str),
+    Toggle,
+    Query(String),
 }
 
 fn store() -> Store {
@@ -67,6 +72,11 @@ impl State {
                     _ => Map::new(),
                 };
             }
+            Msg::Toggle => {
+                self.open = !self.open;
+                self.query.clear();
+            }
+            Msg::Query(q) => self.query = q,
             Msg::Set(app, rule) => {
                 let rules = with_rule(self.rules.clone(), &app, rule);
                 match store().write(RULES, &Value::Json(Json::Object(rules.clone()))) {
@@ -89,22 +99,45 @@ impl State {
         if self.apps.is_empty() {
             rows.push(ui::note("Apps show up here once they send a notification"));
         }
-        for app in &self.apps {
-            let current = self.rules.get(app).and_then(Json::as_str).unwrap_or("");
-            let items = CHOICES
-                .iter()
-                .map(|(rule, label)| (*label, *rule == current, Some(Msg::Set(app.clone(), rule))))
-                .collect();
-            let glyph = match current {
-                "mute" => ico::BELL_OFF,
-                "quiet" => ico::BELL_MINUS,
-                _ => ico::BELL,
+        let entries = self
+            .apps
+            .iter()
+            .filter(|app| ui::matches_query(app, &self.query))
+            .map(|app| {
+                let current = self.rules.get(app).and_then(Json::as_str).unwrap_or("");
+                let items = CHOICES
+                    .iter()
+                    .map(|(rule, label)| (*label, *rule == current, Some(Msg::Set(app.clone(), rule))))
+                    .collect();
+                let glyph = match current {
+                    "mute" => ico::BELL_OFF,
+                    "quiet" => ico::BELL_MINUS,
+                    _ => ico::BELL,
+                };
+                ui::item(
+                    glyph,
+                    app.clone(),
+                    String::new(),
+                    vec![ui::select(items, Length::Fixed(160.0))],
+                )
+            })
+            .collect();
+        if !self.apps.is_empty() {
+            let changed = self.rules.len();
+            let summary = match changed {
+                0 => format!("{} apps, all shown", self.apps.len()),
+                n => format!("{} apps, {n} without toasts or muted", self.apps.len()),
             };
-            rows.push(ui::item(
-                glyph,
-                app.clone(),
-                String::new(),
-                vec![ui::select(items, Length::Fixed(160.0))],
+            rows.extend(ui::collapsed_list(
+                ico::BELL,
+                "Per app",
+                summary,
+                self.open,
+                Msg::Toggle,
+                &self.query,
+                Msg::Query,
+                entries,
+                self.apps.len(),
             ));
         }
         rows

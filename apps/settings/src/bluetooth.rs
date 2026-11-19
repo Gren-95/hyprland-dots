@@ -43,6 +43,8 @@ pub struct State {
     renaming: Option<(String, String)>,
     /// Device whose Forget was picked once; picking it again forgets it.
     confirming: Option<String>,
+    /// Device whose Details (AirPods controls) are open.
+    details_open: Option<String>,
     error: Option<String>,
 }
 
@@ -57,6 +59,8 @@ pub enum Msg {
     Disconnect(String),
     Pair(String),
     Forget(String),
+    /// Show or hide a device's Details.
+    ToggleDetails(String),
     /// An AirPods control, for the device with this MAC.
     AirPods(String, airpods::Action),
     StartRename(String, String),
@@ -215,7 +219,10 @@ fn glyph(icon: &str) -> crate::ui::Icon {
 
 impl State {
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
-        if !matches!(msg, Msg::Forget(_) | Msg::Refresh | Msg::Refreshed(_)) {
+        if !matches!(
+            msg,
+            Msg::Forget(_) | Msg::Refresh | Msg::Refreshed(_) | Msg::ToggleDetails(_)
+        ) {
             self.confirming = None;
         }
         match msg {
@@ -255,6 +262,13 @@ impl State {
             Msg::Pair(mac) => {
                 self.busy = Some(mac.clone());
                 return pair(mac);
+            }
+            Msg::ToggleDetails(mac) => {
+                self.details_open = if self.details_open.as_ref() == Some(&mac) {
+                    None
+                } else {
+                    Some(mac)
+                };
             }
             Msg::AirPods(mac, action) => {
                 self.busy = Some(mac.clone());
@@ -313,7 +327,15 @@ impl State {
         }
         let mut paired: Vec<Element<'a, Msg>> = Vec::new();
         for d in &snap.paired {
-            paired.push(self.paired_row(d));
+            let extras = snap.airpods.iter().find(|a| a.mac == d.mac);
+            paired.push(self.paired_row(d, extras.is_some()));
+            // AirPods controls hang under their device, behind Details.
+            if let Some(a) = extras.filter(|_| self.details_open.as_ref() == Some(&d.mac)) {
+                let mac = a.mac.clone();
+                let rows = airpods::rows(a, idle, move |action| Msg::AirPods(mac.clone(), action));
+                let count = rows.len();
+                paired.extend(rows.into_iter().enumerate().map(|(i, r)| ui::branch(r, i + 1 == count)));
+            }
             if let Some((mac, name)) = &self.renaming
                 && *mac == d.mac
             {
@@ -330,11 +352,6 @@ impl State {
         }
         if paired.is_empty() {
             paired.push(ui::note("No paired devices"));
-        }
-        for a in &snap.airpods {
-            let mac = a.mac.clone();
-            let rows = airpods::rows(a, idle, move |action| Msg::AirPods(mac.clone(), action));
-            body = ui::section(body, "AirPods", rows);
         }
         body = ui::section(body, "Paired devices", paired);
 
@@ -360,7 +377,8 @@ impl State {
         ui::section(body, "Add a device", nearby)
     }
 
-    fn paired_row<'a>(&'a self, d: &'a Device) -> Element<'a, Msg> {
+    /// A paired device; `extras` (AirPods controls) adds a Details button.
+    fn paired_row<'a>(&'a self, d: &'a Device, extras: bool) -> Element<'a, Msg> {
         let mut detail = vec![if d.connected {
             "Connected".to_string()
         } else {
@@ -387,13 +405,19 @@ impl State {
             } else {
                 "Forget"
             };
-            vec![ui::more_actions(
+            let actions = ui::more_actions(
                 connect,
                 vec![
                     ("Rename", idle.then(|| Msg::StartRename(d.mac.clone(), d.name.clone()))),
                     (forget, idle.then(|| Msg::Forget(d.mac.clone()))),
                 ],
-            )]
+            );
+            if extras {
+                let open = self.details_open.as_ref() == Some(&d.mac);
+                vec![ui::disclosure(open, Msg::ToggleDetails(d.mac.clone())), actions]
+            } else {
+                vec![actions]
+            }
         };
         ui::item(glyph(&d.icon), d.name.clone(), detail.join(" · "), controls)
     }

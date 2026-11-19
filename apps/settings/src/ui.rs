@@ -123,6 +123,55 @@ pub fn multi_select<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>, w
     Row::with_children(buttons).spacing(-1.0).width(width).into()
 }
 
+/// Entries from which a collapsed list shows a search field when open.
+pub const LIST_SEARCH_FROM: usize = 8;
+
+/// Whether `label` matches a list's search text (case does not matter).
+pub fn matches_query(label: &str, query: &str) -> bool {
+    let q = query.trim().to_lowercase();
+    q.is_empty() || label.to_lowercase().contains(&q)
+}
+
+/// A long list at a glance (UI.md: lists stay short): a summary row with a
+/// count and Details; open, a search field for long lists and the entries
+/// hanging under it as a tree.
+#[allow(clippy::too_many_arguments)]
+pub fn collapsed_list<'a, M: Clone + 'a>(
+    glyph: Icon,
+    title: &str,
+    summary: String,
+    open: bool,
+    on_toggle: M,
+    query: &'a str,
+    on_query: impl Fn(String) -> M + 'a,
+    entries: Vec<Element<'a, M>>,
+    total: usize,
+) -> Vec<Element<'a, M>> {
+    let mut rows = vec![item(
+        glyph,
+        title.to_string(),
+        summary,
+        vec![disclosure(open, on_toggle)],
+    )];
+    if !open {
+        return rows;
+    }
+    if total >= LIST_SEARCH_FROM {
+        let search = iced::widget::text_input("Search", query)
+            .on_input(on_query)
+            .padding([6, 10])
+            .size(13)
+            .style(style::field);
+        rows.push(container(search).padding([4, 14]).into());
+    }
+    if entries.is_empty() {
+        rows.push(note("No match"));
+    }
+    let count = entries.len();
+    rows.extend(entries.into_iter().enumerate().map(|(i, e)| branch(e, i + 1 == count)));
+    rows
+}
+
 /// Whether on/off options fit as joined toggle buttons (UI.md): a few
 /// short ones. Longer or more go in a check select.
 pub fn fits_buttons(labels: &[&str]) -> bool {
