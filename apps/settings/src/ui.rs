@@ -172,18 +172,15 @@ pub fn collapsed_list<'a, M: Clone + 'a>(
     rows
 }
 
-/// Whether on/off options fit as joined toggle buttons (UI.md): a few
-/// short ones. Longer or more go in a check select.
-pub fn fits_buttons(labels: &[&str]) -> bool {
-    labels.len() <= 4 && labels.iter().map(|l| l.chars().count()).sum::<usize>() <= 40
+/// Whether on/off options become a switch tree (UI.md): more than two.
+/// Two stay a joined button group.
+pub fn is_switch_tree(count: usize) -> bool {
+    count > 2
 }
 
-/// Options from which a check select shows a search field.
-const SEARCH_FROM: usize = 8;
-
-/// What a check select's button says: the options that are on, "None", or
-/// "All".
-pub fn check_summary(items: &[(&str, bool)]) -> String {
+/// What a switch tree's summary row says: the options that are on, "None",
+/// or "All".
+pub fn on_summary(items: &[(&str, bool)]) -> String {
     let on: Vec<&str> = items.iter().filter(|(_, on)| *on).map(|(l, _)| *l).collect();
     match on.len() {
         0 => "None".into(),
@@ -192,99 +189,47 @@ pub fn check_summary(items: &[(&str, bool)]) -> String {
     }
 }
 
-/// Several on/off options as a dropdown of checkboxes (UI.md: check
-/// select). `check_head` is the button showing what is on; `check_list`
-/// the checkbox list shown under the row while open, with a search field
-/// for long lists. Each item is (label, on, message that flips it). The
-/// open flag and the search text belong to the caller; `on_open` opens or
-/// closes it. `check_under` places the list under a row, at the control's
-/// side.
-pub fn check_head<'a, M: Clone + 'a>(
+/// The summary of a switch tree beside its label: what is on, and Details
+/// to show the switches.
+pub fn switch_tree_head<'a, M: Clone + 'a>(
     items: &[(&'a str, bool, Option<M>)],
     open: bool,
-    on_open: M,
-    width: Length,
+    on_toggle: M,
 ) -> Element<'a, M> {
-    let summary = check_summary(&items.iter().map(|(l, on, _)| (*l, *on)).collect::<Vec<_>>());
-    let chevron = if open {
-        lucide_iced::bytes::CHEVRON_UP
-    } else {
-        lucide_iced::bytes::CHEVRON_DOWN
-    };
-    let head = button(
-        row![
-            text(summary)
-                .size(GROUP_TEXT)
-                .width(Length::Fill)
-                .wrapping(text::Wrapping::None),
-            icon(chevron, 14.0)
-        ]
-        .spacing(8)
-        .align_y(Alignment::Center),
-    )
-    .on_press(on_open.clone())
-    .padding([7, 10])
-    .width(width)
-    .style(style::check_head);
-    focusable(head, Some(on_open)).into()
+    let summary = on_summary(&items.iter().map(|(l, on, _)| (*l, *on)).collect::<Vec<_>>());
+    row![
+        text(summary)
+            .size(13)
+            .color(style::FG_MUTED)
+            .wrapping(text::Wrapping::None),
+        disclosure(open, on_toggle)
+    ]
+    .spacing(12)
+    .align_y(Alignment::Center)
+    .into()
 }
 
-pub fn check_list<'a, M: Clone + 'a>(
-    items: Vec<(&'a str, bool, Option<M>)>,
-    query: &'a str,
-    on_query: impl Fn(String) -> M + 'a,
-    width: Length,
-) -> Element<'a, M> {
-    let mut list = column![].spacing(2);
-    if items.len() >= SEARCH_FROM {
-        list = list.push(
-            iced::widget::text_input("Search", query)
-                .on_input(on_query)
-                .padding([6, 10])
-                .size(13)
-                .style(style::field),
-        );
-    }
-    let needle = query.trim().to_lowercase();
-    let mut shown = 0;
-    for (label, on, message) in items {
-        if !needle.is_empty() && !label.to_lowercase().contains(&needle) {
-            continue;
-        }
-        shown += 1;
-        let glyph = if on {
-            lucide_iced::bytes::SQUARE_CHECK
-        } else {
-            lucide_iced::bytes::SQUARE
-        };
-        let activate = message.clone();
-        let entry = button(
-            row![icon(glyph, 16.0), text(label).size(13)]
-                .spacing(10)
-                .align_y(Alignment::Center),
-        )
-        .on_press_maybe(message)
-        .width(Length::Fill)
-        .padding([6, 10])
-        .style(style::nav(false));
-        list = list.push(focusable(entry, activate));
-    }
-    if shown == 0 {
-        list = list.push(note("No match"));
-    }
-    container(list).padding(4).width(width).style(style::check_list).into()
-}
-
-/// The open list under a row: right-aligned like the control above it.
-pub fn check_under<'a, M: 'a>(list: Element<'a, M>) -> Element<'a, M> {
-    container(row![Space::new().width(Length::Fill), list])
-        .padding(iced::Padding {
-            top: 0.0,
-            right: 14.0,
-            bottom: 8.0,
-            left: 14.0,
+/// The options of an open switch tree: one row each with its own switch,
+/// hanging under the summary row. Each item is (label, on, message that
+/// flips it).
+pub fn switch_rows<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>) -> Vec<Element<'a, M>> {
+    let count = items.len();
+    items
+        .into_iter()
+        .enumerate()
+        .map(|(i, (label, on, message))| {
+            let flip = message.map(|m| move |_: bool| m.clone());
+            let line = row![
+                text(label).size(14).color(style::FG).width(Length::Fill),
+                switch(on, flip)
+            ]
+            .spacing(12)
+            .align_y(Alignment::Center);
+            // As tall as a list row, so the branch tick meets the middle.
+            let row = container(line).padding([0, 14]).height(ROW_HEIGHT).center_y(ROW_HEIGHT);
+            branch(row.into(), i + 1 == count)
         })
-        .into()
+        .collect()
 }
 
 /// A "Details" button that shows or hides more about a row, with a chevron
@@ -310,6 +255,9 @@ pub fn disclosure<'a, M: Clone + 'a>(open: bool, on_press: M) -> Element<'a, M> 
 /// Height from the top of a list row to the middle of its title line, where
 /// a tree branch meets it.
 const BRANCH_AT: f32 = 27.0;
+
+/// Height of a one-line row in a tree (a switch tree's options).
+const ROW_HEIGHT: f32 = BRANCH_AT * 2.0;
 
 /// `content` as one branch of a tree under the row above it (UI.md: the
 /// networks under the Wi-Fi switch): a guide line down the left with a tick
@@ -563,22 +511,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn few_short_options_are_buttons() {
-        assert!(fits_buttons(&["Syncs", "Night light", "Docker", "Tailscale"]));
-        assert!(!fits_buttons(&[
-            "Tailscale DNS",
-            "Subnet routes",
-            "Shields up",
-            "Offer exit node"
-        ]));
-        assert!(!fits_buttons(&["a", "b", "c", "d", "e"]));
+    fn more_than_two_options_are_a_switch_tree() {
+        assert!(!is_switch_tree(2));
+        assert!(is_switch_tree(3));
     }
 
     #[test]
     fn summarises_what_is_on() {
-        assert_eq!(check_summary(&[("A", true), ("B", false)]), "A");
-        assert_eq!(check_summary(&[("A", false), ("B", false)]), "None");
-        assert_eq!(check_summary(&[("A", true), ("B", true), ("C", true)]), "All");
-        assert_eq!(check_summary(&[("A", true), ("B", true), ("C", false)]), "A, B");
+        assert_eq!(on_summary(&[("A", true), ("B", false)]), "A");
+        assert_eq!(on_summary(&[("A", false), ("B", false)]), "None");
+        assert_eq!(on_summary(&[("A", true), ("B", true), ("C", true)]), "All");
+        assert_eq!(on_summary(&[("A", true), ("B", true), ("C", false)]), "A, B");
     }
 }

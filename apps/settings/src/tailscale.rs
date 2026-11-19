@@ -153,9 +153,8 @@ pub struct State {
     data: Option<Option<(Status, Option<Prefs>)>>,
     /// Details are open.
     open: bool,
-    /// The Options check select is open, and its search.
+    /// The Options switch tree is open.
     options_open: bool,
-    options_query: String,
     devices_open: bool,
     busy: bool,
     /// A short note after an action ("Copied", "Sent", "3 files in Downloads").
@@ -173,7 +172,6 @@ pub enum Msg {
     ToggleDetails,
     ToggleDevices,
     ToggleOptions,
-    OptionsQuery(String),
     Copy(String),
     Send(String),
     SendPicked(String, Option<String>),
@@ -208,11 +206,7 @@ impl State {
             }
             Msg::ToggleDetails => self.open = !self.open,
             Msg::ToggleDevices => self.devices_open = !self.devices_open,
-            Msg::ToggleOptions => {
-                self.options_open = !self.options_open;
-                self.options_query.clear();
-            }
-            Msg::OptionsQuery(q) => self.options_query = q,
+            Msg::ToggleOptions => self.options_open = !self.options_open,
             Msg::Copy(text) => {
                 self.note = Some(format!("Copied {text}"));
                 return Task::perform(system::run("wl-copy", vec![text], None), |_| Msg::Refresh);
@@ -344,7 +338,7 @@ impl State {
             if status.peers.iter().any(|p| p.exit_node) {
                 options.push(opt("LAN while exiting", prefs.lan_access, Opt::LanAccess));
             }
-            let head = ui::check_head(&options, self.options_open, Msg::ToggleOptions, Length::Fixed(260.0));
+            let head = ui::switch_tree_head(&options, self.options_open, Msg::ToggleOptions);
             let row = ui::item(
                 ico::SLIDERS_HORIZONTAL,
                 "Options".into(),
@@ -352,8 +346,7 @@ impl State {
                 vec![head],
             );
             details.push(if self.options_open {
-                let list = ui::check_list(options, &self.options_query, Msg::OptionsQuery, Length::Fixed(260.0));
-                iced::widget::column![row, ui::check_under(list)].into()
+                iced::widget::column![row].extend(ui::switch_rows(options)).into()
             } else {
                 row
             });

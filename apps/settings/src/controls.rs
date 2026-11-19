@@ -32,8 +32,8 @@ impl fmt::Display for Choice {
 
 /// `draft` is the text being typed into an entry, not yet applied.
 /// `stacked` puts the control under its label (narrow panels).
-/// The check select that is open (by setting file) and its search text.
-pub type OpenList<'a> = (Option<&'static str>, &'a str);
+/// The switch tree that is open, by setting file.
+pub type OpenTree = Option<&'static str>;
 
 /// The options of a Flags or Toggles setting: (label, on, message that
 /// flips it).
@@ -94,7 +94,7 @@ pub fn setting_row<'a>(
     fonts: &[&'static str],
     stacked: bool,
     highlighted: bool,
-    list: OpenList<'a>,
+    open: OpenTree,
 ) -> Element<'a, Message> {
     let title: Element<'a, Message> = if is_default(s, values) {
         text(s.label).size(14).color(style::FG).into()
@@ -119,28 +119,22 @@ pub fn setting_row<'a>(
     let label = column![title, text(s.help).size(12).color(style::MUTED_DEEP)]
         .spacing(2)
         .width(Length::Fill);
-    let control = control(s, values, draft, fonts, stacked, list);
-    let buttons = ui::fits_buttons(&option_labels(s));
+    let control = control(s, values, draft, fonts, stacked, open);
+    let buttons = !ui::is_switch_tree(option_labels(s).len());
     let line: Element<'a, Message> = match s.control {
         // A toggle is small enough to stay beside its label.
         Control::Toggle => row![label, control].spacing(16).align_y(Alignment::Center).into(),
-        // A group of toggle buttons goes under its label (a check select
-        // sits beside it like a dropdown); so does every control when the
-        // panel is narrow.
+        // A group of toggle buttons goes under its label (a switch tree's
+        // summary sits beside it); so does every control when the panel is
+        // narrow.
         Control::Flags(_) | Control::Toggles(_) if buttons => column![label, control].spacing(8).into(),
         Control::Font | Control::Pills { .. } => column![label, control].spacing(8).into(),
         _ if stacked => column![label, control].spacing(10).into(),
         _ => row![label, control].spacing(16).align_y(Alignment::Center).into(),
     };
-    // An open check select lists its options under the row.
-    let line: Element<'a, Message> = match (list.0 == Some(s.file), check_items(s, values)) {
-        (true, Some(items)) => {
-            let width = if stacked { Length::Fill } else { Length::Fixed(300.0) };
-            column![line, ui::check_list(items, list.1, Message::ListQuery, width)]
-                .spacing(8)
-                .align_x(Alignment::End)
-                .into()
-        }
+    // An open switch tree lists its options under the row, a switch each.
+    let line: Element<'a, Message> = match (open == Some(s.file), check_items(s, values)) {
+        (true, Some(items)) => column![line].extend(ui::switch_rows(items)).into(),
         _ => line,
     };
     // The id lets a search result scroll to this row (reveal.rs).
@@ -161,17 +155,15 @@ fn control<'a>(
     draft: Option<&'a String>,
     fonts: &[&'static str],
     stacked: bool,
-    list: OpenList<'a>,
+    open: OpenTree,
 ) -> Element<'a, Message> {
     let file = s.file;
-    // On/off options: toggle buttons when they fit, else a check select.
+    // On/off options: two are toggle buttons, more a switch tree.
     let options = |items: Vec<(&'static str, bool, Option<Message>)>| -> Element<'a, Message> {
-        let labels: Vec<&str> = items.iter().map(|(l, ..)| *l).collect();
-        if ui::fits_buttons(&labels) {
-            ui::multi_select(items, Length::Fill)
+        if ui::is_switch_tree(items.len()) {
+            ui::switch_tree_head(&items, open == Some(file), Message::ToggleList(file))
         } else {
-            let width = if stacked { Length::Fill } else { Length::Fixed(300.0) };
-            ui::check_head(&items, list.0 == Some(file), Message::ToggleList(file), width)
+            ui::multi_select(items, Length::Fill)
         }
     };
     // Under the label the control takes the full width; beside it, a fixed

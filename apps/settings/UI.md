@@ -58,19 +58,19 @@ dialog, or further down the page.
 | On or off | Toggle (`Control::Toggle`) |
 | One of **two** options | Joined button group, the picked one filled (`ui::segmented`) |
 | One of **three or more** options | Dropdown (`pick_list`) |
-| A few short on/off options that belong together (up to four, about 40 characters in all; `ui::fits_buttons`) | Multi-select button group, on ones filled and checked (`ui::multi_select`) |
-| More or longer on/off options | Check select: a button saying what is on, opening a checkbox list under the row, with a search field from eight options (`ui::check_head`, `ui::check_list`) |
+| **Two** on/off options that belong together | Multi-select button group, on ones filled and checked (`ui::multi_select`) |
+| **Three or more** on/off options | Switch tree: the row says what is on, with Details; open, each option hangs under it as its own row with a switch (`ui::switch_tree_head`, `ui::switch_rows`) |
 | A number in a range | Slider with its value and unit beside it |
 | One out of a long list (fonts, keyboard layouts) | Search picker: a search field with up to eight matches under it, fonts drawn in themselves (`ui::search_picker`) |
 | Free text | Text field, applied on Enter |
 | A folder | Text field joined to a Browse… button that opens a folder chooser (`Control::Folder`, zenity) |
 | A link | Text field; links are shortened when they hold tokens |
 
-**On/off options never go in a plain dropdown**, which holds one pick: a
-few short ones are a button group, the rest a check select. Keep labels
-short (one or two words) and put the detail in the help text. A check
-select's list opens under its row, never inside it, so the row keeps its
-height and the tree lines stay put.
+**On/off options never go in a plain dropdown**, which holds one pick: two
+are a button group, more a switch tree. Keep labels short (one or two
+words) and put the detail in the help text. The one exception is the
+modifier keys of a key combo (Super, Shift, Ctrl, Alt): they are pressed
+together like keys, so they stay a button group.
 
 ## Buttons on a row
 

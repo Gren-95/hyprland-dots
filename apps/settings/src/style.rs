@@ -299,34 +299,6 @@ pub fn divider(_: &Theme) -> container::Style {
     }
 }
 
-/// The button of a check select: like a text field.
-pub fn check_head(_: &Theme, status: button::Status) -> button::Style {
-    let hover = matches!(status, button::Status::Hovered | button::Status::Pressed);
-    button::Style {
-        background: Some(Background::Color(if hover { BG_ACTIVE } else { BG_ALT })),
-        text_color: FG,
-        border: Border {
-            color: BORDER,
-            width: 1.0,
-            radius: border::radius(6.0),
-        },
-        ..button::Style::default()
-    }
-}
-
-/// The open list of a check select: darker than the card it opens in.
-pub fn check_list(_: &Theme) -> container::Style {
-    container::Style {
-        background: Some(Background::Color(BG)),
-        border: Border {
-            color: BORDER,
-            width: 1.0,
-            radius: border::radius(8.0),
-        },
-        ..container::Style::default()
-    }
-}
-
 /// The dimmed window behind a dialog.
 pub fn backdrop(_: &Theme) -> container::Style {
     container::Style {
