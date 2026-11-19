@@ -3,7 +3,7 @@
 //! characters); `wpctl` reads and sets volume, mute and the defaults, as it
 //! also handles volumes kept on the device route.
 
-use iced::widget::{Column, container, row, slider, text};
+use iced::widget::{Column, button, container, row, slider, text};
 use iced::{Alignment, Element, Length, Task};
 use lucide_iced::bytes as ico;
 
@@ -253,72 +253,114 @@ impl State {
             return ui::section(body, "Output", vec![ui::note("Loading…")]);
         };
         let max = max_volume.max(1) as f32 / 100.0;
-        body = ui::section(
-            body,
-            "Output",
-            self.devices(&snap.outputs, false, max, "No output devices"),
-        );
-        body = ui::section(body, "Input", self.devices(&snap.inputs, true, max, "No input devices"));
-        let mut apps: Vec<Element<'a, Msg>> = snap
-            .apps
-            .iter()
-            .map(|n| volume_row(ico::AUDIO_LINES, n.label.clone(), n, max))
-            .collect();
-        if apps.is_empty() {
-            apps.push(ui::note("Nothing is playing"));
-        }
+        body = ui::section(body, "Output", self.device_card(&snap.outputs, false, max));
+        body = ui::section(body, "Input", self.device_card(&snap.inputs, true, max));
+        let apps: Vec<Element<'a, Msg>> = if snap.apps.is_empty() {
+            vec![ui::note("Nothing is playing")]
+        } else {
+            snap.apps.iter().map(|n| app_row(n, max)).collect()
+        };
         ui::section(body, "Apps", apps)
     }
 
     /// The device list, then the volume of the default device.
-    fn devices<'a>(&'a self, nodes: &'a [Node], input: bool, max: f32, empty: &'a str) -> Vec<Element<'a, Msg>> {
+    /// Which device is in use (a dropdown of them all) and its volume.
+    fn device_card<'a>(&'a self, nodes: &'a [Node], input: bool, max: f32) -> Vec<Element<'a, Msg>> {
         if nodes.is_empty() {
-            return vec![ui::note(empty)];
+            return vec![ui::note(if input {
+                "No microphone found"
+            } else {
+                "No speakers or headphones found"
+            })];
         }
-        let mut rows: Vec<Element<'a, Msg>> = nodes
+        let default = nodes.iter().find(|n| n.is_default);
+        let choices = nodes
             .iter()
             .map(|n| {
-                let control = if n.is_default {
-                    text("In use").size(13).color(style::FG_MUTED).into()
-                } else {
-                    ui::action("Use", (!self.busy).then_some(Msg::SetDefault(n.id)), Action::Primary)
-                };
-                ui::item(device_glyph(n, input), n.label.clone(), String::new(), vec![control])
+                (
+                    n.label.as_str(),
+                    n.is_default,
+                    (!self.busy).then_some(Msg::SetDefault(n.id)),
+                )
             })
             .collect();
-        if let Some(default) = nodes.iter().find(|n| n.is_default) {
-            // The switch is on while the sound is on; off mutes.
-            rows.push(volume_row(
-                if input { ico::MIC } else { ico::VOLUME_2 },
-                "Volume".into(),
-                default,
-                max,
-            ));
+        // One device is a fact, not a choice.
+        let picker: Element<'a, Msg> = if nodes.len() == 1 {
+            text(nodes[0].label.clone()).size(14).color(style::FG_MUTED).into()
+        } else {
+            ui::select(choices, Length::Fixed(320.0))
+        };
+        let glyph = default.map_or(if input { ico::MIC } else { ico::SPEAKER }, |n| device_glyph(n, input));
+        let mut rows = vec![ui::item(
+            glyph,
+            if input { "Microphone" } else { "Play sound through" }.into(),
+            String::new(),
+            vec![picker],
+        )];
+        if let Some(n) = default {
+            rows.push(volume_line(n, max, input));
         }
         rows
     }
 }
 
-/// A volume slider with its label, percentage and mute switch.
-fn volume_row<'a>(glyph: crate::ui::Icon, label: String, n: &Node, max: f32) -> Element<'a, Msg> {
+/// A mute button: the speaker (or microphone) icon, crossed out while muted.
+fn mute_button<'a>(n: &Node, input: bool) -> Element<'a, Msg> {
+    let glyph = match (input, n.muted) {
+        (false, false) => ico::VOLUME_2,
+        (false, true) => ico::VOLUME_X,
+        (true, false) => ico::MIC,
+        (true, true) => ico::MIC_OFF,
+    };
+    let message = Msg::SetMute(n.id, !n.muted);
+    let b = button(crate::ui::icon(glyph, 18.0))
+        .on_press(message.clone())
+        .padding([6, 8])
+        .style(style::action(if n.muted { Action::Danger } else { Action::Normal }));
+    crate::focus::focusable(b, Some(message)).into()
+}
+
+fn volume_slider<'a>(n: &Node, max: f32) -> Element<'a, Msg> {
     let id = n.id;
-    let bar = slider(0.0..=max, n.volume.min(max), move |v| Msg::Volume(id, v))
+    slider(0.0..=max, n.volume.min(max), move |v| Msg::Volume(id, v))
         .on_release(Msg::VolumeCommit)
         .step(0.01_f32)
-        .width(Length::FillPortion(3));
+        .width(Length::Fill)
+        .into()
+}
+
+fn percent<'a>(n: &Node) -> Element<'a, Msg> {
+    let label = if n.muted {
+        "Muted".to_string()
+    } else {
+        format!("{}%", (n.volume * 100.0).round())
+    };
+    text(label).size(13).color(style::FG_MUTED).width(52).into()
+}
+
+/// A device's volume: mute button, slider across the card, percentage.
+fn volume_line<'a>(n: &Node, max: f32, input: bool) -> Element<'a, Msg> {
+    let line = row![mute_button(n, input), volume_slider(n, max), percent(n)]
+        .spacing(12)
+        .align_y(Alignment::Center);
+    container(line).padding([6, 14]).into()
+}
+
+/// An app that plays sound: mute button, name, slider, percentage.
+fn app_row<'a>(n: &Node, max: f32) -> Element<'a, Msg> {
     let line = row![
-        container(crate::ui::icon(glyph, 18.0)).width(26).center_x(26),
-        text(label).size(14).color(style::FG).width(Length::FillPortion(2)),
-        bar,
-        text(format!("{}%", (n.volume * 100.0).round()))
-            .size(13)
-            .color(style::FG_MUTED)
-            .width(48),
-        ui::switch(!n.muted, Some(move |on: bool| Msg::SetMute(id, !on))),
+        mute_button(n, false),
+        text(n.label.clone())
+            .size(14)
+            .color(style::FG)
+            .width(160)
+            .wrapping(text::Wrapping::None),
+        volume_slider(n, max),
+        percent(n),
     ]
     .spacing(12)
     .align_y(Alignment::Center);
-    container(line).padding([10, 14]).into()
+    container(line).padding([8, 14]).into()
 }
 
 #[cfg(test)]
