@@ -32,6 +32,61 @@ impl fmt::Display for Choice {
 
 /// `draft` is the text being typed into an entry, not yet applied.
 /// `stacked` puts the control under its label (narrow panels).
+/// The check select that is open (by setting file) and its search text.
+pub type OpenList<'a> = (Option<&'static str>, &'a str);
+
+/// The options of a Flags or Toggles setting: (label, on, message that
+/// flips it).
+fn check_items(
+    s: &'static Setting,
+    values: &HashMap<&'static str, Value>,
+) -> Option<Vec<(&'static str, bool, Option<Message>)>> {
+    let file = s.file;
+    match s.control {
+        Control::Flags(flags) => {
+            let map = match values.get(file) {
+                Some(Value::Json(map)) => map.clone(),
+                _ => serde_json::Value::Null,
+            };
+            Some(
+                flags
+                    .iter()
+                    .map(|(key, label)| {
+                        let on = map.get(*key).and_then(|v| v.as_bool()).unwrap_or(false);
+                        let mut next = map.as_object().cloned().unwrap_or_default();
+                        next.insert(key.to_string(), serde_json::Value::Bool(!on));
+                        (
+                            *label,
+                            on,
+                            Some(Message::Set(file, Value::Json(serde_json::Value::Object(next)))),
+                        )
+                    })
+                    .collect(),
+            )
+        }
+        Control::Toggles(toggles) => Some(
+            toggles
+                .iter()
+                .map(|t| {
+                    let on = matches!(values.get(t.file), Some(Value::Bool(true)))
+                        || (values.get(t.file).is_none() && t.default);
+                    (t.label, on, Some(Message::Set(t.file, Value::Bool(!on))))
+                })
+                .collect(),
+        ),
+        _ => None,
+    }
+}
+
+/// The labels of a Flags or Toggles setting.
+fn option_labels(s: &Setting) -> Vec<&'static str> {
+    match s.control {
+        Control::Flags(flags) => flags.iter().map(|(_, l)| *l).collect(),
+        Control::Toggles(toggles) => toggles.iter().map(|t| t.label).collect(),
+        _ => Vec::new(),
+    }
+}
+
 pub fn setting_row<'a>(
     s: &'static Setting,
     values: &HashMap<&'static str, Value>,
@@ -39,6 +94,7 @@ pub fn setting_row<'a>(
     fonts: &[&'static str],
     stacked: bool,
     highlighted: bool,
+    list: OpenList<'a>,
 ) -> Element<'a, Message> {
     let title: Element<'a, Message> = if is_default(s, values) {
         text(s.label).size(14).color(style::FG).into()
@@ -63,17 +119,29 @@ pub fn setting_row<'a>(
     let label = column![title, text(s.help).size(12).color(style::MUTED_DEEP)]
         .spacing(2)
         .width(Length::Fill);
-    let control = control(s, values, draft, fonts, stacked);
+    let control = control(s, values, draft, fonts, stacked, list);
+    let buttons = ui::fits_buttons(&option_labels(s));
     let line: Element<'a, Message> = match s.control {
         // A toggle is small enough to stay beside its label.
         Control::Toggle => row![label, control].spacing(16).align_y(Alignment::Center).into(),
-        // A multi-select group goes under its label; so does every control
-        // when the panel is narrow.
-        Control::Flags(_) | Control::Toggles(_) | Control::Font | Control::Pills { .. } => {
-            column![label, control].spacing(8).into()
-        }
+        // A group of toggle buttons goes under its label (a check select
+        // sits beside it like a dropdown); so does every control when the
+        // panel is narrow.
+        Control::Flags(_) | Control::Toggles(_) if buttons => column![label, control].spacing(8).into(),
+        Control::Font | Control::Pills { .. } => column![label, control].spacing(8).into(),
         _ if stacked => column![label, control].spacing(10).into(),
         _ => row![label, control].spacing(16).align_y(Alignment::Center).into(),
+    };
+    // An open check select lists its options under the row.
+    let line: Element<'a, Message> = match (list.0 == Some(s.file), check_items(s, values)) {
+        (true, Some(items)) => {
+            let width = if stacked { Length::Fill } else { Length::Fixed(300.0) };
+            column![line, ui::check_list(items, list.1, Message::ListQuery, width)]
+                .spacing(8)
+                .align_x(Alignment::End)
+                .into()
+        }
+        _ => line,
     };
     // The id lets a search result scroll to this row (reveal.rs).
     container(line)
@@ -93,8 +161,19 @@ fn control<'a>(
     draft: Option<&'a String>,
     fonts: &[&'static str],
     stacked: bool,
+    list: OpenList<'a>,
 ) -> Element<'a, Message> {
     let file = s.file;
+    // On/off options: toggle buttons when they fit, else a check select.
+    let options = |items: Vec<(&'static str, bool, Option<Message>)>| -> Element<'a, Message> {
+        let labels: Vec<&str> = items.iter().map(|(l, ..)| *l).collect();
+        if ui::fits_buttons(&labels) {
+            ui::multi_select(items, Length::Fill)
+        } else {
+            let width = if stacked { Length::Fill } else { Length::Fixed(300.0) };
+            ui::check_head(&items, list.0 == Some(file), Message::ToggleList(file), width)
+        }
+    };
     // Under the label the control takes the full width; beside it, a fixed
     // one so the controls line up.
     let width = if stacked {
@@ -185,21 +264,8 @@ fn control<'a>(
                 _ => group.into(),
             }
         }
-        (Control::Flags(flags), Value::Json(map)) => {
-            let items = flags
-                .iter()
-                .map(|(key, label)| {
-                    let on = map.get(*key).and_then(|v| v.as_bool()).unwrap_or(false);
-                    let mut next = map.as_object().cloned().unwrap_or_default();
-                    next.insert(key.to_string(), serde_json::Value::Bool(!on));
-                    (
-                        *label,
-                        on,
-                        Some(Message::Set(file, Value::Json(serde_json::Value::Object(next)))),
-                    )
-                })
-                .collect();
-            ui::multi_select(items, Length::Fill)
+        (Control::Flags(_), Value::Json(_)) | (Control::Toggles(_), _) => {
+            options(check_items(s, values).unwrap_or_default())
         }
         (Control::Pills { placeholder }, Value::Json(list)) => {
             let items: Vec<String> = list
@@ -274,17 +340,6 @@ fn control<'a>(
                 .map(|(n, label)| (*label, *n == current, Some(Message::Set(file, Value::Int(*n)))))
                 .collect();
             ui::choice(items, width)
-        }
-        (Control::Toggles(toggles), _) => {
-            let items = toggles
-                .iter()
-                .map(|t| {
-                    let on = matches!(values.get(t.file), Some(Value::Bool(true)))
-                        || (values.get(t.file).is_none() && t.default);
-                    (t.label, on, Some(Message::Set(t.file, Value::Bool(!on))))
-                })
-                .collect();
-            ui::multi_select(items, Length::Fill)
         }
         (Control::Pair { options, none, both }, Value::Text(current)) => {
             let on = pair_state(&current, options, both);

@@ -153,6 +153,9 @@ pub struct State {
     data: Option<Option<(Status, Option<Prefs>)>>,
     /// Details are open.
     open: bool,
+    /// The Options check select is open, and its search.
+    options_open: bool,
+    options_query: String,
     devices_open: bool,
     busy: bool,
     /// A short note after an action ("Copied", "Sent", "3 files in Downloads").
@@ -169,6 +172,8 @@ pub enum Msg {
     Set(Opt, bool),
     ToggleDetails,
     ToggleDevices,
+    ToggleOptions,
+    OptionsQuery(String),
     Copy(String),
     Send(String),
     SendPicked(String, Option<String>),
@@ -203,6 +208,11 @@ impl State {
             }
             Msg::ToggleDetails => self.open = !self.open,
             Msg::ToggleDevices => self.devices_open = !self.devices_open,
+            Msg::ToggleOptions => {
+                self.options_open = !self.options_open;
+                self.options_query.clear();
+            }
+            Msg::OptionsQuery(q) => self.options_query = q,
             Msg::Copy(text) => {
                 self.note = Some(format!("Copied {text}"));
                 return Task::perform(system::run("wl-copy", vec![text], None), |_| Msg::Refresh);
@@ -334,19 +344,19 @@ impl State {
             if status.peers.iter().any(|p| p.exit_node) {
                 options.push(opt("LAN while exiting", prefs.lan_access, Opt::LanAccess));
             }
-            details.push(
-                iced::widget::column![
-                    ui::item(
-                        ico::SLIDERS_HORIZONTAL,
-                        "Options".into(),
-                        "MagicDNS names, other networks the tailnet shares, blocking incoming connections, letting others exit through this device".into(),
-                        vec![],
-                    ),
-                    iced::widget::container(ui::multi_select(options, Length::Fill)).padding([0, 14]),
-                ]
-                .spacing(4)
-                .into(),
+            let head = ui::check_head(&options, self.options_open, Msg::ToggleOptions, Length::Fixed(260.0));
+            let row = ui::item(
+                ico::SLIDERS_HORIZONTAL,
+                "Options".into(),
+                "DNS, routes, incoming connections, exit node".into(),
+                vec![head],
             );
+            details.push(if self.options_open {
+                let list = ui::check_list(options, &self.options_query, Msg::OptionsQuery, Length::Fixed(260.0));
+                iced::widget::column![row, ui::check_under(list)].into()
+            } else {
+                row
+            });
         }
         let online = status.peers.iter().filter(|p| p.online).count();
         let devices_row = ui::item(

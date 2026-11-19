@@ -96,6 +96,9 @@ pub struct App {
     searching: bool,
     /// The sidebar entry with the keyboard focus, while the sidebar has it.
     nav_focus: Option<usize>,
+    /// The check select that is open (by setting file), and its search.
+    open_list: Option<&'static str>,
+    list_query: String,
     /// Setting a search result pointed at, outlined until the time passes.
     highlight: Option<(&'static str, Instant)>,
     network: network::State,
@@ -143,6 +146,9 @@ pub enum Message {
     NavStep(i32),
     /// Enter on a sidebar entry: open the panel, focus its first control.
     EnterPanel(usize),
+    /// Open or close a check select (by setting file); type in its search.
+    ToggleList(&'static str),
+    ListQuery(String),
     /// Alt+Down / Alt+Up: the next or previous panel.
     PanelStep(i32),
     /// Page Down / Page Up (pages) and Home / End (true: the top).
@@ -197,6 +203,8 @@ impl App {
             query,
             searching,
             nav_focus: None,
+            open_list: None,
+            list_query: String::new(),
             highlight: None,
             network: network::State::default(),
             bluetooth: bluetooth::State::default(),
@@ -372,6 +380,7 @@ impl App {
             Message::SelectPanel(i) => {
                 self.panel = i;
                 self.nav_focus = None;
+                self.open_list = None;
                 // The results stay in a full sidebar; a compact one folds
                 // back to give the panel its room.
                 self.searching = false;
@@ -429,6 +438,11 @@ impl App {
                     return crate::focus::focus_id(crate::focus::nav_id(PANELS[next].id));
                 }
             }
+            Message::ToggleList(file) => {
+                self.open_list = if self.open_list == Some(file) { None } else { Some(file) };
+                self.list_query.clear();
+            }
+            Message::ListQuery(q) => self.list_query = q,
             Message::EnterPanel(i) => {
                 let open = self.update(Message::SelectPanel(i));
                 return open.chain(crate::focus::first(PANELS[i].id));
@@ -734,6 +748,7 @@ impl App {
                 &self.fonts,
                 layout.stacked,
                 highlighted,
+                (self.open_list, self.list_query.as_str()),
             )
         });
         ui::section(body, section.title, rows.collect())

@@ -123,6 +123,121 @@ pub fn multi_select<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>, w
     Row::with_children(buttons).spacing(-1.0).width(width).into()
 }
 
+/// Whether on/off options fit as joined toggle buttons (UI.md): a few
+/// short ones. Longer or more go in a check select.
+pub fn fits_buttons(labels: &[&str]) -> bool {
+    labels.len() <= 4 && labels.iter().map(|l| l.chars().count()).sum::<usize>() <= 40
+}
+
+/// Options from which a check select shows a search field.
+const SEARCH_FROM: usize = 8;
+
+/// What a check select's button says: the options that are on, "None", or
+/// "All".
+pub fn check_summary(items: &[(&str, bool)]) -> String {
+    let on: Vec<&str> = items.iter().filter(|(_, on)| *on).map(|(l, _)| *l).collect();
+    match on.len() {
+        0 => "None".into(),
+        n if n == items.len() && n > 2 => "All".into(),
+        _ => on.join(", "),
+    }
+}
+
+/// Several on/off options as a dropdown of checkboxes (UI.md: check
+/// select). `check_head` is the button showing what is on; `check_list`
+/// the checkbox list shown under the row while open, with a search field
+/// for long lists. Each item is (label, on, message that flips it). The
+/// open flag and the search text belong to the caller; `on_open` opens or
+/// closes it. `check_under` places the list under a row, at the control's
+/// side.
+pub fn check_head<'a, M: Clone + 'a>(
+    items: &[(&'a str, bool, Option<M>)],
+    open: bool,
+    on_open: M,
+    width: Length,
+) -> Element<'a, M> {
+    let summary = check_summary(&items.iter().map(|(l, on, _)| (*l, *on)).collect::<Vec<_>>());
+    let chevron = if open {
+        lucide_iced::bytes::CHEVRON_UP
+    } else {
+        lucide_iced::bytes::CHEVRON_DOWN
+    };
+    let head = button(
+        row![
+            text(summary)
+                .size(GROUP_TEXT)
+                .width(Length::Fill)
+                .wrapping(text::Wrapping::None),
+            icon(chevron, 14.0)
+        ]
+        .spacing(8)
+        .align_y(Alignment::Center),
+    )
+    .on_press(on_open.clone())
+    .padding([7, 10])
+    .width(width)
+    .style(style::check_head);
+    focusable(head, Some(on_open)).into()
+}
+
+pub fn check_list<'a, M: Clone + 'a>(
+    items: Vec<(&'a str, bool, Option<M>)>,
+    query: &'a str,
+    on_query: impl Fn(String) -> M + 'a,
+    width: Length,
+) -> Element<'a, M> {
+    let mut list = column![].spacing(2);
+    if items.len() >= SEARCH_FROM {
+        list = list.push(
+            iced::widget::text_input("Search", query)
+                .on_input(on_query)
+                .padding([6, 10])
+                .size(13)
+                .style(style::field),
+        );
+    }
+    let needle = query.trim().to_lowercase();
+    let mut shown = 0;
+    for (label, on, message) in items {
+        if !needle.is_empty() && !label.to_lowercase().contains(&needle) {
+            continue;
+        }
+        shown += 1;
+        let glyph = if on {
+            lucide_iced::bytes::SQUARE_CHECK
+        } else {
+            lucide_iced::bytes::SQUARE
+        };
+        let activate = message.clone();
+        let entry = button(
+            row![icon(glyph, 16.0), text(label).size(13)]
+                .spacing(10)
+                .align_y(Alignment::Center),
+        )
+        .on_press_maybe(message)
+        .width(Length::Fill)
+        .padding([6, 10])
+        .style(style::nav(false));
+        list = list.push(focusable(entry, activate));
+    }
+    if shown == 0 {
+        list = list.push(note("No match"));
+    }
+    container(list).padding(4).width(width).style(style::check_list).into()
+}
+
+/// The open list under a row: right-aligned like the control above it.
+pub fn check_under<'a, M: 'a>(list: Element<'a, M>) -> Element<'a, M> {
+    container(row![Space::new().width(Length::Fill), list])
+        .padding(iced::Padding {
+            top: 0.0,
+            right: 14.0,
+            bottom: 8.0,
+            left: 14.0,
+        })
+        .into()
+}
+
 /// A "Details" button that shows or hides more about a row, with a chevron
 /// for its state. It is not an action (UI.md): it does not count toward a
 /// row's buttons.
@@ -392,4 +507,29 @@ pub fn pills<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>) -> Eleme
         focusable(b, activate).radius(12.0).into()
     });
     Row::with_children(buttons).spacing(6).wrap().into()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn few_short_options_are_buttons() {
+        assert!(fits_buttons(&["Syncs", "Night light", "Docker", "Tailscale"]));
+        assert!(!fits_buttons(&[
+            "Tailscale DNS",
+            "Subnet routes",
+            "Shields up",
+            "Offer exit node"
+        ]));
+        assert!(!fits_buttons(&["a", "b", "c", "d", "e"]));
+    }
+
+    #[test]
+    fn summarises_what_is_on() {
+        assert_eq!(check_summary(&[("A", true), ("B", false)]), "A");
+        assert_eq!(check_summary(&[("A", false), ("B", false)]), "None");
+        assert_eq!(check_summary(&[("A", true), ("B", true), ("C", true)]), "All");
+        assert_eq!(check_summary(&[("A", true), ("B", true), ("C", false)]), "A, B");
+    }
 }
