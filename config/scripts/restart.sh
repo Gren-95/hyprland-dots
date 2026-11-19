@@ -123,8 +123,12 @@ nm-applet --indicator >/dev/null 2>&1 &
 # restart replaces the old instance cleanly, with the unit's own stop grace
 # period. The user manager must see the Wayland/Hyprland environment first.
 dbus-update-activation-environment --systemd --all >/dev/null 2>&1
-systemctl --user restart battery-notify.service power-auto.service \
-    bt-audio-recover.service librepods.service >/dev/null 2>&1
+# Only the ones still enabled: the settings app (Services) can switch them off.
+for unit in battery-notify.service power-auto.service bt-audio-recover.service librepods.service; do
+    systemctl --user -q is-enabled "$unit" 2>/dev/null && systemctl --user restart "$unit" >/dev/null 2>&1
+done
+# Apps in ~/.config/autostart, once per login (autostart-apps.sh).
+bash "$SCRIPTS_DIR/autostart-apps.sh" >/dev/null 2>&1 &
 
 ################################################################################
 # 6. One-shot settings. Measured at ~0.04 s combined, so they stay inline.
@@ -146,11 +150,13 @@ report "quickshell" "qs -p"
 report "xdg-desktop-portal" "xdg-desktop-portal"
 report "awww-daemon" "awww-daemon" -x
 report "hypridle" "hypridle" -x
-report "power-auto" "power-auto.sh"
-report "battery-notify" "battery-notify.sh"
-report "bt-audio-recover" "bt-audio-recover.sh"
+# Units switched off in the settings app are not expected to run.
+enabled() { systemctl --user -q is-enabled "$1.service" 2>/dev/null; }
+enabled power-auto && report "power-auto" "power-auto.sh"
+enabled battery-notify && report "battery-notify" "battery-notify.sh"
+enabled bt-audio-recover && report "bt-audio-recover" "bt-audio-recover.sh"
 # Only once build-librepods.sh has installed it; it is optional.
-[[ -x "$HOME/.local/bin/librepods" ]] && report "librepods" "librepods" -x
+[[ -x "$HOME/.local/bin/librepods" ]] && enabled librepods && report "librepods" "librepods" -x
 report "cliphist" "wl-paste.*cliphist"
 report "dotwatch" "dotwatch.sh"
 report "nm-applet" "nm-applet" -x

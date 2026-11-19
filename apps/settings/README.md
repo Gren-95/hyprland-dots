@@ -39,7 +39,7 @@ terminal, or `settings -p <panel>` for one panel; several shell flyouts
 | `lock` | Idle times (dim, lock, screen off, suspend) edited in `config/hypr/hypridle.conf`, which then restarts hypridle; stay awake; what the lid does; lock screen parts |
 | `about` | Header with the distro logo, system, computer, host name and uptime; processor, memory (size, type, speed, modules, use) and graphics tiles; disk usage meters; kernel, Hyprland, Quickshell, package counts, app version; the dots repository with Open on GitHub and what is not pushed; Copy as text for bug reports (battery and network included) |
 | `gaming` | Game mode switch; connected controllers with their battery and a Connect button to Bluetooth; the game mode launcher opening on games; Proton versions (collapsed): installed GE-Proton and Valve Proton, the default, games per version, missing versions, the newest GE-Proton release, ProtonPlus; what it does (effects off, hide the bar, Do not disturb, performance profile, keep the screen awake, pause syncs, night light, Docker, Tailscale); turn on with Feral GameMode (`gamemoderun`); variable refresh rate, tearing, direct scanout |
-| `services` | Background services from `config/scripts/services-status.sh`: session daemons (running or stopped, Start/Restart), the Immich and Jellyfin syncs and on-demand services (remote access, Windows VM, games browser) with a switch each, through their toggle scripts. Remote access Details: address to connect to, login (show, copy, new password), listen on (tailnet only, this computer only, local network), port, frame rate, view only, drawing the cursor — read by `wayvnc-toggle.sh` |
+| `services` | Apps at login (`~/.config/autostart`: switch, remove, add an installed app; started by `autostart-apps.sh`); background services: your systemd user units (switch enables and starts or disables and stops, Restart) and Dotwatch; the system's enabled user units, collapsed and read-only; from `config/scripts/services-status.sh`: the Immich and Jellyfin syncs and on-demand services (remote access, Windows VM, games browser) with a switch each, through their toggle scripts. Remote access Details: address to connect to, login (show, copy, new password), listen on (tailnet only, this computer only, local network), port, frame rate, view only, drawing the cursor — read by `wayvnc-toggle.sh` |
 | `power` | Battery charge, health, cycles, charge limit, power, temperature, model and age; low battery levels and action |
 
 ## Usage
@@ -121,6 +121,8 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/hyprpage.rs` | Panels of plain Hyprland options declared as rows (Mouse & touchpad) |
 | `src/about.rs` | About panel |
 | `src/services.rs` | Services panel |
+| `src/startup.rs` | Apps at login (XDG autostart) on the Services panel |
+| `src/units.rs` | Systemd user units on the Services panel |
 | `src/vnc.rs` | Remote access (WayVNC) Details on the Services panel |
 | `src/proton.rs` | Proton versions on the Gaming panel |
 | `src/gaming.rs` | Game mode switch and the Display rows on the Gaming panel |

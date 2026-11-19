@@ -1452,7 +1452,7 @@ pub const PANELS: &[Panel] = &[
         glyph: ico::SERVER_COG,
         group: Group::System,
         page: Page::Services,
-        keywords: "background daemons sync immich jellyfin remote access vnc wayvnc password port view only windows vm games browser dotwatch battery",
+        keywords: "background daemons startup autostart login apps systemd units sync immich jellyfin remote access vnc wayvnc password port view only windows vm games browser dotwatch battery",
         sections: &[],
     },
     Panel {

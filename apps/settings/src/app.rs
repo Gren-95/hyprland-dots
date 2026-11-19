@@ -31,10 +31,12 @@ use crate::schema::{PANELS, Page, Panel, Section, all_settings};
 use crate::services;
 use crate::shortcuts;
 use crate::sidebar;
+use crate::startup;
 use crate::store::{Store, Value};
 use crate::style;
 use crate::themes;
 use crate::ui;
+use crate::units;
 use crate::windows;
 
 /// How often the files are read again, so changes made in the shell show up.
@@ -121,6 +123,8 @@ pub struct App {
     gaming_display: hyprpage::State,
     proton: proton::State,
     services: services::State,
+    startup: startup::State,
+    units: units::State,
     /// Installed font families, loaded once at start for the Font picker.
     fonts: Vec<&'static str>,
     error: Option<String>,
@@ -192,6 +196,8 @@ pub enum Message {
     GamingDisplay(hyprpage::Msg),
     Proton(proton::Msg),
     Services(services::Msg),
+    Startup(startup::Msg),
+    Units(units::Msg),
     Fonts(Vec<&'static str>),
 }
 
@@ -231,6 +237,8 @@ impl App {
             gaming_display: hyprpage::State::default(),
             proton: proton::State::default(),
             services: services::State::default(),
+            startup: startup::State::default(),
+            units: units::State::default(),
             fonts: Vec::new(),
             error: None,
         };
@@ -246,7 +254,11 @@ impl App {
     fn refresh_page(&mut self) -> Task<Message> {
         match PANELS[self.panel].page {
             Page::Settings => Task::none(),
-            Page::Services => self.services.update(services::Msg::Refresh).map(Message::Services),
+            Page::Services => Task::batch([
+                self.services.update(services::Msg::Refresh).map(Message::Services),
+                self.units.update(units::Msg::Load).map(Message::Units),
+                self.startup.update(startup::Msg::Load).map(Message::Startup),
+            ]),
             Page::Gaming => Task::batch([
                 self.gaming.update(gaming::Msg::Refresh).map(Message::Gaming),
                 self.gaming_display
@@ -388,6 +400,8 @@ impl App {
             }
             Message::Gaming(msg) => return self.gaming.update(msg).map(Message::Gaming),
             Message::Services(msg) => return self.services.update(msg).map(Message::Services),
+            Message::Startup(msg) => return self.startup.update(msg).map(Message::Startup),
+            Message::Units(msg) => return self.units.update(msg).map(Message::Units),
             Message::Proton(msg) => return self.proton.update(msg).map(Message::Proton),
             Message::GamingDisplay(msg) => {
                 return self
@@ -588,9 +602,32 @@ impl App {
             }
             Page::Services => {
                 let mut body = page_column(panel.title, layout);
-                body = ui::section(body, "At login", services_rows(self.services.daemon_rows()));
+                let startup = self
+                    .startup
+                    .rows()
+                    .into_iter()
+                    .map(|r| r.map(Message::Startup))
+                    .collect();
+                body = ui::section(body, "Apps at login", startup);
+                let mut background: Vec<Element<'_, Message>> = self
+                    .units
+                    .own_rows()
+                    .into_iter()
+                    .map(|r| r.map(Message::Units))
+                    .collect();
+                background.extend(services_rows(self.services.daemon_rows()));
+                body = ui::section(body, "Background services", background);
                 body = ui::section(body, "Scheduled", services_rows(self.services.scheduled_rows()));
                 body = ui::section(body, "On demand", services_rows(self.services.on_demand_rows()));
+                let system: Vec<Element<'_, Message>> = self
+                    .units
+                    .system_rows()
+                    .into_iter()
+                    .map(|r| r.map(Message::Units))
+                    .collect();
+                if !system.is_empty() {
+                    body = ui::section(body, "System", system);
+                }
                 body.into()
             }
             Page::Gaming => {

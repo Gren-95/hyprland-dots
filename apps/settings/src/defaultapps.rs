@@ -148,6 +148,8 @@ pub struct App {
     pub hidden: bool,
     pub mimes: Vec<String>,
     pub categories: Vec<String>,
+    /// The .desktop file (set by `installed`).
+    pub path: std::path::PathBuf,
 }
 
 /// The [Desktop Entry] of a .desktop file, or None for deleted entries
@@ -211,7 +213,10 @@ pub fn installed() -> Vec<App> {
                 .ok()
                 .and_then(|t| parse_desktop(&id, &t))
             {
-                apps.push(app);
+                apps.push(App {
+                    path: entry.path(),
+                    ..app
+                });
             }
         }
     }

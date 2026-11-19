@@ -1,6 +1,7 @@
 //! Services panel: what runs in the background, from one probe
 //! (scripts/services-status.sh, shared with the bar's Services flyout).
-//! Session daemons show whether they run and can be started or restarted;
+//! Dotwatch shows whether it runs and can be started or restarted (the
+//! systemd user units are units.rs, the autostart apps startup.rs);
 //! the scheduled syncs and the on-demand services have a switch, through
 //! the same toggle scripts the flyout uses.
 
@@ -11,42 +12,22 @@ use crate::style::Action;
 use crate::system;
 use crate::ui;
 
-/// How a daemon is started again.
-#[derive(Debug, Clone, Copy)]
-enum Start {
-    /// A systemd user unit.
-    Unit(&'static str),
-    /// A script run detached (it outlives this app).
-    Script(&'static str),
-}
-
 struct Daemon {
     key: &'static str,
     label: &'static str,
     detail: &'static str,
-    start: Start,
+    /// The script that starts it, run detached (it outlives this app).
+    script: &'static str,
 }
 
-const DAEMONS: &[Daemon] = &[
-    Daemon {
-        key: "battery-notify",
-        label: "Battery warnings",
-        detail: "Warns when the battery runs low",
-        start: Start::Unit("battery-notify.service"),
-    },
-    Daemon {
-        key: "power-auto",
-        label: "Power profile",
-        detail: "Follows the charger and the battery level",
-        start: Start::Unit("power-auto.service"),
-    },
-    Daemon {
-        key: "dotwatch",
-        label: "Dotwatch",
-        detail: "Reloads dotfiles when they are edited",
-        start: Start::Script("dotwatch.sh"),
-    },
-];
+/// Started at login by restart.sh rather than as a systemd unit (those are
+/// in units.rs).
+const DAEMONS: &[Daemon] = &[Daemon {
+    key: "dotwatch",
+    label: "Dotwatch",
+    detail: "Reloads dotfiles when they are edited",
+    script: "dotwatch.sh",
+}];
 
 /// A service with an on/off switch: (key, label, detail, toggle script and
 /// its arguments).
@@ -148,19 +129,14 @@ fn probe() -> Status {
     st
 }
 
-fn start(how: Start) -> Result<(), String> {
-    match how {
-        Start::Unit(unit) => {
-            system::run_blocking("systemctl", &system::args(&["--user", "restart", unit]), None).map(|_| ())
-        }
-        Start::Script(name) => std::process::Command::new("setsid")
-            .args(["-f", "bash", &script(name)])
-            .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null())
-            .status()
-            .map_err(|e| e.to_string())
-            .and_then(|s| s.success().then_some(()).ok_or_else(|| format!("{name} did not start"))),
-    }
+fn start(name: &'static str) -> Result<(), String> {
+    std::process::Command::new("setsid")
+        .args(["-f", "bash", &script(name)])
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .map_err(|e| e.to_string())
+        .and_then(|s| s.success().then_some(()).ok_or_else(|| format!("{name} did not start")))
 }
 
 #[derive(Default)]
@@ -197,8 +173,8 @@ impl State {
             Msg::Start(i) => {
                 let daemon = &DAEMONS[i];
                 self.busy = Some(daemon.key);
-                let how = daemon.start;
-                return Task::perform(system::spawn(move || start(how)), |r| {
+                let name = daemon.script;
+                return Task::perform(system::spawn(move || start(name)), |r| {
                     Msg::Done(r.unwrap_or_else(|| Err("starting stopped unexpectedly".into())))
                 });
             }
