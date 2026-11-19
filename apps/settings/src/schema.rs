@@ -67,6 +67,8 @@ pub enum Page {
     Themes,
     /// Key binds moved to other keys (shortcuts.rs).
     Shortcuts,
+    /// Background services: daemons, syncs, on-demand services (services.rs).
+    Services,
     /// The game mode switch, its settings and display options (gaming.rs).
     Gaming,
     /// Launcher settings followed by the hidden apps (hiddenapps.rs).
@@ -90,6 +92,7 @@ impl Page {
         matches!(
             self,
             Page::Gaming
+                | Page::Services
                 | Page::Notifications
                 | Page::Power
                 | Page::Network
@@ -1439,6 +1442,15 @@ pub const PANELS: &[Panel] = &[
                 )],
             },
         ],
+    },
+    Panel {
+        id: "services",
+        title: "Services",
+        glyph: ico::SERVER_COG,
+        group: Group::System,
+        page: Page::Services,
+        keywords: "background daemons sync immich jellyfin remote access vnc windows vm games browser dotwatch battery",
+        sections: &[],
     },
     Panel {
         id: "power",

@@ -35,6 +35,7 @@ shell show in the app too.
 | `lock` | Idle times (dim, lock, screen off, suspend) edited in `config/hypr/hypridle.conf`, which then restarts hypridle; stay awake; what the lid does; lock screen parts |
 | `about` | Header with the distro logo, system, computer, host name and uptime; processor, memory (size, type, speed, modules, use) and graphics tiles; disk usage meters; kernel, Hyprland, Quickshell, package counts, app version; the dots repository with Open on GitHub and what is not pushed; Copy as text for bug reports (battery and network included) |
 | `gaming` | Game mode switch; connected controllers with their battery and a Connect button to Bluetooth; the game mode launcher opening on games; Proton versions (collapsed): installed GE-Proton and Valve Proton, the default, games per version, missing versions, the newest GE-Proton release, ProtonPlus; what it does (effects off, hide the bar, Do not disturb, performance profile, keep the screen awake, pause syncs, night light, Docker, Tailscale); turn on with Feral GameMode (`gamemoderun`); variable refresh rate, tearing, direct scanout |
+| `services` | Background services from `config/scripts/services-status.sh`: session daemons (running or stopped, Start/Restart), the Immich and Jellyfin syncs and on-demand services (remote access, Windows VM, games browser) with a switch each, through their toggle scripts |
 | `power` | Battery charge, health, cycles, charge limit, power, temperature, model and age; low battery levels and action |
 
 ## Usage
@@ -115,6 +116,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/hypr.rs` | Hyprland settings the app owns: settings.json, the generated settings.lua, `hyprctl eval` |
 | `src/hyprpage.rs` | Panels of plain Hyprland options declared as rows (Mouse & touchpad) |
 | `src/about.rs` | About panel |
+| `src/services.rs` | Services panel |
 | `src/proton.rs` | Proton versions on the Gaming panel |
 | `src/gaming.rs` | Game mode switch and the Display rows on the Gaming panel |
 | `src/hiddenapps.rs` | Hidden apps on the Launcher panel |

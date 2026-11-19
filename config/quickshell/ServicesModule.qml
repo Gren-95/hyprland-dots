@@ -207,8 +207,23 @@ Item {
                     font.bold: true
                     horizontalAlignment: Text.AlignHCenter
                 }
-                // Balances the pin button so the title stays centered.
-                Item { implicitWidth: 22; implicitHeight: 22 }
+                // The same services in the settings app, with more room.
+                Text {
+                    text: "󰒓"
+                    color: setMa.containsMouse ? Theme.accentPrimary : Theme.muted
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize.lg
+                    MouseArea {
+                        id: setMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            Cmd.run([Paths.home + "/.local/bin/settings", "-p", "services"]);
+                            mod.popupOpen = false;
+                        }
+                    }
+                }
             }
 
             Flickable {

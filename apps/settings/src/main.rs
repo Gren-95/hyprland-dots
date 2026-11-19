@@ -31,6 +31,7 @@ mod proton;
 mod reveal;
 mod schema;
 mod search;
+mod services;
 mod shortcuts;
 mod sidebar;
 mod store;

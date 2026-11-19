@@ -28,6 +28,7 @@ use crate::power;
 use crate::proton;
 use crate::reveal;
 use crate::schema::{PANELS, Page, Panel, Section, all_settings};
+use crate::services;
 use crate::shortcuts;
 use crate::sidebar;
 use crate::store::{Store, Value};
@@ -119,6 +120,7 @@ pub struct App {
     gaming: gaming::State,
     gaming_display: hyprpage::State,
     proton: proton::State,
+    services: services::State,
     /// Installed font families, loaded once at start for the Font picker.
     fonts: Vec<&'static str>,
     error: Option<String>,
@@ -189,6 +191,7 @@ pub enum Message {
     Gaming(gaming::Msg),
     GamingDisplay(hyprpage::Msg),
     Proton(proton::Msg),
+    Services(services::Msg),
     Fonts(Vec<&'static str>),
 }
 
@@ -227,6 +230,7 @@ impl App {
             gaming: gaming::State::default(),
             gaming_display: hyprpage::State::default(),
             proton: proton::State::default(),
+            services: services::State::default(),
             fonts: Vec::new(),
             error: None,
         };
@@ -242,6 +246,7 @@ impl App {
     fn refresh_page(&mut self) -> Task<Message> {
         match PANELS[self.panel].page {
             Page::Settings => Task::none(),
+            Page::Services => self.services.update(services::Msg::Refresh).map(Message::Services),
             Page::Gaming => Task::batch([
                 self.gaming.update(gaming::Msg::Refresh).map(Message::Gaming),
                 self.gaming_display
@@ -382,6 +387,7 @@ impl App {
                 }
             }
             Message::Gaming(msg) => return self.gaming.update(msg).map(Message::Gaming),
+            Message::Services(msg) => return self.services.update(msg).map(Message::Services),
             Message::Proton(msg) => return self.proton.update(msg).map(Message::Proton),
             Message::GamingDisplay(msg) => {
                 return self
@@ -580,6 +586,13 @@ impl App {
                 }
                 body.into()
             }
+            Page::Services => {
+                let mut body = page_column(panel.title, layout);
+                body = ui::section(body, "At login", services_rows(self.services.daemon_rows()));
+                body = ui::section(body, "Scheduled", services_rows(self.services.scheduled_rows()));
+                body = ui::section(body, "On demand", services_rows(self.services.on_demand_rows()));
+                body.into()
+            }
             Page::Gaming => {
                 let mut body = page_column(panel.title, layout);
                 let switch = self.gaming.rows().into_iter().map(|r| r.map(Message::Gaming)).collect();
@@ -742,6 +755,10 @@ impl App {
         });
         ui::section(body, section.title, rows.collect())
     }
+}
+
+fn services_rows(rows: Vec<Element<'_, services::Msg>>) -> Vec<Element<'_, Message>> {
+    rows.into_iter().map(|r| r.map(Message::Services)).collect()
 }
 
 /// A panel's column, starting with its title.
