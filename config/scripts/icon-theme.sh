@@ -8,7 +8,7 @@
 #
 # The settings app's Icons & cursors panel (apps/settings, themes.rs) calls
 # all three.
-# `list` prints [{id, name, comment, samples: [file, ...]}], one sample per
+# `list` prints [{id, name, comment, path, samples: [file, ...]}], one sample per
 # slot in SAMPLE_SLOTS, taken from the theme itself (not from the themes it
 # inherits) so every pack shows its own art. Themes with fewer than
 # MIN_SAMPLES of them (cursor themes, hicolor) are left out.
@@ -111,8 +111,8 @@ list() {
         ((${#files[@]} >= MIN_SAMPLES)) || continue
         name=$(theme_key "$dir" Name)
         comment=$(theme_key "$dir" Comment)
-        jq -n --arg id "$id" --arg name "${name:-$id}" --arg comment "$comment" \
-            '{id: $id, name: $name, comment: $comment, samples: $ARGS.positional}' \
+        jq -n --arg id "$id" --arg name "${name:-$id}" --arg comment "$comment" --arg path "$dir" \
+            '{id: $id, name: $name, comment: $comment, path: $path, samples: $ARGS.positional}' \
             --args "${files[@]}"
     done < <(theme_dirs) | jq -s 'sort_by(.name | ascii_downcase)'
 }

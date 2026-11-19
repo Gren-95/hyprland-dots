@@ -4,7 +4,7 @@
 Usage: cursor-previews.py
 
 Prints a JSON array, sorted by name:
-  [{"id", "name", "comment", "kind": "xcursor" | "hyprcursor", "samples": [file, ...]}]
+  [{"id", "name", "comment", "kind": "xcursor" | "hyprcursor", "path", "samples": [file, ...]}]
 
 Called by `cursor-theme.sh list` for the settings app's Icons & cursors
 panel (apps/settings, themes.rs). XCursor themes are directories with a
@@ -164,7 +164,14 @@ def themes():
             if not files:
                 continue
             seen.add(theme_id)
-            yield {"id": theme_id, "name": name, "comment": comment, "kind": kind, "samples": files}
+            yield {
+                "id": theme_id,
+                "name": name,
+                "comment": comment,
+                "kind": kind,
+                "path": theme_dir,
+                "samples": files,
+            }
 
 
 def main():

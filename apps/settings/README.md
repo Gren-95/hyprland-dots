@@ -20,7 +20,7 @@ shell show in the app too.
 | `shortcuts` | Every key bind with its keys (search, change with modifiers and a searchable key list, reset); moves are kept in `config/hypr/settings.lua` as `hl.unbind` + `hl.bind`, `keys.lua` is not edited |
 | `mouse` | Pointer speed, acceleration, left-handed, natural scrolling and scroll speed for mice; tap to click, natural scrolling, off while typing, right-click method, middle click and scroll speed for touchpads; workspace swipe direction and distance — Hyprland options saved to `config/hypr/settings.lua` |
 | `appearance` | Accent colour, font and text size, corner roundness, animations on or off (shell, Hyprland and GTK together) and their speed, wallpaper folder |
-| `themes` | Icon and cursor themes with previews, recently used first; applied through `config/scripts/icon-theme.sh` and `cursor-theme.sh` (the Quick Actions tile opens this panel) |
+| `themes` | Icon and cursor themes with previews, recently used first; applied through `config/scripts/icon-theme.sh` and `cursor-theme.sh` (the Quick Actions tile opens this panel) ; Open folder on each theme and on an "Add themes" row for ~/.local/share/icons |
 | `windows` | Gaps, border width, corner rounding, animations, blur, shadows, unfocused opacity, tiling layout, focus follows mouse, resize by border — Hyprland options in `config/hypr/settings.lua` (they win over HyprMod's `hyprland-gui.lua`) |
 | `bar` | Height, opacity, window title width, workspace icons, activity icons, scroll action |
 | `baritems` | Where each bar module, Quick Actions item and tray app shows: on the bar, in Quick Actions or hidden (the shell's placement files); tray apps are read live over D-Bus |

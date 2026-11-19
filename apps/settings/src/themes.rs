@@ -24,6 +24,8 @@ pub struct Theme {
     pub comment: String,
     /// "xcursor" or "hyprcursor" for cursor themes, empty for icon themes.
     pub kind: String,
+    /// Its folder, to open in the file manager.
+    pub path: String,
     /// Preview files, PNG or SVG.
     pub samples: Vec<String>,
 }
@@ -52,6 +54,8 @@ pub enum Msg {
     Cursors(Result<Themes, String>),
     UseIcon(String),
     UseCursor(String),
+    /// Open a folder in the file manager.
+    OpenFolder(String),
     Applied(Result<(), String>),
 }
 
@@ -67,6 +71,7 @@ pub fn parse_list(json: &str) -> Result<Vec<Theme>, String> {
             name: s(t, "name"),
             comment: s(t, "comment"),
             kind: s(t, "kind"),
+            path: s(t, "path"),
             samples: t["samples"]
                 .as_array()
                 .into_iter()
@@ -220,6 +225,13 @@ impl State {
                 self.busy = Some(id.clone());
                 return apply("cursor-theme.sh", CURSOR_RECENTS, id, replaced);
             }
+            Msg::OpenFolder(path) => {
+                // The folder for new themes may not exist yet.
+                let _ = std::fs::create_dir_all(&path);
+                return Task::perform(system::run("xdg-open", vec![path], None), |r| {
+                    Msg::Applied(r.map(|_| ()))
+                });
+            }
             Msg::Applied(r) => {
                 self.busy = None;
                 self.error = r.err();
@@ -233,16 +245,12 @@ impl State {
         if let Some(e) = &self.error {
             body = body.push(ui::error(e));
         }
-        body = ui::section(
-            body,
-            "Icon theme",
-            self.rows(&self.icons, "Looking for icon themes…", Msg::UseIcon),
-        );
-        ui::section(
-            body,
-            "Cursor theme",
-            self.rows(&self.cursors, "Looking for cursor themes…", Msg::UseCursor),
-        )
+        let mut icons = vec![folder_row("icon")];
+        icons.extend(self.rows(&self.icons, "Looking for icon themes…", Msg::UseIcon));
+        body = ui::section(body, "Icon theme", icons);
+        let mut cursors = vec![folder_row("cursor")];
+        cursors.extend(self.rows(&self.cursors, "Looking for cursor themes…", Msg::UseCursor));
+        ui::section(body, "Cursor theme", cursors)
     }
 
     fn rows<'a>(
@@ -277,16 +285,26 @@ impl State {
                 }
             );
         }
+        let folder = (!t.path.is_empty()).then(|| Msg::OpenFolder(t.path.clone()));
         let control: Element<'a, Msg> = if self.busy.as_deref() == Some(t.id.as_str()) {
             ui::note("Applying…")
         } else if let Some(badge) = badge {
-            text(badge).size(13).color(style::FG_MUTED).into()
+            row![
+                text(badge).size(13).color(style::FG_MUTED),
+                ui::action("Open folder", folder, Action::Normal)
+            ]
+            .spacing(12)
+            .align_y(Alignment::Center)
+            .into()
         } else {
-            ui::action(
-                "Use",
-                self.busy.is_none().then(|| on_use(t.id.clone())),
-                Action::Primary,
-            )
+            ui::button_group(vec![
+                ("Open folder", folder, Action::Normal),
+                (
+                    "Use",
+                    self.busy.is_none().then(|| on_use(t.id.clone())),
+                    Action::Primary,
+                ),
+            ])
         };
         let samples = Row::with_children(t.samples.iter().map(|path| sample(path))).spacing(10);
         let mut info = column![text(t.name.clone()).size(14).color(style::FG)]
@@ -305,6 +323,29 @@ impl State {
             })
             .into()
     }
+}
+
+/// Where new themes go: icon and cursor themes share ~/.local/share/icons.
+fn themes_folder() -> String {
+    crate::store::home()
+        .join(".local/share/icons")
+        .to_string_lossy()
+        .into_owned()
+}
+
+/// The first row of a section: where to put new themes, with a button that
+/// opens it.
+fn folder_row<'a>(kind: &str) -> Element<'a, Msg> {
+    ui::item(
+        lucide_iced::bytes::FOLDER_OPEN,
+        format!("Add {kind} themes"),
+        "Put a theme's folder in ~/.local/share/icons, then reopen this panel".into(),
+        vec![ui::action(
+            "Open folder",
+            Some(Msg::OpenFolder(themes_folder())),
+            Action::Normal,
+        )],
+    )
 }
 
 /// One preview file: SVG drawn as a vector, anything else as an image.
