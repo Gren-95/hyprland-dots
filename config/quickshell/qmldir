@@ -35,6 +35,7 @@ singleton Cmd Cmd.qml
 singleton Hypr Hypr.qml
 GameLauncher GameLauncher.qml
 GameModeService GameModeService.qml
+GamesService GamesService.qml
 IcsCalendar IcsCalendar.qml
 IdleService IdleService.qml
 HyprBorder HyprBorder.qml

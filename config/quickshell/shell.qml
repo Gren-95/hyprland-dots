@@ -55,6 +55,7 @@ Scope {
     Spotlight { id: spotlight }
     // Minimal launcher used while game mode hides the bar (Spotlight's flyout
     // needs a visible bar to anchor to); the spotlight shortcut routes here.
+    GamesService { id: games }
     GameLauncher { id: gameLauncher }
     Clipboard { id: clipboard }
     Osd { id: osd }

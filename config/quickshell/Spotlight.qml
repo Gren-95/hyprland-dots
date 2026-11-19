@@ -53,6 +53,13 @@ Scope {
     // puts one back. The list stays open either way — hiding a run of
     // entries should not mean reopening the launcher between each one.
     property bool manageHidden: false
+    // The Games view: Steam games and Game-category apps only (GamesService).
+    property bool gamesView: false
+    function toggleGamesView() {
+        gamesView = !gamesView;
+        if (gamesView) games.refresh();
+        selectedIndex = 0;
+    }
     // Left/Right flip between the two lists. The query survives the flip, so
     // it reads as one list with a filter on it rather than two places to be.
     function toggleHiddenView() {
@@ -110,7 +117,9 @@ Scope {
 
     readonly property var filtered: {
         if (!DesktopEntries.applications) return [];
-        const all = DesktopEntries.applications.values || [];
+        const apps = DesktopEntries.applications.values || [];
+        const gamesOnly = root.gamesView && root.pickRole === "" && !root.manageHidden;
+        const all = gamesOnly ? games.list(apps) : apps;
         const q = root.query.toLowerCase();
         const cat = root.pickRole !== "" ? root.pickRoles[root.pickRole].category : "";
         return all
@@ -152,7 +161,7 @@ Scope {
     // startPick() and manageHiddenApps() open the special lists.
     function toggle() {
         if (open) { close(); return; }
-        pickRole = ""; manageHidden = false;
+        pickRole = ""; manageHidden = false; gamesView = false;
         open = true;
         query = ""; selectedIndex = 0;
     }
@@ -161,7 +170,7 @@ Scope {
         selectedIndex = idx < 0 ? Math.max(0, root.totalRows - 1)
                                 : Math.min(idx, Math.max(0, root.totalRows - 1));
     }
-    function close() { open = false; pickRole = ""; manageHidden = false; }
+    function close() { open = false; pickRole = ""; manageHidden = false; gamesView = false; }
     // The highlighted shell-toggle action, if any (drives Space-to-toggle).
     function highlightedToggle() {
         const ai = selectedIndex - actionOffset;
@@ -280,6 +289,13 @@ Scope {
                     font.pixelSize: Theme.fontSize.lg
                     font.bold: true
                     elide: Text.ElideRight
+                }
+                LauncherChipButton {
+                    visible: root.pickRole === "" && !root.manageHidden
+                    glyph: "󰊖"
+                    text: "Games"
+                    active: root.gamesView
+                    onClicked: root.toggleGamesView()
                 }
                 LauncherChipButton {
                     visible: root.pickRole === ""

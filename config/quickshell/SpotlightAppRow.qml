@@ -20,9 +20,22 @@ Item {
         anchors.leftMargin: Theme.spacing.xl
         anchors.rightMargin: Theme.spacing.lg
         spacing: Theme.spacing.lg
+        // Steam games carry their cover art instead of an icon name.
+        Image {
+            visible: row.entry && row.entry.art ? true : false
+            Layout.preferredWidth: 40
+            Layout.preferredHeight: 40
+            source: visible ? "file://" + row.entry.art : ""
+            fillMode: Image.PreserveAspectCrop
+            sourceSize.width: 80
+            asynchronous: true
+            scale: row.highlighted ? 1.06 : 1.0
+            Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.emphasized } }
+        }
         IconImage {
+            visible: !(row.entry && row.entry.art)
             implicitSize: 40
-            source: row.entry ? Quickshell.iconPath(row.entry.icon, "application-x-executable") : ""
+            source: row.entry && !row.entry.art ? Quickshell.iconPath(row.entry.icon, "application-x-executable") : ""
             asynchronous: true
             scale: row.highlighted ? 1.06 : 1.0
             Behavior on scale { NumberAnimation { duration: Theme.duration.normal; easing.type: Theme.easing.emphasized } }

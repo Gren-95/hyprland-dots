@@ -23,10 +23,14 @@ Scope {
     property bool open: false
     property string query: ""
     property int selectedIndex: 0
+    // Games only (GamesService); opens this way unless the Gaming panel
+    // turned it off.
+    property bool gamesView: false
 
     readonly property var filtered: {
         if (!DesktopEntries.applications) return [];
-        const all = DesktopEntries.applications.values || [];
+        const apps = DesktopEntries.applications.values || [];
+        const all = root.gamesView ? games.list(apps) : apps;
         const q = root.query.toLowerCase();
         return all
             .filter(a => !a.noDisplay)
@@ -52,7 +56,12 @@ Scope {
     readonly property var shown: root.filtered.slice(0, settingsStore.spotlightCap)
     readonly property int totalRows: root.shown.length
 
-    function openLauncher() { root.query = ""; root.selectedIndex = 0; root.open = true; }
+    function openLauncher() {
+        root.query = ""; root.selectedIndex = 0;
+        root.gamesView = settingsStore.gameLauncherGames;
+        if (root.gamesView) games.refresh();
+        root.open = true;
+    }
     function close() { root.open = false; }
     function toggle() { if (root.open) root.close(); else root.openLauncher(); }
     function activate(i) {
@@ -162,11 +171,15 @@ Scope {
                                 font.bold: true
                                 elide: Text.ElideRight
                             }
-                            Text {
-                                text: "󰊖"
-                                color: Theme.accent.green
-                                font.family: Theme.font
-                                font.pixelSize: Theme.fontSize.lg
+                            LauncherChipButton {
+                                glyph: "󰊖"
+                                text: "Games"
+                                active: root.gamesView
+                                onClicked: {
+                                    root.gamesView = !root.gamesView;
+                                    if (root.gamesView) games.refresh();
+                                    root.selectedIndex = 0;
+                                }
                             }
                         }
 

@@ -71,6 +71,7 @@ Scope {
     property bool gamemodeAwake: true
     property bool gamemodeTailscale: true
     property bool gamemodeFeral: false
+    property bool gameLauncherGames: true      // the game mode launcher opens on the Games view
     property real radiusScale: 1.0             // multiplies Theme.radius
     property real barOpacity: 1.0
     property int batteryCriticalPct: 5         // countdown-to-action level; 0 = off
@@ -218,6 +219,7 @@ Scope {
         { name: "gamemodeAwake", file: "gamemode-awake", type: "bool" },
         { name: "gamemodeTailscale", file: "gamemode-tailscale", type: "bool" },
         { name: "gamemodeFeral", file: "gamemode-feral", type: "bool" },
+        { name: "gameLauncherGames", file: "game-launcher-games", type: "bool" },
         { name: "radiusScale",          file: "radius-scale",           type: "real" },
         { name: "barOpacity",           file: "bar-opacity",            type: "real" },
         { name: "batteryCriticalPct",   file: "battery-critical-pct",   type: "int"  },

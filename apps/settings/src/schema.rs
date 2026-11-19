@@ -1286,7 +1286,7 @@ pub const PANELS: &[Panel] = &[
         glyph: ico::GAMEPAD_2,
         group: Group::System,
         page: Page::Gaming,
-        keywords: "game mode games steam gamemoderun feral vrr freesync tearing scanout performance",
+        keywords: "game mode games steam gamemoderun feral vrr freesync tearing scanout performance controller gamepad proton launcher",
         sections: &[
             Section {
                 title: "While game mode is on",
@@ -1369,6 +1369,15 @@ pub const PANELS: &[Panel] = &[
                     "With Feral GameMode",
                     "Turn game mode on while a game started with gamemoderun runs (Steam: gamemoderun %command%)",
                     false,
+                )],
+            },
+            Section {
+                title: "Launcher",
+                settings: &[toggle(
+                    "game-launcher-games",
+                    "Open on games in game mode",
+                    "The launcher in game mode lists your Steam games and Game apps first; Games switches back to all apps",
+                    true,
                 )],
             },
         ],
