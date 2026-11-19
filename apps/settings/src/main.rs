@@ -37,6 +37,7 @@ mod store;
 mod style;
 mod sysinfo;
 mod system;
+mod tailscale;
 mod themes;
 mod ui;
 mod vpn;

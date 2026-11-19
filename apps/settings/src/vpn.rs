@@ -416,15 +416,21 @@ impl State {
         Task::none()
     }
 
-    pub fn rows(&self) -> Vec<Element<'_, Msg>> {
+    /// The VPN rows; `without_tailscale` leaves Tailscale out (it has its own
+    /// section).
+    pub fn rows(&self, without_tailscale: bool) -> Vec<Element<'_, Msg>> {
         let mut rows: Vec<Element<'_, Msg>> = Vec::new();
         if let Some(e) = &self.error {
             rows.push(ui::error(e));
         }
-        if self.vpns.is_empty() {
+        if self.vpns.iter().all(|v| without_tailscale && v.kind == "Tailscale") {
             rows.push(ui::note("No VPN yet"));
         }
-        for v in &self.vpns {
+        for v in self
+            .vpns
+            .iter()
+            .filter(|v| !(without_tailscale && v.kind == "Tailscale"))
+        {
             rows.push(self.vpn_row(v));
             if let Some((_, info)) = self.open.as_ref().filter(|(u, _)| *u == v.uuid) {
                 rows.push(self.details(v, info.as_ref()));

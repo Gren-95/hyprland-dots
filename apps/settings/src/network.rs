@@ -54,6 +54,7 @@ pub struct State {
     /// The hidden network dialog is open.
     hidden_open: bool,
     vpn: crate::vpn::State,
+    tailscale: crate::tailscale::State,
     error: Option<String>,
 }
 
@@ -70,6 +71,7 @@ pub enum Msg {
     Disconnect(String),
     Forget(String),
     Vpn(crate::vpn::Msg),
+    Tailscale(crate::tailscale::Msg),
     /// An action finished; refresh to show its effect.
     HiddenSsid(String),
     HiddenPassword(String),
@@ -223,13 +225,19 @@ impl State {
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
         if !matches!(
             msg,
-            Msg::Forget(_) | Msg::Refresh | Msg::Refreshed(_) | Msg::ToggleDetails(_) | Msg::Vpn(_)
+            Msg::Forget(_) | Msg::Refresh | Msg::Refreshed(_) | Msg::ToggleDetails(_) | Msg::Vpn(_) | Msg::Tailscale(_)
         ) {
             self.confirming = None;
         }
         match msg {
             Msg::Refresh => {
-                return Task::batch([refresh(), self.vpn.update(crate::vpn::Msg::Refresh).map(Msg::Vpn)]);
+                return Task::batch([
+                    refresh(),
+                    self.vpn.update(crate::vpn::Msg::Refresh).map(Msg::Vpn),
+                    self.tailscale
+                        .update(crate::tailscale::Msg::Refresh)
+                        .map(Msg::Tailscale),
+                ]);
             }
             Msg::Refreshed(Ok(snapshot)) => self.snapshot = Some(*snapshot),
             Msg::Refreshed(Err(e)) => self.error = Some(e),
@@ -291,6 +299,7 @@ impl State {
                 return act(vec!["connection".into(), "delete".into(), "id".into(), name], None);
             }
             Msg::Vpn(m) => return self.vpn.update(m).map(Msg::Vpn),
+            Msg::Tailscale(m) => return self.tailscale.update(m).map(Msg::Tailscale),
             Msg::HiddenSsid(text) => self.hidden_ssid = text,
             Msg::HiddenPassword(text) => self.hidden_password = text,
             Msg::HiddenDialog(open) => {
@@ -395,7 +404,19 @@ impl State {
                 .collect();
             body = ui::section(body, "Wired", rows);
         }
-        let vpns = self.vpn.rows().into_iter().map(|r| r.map(Msg::Vpn)).collect();
+        // With its own section, Tailscale's NetworkManager entry is left out
+        // of the VPN list.
+        let tailscale = self.tailscale.installed();
+        if tailscale {
+            let rows = self
+                .tailscale
+                .rows()
+                .into_iter()
+                .map(|r| r.map(Msg::Tailscale))
+                .collect();
+            body = ui::section(body, "Tailscale", rows);
+        }
+        let vpns = self.vpn.rows(tailscale).into_iter().map(|r| r.map(Msg::Vpn)).collect();
         body = ui::section(body, "VPN", vpns);
         body
     }
