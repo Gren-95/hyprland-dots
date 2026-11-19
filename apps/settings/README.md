@@ -13,7 +13,7 @@ shell show in the app too.
 
 | Name | Settings |
 |------|----------|
-| `network` | Wi-Fi on/off, nearby networks (connect, disconnect, forget, scan), wired devices, VPN connections (on/off, Details with type, server, address, DNS and Delete; import a WireGuard .conf or OpenVPN .ovpn file; set up WireGuard by hand); Tailscale: on/off, tailnet and address to copy, exit node, options (Tailscale DNS, subnet routes, shields up, offer exit node, LAN access), devices with their address and Taildrop send, receive files into ~/Downloads — through `nmcli`; Details on the connected Wi-Fi network or wired device shows its addresses, gateway, DNS, hardware address and interface |
+| `network` | Wi-Fi on/off, nearby networks (connect, disconnect, forget, scan), wired devices, VPN connections (on/off, Details with type, server, address, DNS and Delete; import a WireGuard .conf or OpenVPN .ovpn file; set up WireGuard by hand); Tailscale, when installed, as one VPN row whose Details hold its address to copy, exit node, options (Tailscale DNS, subnet routes, shields up, offer exit node, LAN access), devices with their address and Taildrop send, receive files into ~/Downloads — through `nmcli`; Details on the connected Wi-Fi network or wired device shows its addresses, gateway, DNS, hardware address and interface |
 | `sound` | Output and input device, their volume and mute, and the volume of every app playing — through `pw-dump` and `wpctl` |
 | `bluetooth` | Bluetooth on/off, paired devices (connect, disconnect, forget, battery), scanning and pairing — through `bluetoothctl`. Connected AirPods get battery per bud and case, noise control, conversation awareness, codec and an audio reset, through librepods and `config/scripts/airpods.sh` |
 | `keyboard` | Keyboard layouts (search the XKB list, add, remove, reorder), layout switch shortcut, Caps Lock key, Num Lock at start, key repeat delay and speed — written to `config/hypr/settings.lua` (gitignored, loaded last) and applied with `hyprctl eval` |
@@ -119,7 +119,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/gaming.rs` | Game mode switch and the Display rows on the Gaming panel |
 | `src/hiddenapps.rs` | Hidden apps on the Launcher panel |
 | `src/focus.rs` | Keyboard focus: the focusable wrapper, Tab and scrolling to the focused control |
-| `src/tailscale.rs` | Tailscale section of the Network panel |
+| `src/tailscale.rs` | Tailscale row and its Details in the VPN list |
 | `src/vpn.rs` | VPN section of the Network panel: list, details, import, WireGuard setup |
 | `src/notifapps.rs` | Per-app notification rules on the Notifications panel |
 | `src/power.rs` | Battery block on the Power panel |

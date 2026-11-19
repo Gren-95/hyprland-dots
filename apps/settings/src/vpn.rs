@@ -423,7 +423,8 @@ impl State {
         if let Some(e) = &self.error {
             rows.push(ui::error(e));
         }
-        if self.vpns.iter().all(|v| without_tailscale && v.kind == "Tailscale") {
+        // With Tailscale shown above, the list is not empty.
+        if !without_tailscale && self.vpns.is_empty() {
             rows.push(ui::note("No VPN yet"));
         }
         for v in self

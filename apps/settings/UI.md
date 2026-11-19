@@ -4,6 +4,28 @@ How panels in the settings app look and behave. Follow these when adding a
 panel or a setting; the shared pieces in `src/ui.rs`, `src/controls.rs` and
 `src/style.rs` already do most of it.
 
+## Philosophy: simple at a glance, complex when needed
+
+Every panel first answers the everyday question in one look: is it on,
+what is it set to, the one switch most people want. Everything else is
+there, but one step away: behind Details, in a collapsed list, in a
+dialog, or further down the page.
+
+- **One row per thing at first.** A VPN, a network, a device is one row
+  with its name, its state and at most two controls. Its address, options,
+  sub-lists and rarely used actions open under it with Details.
+- **Don't assume what someone uses.** A tool that may not be installed or
+  used (Tailscale, Steam, a VPN) takes no more room than one row, or none
+  when it is missing; it never gets a section of its own by default.
+- **Rare tasks open on demand.** Joining a hidden network, setting up a
+  VPN by hand: a button that opens a dialog or form, not fields always on
+  screen.
+- **Lists stay short.** Long lists (devices, Proton versions, hidden apps)
+  start collapsed with a count in the summary row.
+- **Nothing is lost.** Collapsed does not mean hidden from search or the
+  keyboard: Details is a button like any other, and search finds settings
+  wherever they are.
+
 ## Structure
 
 - **Sidebar groups:** panels are listed under group headers (Connections,

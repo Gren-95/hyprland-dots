@@ -1,9 +1,11 @@
-//! Tailscale section of the Network panel, through the tailscale CLI (the
-//! user is the operator, so `tailscale set` needs no root): on or off, the
-//! tailnet and this device's address, the exit node, options (Tailscale DNS,
-//! subnet routes, shields up, offering this device as an exit node), and the
-//! devices of the tailnet (collapsed) with their address to copy and
-//! Taildrop: send a file to one, fetch files sent here into ~/Downloads.
+//! Tailscale in the VPN list of the Network panel, when it is installed,
+//! through the tailscale CLI (the user is the operator, so `tailscale set`
+//! needs no root). At a glance one row: on or off and the tailnet. Its
+//! Details hold the rest: this device's address to copy, the exit node,
+//! options (Tailscale DNS, subnet routes, shields up, offering this device
+//! as an exit node), and the devices of the tailnet (collapsed again) with
+//! their address to copy and Taildrop: send a file to one, fetch files sent
+//! here into ~/Downloads.
 
 use iced::{Element, Length, Task};
 use lucide_iced::bytes as ico;
@@ -149,6 +151,8 @@ impl Opt {
 pub struct State {
     /// None until read; Some(None) when Tailscale is not installed.
     data: Option<Option<(Status, Option<Prefs>)>>,
+    /// Details are open.
+    open: bool,
     devices_open: bool,
     busy: bool,
     /// A short note after an action ("Copied", "Sent", "3 files in Downloads").
@@ -163,6 +167,7 @@ pub enum Msg {
     Power(bool),
     ExitNode(String),
     Set(Opt, bool),
+    ToggleDetails,
     ToggleDevices,
     Copy(String),
     Send(String),
@@ -196,6 +201,7 @@ impl State {
                 self.busy = true;
                 return run(vec!["set".into(), format!("{}={on}", opt.flag())]);
             }
+            Msg::ToggleDetails => self.open = !self.open,
             Msg::ToggleDevices => self.devices_open = !self.devices_open,
             Msg::Copy(text) => {
                 self.note = Some(format!("Copied {text}"));
@@ -264,33 +270,40 @@ impl State {
         }
         let running = status.state == "Running";
         let detail = match status.state.as_str() {
-            "Running" => format!("Connected to {} · {}", status.tailnet, status.ip),
-            "NeedsLogin" => "Not logged in: run tailscale login".into(),
-            "Stopped" => "Off".into(),
-            other => other.to_string(),
+            "Running" => format!("Tailscale · Connected to {}", status.tailnet),
+            "NeedsLogin" => "Tailscale · Not logged in: run tailscale login".into(),
+            "Stopped" => "Tailscale · Off".into(),
+            other => format!("Tailscale · {other}"),
         };
         let idle = !self.busy;
         let mut controls = Vec::new();
-        if running && !status.ip.is_empty() {
-            controls.push(ui::action(
-                "Copy address",
-                idle.then(|| Msg::Copy(status.ip.clone())),
-                Action::Normal,
-            ));
+        if running {
+            controls.push(ui::disclosure(self.open, Msg::ToggleDetails));
         }
         controls.push(ui::switch(running, idle.then_some(Msg::Power)));
         rows.push(ui::item(
             if running { ico::SHIELD_CHECK } else { ico::SHIELD },
-            format!("Tailscale · {}", status.name),
+            "Tailscale".into(),
             detail,
             controls,
         ));
-        if let Some(note) = &self.note {
-            rows.push(ui::note(note.clone()));
-        }
-        if !running {
+        if !running || !self.open {
             return rows;
         }
+        let mut details: Vec<Element<'_, Msg>> = Vec::new();
+        if let Some(note) = &self.note {
+            details.push(ui::note(note.clone()));
+        }
+        details.push(ui::item(
+            ico::NETWORK,
+            format!("This device · {}", status.name),
+            status.ip.clone(),
+            vec![ui::action(
+                "Copy",
+                idle.then(|| Msg::Copy(status.ip.clone())),
+                Action::Normal,
+            )],
+        ));
         // Exit node: none, or one of the devices that offer it.
         let mut items: Vec<(&str, bool, Option<Msg>)> = vec![(
             "None",
@@ -304,7 +317,7 @@ impl State {
                 (idle && p.online).then(|| Msg::ExitNode(p.ip.clone())),
             ));
         }
-        rows.push(ui::item(
+        details.push(ui::item(
             ico::GLOBE,
             "Exit node".into(),
             "Send all internet traffic through another device".into(),
@@ -321,7 +334,7 @@ impl State {
             if status.peers.iter().any(|p| p.exit_node) {
                 options.push(opt("LAN while exiting", prefs.lan_access, Opt::LanAccess));
             }
-            rows.push(
+            details.push(
                 iced::widget::column![
                     ui::item(
                         ico::SLIDERS_HORIZONTAL,
@@ -336,7 +349,7 @@ impl State {
             );
         }
         let online = status.peers.iter().filter(|p| p.online).count();
-        rows.push(ui::item(
+        let devices_row = ui::item(
             ico::MONITOR_SMARTPHONE,
             "Devices".into(),
             format!("{online} of {} online", status.peers.len()),
@@ -344,7 +357,9 @@ impl State {
                 ui::action("Receive files", idle.then_some(Msg::Receive), Action::Normal),
                 ui::disclosure(self.devices_open, Msg::ToggleDevices),
             ],
-        ));
+        );
+        // The devices hang one level deeper, under the Devices row.
+        let mut devices = iced::widget::column![];
         if self.devices_open {
             let count = status.peers.len();
             for (i, p) in status.peers.iter().enumerate() {
@@ -369,9 +384,18 @@ impl State {
                     detail.join(" · "),
                     vec![ui::button_group(buttons)],
                 );
-                rows.push(ui::branch(row, i + 1 == count));
+                devices = devices.push(ui::branch(row, i + 1 == count));
             }
         }
+        details.push(iced::widget::column![devices_row, devices].into());
+        // The details hang under the Tailscale row as a tree.
+        let count = details.len();
+        rows.extend(
+            details
+                .into_iter()
+                .enumerate()
+                .map(|(i, d)| ui::branch(d, i + 1 == count)),
+        );
         rows
     }
 }

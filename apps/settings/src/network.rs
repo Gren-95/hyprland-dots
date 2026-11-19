@@ -404,19 +404,14 @@ impl State {
                 .collect();
             body = ui::section(body, "Wired", rows);
         }
-        // With its own section, Tailscale's NetworkManager entry is left out
-        // of the VPN list.
+        // Tailscale, when installed, is the first VPN row with its extras in
+        // its Details; its NetworkManager entry is left out of the list.
         let tailscale = self.tailscale.installed();
+        let mut vpns: Vec<Element<'a, Msg>> = Vec::new();
         if tailscale {
-            let rows = self
-                .tailscale
-                .rows()
-                .into_iter()
-                .map(|r| r.map(Msg::Tailscale))
-                .collect();
-            body = ui::section(body, "Tailscale", rows);
+            vpns.extend(self.tailscale.rows().into_iter().map(|r| r.map(Msg::Tailscale)));
         }
-        let vpns = self.vpn.rows(tailscale).into_iter().map(|r| r.map(Msg::Vpn)).collect();
+        vpns.extend(self.vpn.rows(tailscale).into_iter().map(|r| r.map(Msg::Vpn)));
         body = ui::section(body, "VPN", vpns);
         body
     }
