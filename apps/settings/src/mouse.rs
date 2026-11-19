@@ -19,8 +19,8 @@ pub const SECTIONS: &[Section] = &[
             Row::Choice {
                 option: "input:accel_profile",
                 label: "Acceleration",
-                help: "Flat moves the pointer by distance only; adaptive speeds it up with fast moves (neither picked: the device's own)",
-                options: &[("flat", "Flat"), ("adaptive", "Adaptive")],
+                help: "Off leaves it to the device; flat moves the pointer by distance only; adaptive speeds it up with fast moves",
+                options: &[("", "Off"), ("flat", "Flat"), ("adaptive", "Adaptive")],
             },
             Row::Toggle {
                 option: "input:left_handed",

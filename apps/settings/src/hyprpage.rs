@@ -45,7 +45,8 @@ pub enum Row {
         off: &'static str,
         on: &'static str,
     },
-    /// A text option with fixed values: (value, label).
+    /// A text option with fixed values: (value, label). An empty value
+    /// means "not set" (Hyprland's default).
     Choice {
         option: &'static str,
         label: &'static str,
@@ -166,6 +167,21 @@ impl State {
     }
 
     fn save(&self, option: &'static str, value: Json) -> Task<Msg> {
+        // An empty choice means "not set" (the device's own): Hyprland will
+        // not take "" as a value, so the option is dropped from settings.lua
+        // and Hyprland reloads its config to forget it.
+        if value == Json::String(String::new()) {
+            return Task::perform(
+                async move {
+                    hypr::update(move |s| {
+                        s.options.remove(option);
+                    })
+                    .await?;
+                    system::run("hyprctl", vec!["reload".into()], None).await.map(|_| ())
+                },
+                Msg::Applied,
+            );
+        }
         Task::perform(
             hypr::update(move |s| {
                 s.options.insert(option.to_string(), value);
