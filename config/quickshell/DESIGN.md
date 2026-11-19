@@ -264,40 +264,16 @@ Each modal exposes:
 Cross-modal Ctrl+Left/Right navigation is wired in `shell.qml` via
 `navigateNext` / `navigatePrev` signals on each module.
 
-### Spotlight's second mode: picking a default app
+### Default apps and hidden apps live in the settings app
 
-`Default browser` / `terminal` / `editor` / `file manager` in the command
-palette do not open anything — they call `spotlight.startPick(role)`, which
-keeps the launcher up and turns the same list into a chooser: apps filtered to
-the role's freedesktop category, Enter assigns instead of launching, Escape
-backs out to the normal list rather than closing.
-
-Two details make it behave:
-- `activate()` skips its usual `close()` when the action left `pickRole` set,
-  otherwise the launcher would shut the instant the mode opened.
-- The assignment goes through `scripts/default-app.sh set`, never straight to
-  a config file. Browser and file manager have real XDG defaults, so that
-  script writes those too — picking a browser here also changes what a link in
-  another app opens. Terminal and editor have no such standard, which is why
-  the Hyprland binds call `default-app.sh run <role>` instead of naming a
-  command: `var_terminal` and `var_fileManager` in `general.lua` route through
-  it, so a pick takes effect without editing the config.
-
-### Hiding apps from the launcher
-
-`Ctrl+D` drops the highlighted app; `Hidden apps` in the palette reopens the
-same list showing only what is hidden, where Enter puts one back. Both stay
-open after acting — hiding a run of entries should not mean reopening the
-launcher between each one.
-
-The list is `settingsStore.hiddenApps`, a desktop-id → true map, and it is
-launcher-scoped on purpose. The alternative, writing `NoDisplay=true` into
-`~/.local/share/applications/<id>.desktop` the way a menu editor does, would
-apply everywhere — but it risks clobbering an entry that already lives there
-(the WinApps ones do), and un-hiding would become a file deletion rather than
-a value change.
-
-`Ctrl+H` was not available for this: it is already the flyout ring's vim-left.
+Picking a default app and showing a hidden app again are configuration, so
+they belong to the settings app (Default apps; Launcher > Hidden apps). The
+launcher keeps the one quick action: `Ctrl+D` hides the highlighted app and
+the list stays open, so hiding a run of entries does not mean reopening it.
+The "Hidden · n" chip, the `Hidden apps` / `Default apps` palette entries and
+the `unhide` shortcut open those settings panels. Defaults are still written
+through `scripts/default-app.sh set`, which the Hyprland binds read back with
+`default-app.sh run <role>`.
 
 ### Notable modals (post-initial-doc additions)
 

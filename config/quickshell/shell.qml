@@ -110,11 +110,8 @@ Scope {
                     keywords: t.action, isToggle: false,
                     run: () => quickMod.performAction(t.action),
                 }))).concat(servicesMod.spotlightActions).concat([
-                    { name: "Hidden apps",          glyph: "󰈉", accent: Theme.accent.slate,  keywords: "hidden apps unhide show menu editor", isToggle: false, run: () => spotlight.manageHiddenApps() },
-                    { name: "Default browser",      glyph: "󰖟", accent: Theme.accent.blue,   keywords: "default app browser web",    isToggle: false, run: () => spotlight.startPick("browser") },
-                    { name: "Default terminal",     glyph: "󰆍", accent: Theme.accent.teal,   keywords: "default app terminal shell", isToggle: false, run: () => spotlight.startPick("terminal") },
-                    { name: "Default editor",       glyph: "󰷈", accent: Theme.accent.orange, keywords: "default app editor text",    isToggle: false, run: () => spotlight.startPick("editor") },
-                    { name: "Default file manager", glyph: "󰉋", accent: Theme.accent.yellow, keywords: "default app files folder",   isToggle: false, run: () => spotlight.startPick("filemanager") },
+                    { name: "Hidden apps",   glyph: "󰈉", accent: Theme.accent.slate,  keywords: "hidden apps unhide show settings", isToggle: false, run: () => Cmd.run([Paths.home + "/.local/bin/settings", "-p", "launcher"]) },
+                    { name: "Default apps",  glyph: "󰖟", accent: Theme.accent.blue,   keywords: "default app browser terminal editor file manager mail settings", isToggle: false, run: () => Cmd.run([Paths.home + "/.local/bin/settings", "-p", "apps"]) },
                     { name: "Bluetooth",      glyph: "󰂯", accent: Theme.accent.blue,   keywords: "bt devices",                      isToggle: false, run: () => btMod.toggleOpen() },
                     { name: "Sound",          glyph: "󰕾", accent: Theme.accent.blue,   keywords: "audio volume output input",       isToggle: false, run: () => soundMod.toggleOpen() },
                     { name: "Power",          glyph: "󰐥", accent: Theme.accent.red,    keywords: "battery profile sleep reboot shutdown session", isToggle: false, run: () => powerMod.toggleOpen(batteryIcon.visible ? batteryIcon : null) },

@@ -21,38 +21,12 @@ Scope {
     // (flyout-openers close it via the single-open policy anyway).
     property var shellActions: []
 
-    // ===== Default-app picking =====
-    // A second mode for the same list: instead of launching the highlighted
-    // app, assign it to a role. Roles the desktop has no standard for
-    // (terminal, editor) are why default-app.sh exists at all — see it for
-    // where each choice is written.
-    property string pickRole: ""
-    readonly property var pickRoles: ({
-        browser:     { label: "browser",      category: "WebBrowser" },
-        terminal:    { label: "terminal",     category: "TerminalEmulator" },
-        editor:      { label: "editor",       category: "TextEditor" },
-        filemanager: { label: "file manager", category: "FileManager" }
-    })
-    readonly property string pickLabel: pickRole !== "" ? pickRoles[pickRole].label : ""
-    function startPick(role) {
-        root.pickRole = role;
-        root.query = "";
-        root.selectedIndex = 0;
-        root.open = true;
-    }
-    function cancelPick() {
-        root.pickRole = "";
-        root.query = "";
-        root.selectedIndex = 0;
-    }
-
     // ===== Hiding apps =====
     // Ctrl+D drops the highlighted app from the list (Ctrl+H is already the
-    // flyout ring's vim-left); "Hidden apps" in the
-    // palette opens the same list showing only what is hidden, where Enter
-    // puts one back. The list stays open either way — hiding a run of
-    // entries should not mean reopening the launcher between each one.
-    property bool manageHidden: false
+    // flyout ring's vim-left). The list stays open — hiding a run of entries
+    // should not mean reopening the launcher between each one. Showing one
+    // again is the settings app's job (Launcher > Hidden apps), as is picking
+    // default apps (Default apps).
     // The Games view: Steam games and Game-category apps only (GamesService).
     property bool gamesView: false
     function toggleGamesView() {
@@ -60,19 +34,9 @@ Scope {
         if (gamesView) games.refresh();
         selectedIndex = 0;
     }
-    // Left/Right flip between the two lists. The query survives the flip, so
-    // it reads as one list with a filter on it rather than two places to be.
-    function toggleHiddenView() {
-        if (root.pickRole !== "") return;      // the default-app picker owns its list
-        root.manageHidden = !root.manageHidden;
-        root.selectedIndex = 0;
-    }
-    function manageHiddenApps() {
-        root.manageHidden = true;
-        root.pickRole = "";
-        root.query = "";
-        root.selectedIndex = 0;
-        root.open = true;
+    function openHiddenApps() {
+        Cmd.run([Paths.home + "/.local/bin/settings", "-p", "launcher"]);
+        root.close();
     }
     function toggleHidden(i) {
         const item = root.shownApps[i - root.appOffset];
@@ -81,13 +45,10 @@ Scope {
         // The row under the cursor just left the list; keep the index in range.
         root.selectedIndex = Math.max(0, Math.min(root.selectedIndex, root.totalRows - 1));
     }
-    Process { id: setDefaultProc; command: [] }
 
     readonly property var matchedActions: {
         const q = root.query.trim().toLowerCase();
-        // Picking a default, or editing what is hidden, is a list of apps
-        // and nothing else.
-        if (root.pickRole !== "" || root.manageHidden || !q || !settingsStore.spotlightActions) return [];
+        if (!q || !settingsStore.spotlightActions) return [];
         return shellActions.filter(a =>
             a.name.toLowerCase().includes(q)
             || (a.keywords && a.keywords.indexOf(q) >= 0)
@@ -112,22 +73,16 @@ Scope {
         } catch (e) {}
         return "";
     }
-    readonly property bool hasCalc: root.pickRole === "" && !root.manageHidden
-        && root.calcResult !== ""
+    readonly property bool hasCalc: root.calcResult !== ""
 
     readonly property var filtered: {
         if (!DesktopEntries.applications) return [];
         const apps = DesktopEntries.applications.values || [];
-        const gamesOnly = root.gamesView && root.pickRole === "" && !root.manageHidden;
-        const all = gamesOnly ? games.list(apps) : apps;
+        const all = root.gamesView ? games.list(apps) : apps;
         const q = root.query.toLowerCase();
-        const cat = root.pickRole !== "" ? root.pickRoles[root.pickRole].category : "";
         return all
             .filter(a => !a.noDisplay)
-            // Managing shows exactly the hidden ones; every other mode shows
-            // exactly the rest.
-            .filter(a => settingsStore.isAppHidden(a.id) === root.manageHidden)
-            .filter(a => cat === "" || (a.categories || []).indexOf(cat) >= 0)
+            .filter(a => !settingsStore.isAppHidden(a.id))
             .filter(a => {
                 if (!q) return true;
                 const name = (a.name || "").toLowerCase();
@@ -157,20 +112,19 @@ Scope {
     readonly property int actionOffset: appOffset + shownApps.length
     readonly property int totalRows: actionOffset + matchedActions.length
 
-    // Opening through the shortcut always starts in plain launch mode; only
-    // startPick() and manageHiddenApps() open the special lists.
+    // Opening through the shortcut always starts on all apps.
     function toggle() {
         if (open) { close(); return; }
-        pickRole = ""; manageHidden = false; gamesView = false;
+        gamesView = false;
         open = true;
         query = ""; selectedIndex = 0;
     }
     function openAt(idx) {
-        if (!open) { pickRole = ""; manageHidden = false; open = true; query = ""; }
+        if (!open) { gamesView = false; open = true; query = ""; }
         selectedIndex = idx < 0 ? Math.max(0, root.totalRows - 1)
                                 : Math.min(idx, Math.max(0, root.totalRows - 1));
     }
-    function close() { open = false; pickRole = ""; manageHidden = false; gamesView = false; }
+    function close() { open = false; gamesView = false; }
     // The highlighted shell-toggle action, if any (drives Space-to-toggle).
     function highlightedToggle() {
         const ai = selectedIndex - actionOffset;
@@ -188,23 +142,10 @@ Scope {
         if (ai >= 0 && ai < matchedActions.length) {
             const a = matchedActions[ai];
             a.run();
-            // An action that put us into pick mode wants the launcher to stay
-            // up — the list it just narrowed is the point.
-            if (!a.isToggle && root.pickRole === "" && !root.manageHidden) close();
+            if (!a.isToggle) close();
             return;
         }
         const item = shownApps[i - appOffset];
-        if (item && root.manageHidden) {
-            settingsStore.setAppHidden(item.id, false);
-            root.selectedIndex = Math.max(0, Math.min(root.selectedIndex, root.totalRows - 1));
-            return;                            // stay in the list
-        }
-        if (item && root.pickRole !== "") {
-            setDefaultProc.command = ["bash", Paths.scripts + "/default-app.sh", "set", root.pickRole, item.id];
-            setDefaultProc.startDetached();
-            close();
-            return;
-        }
         if (item) item.execute();
         close();
     }
@@ -217,15 +158,8 @@ Scope {
         anchorBar && anchorBar.screen ? Math.min(anchorBar.screen.height - 160, 680) : 600,
         contentCol.implicitHeight))
 
-    readonly property string emptyTitle: {
-        if (root.manageHidden) return settingsStore.hiddenAppCount > 0 ? "No hidden apps match" : "Nothing hidden";
-        if (root.pickRole !== "") return "No " + root.pickLabel + " apps found";
-        return "No results";
-    }
-    readonly property string emptySubtitle: {
-        if (root.manageHidden && settingsStore.hiddenAppCount === 0) return "Ctrl+D hides an app from the launcher";
-        return root.query !== "" ? "Nothing matches \u201c" + root.query + "\u201d" : "";
-    }
+    readonly property string emptyTitle: "No results"
+    readonly property string emptySubtitle: root.query !== "" ? "Nothing matches \u201c" + root.query + "\u201d" : ""
 
     BarFlyout {
         parentBar: root.anchorBar
@@ -236,11 +170,8 @@ Scope {
         onKeyPressed: (e) => {
             const n = root.totalRows;
             const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
-            if (e.key === Qt.Key_Escape && (root.pickRole !== "" || root.manageHidden)) {
-                root.manageHidden = false;
-                root.cancelPick(); e.accepted = true;
-            } else if (!ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_Right)) {
-                root.toggleHiddenView(); e.accepted = true;
+            if (!ctrl && (e.key === Qt.Key_Left || e.key === Qt.Key_Right)) {
+                root.toggleGamesView(); e.accepted = true;
             } else if (ctrl && e.key === Qt.Key_D) {
                 root.toggleHidden(root.selectedIndex); e.accepted = true;
             } else if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_L)) {
@@ -282,8 +213,7 @@ Scope {
                 spacing: Theme.spacing.md
                 Text {
                     Layout.fillWidth: true
-                    text: root.manageHidden ? "Hidden apps"
-                        : root.pickRole === "" ? "Launcher" : "Default " + root.pickLabel
+                    text: "Launcher"
                     color: Theme.fg
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.lg
@@ -291,36 +221,25 @@ Scope {
                     elide: Text.ElideRight
                 }
                 LauncherChipButton {
-                    visible: root.pickRole === "" && !root.manageHidden
                     glyph: "󰊖"
                     text: "Games"
                     active: root.gamesView
                     onClicked: root.toggleGamesView()
                 }
+                // Hidden apps are shown again in the settings app.
                 LauncherChipButton {
-                    visible: root.pickRole === ""
-                    glyph: root.manageHidden ? "󰁍" : "󰈉"
-                    text: root.manageHidden ? "Back to apps"
-                        : settingsStore.hiddenAppCount > 0 ? "Hidden \u00b7 " + settingsStore.hiddenAppCount : "Hidden"
-                    active: root.manageHidden
-                    onClicked: root.toggleHiddenView()
-                }
-                LauncherChipButton {
-                    visible: root.pickRole !== ""
-                    glyph: "󰁍"
-                    text: "Cancel"
-                    onClicked: root.cancelPick()
+                    visible: settingsStore.hiddenAppCount > 0
+                    glyph: "󰈉"
+                    text: "Hidden \u00b7 " + settingsStore.hiddenAppCount
+                    onClicked: root.openHiddenApps()
                 }
             }
 
             LauncherSearchBar {
                 Layout.fillWidth: true
                 text: root.query
-                glyph: root.manageHidden ? "󰈉" : "󰍉"
-                placeholder: root.manageHidden
-                    ? (settingsStore.hiddenAppCount > 0 ? "Pick one to show again" : "Nothing hidden")
-                    : root.pickRole === "" ? "Search apps, actions, or type = to calculate"
-                    : "Pick a " + root.pickLabel
+                glyph: "󰍉"
+                placeholder: "Search apps, actions, or type = to calculate"
                 countText: root.totalRows > 0 ? String(root.totalRows) : ""
                 onCleared: { root.query = ""; root.selectedIndex = 0; }
             }
@@ -390,7 +309,7 @@ Scope {
                                 Layout.rightMargin: Theme.spacing.md
                                 Layout.topMargin: Theme.spacing.xs
                                 visible: root.filtered.length > 0
-                                title: root.manageHidden ? "HIDDEN APPS" : "APPLICATIONS"
+                                title: root.gamesView ? "GAMES" : "APPLICATIONS"
                                 count: root.filtered.length
                             }
                             Repeater {
@@ -436,7 +355,7 @@ Scope {
                         LauncherEmptyState {
                             anchors.centerIn: parent
                             visible: root.totalRows === 0
-                            glyph: root.manageHidden ? "󰈉" : "󰍉"
+                            glyph: "󰍉"
                             title: root.emptyTitle
                             subtitle: root.emptySubtitle
                         }
@@ -446,12 +365,8 @@ Scope {
 
             LauncherFooter {
                 Layout.fillWidth: true
-                hints: root.manageHidden
-                    ? [{ key: "\u21b5", label: "show again" }, { key: "\u2190\u2192", label: "back to all" }, { key: "Esc", label: "close" }]
-                    : root.pickRole === ""
-                    ? [{ key: "\u2191\u2193", label: "navigate" }, { key: "\u21b5", label: "launch" },
-                       { key: "Ctrl+D", label: "hide" }, { key: "\u2190\u2192", label: "hidden" }, { key: "Esc", label: "close" }]
-                    : [{ key: "\u21b5", label: "set as default " + root.pickLabel }, { key: "Esc", label: "back" }]
+                hints: [{ key: "\u2191\u2193", label: "navigate" }, { key: "\u21b5", label: "launch" },
+                        { key: "Ctrl+D", label: "hide" }, { key: "\u2190\u2192", label: "games" }, { key: "Esc", label: "close" }]
             }
 
             Connections {

@@ -35,12 +35,10 @@ Scope {
         { name: "spotlight", description: "Toggle app launcher",
           run: () => (sc.gameModeRef && sc.gameModeRef.active)
             ? sc.gameLauncherRef.toggle() : sc.spotlightRef.toggle() },
-        // Pairs with Ctrl+D inside the launcher, which is what hides
-        // an app. Getting back to one previously needed the launcher
-        // open and an arrow press, which is a lot of steps for undoing
-        // a single keystroke.
-        { name: "unhide", description: "Open the hidden-apps list to show one again",
-          run: () => sc.spotlightRef.manageHiddenApps() },
+        // Pairs with Ctrl+D inside the launcher, which is what hides an
+        // app; showing one again is in the settings app.
+        { name: "unhide", description: "Open the hidden apps in the settings app to show one again",
+          run: () => Cmd.run([Paths.home + "/.local/bin/settings", "-p", "launcher"]) },
         { name: "clipboard", description: "Toggle clipboard history selector",
           run: () => sc.clipboardRef.toggle() },
         { name: "powermenu", description: "Toggle the power popup (battery, profile, session actions)",
