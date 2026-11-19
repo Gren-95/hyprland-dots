@@ -17,6 +17,11 @@ dialog, or further down the page.
 - **Don't assume what someone uses.** A tool that may not be installed or
   used (Tailscale, Steam, a VPN) takes no more room than one row, or none
   when it is missing; it never gets a section of its own by default.
+- **Settings that only matter while a switch is on hide while it is off**
+  (a schedule's times, animation speed): list them in `schema::SHOWN_WHEN`.
+  A search result still shows its row.
+- **Long pickers open on demand.** The font row shows the font in use as a
+  dropdown-style button; the search and matches open under it.
 - **Rare tasks open on demand.** Joining a hidden network, setting up a
   VPN by hand: a button that opens a dialog or form, not fields always on
   screen.

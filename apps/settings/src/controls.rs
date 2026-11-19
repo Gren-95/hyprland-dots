@@ -128,13 +128,23 @@ pub fn setting_row<'a>(
         // summary sits beside it); so does every control when the panel is
         // narrow.
         Control::Flags(_) | Control::Toggles(_) if buttons => column![label, control].spacing(8).into(),
-        Control::Font | Control::Pills { .. } => column![label, control].spacing(8).into(),
+        Control::Pills { .. } => column![label, control].spacing(8).into(),
         _ if stacked => column![label, control].spacing(10).into(),
         _ => row![label, control].spacing(16).align_y(Alignment::Center).into(),
     };
-    // An open switch tree lists its options under the row, a switch each.
-    let line: Element<'a, Message> = match (open == Some(s.file), check_items(s, values)) {
-        (true, Some(items)) => column![line].extend(ui::switch_rows(items)).into(),
+    // An open switch tree lists its options under the row, a switch each;
+    // an open font picker its search and matches.
+    let line: Element<'a, Message> = match (open == Some(s.file), check_items(s, values), &s.control) {
+        (true, Some(items), _) => column![line].extend(ui::switch_rows(items)).into(),
+        (true, None, Control::Font) => {
+            let current = match values.get(s.file) {
+                Some(Value::Text(t)) => t.clone(),
+                _ => String::new(),
+            };
+            column![line, font_picker(s.file, &current, fonts, draft)]
+                .spacing(10)
+                .into()
+        }
         _ => line,
     };
     // The id lets a search result scroll to this row (reveal.rs).
@@ -296,35 +306,31 @@ fn control<'a>(
                 .into()
         }
         (Control::Font, Value::Text(current)) => {
-            let matches = crate::fonts::find(fonts, draft.map(String::as_str).unwrap_or(""))
-                .into_iter()
-                .map(|name| ui::PickerMatch {
-                    label: name.to_string(),
-                    font: Some(iced::Font::with_name(name)),
-                    detail: if name == current {
-                        "In use".into()
-                    } else {
-                        String::new()
-                    },
-                    on_pick: Message::Set(file, Value::Text(name.to_string())),
-                })
-                .collect();
-            // The current font, drawn in itself when it is installed.
-            let mut shown = text(current.clone()).size(15).color(style::FG);
+            // The font in use, drawn in itself when installed, as a button
+            // that opens the search under the row.
+            let mut shown = text(current.clone())
+                .size(14)
+                .color(style::FG)
+                .width(Length::Fill)
+                .wrapping(text::Wrapping::None);
             if let Some(name) = fonts.iter().find(|f| **f == current) {
                 shown = shown.font(iced::Font::with_name(name));
             }
-            column![
-                shown,
-                ui::search_picker(
-                    "Search installed fonts",
-                    draft.map(String::as_str).unwrap_or(""),
-                    move |t| Message::Draft(file, t),
-                    matches
-                ),
-            ]
-            .spacing(8)
-            .into()
+            let chevron = if open == Some(file) {
+                lucide_iced::bytes::CHEVRON_UP
+            } else {
+                lucide_iced::bytes::CHEVRON_DOWN
+            };
+            let head = button(
+                row![shown, ui::icon(chevron, 14.0)]
+                    .spacing(8)
+                    .align_y(Alignment::Center),
+            )
+            .on_press(Message::ToggleList(file))
+            .padding([6, 10])
+            .width(width)
+            .style(style::field_button);
+            crate::focus::focusable(head, Some(Message::ToggleList(file))).into()
         }
         (Control::NumberChoice(options), Value::Int(current)) => {
             let items = options
@@ -395,6 +401,34 @@ fn slider_row<'a>(bar: Element<'a, Message>, value: String, width: Length) -> El
         .width(width)
         .align_y(Alignment::Center)
         .into()
+}
+
+/// The installed fonts matching the search, each drawn in itself.
+fn font_picker<'a>(
+    file: &'static str,
+    current: &str,
+    fonts: &[&'static str],
+    draft: Option<&'a String>,
+) -> Element<'a, Message> {
+    let matches = crate::fonts::find(fonts, draft.map(String::as_str).unwrap_or(""))
+        .into_iter()
+        .map(|name| ui::PickerMatch {
+            label: name.to_string(),
+            font: Some(iced::Font::with_name(name)),
+            detail: if name == current {
+                "In use".into()
+            } else {
+                String::new()
+            },
+            on_pick: Message::Pick(file, Value::Text(name.to_string())),
+        })
+        .collect();
+    ui::search_picker(
+        "Search installed fonts",
+        draft.map(String::as_str).unwrap_or(""),
+        move |t| Message::Draft(file, t),
+        matches,
+    )
 }
 
 #[cfg(test)]

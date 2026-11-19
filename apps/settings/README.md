@@ -143,3 +143,12 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 
 To add a setting, add its row to `_schema` in `Settings.qml` first, then a
 `Setting` to a panel in `src/schema.rs`.
+
+## Checking the UI
+
+`scripts/screenshot.sh <panel> <out.png> [height] [scroll]` starts the debug
+build on a panel, floats it, saves the panel part as a picture and closes
+it again; `scroll` moves the window up so the lower part of a long panel
+shows. Pages that read system state every few seconds say so in
+`Page::polls` (schema.rs); nothing else needs wiring for that.
+

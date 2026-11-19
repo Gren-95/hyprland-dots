@@ -147,6 +147,11 @@ pub enum Message {
     EnterPanel(usize),
     /// Open or close a switch tree, by setting file.
     ToggleList(&'static str),
+    /// A pick from a search picker that opened under its row: set it and
+    /// close the picker.
+    Pick(&'static str, Value),
+    /// Every few seconds on a page that polls (`Page::polls`).
+    Tick,
     /// Alt+Down / Alt+Up: the next or previous panel.
     PanelStep(i32),
     /// Page Down / Page Up (pages) and Home / End (true: the top).
@@ -338,36 +343,8 @@ impl App {
             _ => None,
         });
         let mut subscriptions = vec![iced::time::every(RELOAD_EVERY).map(|_| Message::Reload), keys];
-        // Subscription::map takes only closures that capture nothing.
-        match PANELS[self.panel].page {
-            Page::Settings => {}
-            Page::Gaming => subscriptions
-                .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Gaming(gaming::Msg::Refresh))),
-            Page::Launcher => {}
-            Page::Notifications => subscriptions
-                .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::NotifApps(notifapps::Msg::Load))),
-            Page::Power => {
-                subscriptions.push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Power(power::Msg::Refresh)))
-            }
-            Page::Network => subscriptions
-                .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Network(network::Msg::Refresh))),
-            Page::Bluetooth => subscriptions
-                .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Bluetooth(bluetooth::Msg::Refresh))),
-            Page::Sound => {
-                subscriptions.push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Audio(audio::Msg::Refresh)))
-            }
-            Page::Calendar => subscriptions
-                .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Calendar(calendar::Msg::Refresh))),
-            Page::Keyboard
-            | Page::Mouse
-            | Page::Lock
-            | Page::Themes
-            | Page::Shortcuts
-            | Page::DefaultApps
-            | Page::Windows
-            | Page::About => {}
-            Page::BarItems => subscriptions
-                .push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Placement(placement::Msg::Refresh))),
+        if PANELS[self.panel].page.polls() {
+            subscriptions.push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Tick));
         }
         Subscription::batch(subscriptions)
     }
@@ -434,6 +411,11 @@ impl App {
                     self.nav_focus = Some(next);
                     return crate::focus::focus_id(crate::focus::nav_id(PANELS[next].id));
                 }
+            }
+            Message::Tick => return self.refresh_page(),
+            Message::Pick(file, value) => {
+                self.open_list = None;
+                return self.update(Message::Set(file, value));
             }
             Message::ToggleList(file) => {
                 self.open_list = if self.open_list == Some(file) { None } else { Some(file) };
@@ -737,7 +719,16 @@ impl App {
         section: &'static Section,
         layout: Layout,
     ) -> Column<'a, Message> {
-        let rows = section.settings.iter().map(|s| {
+        let shown = |s: &&'static crate::schema::Setting| {
+            let switch = crate::schema::SHOWN_WHEN
+                .iter()
+                .find(|(f, _)| *f == s.file)
+                .map(|(_, w)| *w);
+            // A search result still shows its row.
+            switch.is_none_or(|w| matches!(self.values.get(w), Some(Value::Bool(true))))
+                || self.highlight.is_some_and(|(file, _)| file == s.file)
+        };
+        let rows = section.settings.iter().filter(shown).map(|s| {
             let highlighted = self.highlight.is_some_and(|(file, _)| file == s.file);
             controls::setting_row(
                 s,

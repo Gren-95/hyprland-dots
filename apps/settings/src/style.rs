@@ -276,6 +276,21 @@ pub fn divider(_: &Theme) -> container::Style {
     }
 }
 
+/// A button that looks like a dropdown field (the font row).
+pub fn field_button(_: &Theme, status: button::Status) -> button::Style {
+    let hover = matches!(status, button::Status::Hovered | button::Status::Pressed);
+    button::Style {
+        background: Some(Background::Color(if hover { BG_ACTIVE } else { BG_HOVER })),
+        text_color: FG,
+        border: Border {
+            color: BORDER,
+            width: 1.0,
+            radius: border::radius(4.0),
+        },
+        ..button::Style::default()
+    }
+}
+
 /// The dimmed window behind a dialog.
 pub fn backdrop(_: &Theme) -> container::Style {
     container::Style {

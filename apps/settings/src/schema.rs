@@ -83,6 +83,36 @@ pub enum Page {
     Power,
 }
 
+impl Page {
+    /// Pages that show system state and read it again every few seconds
+    /// while open.
+    pub fn polls(self) -> bool {
+        matches!(
+            self,
+            Page::Gaming
+                | Page::Notifications
+                | Page::Power
+                | Page::Network
+                | Page::Bluetooth
+                | Page::Sound
+                | Page::Calendar
+                | Page::BarItems
+        )
+    }
+}
+
+/// Rows shown only while a switch is on: (setting, switch). The times of a
+/// schedule, or the speed of switched-off animations, are noise while the
+/// switch is off (UI.md: simple at a glance). Add a row here rather than
+/// special-casing a panel.
+pub const SHOWN_WHEN: &[(&str, &str)] = &[
+    ("night-from", "night-schedule"),
+    ("night-to", "night-schedule"),
+    ("dnd-from", "dnd-schedule"),
+    ("dnd-to", "dnd-schedule"),
+    ("anim-scale", "animations"),
+];
+
 pub struct Section {
     pub title: &'static str,
     pub settings: &'static [Setting],
