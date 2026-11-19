@@ -129,7 +129,7 @@ pub struct Bind {
     pub dangerous: bool,
 }
 
-/// Categories, in pill order: (name, label, icon).
+/// Categories, in dropdown order: (name, label, icon).
 pub const CATEGORIES: &[(&str, &str, crate::ui::Icon)] = &[
     ("apps", "Apps", ico::ROCKET),
     ("window", "Windows", ico::APP_WINDOW),
@@ -538,9 +538,15 @@ impl State {
         }
         let search = text_input("Search: what it does, or keys like super s", &self.query)
             .on_input(Msg::Search)
-            .padding([7, 10])
+            .padding([5, 10])
             .style(style::field);
-        body = body.push(search).push(self.pills());
+        // Search and category on one line: the category narrows what the
+        // search looks through.
+        body = body.push(
+            iced::widget::row![search.width(Length::Fill), self.category_select()]
+                .spacing(10)
+                .align_y(Alignment::Center),
+        );
         let mut rows: Vec<Element<'a, Msg>> = Vec::new();
         let shown = filter(&self.binds, &self.query)
             .into_iter()
@@ -598,15 +604,15 @@ impl State {
         container(line).padding([8, 14]).into()
     }
 
-    /// All, then one pill per category that has binds.
-    fn pills<'a>(&'a self) -> Element<'a, Msg> {
-        let mut items = vec![("All", self.category.is_none(), Some(Msg::Category(None)))];
+    /// All categories, then each category that has binds, as a dropdown.
+    fn category_select<'a>(&'a self) -> Element<'a, Msg> {
+        let mut items = vec![("All categories", self.category.is_none(), Some(Msg::Category(None)))];
         for (name, label, _) in CATEGORIES {
             if self.binds.iter().any(|b| b.category == *name) {
                 items.push((*label, self.category == Some(*name), Some(Msg::Category(Some(*name)))));
             }
         }
-        ui::pills(items)
+        ui::select(items, Length::Fixed(190.0))
     }
 
     fn editor_view<'a>(&'a self, e: &'a Editor) -> Element<'a, Msg> {

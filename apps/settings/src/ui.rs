@@ -492,20 +492,6 @@ pub fn search_picker<'a, M: Clone + 'a>(
     list.into()
 }
 
-/// A row of rounded filter pills that wraps; one is picked at a time (the
-/// shortcut categories). Each item is (label, picked, message).
-pub fn pills<'a, M: Clone + 'a>(items: Vec<(&'a str, bool, Option<M>)>) -> Element<'a, M> {
-    let buttons = items.into_iter().map(|(label, picked, on_press)| {
-        let activate = on_press.clone();
-        let b = button(text(label).size(13))
-            .on_press_maybe(on_press)
-            .padding([4, 12])
-            .style(style::filter_pill(picked));
-        focusable(b, activate).radius(12.0).into()
-    });
-    Row::with_children(buttons).spacing(6).wrap().into()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
