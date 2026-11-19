@@ -7,20 +7,31 @@
 #   wayvnc-toggle.sh            start wayvnc, or stop it when it is running
 #   wayvnc-toggle.sh password   print the login (creates it on first use)
 #   wayvnc-toggle.sh rotate     generate a new password
+#   wayvnc-toggle.sh address    print where clients connect (host:port), or
+#                               nothing while it is not running
 #
 # Login: your login name plus a random password stored in ~/.config/wayvnc/password
 # (gitignored, mode 600). Traffic uses a self-signed TLS certificate created on
 # first use next to it. wayvnc/config holds only the bind settings; the
 # password is merged into a temporary config in $XDG_RUNTIME_DIR for the start.
 #
-# wayvnc/config binds loopback. When Tailscale is up, the tailnet IPv4 address
-# is passed on the command line instead, so the server is reachable over the
-# tailnet only and never on the LAN.
+# Where it listens (settings app: Services > Remote access, vnc-listen):
+#   tailscale (default)  the tailnet IPv4 address while Tailscale is up, so the
+#                        server is reachable over the tailnet only and never on
+#                        the LAN; loopback otherwise
+#   local                loopback only (reach it through an SSH tunnel)
+#   lan                  every address, the local network included
+# Other settings: vnc-port (5900), vnc-view-only (0), vnc-max-fps (30),
+# vnc-cursor (0: draw the cursor into the picture).
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/shell-ipc.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/settings.sh"
 
-PORT=5900
+PORT=$(valid "$(setting vnc-port 5900)" '[1-9][0-9]{2,4}' 5900)
+LISTEN=$(valid "$(setting vnc-listen tailscale)" 'tailscale|local|lan' tailscale)
+MAX_FPS=$(valid "$(setting vnc-max-fps 30)" '[1-9][0-9]?' 30)
 READY_TIMEOUT_DS=30 # deciseconds
 CONF_DIR="$HOME/.config/wayvnc"
 PASSWORD_FILE="$CONF_DIR/password"
@@ -57,9 +68,14 @@ case "${1:-toggle}" in
         echo "Restart remote access for it to take effect."
         exit 0
         ;;
+    address)
+        pid=$(pgrep -x wayvnc | head -n1) || exit 0
+        ss -ltnpH "sport = :$PORT" 2>/dev/null | awk -v pid="pid=$pid," 'index($0, pid) { print $4; exit }'
+        exit 0
+        ;;
     toggle) ;;
     *)
-        echo "usage: wayvnc-toggle.sh [toggle|password|rotate]" >&2
+        echo "usage: wayvnc-toggle.sh [toggle|password|rotate|address]" >&2
         exit 2
         ;;
 esac
@@ -91,11 +107,19 @@ trap 'rm -f "$runtime_conf"' EXIT
 
 # `tailscale ip` still prints the address while Tailscale is stopped, so ask the
 # interface: the address is only bindable while tailscale0 actually holds it.
-args=()
-ts_ip=$(ip -4 -o addr show dev tailscale0 2>/dev/null | awk '{sub(/\/.*/, "", $4); print $4; exit}')
-[[ -n "$ts_ip" ]] && args=("$ts_ip" "$PORT")
+address=127.0.0.1
+case "$LISTEN" in
+    tailscale)
+        ts_ip=$(ip -4 -o addr show dev tailscale0 2>/dev/null | awk '{sub(/\/.*/, "", $4); print $4; exit}')
+        [[ -n "$ts_ip" ]] && address=$ts_ip
+        ;;
+    lan) address=0.0.0.0 ;;
+esac
+options=(--max-fps="$MAX_FPS")
+[[ $(setting vnc-view-only 0) == 1 ]] && options+=(--disable-input)
+[[ $(setting vnc-cursor 0) == 1 ]] && options+=(--render-cursor)
 
-wayvnc --config "$runtime_conf" "${args[@]}" &>/dev/null &
+wayvnc --config "$runtime_conf" "${options[@]}" "$address" "$PORT" &>/dev/null &
 
 # Readiness: wait until something listens on the port, or give up and say so.
 for ((i = 0; i < READY_TIMEOUT_DS; i++)); do

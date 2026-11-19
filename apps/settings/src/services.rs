@@ -76,7 +76,7 @@ const ON_DEMAND: &[Switchable] = &[
     Switchable {
         key: "wayvnc",
         label: "Remote access",
-        detail: "VNC on port 5900",
+        detail: "VNC",
         toggle: &["wayvnc-toggle.sh"],
     },
     Switchable {
@@ -166,6 +166,9 @@ fn start(how: Start) -> Result<(), String> {
 #[derive(Default)]
 pub struct State {
     status: Option<Status>,
+    /// Remote access Details: open, and what they hold (vnc.rs).
+    vnc_open: bool,
+    vnc: crate::vnc::State,
     /// The service being switched, until the next probe shows it.
     busy: Option<&'static str>,
     error: Option<String>,
@@ -178,6 +181,8 @@ pub enum Msg {
     Start(usize),
     Toggle(&'static str),
     OpenGamesBrowser,
+    ToggleVnc,
+    Vnc(crate::vnc::Msg),
     Done(Result<(), String>),
 }
 
@@ -206,6 +211,13 @@ impl State {
                 list.extend(s.toggle[1..].iter().map(|a| a.to_string()));
                 return Task::perform(system::run("bash", list, None), |r| Msg::Done(r.map(|_| ())));
             }
+            Msg::ToggleVnc => {
+                self.vnc_open = !self.vnc_open;
+                if self.vnc_open {
+                    return self.vnc.update(crate::vnc::Msg::Load).map(Msg::Vnc);
+                }
+            }
+            Msg::Vnc(m) => return self.vnc.update(m).map(Msg::Vnc),
             Msg::OpenGamesBrowser => {
                 return Task::perform(system::run("xdg-open", vec![GAMES_BROWSER_URL.into()], None), |r| {
                     Msg::Done(r.map(|_| ()))
@@ -213,7 +225,13 @@ impl State {
             }
             Msg::Done(r) => {
                 self.error = r.err();
-                return self.update(Msg::Refresh);
+                // Remote access may have started or stopped: its address too.
+                let vnc = if self.vnc_open {
+                    self.vnc.update(crate::vnc::Msg::Load).map(Msg::Vnc)
+                } else {
+                    Task::none()
+                };
+                return Task::batch([self.update(Msg::Refresh), vnc]);
             }
         }
         Task::none()
@@ -253,26 +271,43 @@ impl State {
         let Some(st) = &self.status else {
             return vec![ui::note("Looking…")];
         };
-        list.iter()
-            .map(|s| {
-                let on = st.up(s.key);
-                let busy = self.busy == Some(s.key);
-                let mut detail = s.detail.to_string();
-                if s.key == "jellyfin" && on && !st.jellyfin_next.is_empty() {
-                    detail = format!("{detail} · next {}", st.jellyfin_next);
-                }
-                if busy {
-                    detail = "Switching…".into();
-                }
-                let key = s.key;
-                let mut controls = Vec::new();
-                if key == "games-browser" && on {
-                    controls.push(ui::action("Open", Some(Msg::OpenGamesBrowser), Action::Normal));
-                }
-                controls.push(ui::switch(on, (!busy).then_some(move |_| Msg::Toggle(key))));
-                ui::item(service_glyph(key), s.label.into(), detail, controls)
-            })
-            .collect()
+        let mut rows = Vec::new();
+        for s in list {
+            let on = st.up(s.key);
+            let busy = self.busy == Some(s.key);
+            let mut detail = s.detail.to_string();
+            if s.key == "wayvnc" {
+                detail = format!("VNC on port {}", self.vnc.port());
+            }
+            if s.key == "jellyfin" && on && !st.jellyfin_next.is_empty() {
+                detail = format!("{detail} · next {}", st.jellyfin_next);
+            }
+            if busy {
+                detail = "Switching…".into();
+            }
+            let key = s.key;
+            let mut controls = Vec::new();
+            if key == "games-browser" && on {
+                controls.push(ui::action("Open", Some(Msg::OpenGamesBrowser), Action::Normal));
+            }
+            // Remote access has its address, login and options behind Details.
+            if key == "wayvnc" {
+                controls.push(ui::disclosure(self.vnc_open, Msg::ToggleVnc));
+            }
+            controls.push(ui::switch(on, (!busy).then_some(move |_| Msg::Toggle(key))));
+            rows.push(ui::item(service_glyph(key), s.label.into(), detail, controls));
+            if key == "wayvnc" && self.vnc_open {
+                let details: Vec<Element<'_, Msg>> = self.vnc.rows().into_iter().map(|r| r.map(Msg::Vnc)).collect();
+                let count = details.len();
+                rows.extend(
+                    details
+                        .into_iter()
+                        .enumerate()
+                        .map(|(i, d)| ui::branch(d, i + 1 == count)),
+                );
+            }
+        }
+        rows
     }
 
     pub fn scheduled_rows(&self) -> Vec<Element<'_, Msg>> {

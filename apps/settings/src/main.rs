@@ -41,6 +41,7 @@ mod system;
 mod tailscale;
 mod themes;
 mod ui;
+mod vnc;
 mod vpn;
 mod windows;
 
