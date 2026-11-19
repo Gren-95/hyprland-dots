@@ -26,6 +26,7 @@ mod network;
 mod notifapps;
 mod placement;
 mod power;
+mod proton;
 mod reveal;
 mod schema;
 mod search;

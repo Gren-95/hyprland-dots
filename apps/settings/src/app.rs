@@ -25,6 +25,7 @@ use crate::network;
 use crate::notifapps;
 use crate::placement;
 use crate::power;
+use crate::proton;
 use crate::reveal;
 use crate::schema::{PANELS, Page, Panel, Section, all_settings};
 use crate::shortcuts;
@@ -111,6 +112,7 @@ pub struct App {
     hidden_apps: hiddenapps::State,
     gaming: gaming::State,
     gaming_display: hyprpage::State,
+    proton: proton::State,
     /// Installed font families, loaded once at start for the Font picker.
     fonts: Vec<&'static str>,
     error: Option<String>,
@@ -161,6 +163,7 @@ pub enum Message {
     HiddenApps(hiddenapps::Msg),
     Gaming(gaming::Msg),
     GamingDisplay(hyprpage::Msg),
+    Proton(proton::Msg),
     Fonts(Vec<&'static str>),
 }
 
@@ -196,6 +199,7 @@ impl App {
             hidden_apps: hiddenapps::State::default(),
             gaming: gaming::State::default(),
             gaming_display: hyprpage::State::default(),
+            proton: proton::State::default(),
             fonts: Vec::new(),
             error: None,
         };
@@ -216,6 +220,7 @@ impl App {
                 self.gaming_display
                     .update(hyprpage::Msg::Load, gaming::DISPLAY)
                     .map(Message::GamingDisplay),
+                self.proton.update(proton::Msg::Load).map(Message::Proton),
             ]),
             Page::Launcher => self.hidden_apps.update(hiddenapps::Msg::Load).map(Message::HiddenApps),
             Page::Notifications => {
@@ -366,6 +371,7 @@ impl App {
                 }
             }
             Message::Gaming(msg) => return self.gaming.update(msg).map(Message::Gaming),
+            Message::Proton(msg) => return self.proton.update(msg).map(Message::Proton),
             Message::GamingDisplay(msg) => {
                 return self
                     .gaming_display
@@ -516,6 +522,8 @@ impl App {
                     .map(|r| r.map(Message::Gaming))
                     .collect();
                 body = ui::section(body, "Controllers", pads);
+                let proton = self.proton.rows().into_iter().map(|r| r.map(Message::Proton)).collect();
+                body = ui::section(body, "Steam", proton);
                 for section in panel.sections {
                     body = self.section(body, section, layout);
                 }
