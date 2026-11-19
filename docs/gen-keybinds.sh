@@ -82,6 +82,7 @@ QS_LABELS = {
 }
 EXEC_LABELS = [  # (substring of arg, category, label)
     ("settings -p shortcuts", APP, "Keyboard shortcuts (settings app): search, run and change binds"),
+    ("local/bin/settings", APP, "Settings app"),
     ("default-app.sh run terminal", APP, "Open terminal (default app)"),
     ("default-app.sh run filemanager", APP, "Open file manager (default app)"),
     ("default-app.sh run", APP, "Open default app"),

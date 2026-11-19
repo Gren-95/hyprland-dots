@@ -19,6 +19,7 @@ flags rows that no longer match.
 | `Super+B` | Restart all userspace services (`config/scripts/restart.sh`) |
 | `Super+Shift+E` / `Ctrl+Alt+Delete` | Power popup (battery, power profile, brightness, Sleep / Logout / Reboot / Shutdown) |
 | `Super+F1` | Keyboard shortcuts (settings app): search, run and change binds |
+| `Super+I` | Settings app |
 | `Super+Shift+I` | Keep the screen awake until pressed again (idle inhibitor) |
 | `Super+Shift+G` | Game mode on / off |
 

@@ -9,6 +9,10 @@ Quickshell watches those files, so a change in the app shows in the shell at
 once. The app reads the files again every second, so changes made in the
 shell show in the app too.
 
+Open it with Super+I, the Settings tile in Quick Actions, `settings` from a
+terminal, or `settings -p <panel>` for one panel; several shell flyouts
+(Bluetooth, Services) and the launcher open their panel here too.
+
 ## Panels
 
 | Name | Settings |

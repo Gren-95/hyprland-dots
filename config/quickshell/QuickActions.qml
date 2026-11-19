@@ -43,6 +43,7 @@ Item {
         { glyph: "󰹑", label: "Screenshot",   accent: Theme.accent.blueBright, action: "screenshot", cmd: ["bash", Paths.scripts + "/screenshot.sh"] },
         { glyph: "󰕧", label: "Record",       accent: Theme.accent.red, action: "record", cmd: ["bash", Paths.scripts + "/screenrecord.sh"] },
         { glyph: "󰈊", label: "Color picker", accent: Theme.accent.pink, action: "colorpicker", cmd: ["hyprpicker", "-a"] },
+        { glyph: "󰒓", label: "Settings",     accent: Theme.accent.slate, action: "settings", cmd: [Paths.home + "/.local/bin/settings"] },
         { glyph: "󰋖", label: "Keybinds",     accent: Theme.accent.blue, action: "keybinds", cmd: [Paths.home + "/.local/bin/settings", "-p", "shortcuts"] },
         { glyph: "󰀻", label: "Icons & cursors", accent: Theme.accent.purple, action: "iconscursors", cmd: [Paths.home + "/.local/bin/settings", "-p", "themes"] },
     ]
