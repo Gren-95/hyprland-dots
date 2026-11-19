@@ -5,8 +5,11 @@
 //! message. A mouse click anywhere drops the focus, so the ring only shows
 //! while the keyboard is in use.
 //!
-//! `next` / `previous` move the focus and then scroll the open panel so the
-//! focused control is in sight.
+//! The window has two zones: the sidebar and the open panel. Tab moves
+//! through the panel's controls (wrapping round inside it); Shift+Tab goes
+//! back to the sidebar entry of the open panel; Up and Down move along the
+//! sidebar, and Enter there opens the panel with the focus on its first
+//! control. After the focus moves the panel scrolls to keep it in sight.
 
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::renderer::{self, Quad};
@@ -14,7 +17,7 @@ use iced::advanced::widget::operation::{Focusable, Outcome, Scrollable};
 use iced::advanced::widget::{self, Id, Operation, Tree, tree};
 use iced::advanced::{Clipboard, Shell, Widget, mouse, overlay};
 use iced::keyboard::{self, key};
-use iced::widget::operation::{focus_next, focus_previous, scroll_to};
+use iced::widget::operation::scroll_to;
 use iced::widget::scrollable::AbsoluteOffset;
 use iced::{Border, Color, Element, Event, Length, Rectangle, Size, Task, Theme, Vector, border};
 
@@ -42,6 +45,7 @@ pub struct Focus<'a, M> {
     content: Element<'a, M>,
     on_activate: Option<M>,
     radius: f32,
+    id: Option<Id>,
 }
 
 /// `content` that Tab can reach; Enter or Space sends `on_activate` (a
@@ -51,10 +55,17 @@ pub fn focusable<'a, M: Clone + 'a>(content: impl Into<Element<'a, M>>, on_activ
         content: content.into(),
         on_activate,
         radius: 6.0,
+        id: None,
     }
 }
 
 impl<'a, M> Focus<'a, M> {
+    /// An id, so `focus_id` can focus it (sidebar entries).
+    pub fn id(mut self, id: Id) -> Self {
+        self.id = Some(id);
+        self
+    }
+
     /// Corner radius of the ring, to follow the control's shape.
     pub fn radius(mut self, radius: f32) -> Self {
         self.radius = radius;
@@ -98,7 +109,7 @@ impl<M: Clone> Widget<M, Theme, iced::Renderer> for Focus<'_, M> {
     ) {
         if self.on_activate.is_some() {
             let state = tree.state.downcast_mut::<State>();
-            operation.focusable(None, layout.bounds(), state);
+            operation.focusable(self.id.as_ref(), layout.bounds(), state);
         }
         self.content
             .as_widget_mut()
@@ -210,14 +221,134 @@ impl<'a, M: Clone + 'a> From<Focus<'a, M>> for Element<'a, M> {
     }
 }
 
-/// Focus the next control (Tab), then bring it into sight in `scroll`.
-pub fn next<T: Send + 'static>(scroll: &'static str) -> Task<T> {
-    focus_next().chain(reveal(scroll))
+/// The id of a sidebar entry.
+pub fn nav_id(panel: &str) -> Id {
+    Id::from(format!("nav:{panel}"))
 }
 
-/// Focus the previous control (Shift+Tab), then bring it into sight.
-pub fn previous<T: Send + 'static>(scroll: &'static str) -> Task<T> {
-    focus_previous().chain(reveal(scroll))
+/// Focus the widget with `id` (a sidebar entry), nothing else.
+pub fn focus_id<T: Send + 'static>(id: Id) -> Task<T> {
+    iced::widget::operation::focus(id)
+}
+
+/// Tab: the next control inside the panel `scroll`, round to its first
+/// after the last (and the first when the focus is elsewhere).
+pub fn next<T: Send + 'static>(scroll: &'static str) -> Task<T> {
+    step(scroll, true)
+}
+
+/// The first control inside the panel `scroll`.
+pub fn first<T: Send + 'static>(scroll: &'static str) -> Task<T> {
+    step(scroll, false)
+}
+
+fn step<T: Send + 'static>(scroll: &'static str, onward: bool) -> Task<T> {
+    widget::operate(Count {
+        scroll: Id::new(scroll),
+        view: None,
+        inside: 0,
+        current: None,
+        onward,
+    })
+    .discard()
+    .chain(reveal(scroll))
+}
+
+/// Whether `bounds` lie in the panel's scrollable (not the sidebar).
+fn inside(view: Option<Rectangle>, bounds: Rectangle) -> bool {
+    view.is_some_and(|v| bounds.x >= v.x && bounds.x < v.x + v.width)
+}
+
+/// First pass: how many focusable controls the panel has and which one has
+/// the focus; then `Pick` focuses the one to move to.
+struct Count {
+    scroll: Id,
+    view: Option<Rectangle>,
+    inside: usize,
+    current: Option<usize>,
+    onward: bool,
+}
+
+impl Operation for Count {
+    fn traverse(&mut self, operate: &mut dyn FnMut(&mut dyn Operation)) {
+        operate(self);
+    }
+
+    fn scrollable(
+        &mut self,
+        id: Option<&Id>,
+        bounds: Rectangle,
+        _content_bounds: Rectangle,
+        _translation: Vector,
+        _state: &mut dyn Scrollable,
+    ) {
+        if id == Some(&self.scroll) {
+            self.view = Some(bounds);
+        }
+    }
+
+    fn focusable(&mut self, _id: Option<&Id>, bounds: Rectangle, state: &mut dyn Focusable) {
+        if inside(self.view, bounds) {
+            if state.is_focused() {
+                self.current = Some(self.inside);
+            }
+            self.inside += 1;
+        }
+    }
+
+    fn finish(&self) -> Outcome<()> {
+        if self.inside == 0 {
+            return Outcome::None;
+        }
+        let target = match (self.onward, self.current) {
+            (true, Some(i)) => (i + 1) % self.inside,
+            _ => 0,
+        };
+        Outcome::Chain(Box::new(Pick {
+            scroll: self.scroll.clone(),
+            view: None,
+            seen: 0,
+            target,
+        }))
+    }
+}
+
+/// Second pass: focus the `target`-th control of the panel, nothing else.
+struct Pick {
+    scroll: Id,
+    view: Option<Rectangle>,
+    seen: usize,
+    target: usize,
+}
+
+impl Operation for Pick {
+    fn traverse(&mut self, operate: &mut dyn FnMut(&mut dyn Operation)) {
+        operate(self);
+    }
+
+    fn scrollable(
+        &mut self,
+        id: Option<&Id>,
+        bounds: Rectangle,
+        _content_bounds: Rectangle,
+        _translation: Vector,
+        _state: &mut dyn Scrollable,
+    ) {
+        if id == Some(&self.scroll) {
+            self.view = Some(bounds);
+        }
+    }
+
+    fn focusable(&mut self, _id: Option<&Id>, bounds: Rectangle, state: &mut dyn Focusable) {
+        if inside(self.view, bounds) && self.seen == self.target {
+            state.focus();
+        } else {
+            state.unfocus();
+        }
+        if inside(self.view, bounds) {
+            self.seen += 1;
+        }
+    }
 }
 
 /// Scroll `scroll` so the focused control is in sight, when it is inside it

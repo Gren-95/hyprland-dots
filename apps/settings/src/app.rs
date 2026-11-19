@@ -94,6 +94,8 @@ pub struct App {
     query: String,
     /// The search field is in use (it widens a compact sidebar).
     searching: bool,
+    /// The sidebar entry with the keyboard focus, while the sidebar has it.
+    nav_focus: Option<usize>,
     /// Setting a search result pointed at, outlined until the time passes.
     highlight: Option<(&'static str, Instant)>,
     network: network::State,
@@ -134,9 +136,13 @@ pub enum Message {
     FocusSearch,
     /// Escape: empty the search field.
     ClearSearch,
-    /// Tab / Shift+Tab: the next or previous control.
+    /// Tab: the next control in the panel. Shift+Tab: back to the sidebar.
     FocusNext,
     FocusPrevious,
+    /// Up / Down while the sidebar has the focus.
+    NavStep(i32),
+    /// Enter on a sidebar entry: open the panel, focus its first control.
+    EnterPanel(usize),
     /// Alt+Down / Alt+Up: the next or previous panel.
     PanelStep(i32),
     /// Page Down / Page Up (pages) and Home / End (true: the top).
@@ -190,6 +196,7 @@ impl App {
             dragging: None,
             query,
             searching,
+            nav_focus: None,
             highlight: None,
             network: network::State::default(),
             bluetooth: bluetooth::State::default(),
@@ -315,6 +322,8 @@ impl App {
                 keys::Key::Named(keys::key::Named::Tab) => Some(Message::FocusNext),
                 keys::Key::Named(keys::key::Named::ArrowDown) if modifiers.alt() => Some(Message::PanelStep(1)),
                 keys::Key::Named(keys::key::Named::ArrowUp) if modifiers.alt() => Some(Message::PanelStep(-1)),
+                keys::Key::Named(keys::key::Named::ArrowDown) if modifiers.is_empty() => Some(Message::NavStep(1)),
+                keys::Key::Named(keys::key::Named::ArrowUp) if modifiers.is_empty() => Some(Message::NavStep(-1)),
                 keys::Key::Named(keys::key::Named::PageDown) => Some(Message::ScrollPage(1.0)),
                 keys::Key::Named(keys::key::Named::PageUp) => Some(Message::ScrollPage(-1.0)),
                 keys::Key::Named(keys::key::Named::Home) => Some(Message::ScrollEdge(true)),
@@ -362,6 +371,7 @@ impl App {
         match message {
             Message::SelectPanel(i) => {
                 self.panel = i;
+                self.nav_focus = None;
                 // The results stay in a full sidebar; a compact one folds
                 // back to give the panel its room.
                 self.searching = false;
@@ -404,8 +414,25 @@ impl App {
                 self.searching = true;
                 return iced::widget::operation::focus(SEARCH_ID);
             }
-            Message::FocusNext => return crate::focus::next(PANELS[self.panel].id),
-            Message::FocusPrevious => return crate::focus::previous(PANELS[self.panel].id),
+            Message::FocusNext => {
+                self.nav_focus = None;
+                return crate::focus::next(PANELS[self.panel].id);
+            }
+            Message::FocusPrevious => {
+                self.nav_focus = Some(self.panel);
+                return crate::focus::focus_id(crate::focus::nav_id(PANELS[self.panel].id));
+            }
+            Message::NavStep(step) => {
+                if let Some(i) = self.nav_focus {
+                    let next = (i as i32 + step).rem_euclid(PANELS.len() as i32) as usize;
+                    self.nav_focus = Some(next);
+                    return crate::focus::focus_id(crate::focus::nav_id(PANELS[next].id));
+                }
+            }
+            Message::EnterPanel(i) => {
+                let open = self.update(Message::SelectPanel(i));
+                return open.chain(crate::focus::first(PANELS[i].id));
+            }
             Message::PanelStep(step) => {
                 let count = PANELS.len() as i32;
                 let next = (self.panel as i32 + step).rem_euclid(count) as usize;

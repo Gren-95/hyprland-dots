@@ -59,13 +59,15 @@ shows only icons and widens while you search.
 
 Sliders write when released. Text fields write on Enter.
 
-Keyboard: Tab and Shift+Tab move between controls (sidebar entries,
-buttons, switches, dropdowns, text fields) with a ring around the one in
-focus, and the panel scrolls to keep it in sight; Enter or Space presses
-it (a dropdown steps to its next choice, a switch flips). Alt+Down and
-Alt+Up open the next and previous panel; Page Down, Page Up, Home and End
-scroll the panel; Escape closes a dialog or empties the search. Sliders
-are mouse only.
+Keyboard: the sidebar and the open panel are two zones. Tab moves through
+the panel's controls (buttons, switches, dropdowns, text fields), round to
+the first after the last, with a ring around the one in focus, and the
+panel scrolls to keep it in sight; Enter or Space presses it (a dropdown
+steps to its next choice, a switch flips). Shift+Tab goes back to the
+sidebar, where Up and Down move between panels and Enter opens one with the
+focus on its first control. Alt+Down and Alt+Up open the next and previous
+panel; Page Down, Page Up, Home and End scroll the panel; Escape closes a
+dialog or empties the search. Sliders are mouse only.
 
 The Network, Sound and Bluetooth panels ask the system again every three
 seconds while open. Volume sliders stop at the maximum volume set in Volume &

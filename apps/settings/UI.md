@@ -130,6 +130,9 @@ text.
 
 ## Keyboard
 
+- Two zones: Tab stays inside the open panel (wrapping round); Shift+Tab
+  returns to the sidebar, where Up/Down move and Enter opens a panel with
+  its first control focused.
 - Every control is reachable with Tab: build buttons, switches and
   dropdowns with the `ui` helpers (`ui::action`, `ui::switch`,
   `ui::button_group`, `ui::choice`…), which wrap them in

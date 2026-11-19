@@ -60,7 +60,9 @@ fn panel_entry<'a>(i: usize, selected: bool) -> Element<'a, Message> {
     .width(Length::Fill)
     .padding([9, 12])
     .style(style::nav(selected));
-    crate::focus::focusable(entry, Some(Message::SelectPanel(i))).into()
+    crate::focus::focusable(entry, Some(Message::EnterPanel(i)))
+        .id(crate::focus::nav_id(p.id))
+        .into()
 }
 
 fn glyph<'a>(g: crate::ui::Icon) -> Element<'a, Message> {
@@ -125,6 +127,7 @@ fn compact<'a>(open: usize) -> Element<'a, Message> {
             .style(style::nav(false)),
         "Search (Ctrl+F)",
         Message::FocusSearch,
+        None,
     );
     // Icons only: a thin line between groups instead of their headers.
     let mut entries = column![].spacing(2);
@@ -144,14 +147,28 @@ fn compact<'a>(open: usize) -> Element<'a, Message> {
             .on_press(Message::SelectPanel(i))
             .padding([9, 12])
             .style(style::nav(i == open));
-        entries = entries.push(with_tooltip(entry, PANELS[i].title, Message::SelectPanel(i)));
+        entries = entries.push(with_tooltip(
+            entry,
+            PANELS[i].title,
+            Message::EnterPanel(i),
+            Some(crate::focus::nav_id(PANELS[i].id)),
+        ));
     }
     column![Space::new().height(8), search, entries].spacing(10).into()
 }
 
-fn with_tooltip<'a>(content: button::Button<'a, Message>, tip: &'a str, on_key: Message) -> Element<'a, Message> {
+fn with_tooltip<'a>(
+    content: button::Button<'a, Message>,
+    tip: &'a str,
+    on_key: Message,
+    id: Option<iced::advanced::widget::Id>,
+) -> Element<'a, Message> {
+    let mut focus = crate::focus::focusable(content, Some(on_key));
+    if let Some(id) = id {
+        focus = focus.id(id);
+    }
     tooltip(
-        crate::focus::focusable(content, Some(on_key)),
+        focus,
         container(text(tip).size(13)).padding([4, 8]).style(style::card),
         tooltip::Position::Right,
     )
