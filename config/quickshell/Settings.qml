@@ -44,6 +44,10 @@ Scope {
     property bool accentEverywhere: true       // accent replaces the decorative accents
     property int spotlightCap: 60              // launcher results shown
     property int osdDuration: 1500             // ms the volume/brightness OSD stays
+    property bool osdVolume: true              // which changes show the OSD
+    property bool osdMic: true
+    property bool osdBrightness: true
+    property bool osdKbBacklight: true
     property int sysmonInterval: 1500          // ms between system-monitor refreshes
     property int calendarFetchInterval: 10     // minutes between ICS fetches
     property string wallpaperDir: Quickshell.env("HOME") + "/Pictures/wallpapers"
@@ -193,6 +197,10 @@ Scope {
         { name: "accentEverywhere",     file: "accent-everywhere",      type: "bool" },
         { name: "spotlightCap",         file: "spotlight-cap",          type: "int"  },
         { name: "osdDuration",          file: "osd-duration",           type: "int"  },
+        { name: "osdVolume",            file: "osd-volume",             type: "bool" },
+        { name: "osdMic",               file: "osd-mic",                type: "bool" },
+        { name: "osdBrightness",        file: "osd-brightness",         type: "bool" },
+        { name: "osdKbBacklight",       file: "osd-kb-backlight",       type: "bool" },
         { name: "sysmonInterval",       file: "sysmon-interval",        type: "int"  },
         { name: "calendarFetchInterval", file: "calendar-fetch-interval", type: "int" },
         { name: "wallpaperDir",         file: "wallpaper-dir",          type: "string" },

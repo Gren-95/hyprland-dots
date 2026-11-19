@@ -488,7 +488,7 @@ pub const PANELS: &[Panel] = &[
         glyph: ico::VOLUME_2,
         group: Group::InputOutput,
         page: Page::Settings,
-        keywords: "",
+        keywords: "osd on-screen display popup",
         sections: &[
             Section {
                 title: "Steps",
@@ -528,6 +528,34 @@ pub const PANELS: &[Panel] = &[
             Section {
                 title: "On-screen display",
                 settings: &[
+                    Setting {
+                        file: "osd-volume",
+                        label: "Show for",
+                        help: "Which changes pop up the on-screen display",
+                        control: Control::Toggles(&[
+                            Toggle {
+                                file: "osd-volume",
+                                label: "Volume",
+                                default: true,
+                            },
+                            Toggle {
+                                file: "osd-mic",
+                                label: "Microphone",
+                                default: true,
+                            },
+                            Toggle {
+                                file: "osd-brightness",
+                                label: "Brightness",
+                                default: true,
+                            },
+                            Toggle {
+                                file: "osd-kb-backlight",
+                                label: "Keyboard backlight",
+                                default: true,
+                            },
+                        ]),
+                        default: Default::Bool(true),
+                    },
                     number(
                         "osd-duration",
                         "Time on screen",

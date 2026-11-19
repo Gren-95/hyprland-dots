@@ -65,24 +65,24 @@ Scope {
 
     function showVolume() {
         const a = Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio;
-        if (!a) return;
+        if (!a || !settingsStore.osdVolume) return;
         const v = a.volume;
         const icon = a.muted ? "󰸈" : (v < 0.34 ? "󰕿" : v < 0.67 ? "󰖀" : "󰕾");
         root.show(icon, v, "Volume", a.muted, Theme.accent.blue);
     }
     function showMic() {
         const a = Pipewire.defaultAudioSource && Pipewire.defaultAudioSource.audio;
-        if (!a) return;
+        if (!a || !settingsStore.osdMic) return;
         root.show(a.muted ? "󰍭" : "󰍬", a.volume, "Microphone", a.muted, Theme.accent.green);
     }
     function showBrightness(cur) {
-        if (root.blMax <= 0) return;
+        if (root.blMax <= 0 || !settingsStore.osdBrightness) return;
         const pct = cur / root.blMax;
         const icon = pct < 0.34 ? "󰃞" : pct < 0.67 ? "󰃟" : "󰃠";
         root.show(icon, pct, "Brightness", false, Theme.accent.yellow);
     }
     function showKbBacklight(cur) {
-        if (root.kbMax <= 0) return;
+        if (root.kbMax <= 0 || !settingsStore.osdKbBacklight) return;
         const pct = cur / root.kbMax;
         root.show(cur === 0 ? "󰥻" : "󰌌", pct, "Keyboard backlight", false, Theme.accent.purple);
     }
