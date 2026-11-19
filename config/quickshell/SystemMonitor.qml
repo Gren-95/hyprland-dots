@@ -99,7 +99,8 @@ Scope {
     // Refresh control: the chips in the header pick the interval (persisted
     // in settingsStore.sysmonInterval); pausing stops sampling until resumed.
     property bool paused: false
-    readonly property var intervalChoices: [500, 1000, 2000, 5000]
+    // The same choices as the settings app (System monitor > Interval).
+    readonly property var intervalChoices: [500, 1000, 1500, 2000, 5000]
     function choiceLabel(ms) { return (ms / 1000) + "s"; }
 
     function toggle() { open = !open }

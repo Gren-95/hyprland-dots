@@ -1223,16 +1223,19 @@ pub const PANELS: &[Panel] = &[
         sections: &[
             Section {
                 title: "Refresh",
-                settings: &[number(
-                    "sysmon-interval",
-                    "Interval",
-                    "Time between refreshes",
-                    500,
-                    5000,
-                    500,
-                    "ms",
-                    1500,
-                )],
+                settings: &[Setting {
+                    file: "sysmon-interval",
+                    label: "Interval",
+                    help: "Time between refreshes",
+                    control: Control::NumberChoice(&[
+                        (500, "0.5 s"),
+                        (1000, "1 s"),
+                        (1500, "1.5 s"),
+                        (2000, "2 s"),
+                        (5000, "5 s"),
+                    ]),
+                    default: Default::Int(1500),
+                }],
             },
             Section {
                 title: "Sections",
