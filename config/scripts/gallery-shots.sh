@@ -36,7 +36,6 @@ SHOTS=(
     sound:audiopower
     power:powermenu
     systemmonitor:sysmon
-    services:services
     daypanel:calendar
     keybinds:keybinds
     toast:

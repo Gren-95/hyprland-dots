@@ -1,9 +1,9 @@
 //! Services panel: what runs in the background, from one probe
-//! (scripts/services-status.sh, shared with the bar's Services flyout).
+//! (scripts/services-status.sh).
 //! Dotwatch shows whether it runs and can be started or restarted (the
 //! systemd user units are units.rs, the autostart apps startup.rs);
 //! the on-demand services have a switch, through the same toggle scripts
-//! the flyout uses. The scheduled syncs are drawn on the Sync panel. Remote access is on the
+//! Quick Actions uses. The scheduled syncs are drawn on the Sync panel. Remote access is on the
 //! Sharing panel (sharing.rs).
 
 use iced::{Element, Task};

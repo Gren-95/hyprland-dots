@@ -25,11 +25,10 @@ Modals reachable from keybindings or the bar:
   </tr>
   <tr>
     <td align="center" width="33%" valign="top"><img src="screenshots/gallery/systemmonitor.png" width="100%"/><br><strong>System Monitor</strong><br>btop-style graphs: CPU, GPU, memory, network, disks, processes<br><kbd>Super</kbd>+<kbd>M</kbd></td>
-    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/services.png" width="100%"/><br><strong>Services</strong><br>background daemons and sync<br>bar button</td>
     <td align="center" width="33%" valign="top"><img src="screenshots/gallery/daypanel.png" width="100%"/><br><strong>Day Panel</strong><br>calendar, weather, media, notifications<br><kbd>Super</kbd>+<kbd>N</kbd> / <kbd>Super</kbd>+<kbd>D</kbd></td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/keybinds.png" width="100%"/><br><strong>Keyboard shortcuts</strong><br>search, filter, run, rebind (settings app)<br><kbd>Super</kbd>+<kbd>F1</kbd></td>
   </tr>
   <tr>
-    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/keybinds.png" width="100%"/><br><strong>Keyboard shortcuts</strong><br>search, filter, run, rebind (settings app)<br><kbd>Super</kbd>+<kbd>F1</kbd></td>
     <td align="center" width="33%" valign="top"><img src="screenshots/gallery/wallpaper.png" width="100%"/><br><strong>Wallpaper Deck</strong><br>hold <kbd>Super</kbd>, tap <kbd>W</kbd> to deal, release to apply</td>
     <td align="center" width="33%" valign="top"><img src="screenshots/gallery/toast.png" width="100%"/><br><strong>Notification Toast</strong><br>auto-shown on incoming notification</td>
   </tr>

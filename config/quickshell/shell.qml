@@ -113,7 +113,10 @@ Scope {
                     name: t.label, glyph: t.glyph, accent: t.accent,
                     keywords: t.action, isToggle: false,
                     run: () => quickMod.performAction(t.action),
-                }))).concat(servicesMod.spotlightActions).concat([
+                }))).concat([
+                    { name: "Services",      glyph: "󰒓", accent: Theme.accent.slate,  keywords: "background daemons startup autostart vm windows games browser systemd settings", isToggle: false, run: () => Cmd.run([Paths.home + "/.local/bin/settings", "-p", "services"]) },
+                    { name: "Sync",          glyph: "󰓦", accent: Theme.accent.teal,   keywords: "immich jellyfin photos music sync settings", isToggle: false, run: () => Cmd.run([Paths.home + "/.local/bin/settings", "-p", "sync"]) },
+                    { name: "Sharing",       glyph: "󰢹", accent: Theme.accent.blue,   keywords: "remote access vnc ssh tailnet settings", isToggle: false, run: () => Cmd.run([Paths.home + "/.local/bin/settings", "-p", "sharing"]) },
                     { name: "Hidden apps",   glyph: "󰈉", accent: Theme.accent.slate,  keywords: "hidden apps unhide show settings", isToggle: false, run: () => Cmd.run([Paths.home + "/.local/bin/settings", "-p", "launcher"]) },
                     { name: "Default apps",  glyph: "󰖟", accent: Theme.accent.blue,   keywords: "default app browser terminal editor file manager mail settings", isToggle: false, run: () => Cmd.run([Paths.home + "/.local/bin/settings", "-p", "apps"]) },
                     { name: "Bluetooth",      glyph: "󰂯", accent: Theme.accent.blue,   keywords: "bt devices",                      isToggle: false, run: () => btMod.toggleOpen() },
@@ -353,12 +356,6 @@ Scope {
                         ]
                     }
 
-                    // Sits beside Quick Actions on purpose: that panel is for
-                    // flipping things, this one is for seeing what is up.
-                    ServicesModule {
-                        id: servicesMod
-                        parentBar: bar
-                    }
                     BarSep { visible: settingsStore.placement("network") === "bar" }
 
                     ConnectivityModule {
@@ -509,7 +506,6 @@ Scope {
                     soundModRef: soundMod
                     powerModRef: powerMod
                     quickModRef: quickMod
-                    servicesModRef: servicesMod
                     btModRef: btMod
                     clockAnchorRef: clockAnchor
                 }

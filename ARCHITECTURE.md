@@ -49,7 +49,7 @@ Bird's-eye view of how the pieces fit together. For widget-level detail see
 | **Hyprland compositor** | Window layout, workspaces, keyboard input, layer-shell protocol. |
 | **`config/scripts/`** | Long-running background daemons (battery-notify, power-auto, bt-audio-recover as systemd user units; dotwatch) + one-shot actions (screenshot/record/wallpaper/music). All notifications go through `config/scripts/lib/notify.sh`. |
 | **Quickshell** | Bar, popups, OSDs, notification daemon (replaces swaync), launcher (replaces rofi), polkit agent (replaces hyprpolkitagent). State for the bar's interactive bits (audio, brightness, BT) comes from `Quickshell.Services.*` modules talking directly to PipeWire / BlueZ / UPower / etc. Wi-Fi, wired and Tailscale are left to the nm-applet tray app (Tailscale through the NetworkManager Tailscale VPN plugin). |
-| **`cron` / systemd timer** | Immich syncs hourly from cron; Jellyfin syncs daily from the `jellyfin-sync.timer` user timer (Persistent, so a missed run happens on the next boot). Both are switched on and off by `config/scripts/sync-toggle.sh` from the Services panel. |
+| **`cron` / systemd timer** | Immich syncs hourly from cron; Jellyfin syncs daily from the `jellyfin-sync.timer` user timer (Persistent, so a missed run happens on the next boot). Both are switched on and off by `config/scripts/sync-toggle.sh` from the settings app's Sync panel. |
 
 ## Dotfiles plumbing
 
@@ -88,7 +88,7 @@ watcher missed an atomic write).
 | Quickshell | Scripts | `Process { command: ["bash", Paths.scripts + "/<x>.sh"] }` + `startDetached()` (Process does not expand `~`) |
 | Quickshell | Hyprland | `Hypr.dispatch("<cmd>")` singleton (wraps `hyprctl dispatch`) |
 | Cron / user timer | Sync | Hourly `bash ~/.config/scripts/immich-sync.sh` from cron; daily `jellyfin-sync.timer` |
-| Quickshell ↔ sync state | — | `services-status.sh` polled by `ServicesModule.qml`; toggles call `sync-toggle.sh` |
+| Settings app ↔ sync state | — | `services-status.sh` read by the settings app (Services, Sync); toggles call `sync-toggle.sh` |
 
 ## See also
 

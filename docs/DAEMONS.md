@@ -8,9 +8,9 @@ with the graphical session, and `restart.sh` (`Super+B`) restarts them.
 librepods is a user unit too, installed by `build-librepods.sh` when you build
 it. dotwatch is started by `restart.sh` itself.
 
-The Services panel (the sync icon beside Quick Actions in the bar) shows
-battery-notify, power-auto and dotwatch, starts any of those three that has
-died, and lists the scheduled syncs and the on-demand services.
+The settings app's Services panel (`settings -p services`, also in the
+launcher) shows the user units and dotwatch, starts or restarts them, and
+switches the on-demand services; the scheduled syncs are on its Sync panel.
 
 | Script | Purpose |
 |---|---|

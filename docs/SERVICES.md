@@ -9,8 +9,8 @@ Sync jobs, timers and opt-in services.
 | Immich photo sync | Hourly by default (30 min to 6 h, chosen at setup), when enabled | crontab entry between `# QSSYNC:immich` markers |
 | Jellyfin music sync | Daily | `jellyfin-sync.timer` (user timer, `Persistent=true`) |
 
-Both sync jobs are toggled from the Services panel (the sync icon beside Quick
-Actions in the bar), which calls `sync-toggle.sh`. It comments or uncomments the cron line for Immich and
+Both sync jobs are toggled from the settings app's Sync panel (`settings -p
+sync`, also in the launcher), which calls `sync-toggle.sh`. It comments or uncomments the cron line for Immich and
 enables or disables the user timer for Jellyfin, so a disabled job leaves its
 schedule in place rather than losing it.
 
@@ -34,7 +34,7 @@ bash ~/.config/scripts/sync-toggle.sh schedule immich "0 * * * *"
 bash ~/.config/scripts/sync-toggle.sh enable immich
 ```
 
-Needs `crontab` (cronie); without it the Services panel shows Immich sync as
+Needs `crontab` (cronie); without it the Sync panel shows Immich sync as
 off and explains why when toggled.
 
 Auth is stored in `~/.config/immich/auth.yml` (gitignored).
@@ -50,7 +50,7 @@ bash ~/.config/scripts/jellyfin-music-sync.sh   # first run asks for the URL and
 ./dots.sh units   # from the repo: installs jellyfin-sync.{service,timer}
 ```
 
-Then switch "Jellyfin sync" on in the Services panel, which enables the timer.
+Then switch "Jellyfin sync" on in the settings app's Sync panel, which enables the timer.
 Tracks are saved as `~/Music/<Artist>/<Album>/<Track>`. To change the time,
 `sync-toggle.sh schedule jellyfin "*-*-* 04:00:00"` writes a timer drop-in.
 
@@ -59,5 +59,5 @@ Config is stored in `~/.config/jellyfin/sync.conf` (gitignored). To reconfigure,
 ### Windows VM (WinApps)
 
 `winvm-toggle.sh` starts and stops the `dockur/windows` container that backs
-WinApps, exposed in the Services panel. Stopping the container is what
+WinApps, a switch on the settings app's Services panel. Stopping the container is what
 actually frees the VM's 6 GB of RAM. Needs `docker` and `freerdp`.

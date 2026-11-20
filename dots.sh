@@ -49,7 +49,7 @@ USER_UNITS=(
 )
 # Installed (and kept in sync with the repo) by `dots.sh units`, but not
 # enabled there: whether they run is the user's choice, made through
-# sync-toggle.sh (the Services panel) or setup.
+# sync-toggle.sh (the settings app's Sync panel) or setup.
 INSTALL_ONLY_UNITS=(
     "systemd/user/jellyfin-sync.service"
     "systemd/user/jellyfin-sync.timer"

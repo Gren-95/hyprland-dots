@@ -25,7 +25,6 @@ Scope {
     property var soundModRef
     property var powerModRef
     property var quickModRef
-    property var servicesModRef
     property var btModRef
     property Item clockAnchorRef
 
@@ -65,8 +64,8 @@ Scope {
           run: () => sc.wallpaperDeckRef.close() },
         { name: "screenshot-region", description: "Pick a region with the Quickshell region selector",
           run: () => sc.regionSelectorRef.start() },
-        { name: "services", description: "Toggle background services panel",
-          run: () => sc.servicesModRef.popupOpen = !sc.servicesModRef.popupOpen },
+        { name: "services", description: "Open Services in the settings app",
+          run: () => Cmd.run([Paths.home + "/.local/bin/settings", "-p", "services"]) },
         { name: "bluetooth", description: "Toggle bluetooth menu",
           run: () => sc.btModRef.toggleOpen() },
         { name: "notifications", description: "Toggle notification center",

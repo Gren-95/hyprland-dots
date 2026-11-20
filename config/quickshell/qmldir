@@ -59,7 +59,6 @@ RemoteSyncStatus RemoteSyncStatus.qml
 ScreenRecorder ScreenRecorder.qml
 ScreenshotActions ScreenshotActions.qml
 ServiceRow ServiceRow.qml
-ServicesModule ServicesModule.qml
 Settings Settings.qml
 Shortcuts Shortcuts.qml
 Spinner Spinner.qml

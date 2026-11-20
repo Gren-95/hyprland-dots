@@ -11,7 +11,7 @@ add a new modal" or "where do I change X" — not a tutorial.
 | **Root stores** | `Settings.qml` (`settingsStore`), `PopupManager.qml` (`popupManager`) | Persisted user settings + single-open flyout policy. Instantiated FIRST in shell.qml and resolved via the id scope chain — NOT singletons (see warning below) |
 | **Primitives** | `BarFlyout.qml`, `PopupCard.qml`, `SproutBg.qml` | The flyout envelope, the top-drawer envelope, the speech-bubble shape |
 | **Bar items** | `BarIcon.qml`, `BarSep.qml`, `BarHover.qml`, `BarTooltip.qml`, `WorkspaceStrip.qml`, `StatusIndicators.qml`, `QuickActionIcon.qml`, `TrayItem.qml` | Leaf widgets that sit on the top bar (hover highlight, tooltip, activity dots, promoted Quick Actions items, tray icons) |
-| **Bar modules** | `ConnectivityModule.qml`, `SoundModule.qml`, `PowerModule.qml`, `NotifBell.qml`, `QuickActions.qml`, `ServicesModule.qml` | Bar entry points that open their own flyout |
+| **Bar modules** | `ConnectivityModule.qml`, `SoundModule.qml`, `PowerModule.qml`, `NotifBell.qml`, `QuickActions.qml` | Bar entry points that open their own flyout |
 | **Flyout modals** | `Spotlight.qml`, `Clipboard.qml`, `DayPanel.qml`, `SystemMonitor.qml`, `GameLauncher.qml` | Scope-level services whose UI opens as a centred flyout |
 | **Services (headless)** | `IcsCalendar.qml`, `Notifications.qml`, `WeatherService.qml`, `IdleService.qml`, `AccentService.qml`, `SuperWatch.qml`, `GameModeService.qml`, `RemoteSyncStatus.qml`, `EventToasts.qml` | State and system plumbing with no surface of their own; panes read them (EventToasts turns charger/VPN/audio/layout changes into toasts) |
 | **JavaScript helpers** | `IcsParse.js` | Pure logic with no QML types (ICS parsing and recurrence); unit-tested under node in `tests/` |
@@ -176,27 +176,12 @@ Pattern:
 
 `QuickActions` is the catch-all overflow panel: stateful toggles (Microphone,
 Activity icons) + a 3-column grid of one-shots (Clipboard, Screenshot, Record,
-Color picker, Keybinds). Bound to `Super+A`. Two sets of toggles
-have moved out to sit beside what they describe: Do Not Disturb and Stay Awake
-are in the day panel, and Immich/Jellyfin sync, Remote access and Windows VM
-are in `ServicesModule` — duplicating them here left two places to look and
-two probes polling the same scripts. All of them stay searchable in Spotlight,
-which now concatenates `servicesMod.spotlightActions` onto the Quick Actions
-arrays.
-
-`ServicesModule` sits beside Quick Actions and is the read-out to its remote
-control: three session daemons (battery-notify, power-auto, dotwatch), the
-two scheduled syncs, and three on-demand services (remote access, Windows VM,
-games browser). It is the only place to flip them; it also shows whether
-`dotwatch` survived the last session and when the Jellyfin timer next fires. One probe backs the whole panel —
-`scripts/services-status.sh` prints `key=value` pairs on one line, so no shell
-pipeline lives in a QML string literal. A running daemon is not clickable
-(there is nothing to do); a dead one starts on click, detached, because a
-daemon parented to Quickshell would die with the next reload — which is the
-very failure the panel exists to report. The bar glyph turns orange only for a
-session daemon that should be up and isn't; everything else being off is a
-choice, not a fault. Openable as `quickshell:services` (no key bound by
-default).
+Color picker, Keybinds). Bound to `Super+A`. Do Not Disturb and Stay Awake
+have moved out to sit in the day panel. Background services, the scheduled
+syncs and remote access live in the settings app (Services, Sync and
+Sharing); Spotlight has an action that opens each, and `quickshell:services`
+opens the Services panel (no key bound by default). A bar widget for them
+duplicated the app and polled the same scripts.
 
 `MediaCard` is the MPRIS now-playing card at the top of the day panel's
 notification column: art, title/artist, scrub bar, prev/play-pause/next. It
