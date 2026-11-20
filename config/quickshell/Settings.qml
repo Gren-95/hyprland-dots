@@ -113,6 +113,7 @@ Scope {
     property bool idleInhibitOnMedia: false    // Stay Awake while media plays
     property bool idleInhibitOnPower: false    // Stay Awake while on AC
     property bool idleStayAwake: false         // the manual Stay Awake toggle
+    property bool idleHoldClaude: true         // Claude Code at work holds idle (claude-activity.sh reads it)
     // Read by scripts, not the shell: lid.sh and the hyprlock text scripts.
     property string lidCloseAction: "lock"     // lock | suspend | nothing
     property bool lockShowMedia: true
@@ -265,6 +266,7 @@ Scope {
         { name: "idleInhibitOnMedia",   file: "idle-inhibit-media",     type: "bool" },
         { name: "idleInhibitOnPower",   file: "idle-inhibit-power",     type: "bool" },
         { name: "idleStayAwake",        file: "idle-stay-awake",        type: "bool" },
+        { name: "idleHoldClaude",       file: "idle-hold-claude",       type: "bool" },
         { name: "lidCloseAction",       file: "lid-close-action",       type: "string" },
         { name: "lockShowMedia",        file: "lock-show-media",        type: "bool" },
         { name: "lockShowWeather",      file: "lock-show-weather",      type: "bool" },

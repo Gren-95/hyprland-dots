@@ -14,7 +14,12 @@
 # One file per working session under $XDG_RUNTIME_DIR/claude-activity/. A session
 # counts as working while its file was touched in the last STALE_MINUTES, so a
 # session that dies without a Stop hook stops blocking idle on its own.
+#
+# The idle-hold-claude setting (Lock & idle in the settings app) switches the
+# hold off: sessions are still tracked, but the count reported is 0.
 set -uo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/settings.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/shell-ipc.sh"
 
 STATE_DIR="${XDG_RUNTIME_DIR:-/tmp}/claude-activity"
@@ -26,6 +31,7 @@ report_count() {
     find "$STATE_DIR" -type f -mmin +"$STALE_MINUTES" -delete 2>/dev/null
     local count
     count=$(find "$STATE_DIR" -type f | wc -l)
+    [[ $(setting idle-hold-claude 1) == 1 ]] || count=0
     shell_ipc claude active "$count"
 }
 

@@ -1285,7 +1285,7 @@ pub const PANELS: &[Panel] = &[
                     Setting {
                         file: "idle-inhibit-media",
                         label: "Also stay awake",
-                        help: "While something is playing, or while the charger is plugged in",
+                        help: "While something plays, on the charger, or while Claude Code works",
                         control: Control::Toggles(&[
                             Toggle {
                                 file: "idle-inhibit-media",
@@ -1296,6 +1296,11 @@ pub const PANELS: &[Panel] = &[
                                 file: "idle-inhibit-power",
                                 label: "On AC",
                                 default: false,
+                            },
+                            Toggle {
+                                file: "idle-hold-claude",
+                                label: "While Claude Code works",
+                                default: true,
                             },
                         ]),
                         default: Default::Bool(false),
