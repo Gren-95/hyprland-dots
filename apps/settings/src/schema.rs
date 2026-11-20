@@ -718,20 +718,58 @@ pub const PANELS: &[Panel] = &[
                         control: Control::Font,
                         default: Default::Text("Adwaita Sans"),
                     },
+                ],
+            },
+            Section {
+                title: "Shape",
+                settings: &[scale(
+                    "radius-scale",
+                    "Corner roundness",
+                    "Multiplies every corner radius, in the shell and of windows",
+                    0.0,
+                    2.0,
+                    0.1,
+                    false,
+                )],
+            },
+            Section {
+                title: "Wallpaper",
+                settings: &[folder(
+                    "wallpaper-dir",
+                    "Wallpaper folder",
+                    "Where the wallpaper deck deals cards from",
+                    "~/Pictures/wallpapers",
+                    "Pictures/wallpapers",
+                )],
+            },
+        ],
+    },
+    Panel {
+        id: "accessibility",
+        title: "Accessibility",
+        glyph: ico::ACCESSIBILITY,
+        group: Group::Appearance,
+        page: Page::Settings,
+        keywords: "a11y larger bigger text font scale contrast reduce motion zoom magnifier cursor pointer vision",
+        sections: &[
+            Section {
+                title: "Seeing",
+                settings: &[
                     scale(
                         "font-scale",
                         "Text size",
-                        "Multiplies every text size",
+                        "Multiplies every text size in the shell",
                         0.8,
                         1.5,
                         0.05,
                         false,
                     ),
-                ],
-            },
-            Section {
-                title: "Shape and motion",
-                settings: &[
+                    toggle(
+                        "high-contrast",
+                        "High contrast",
+                        "Brighter borders and dimmed text in the shell, and an opaque focused window border",
+                        false,
+                    ),
                     Setting {
                         file: "cursor-size",
                         label: "Cursor size",
@@ -740,14 +778,19 @@ pub const PANELS: &[Panel] = &[
                         default: Default::Int(24),
                     },
                     scale(
-                        "radius-scale",
-                        "Corner roundness",
-                        "Multiplies every corner radius, in the shell and of windows",
-                        0.0,
-                        2.0,
-                        0.1,
+                        "cursor-zoom",
+                        "Zoom",
+                        "Magnifies the screen around the pointer; 1 is off",
+                        1.0,
+                        4.0,
+                        0.25,
                         false,
                     ),
+                ],
+            },
+            Section {
+                title: "Motion",
+                settings: &[
                     toggle(
                         "animations",
                         "Animations",
@@ -764,16 +807,6 @@ pub const PANELS: &[Panel] = &[
                         false,
                     ),
                 ],
-            },
-            Section {
-                title: "Wallpaper",
-                settings: &[folder(
-                    "wallpaper-dir",
-                    "Wallpaper folder",
-                    "Where the wallpaper deck deals cards from",
-                    "~/Pictures/wallpapers",
-                    "Pictures/wallpapers",
-                )],
             },
         ],
     },

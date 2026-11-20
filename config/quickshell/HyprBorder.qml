@@ -23,9 +23,10 @@ Scope {
     readonly property color colour: colourName === "accent" || Theme.base[colourName] === undefined
         ? Theme.accentPrimary : Theme.base[colourName]
 
-    // "rgba(rrggbbaa)" for Hyprland, slightly transparent like the default.
+    // "rgba(rrggbbaa)" for Hyprland, slightly transparent like the default;
+    // opaque with high contrast.
     function _hypr(c) {
-        return "rgba(" + c.toString().slice(1) + "ee)";
+        return "rgba(" + c.toString().slice(1) + (Theme.highContrast ? "ff" : "ee") + ")";
     }
 
     function apply() {
@@ -44,6 +45,10 @@ Scope {
     onColourChanged: debounce.restart()
     onGradientChanged: debounce.restart()
     onAngleChanged: debounce.restart()
+    Connections {
+        target: Theme
+        function onHighContrastChanged() { debounce.restart(); }
+    }
     Connections {
         target: Hyprland
         function onRawEvent(event) {

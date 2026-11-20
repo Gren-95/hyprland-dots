@@ -85,6 +85,8 @@ Scope {
     property bool gamemodeFeral: false
     property bool gameLauncherGames: true      // the game mode launcher opens on the Games view
     property real radiusScale: 1.0             // multiplies Theme.radius
+    property bool highContrast: false          // Theme: brighter borders and muted text; opaque focused border
+    property real cursorZoom: 1.0              // Hyprland cursor:zoom_factor (applied by the settings app)
     property real barOpacity: 1.0
     property int batteryCriticalPct: 5         // countdown-to-action level; 0 = off
     property string batteryCriticalAction: "suspend"   // "suspend" | "none"
@@ -254,6 +256,8 @@ Scope {
         { name: "gamemodeFeral", file: "gamemode-feral", type: "bool" },
         { name: "gameLauncherGames", file: "game-launcher-games", type: "bool" },
         { name: "radiusScale",          file: "radius-scale",           type: "real" },
+        { name: "highContrast",         file: "high-contrast",          type: "bool" },
+        { name: "cursorZoom",           file: "cursor-zoom",            type: "real" },
         { name: "barOpacity",           file: "bar-opacity",            type: "real" },
         { name: "batteryCriticalPct",   file: "battery-critical-pct",   type: "int"  },
         { name: "batteryCriticalAction", file: "battery-critical-action", type: "string" },

@@ -135,6 +135,7 @@ const APPLY: &[Apply] = &[
     ("color-scheme", Kind::Text, apply_color_scheme),
     ("app-font", Kind::Text, apply_app_font),
     ("cursor-size", Kind::Int, apply_cursor_size),
+    ("cursor-zoom", Kind::Real, apply_cursor_zoom),
 ];
 
 fn gsettings_set(key: &str, value: &str) -> Result<(), String> {
@@ -200,6 +201,12 @@ fn apply_cursor_size(value: Value) -> Result<(), String> {
         None,
     )
     .map(|_| ())
+}
+
+/// Hyprland's screen zoom around the pointer, kept in settings.lua.
+fn apply_cursor_zoom(value: Value) -> Result<(), String> {
+    let Value::Real(factor) = value else { return Ok(()) };
+    set_hyprland("cursor:zoom_factor", serde_json::json!(factor.max(1.0)))
 }
 
 /// Animations on or off everywhere: Hyprland's animations:enabled (kept in

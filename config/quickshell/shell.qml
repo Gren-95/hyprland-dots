@@ -40,6 +40,7 @@ Scope {
     Binding { target: Theme; property: "accentEverywhere";   value: settingsStore.accentEverywhere }
     Binding { target: Theme; property: "animScale";         value: settingsStore.animations ? settingsStore.animScale : 0 }
     Binding { target: Theme; property: "radiusScale";       value: settingsStore.radiusScale }
+    Binding { target: Theme; property: "highContrast";      value: settingsStore.highContrast }
 
     IdleService { id: idleService }
     RemoteSyncStatus { id: remoteSyncStatus }

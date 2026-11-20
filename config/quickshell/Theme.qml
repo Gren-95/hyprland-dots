@@ -14,6 +14,8 @@ Singleton {
     property bool accentEverywhere: true
     property real animScale: 1.0    // 0 = animations off (instant)
     property real radiusScale: 1.0
+    // Accessibility: brighter borders and muted text.
+    property bool highContrast: false
     // The highlight/selection accent — used for selected rows, focused
     // cards, active pills. Semantic accents (red=danger, green=ok, …) stay.
     readonly property color accentPrimary: {
@@ -40,19 +42,19 @@ Singleton {
     readonly property color bgInset:   "#1a1716"   // inset wells (profile rows, settings tiles)
 
     // Borders / dividers
-    readonly property color border:        "#3a3633"
-    readonly property color borderSubtle:  "#2a2624"
-    readonly property color borderStrong:  "#44403c"
+    readonly property color border:        highContrast ? "#a8a29e" : "#3a3633"
+    readonly property color borderSubtle:  highContrast ? "#78716c" : "#2a2624"
+    readonly property color borderStrong:  highContrast ? "#d6d3d1" : "#44403c"
     // Outer frame of popup surfaces (flyouts, popups, overlays) — the box
     // itself, not UI inside it. Paired with Theme.radius.lg outer corners.
-    readonly property color popupBorder:   "#78716c"
+    readonly property color popupBorder:   highContrast ? "#e7e5e4" : "#78716c"
 
     // Text
     readonly property color fg:        "#fafaf9"
     readonly property color fgDim:     "#e7e5e4"
-    readonly property color fgMuted:   "#d6d3d1"
-    readonly property color muted:     "#a8a29e"
-    readonly property color mutedDeep: "#78716c"
+    readonly property color fgMuted:   highContrast ? "#fafaf9" : "#d6d3d1"
+    readonly property color muted:     highContrast ? "#e7e5e4" : "#a8a29e"
+    readonly property color mutedDeep: highContrast ? "#d6d3d1" : "#78716c"
     readonly property color disabled:  "#57534e"
     // Text and glyphs drawn on top of an accent or otherwise light fill,
     // where fg would disappear.
