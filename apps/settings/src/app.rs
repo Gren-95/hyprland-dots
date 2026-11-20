@@ -18,6 +18,7 @@ use crate::defaultapps;
 use crate::gaming;
 use crate::hiddenapps;
 use crate::ocr;
+use crate::sharing;
 use crate::hyprpage;
 use crate::idle;
 use crate::keyboard;
@@ -121,6 +122,7 @@ pub struct App {
     power: power::State,
     notif_apps: notifapps::State,
     ocr: ocr::State,
+    sharing: sharing::State,
     hidden_apps: hiddenapps::State,
     gaming: gaming::State,
     gaming_display: hyprpage::State,
@@ -197,6 +199,7 @@ pub enum Message {
     NotifApps(notifapps::Msg),
     HiddenApps(hiddenapps::Msg),
     Ocr(ocr::Msg),
+    Sharing(sharing::Msg),
     Gaming(gaming::Msg),
     GamingDisplay(hyprpage::Msg),
     Proton(proton::Msg),
@@ -239,6 +242,7 @@ impl App {
             power: power::State::default(),
             notif_apps: notifapps::State::default(),
             ocr: ocr::State::default(),
+            sharing: sharing::State::default(),
             hidden_apps: hiddenapps::State::default(),
             gaming: gaming::State::default(),
             gaming_display: hyprpage::State::default(),
@@ -277,6 +281,7 @@ impl App {
             ]),
             Page::Launcher => self.hidden_apps.update(hiddenapps::Msg::Load).map(Message::HiddenApps),
             Page::Recording => self.ocr.update(ocr::Msg::Load).map(Message::Ocr),
+            Page::Sharing => self.sharing.update(sharing::Msg::Refresh).map(Message::Sharing),
             Page::Notifications => {
                 self.notif_apps.update(notifapps::Msg::Load);
                 Task::none()
@@ -404,6 +409,12 @@ impl App {
             Message::NotifApps(msg) => self.notif_apps.update(msg),
             Message::HiddenApps(msg) => return self.hidden_apps.update(msg).map(Message::HiddenApps),
             Message::Ocr(msg) => return self.ocr.update(msg).map(Message::Ocr),
+            Message::Sharing(sharing::Msg::OpenNetwork) => {
+                if let Some(i) = crate::schema::panel_index("network") {
+                    return self.update(Message::SelectPanel(i));
+                }
+            }
+            Message::Sharing(msg) => return self.sharing.update(msg).map(Message::Sharing),
             Message::Gaming(gaming::Msg::OpenBluetooth) => {
                 if let Some(i) = crate::schema::panel_index("bluetooth") {
                     return self.update(Message::SelectPanel(i));
@@ -681,6 +692,16 @@ impl App {
                 }
                 body.into()
             }
+            Page::Sharing => {
+                let mut body = page_column(panel.title, layout);
+                body = ui::section(body, "Screen", sharing_rows(self.sharing.screen_rows()));
+                body = ui::section(body, "Remote login", sharing_rows(self.sharing.login_rows()));
+                let tailnet = sharing_rows(self.sharing.tailnet_rows());
+                if !tailnet.is_empty() {
+                    body = ui::section(body, "Tailnet", tailnet);
+                }
+                body.into()
+            }
             Page::Recording => {
                 let mut body = page_column(panel.title, layout);
                 for section in panel.sections {
@@ -815,6 +836,10 @@ impl App {
         });
         ui::section(body, section.title, rows.collect())
     }
+}
+
+fn sharing_rows(rows: Vec<Element<'_, sharing::Msg>>) -> Vec<Element<'_, Message>> {
+    rows.into_iter().map(|r| r.map(Message::Sharing)).collect()
 }
 
 fn services_rows(rows: Vec<Element<'_, services::Msg>>) -> Vec<Element<'_, Message>> {

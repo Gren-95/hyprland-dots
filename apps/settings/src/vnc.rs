@@ -1,4 +1,4 @@
-//! Remote access (WayVNC) details under its row on the Services panel: where
+//! Remote access (WayVNC) details under its row on the Sharing panel: where
 //! clients connect, the login (shown on request, copied, replaced), and how
 //! the server runs. The settings are store files read by
 //! scripts/wayvnc-toggle.sh when it starts the server.

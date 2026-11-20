@@ -33,6 +33,7 @@ mod reveal;
 mod schema;
 mod search;
 mod services;
+mod sharing;
 mod shortcuts;
 mod sidebar;
 mod startup;

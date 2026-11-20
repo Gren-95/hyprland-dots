@@ -85,6 +85,8 @@ pub enum Page {
     Power,
     /// Screenshot and recording settings, then the OCR languages (ocr.rs).
     Recording,
+    /// Remote access, remote login and the tailnet (sharing.rs).
+    Sharing,
 }
 
 impl Page {
@@ -95,6 +97,7 @@ impl Page {
             self,
             Page::Gaming
                 | Page::Services
+                | Page::Sharing
                 | Page::Notifications
                 | Page::Power
                 | Page::Network
@@ -1459,7 +1462,16 @@ pub const PANELS: &[Panel] = &[
         glyph: ico::SERVER_COG,
         group: Group::System,
         page: Page::Services,
-        keywords: "background daemons startup autostart login apps systemd units sync immich jellyfin remote access vnc wayvnc password port view only windows vm games browser dotwatch battery",
+        keywords: "background daemons startup autostart login apps systemd units sync immich jellyfin windows vm games browser dotwatch battery",
+        sections: &[],
+    },
+    Panel {
+        id: "sharing",
+        title: "Sharing",
+        glyph: ico::SHARE_2,
+        group: Group::System,
+        page: Page::Sharing,
+        keywords: "remote access desktop vnc wayvnc password port view only ssh login sshd tailscale tailnet",
         sections: &[],
     },
     Panel {

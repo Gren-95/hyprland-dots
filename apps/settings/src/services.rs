@@ -3,7 +3,8 @@
 //! Dotwatch shows whether it runs and can be started or restarted (the
 //! systemd user units are units.rs, the autostart apps startup.rs);
 //! the scheduled syncs and the on-demand services have a switch, through
-//! the same toggle scripts the flyout uses.
+//! the same toggle scripts the flyout uses. Remote access is on the
+//! Sharing panel (sharing.rs).
 
 use iced::{Element, Task};
 use lucide_iced::bytes as ico;
@@ -54,12 +55,6 @@ const SCHEDULED: &[Switchable] = &[
 ];
 
 const ON_DEMAND: &[Switchable] = &[
-    Switchable {
-        key: "wayvnc",
-        label: "Remote access",
-        detail: "VNC",
-        toggle: &["wayvnc-toggle.sh"],
-    },
     Switchable {
         key: "winvm",
         label: "Windows VM",
@@ -142,9 +137,6 @@ fn start(name: &'static str) -> Result<(), String> {
 #[derive(Default)]
 pub struct State {
     status: Option<Status>,
-    /// Remote access Details: open, and what they hold (vnc.rs).
-    vnc_open: bool,
-    vnc: crate::vnc::State,
     /// The service being switched, until the next probe shows it.
     busy: Option<&'static str>,
     error: Option<String>,
@@ -157,8 +149,6 @@ pub enum Msg {
     Start(usize),
     Toggle(&'static str),
     OpenGamesBrowser,
-    ToggleVnc,
-    Vnc(crate::vnc::Msg),
     Done(Result<(), String>),
 }
 
@@ -187,13 +177,6 @@ impl State {
                 list.extend(s.toggle[1..].iter().map(|a| a.to_string()));
                 return Task::perform(system::run("bash", list, None), |r| Msg::Done(r.map(|_| ())));
             }
-            Msg::ToggleVnc => {
-                self.vnc_open = !self.vnc_open;
-                if self.vnc_open {
-                    return self.vnc.update(crate::vnc::Msg::Load).map(Msg::Vnc);
-                }
-            }
-            Msg::Vnc(m) => return self.vnc.update(m).map(Msg::Vnc),
             Msg::OpenGamesBrowser => {
                 return Task::perform(system::run("xdg-open", vec![GAMES_BROWSER_URL.into()], None), |r| {
                     Msg::Done(r.map(|_| ()))
@@ -201,13 +184,7 @@ impl State {
             }
             Msg::Done(r) => {
                 self.error = r.err();
-                // Remote access may have started or stopped: its address too.
-                let vnc = if self.vnc_open {
-                    self.vnc.update(crate::vnc::Msg::Load).map(Msg::Vnc)
-                } else {
-                    Task::none()
-                };
-                return Task::batch([self.update(Msg::Refresh), vnc]);
+                return self.update(Msg::Refresh);
             }
         }
         Task::none()
@@ -252,9 +229,6 @@ impl State {
             let on = st.up(s.key);
             let busy = self.busy == Some(s.key);
             let mut detail = s.detail.to_string();
-            if s.key == "wayvnc" {
-                detail = format!("VNC on port {}", self.vnc.port());
-            }
             if s.key == "jellyfin" && on && !st.jellyfin_next.is_empty() {
                 detail = format!("{detail} · next {}", st.jellyfin_next);
             }
@@ -266,22 +240,8 @@ impl State {
             if key == "games-browser" && on {
                 controls.push(ui::action("Open", Some(Msg::OpenGamesBrowser), Action::Normal));
             }
-            // Remote access has its address, login and options behind Details.
-            if key == "wayvnc" {
-                controls.push(ui::disclosure(self.vnc_open, Msg::ToggleVnc));
-            }
             controls.push(ui::switch(on, (!busy).then_some(move |_| Msg::Toggle(key))));
             rows.push(ui::item(service_glyph(key), s.label.into(), detail, controls));
-            if key == "wayvnc" && self.vnc_open {
-                let details: Vec<Element<'_, Msg>> = self.vnc.rows().into_iter().map(|r| r.map(Msg::Vnc)).collect();
-                let count = details.len();
-                rows.extend(
-                    details
-                        .into_iter()
-                        .enumerate()
-                        .map(|(i, d)| ui::branch(d, i + 1 == count)),
-                );
-            }
         }
         rows
     }
@@ -299,7 +259,6 @@ fn service_glyph(key: &str) -> ui::Icon {
     match key {
         "immich" => ico::IMAGES,
         "jellyfin" => ico::AUDIO_LINES,
-        "wayvnc" => ico::MONITOR_UP,
         "winvm" => ico::APP_WINDOW,
         _ => ico::GAMEPAD_2,
     }
