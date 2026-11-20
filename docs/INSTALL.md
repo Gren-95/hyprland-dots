@@ -130,6 +130,7 @@ The setup script will:
 - Build the settings app to `~/.local/bin/settings` and add its launcher entry
 - Install and enable the systemd user units (`dots.sh units`)
 - Configure the GTK theme (and the Tailscale operator when Tailscale is installed)
+- Install `system/sysctl.d/90-dots-inotify.conf` to `/etc/sysctl.d` (sudo): 1024 inotify instances per user instead of 128, so the session D-Bus can always reload its config
 - Optionally set up the Immich CLI, Jellyfin music sync and Gcode Viewer (skipped with `--yes`)
 - Optionally generate an initials avatar for the lock screen
 

@@ -1174,6 +1174,21 @@ setup_user_units() {
     fi
 }
 
+# Kernel settings the session needs (system/sysctl.d), installed to
+# /etc/sysctl.d and applied now.
+setup_sysctl() {
+    local file
+    for file in "$DOTS_DIR"/system/sysctl.d/*.conf; do
+        log_info "Installing $(basename "$file") to /etc/sysctl.d (needs sudo)..."
+        if sudo install -Dm644 "$file" "/etc/sysctl.d/$(basename "$file")" &&
+            sudo sysctl -q -p "/etc/sysctl.d/$(basename "$file")"; then
+            log_success "$(basename "$file") applied"
+        else
+            log_warning "Could not apply $(basename "$file")"
+        fi
+    done
+}
+
 # Initial system setup
 system_setup() {
     log_info "Running initial system setup..."
@@ -1184,6 +1199,8 @@ system_setup() {
         gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"
         log_success "GTK theme configured"
     fi
+
+    setup_sysctl
 
     # Allow current user to manage Tailscale without sudo
     if command_exists tailscale; then
