@@ -9,6 +9,7 @@ mod audio;
 mod backup;
 mod bluetooth;
 mod calendar;
+mod changed;
 mod cli;
 mod controls;
 mod defaultapps;

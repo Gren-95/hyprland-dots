@@ -124,6 +124,8 @@ pub struct App {
     shortcuts: shortcuts::State,
     /// Keyboard shows its key binds page instead of its settings.
     shortcuts_open: bool,
+    /// The panel whose Reset asks for confirmation.
+    confirm_reset: Option<usize>,
     /// A timed refresh is still running: the next tick waits for it, so a
     /// slow or hung tool cannot pile up reads.
     polling: bool,
@@ -213,6 +215,9 @@ pub enum Message {
     ShowShortcuts(bool),
     /// A timed refresh finished.
     Polled,
+    /// Reset every setting of a panel: the first press asks, the second
+    /// does it.
+    ResetPanel(usize),
     /// A saved setting was applied outside the shell, or why not.
     Applied(&'static str, Result<(), String>),
     DefaultApps(defaultapps::Msg),
@@ -267,6 +272,7 @@ impl App {
             shortcuts: shortcuts::State::default(),
             shortcuts_open: open_shortcuts,
             polling: false,
+            confirm_reset: None,
             default_apps: defaultapps::State::default(),
             windows: hyprpage::State::default(),
             about: about::State::default(),
@@ -316,7 +322,7 @@ impl App {
     /// Ask the system again, when the open panel shows system state.
     fn refresh_page(&mut self) -> Task<Message> {
         match PANELS[self.panel].page {
-            Page::Settings => Task::none(),
+            Page::Settings | Page::Changed => Task::none(),
             Page::Services => Task::batch([
                 self.services.update(services::Msg::Refresh).map(Message::Services),
                 self.units.update(units::Msg::Load).map(Message::Units),
@@ -463,6 +469,7 @@ impl App {
         match message {
             Message::SelectPanel(i) => {
                 self.panel = i;
+                self.confirm_reset = None;
                 self.shortcuts_open = false;
                 self.nav_focus = None;
                 self.open_list = None;
@@ -559,6 +566,18 @@ impl App {
                 return self.poll_page().chain(Task::done(Message::Polled));
             }
             Message::Polled => self.polling = false,
+            Message::ResetPanel(i) if self.confirm_reset != Some(i) => self.confirm_reset = Some(i),
+            Message::ResetPanel(i) => {
+                self.confirm_reset = None;
+                let mut tasks = Vec::new();
+                for setting in PANELS[i].sections.iter().flat_map(|s| s.settings.iter()) {
+                    for (file, _, default) in setting.files() {
+                        self.drafts.remove(file);
+                        tasks.push(self.write(file, default));
+                    }
+                }
+                return Task::batch(tasks);
+            }
             Message::Pick(file, value) => {
                 self.open_list = None;
                 return self.update(Message::Set(file, value));
@@ -846,6 +865,28 @@ impl App {
                 }
                 body.into()
             }
+            Page::Changed => {
+                let body = page_column(panel.title, layout);
+                let list = crate::changed::changed(&self.values);
+                let rows: Vec<Element<'_, Message>> = if list.is_empty() {
+                    vec![ui::note("Every setting is at its default")]
+                } else {
+                    list.into_iter()
+                        .map(|(i, s)| {
+                            ui::item(
+                                PANELS[i].glyph,
+                                s.label.into(),
+                                format!("{} · {}", PANELS[i].title, crate::changed::shown(s, &self.values)),
+                                vec![
+                                    ui::action("Show", Some(Message::Reveal(i, s.file)), style::Action::Normal),
+                                    ui::action("Reset", Some(Message::Reset(s.file)), style::Action::Normal),
+                                ],
+                            )
+                        })
+                        .collect()
+                };
+                ui::section(body, "Not at their default", rows).into()
+            }
             Page::Flatpak => {
                 let body = page_column(panel.title, layout);
                 let rows = self
@@ -1042,6 +1083,35 @@ impl App {
                 let backup = ui::section(backup, "Backup", rows);
                 column![about, backup].width(Length::Fill).max_width(PAGE_WIDTH).into()
             }
+        };
+        // Panels with store settings end with a reset for all of them.
+        let content = if !panel.sections.is_empty() && crate::changed::panel_changed(panel, &self.values) {
+            let i = self.panel;
+            let asking = self.confirm_reset == Some(i);
+            let row = ui::item(
+                lucide_iced::bytes::ROTATE_CCW,
+                "Reset this panel".into(),
+                if asking {
+                    "Every setting on this panel goes back to its default. Press again to confirm.".into()
+                } else {
+                    "Put every setting on this panel back to its default".into()
+                },
+                vec![ui::action(
+                    if asking { "Reset all" } else { "Reset…" },
+                    Some(Message::ResetPanel(i)),
+                    if asking {
+                        style::Action::Danger
+                    } else {
+                        style::Action::Normal
+                    },
+                )],
+            );
+            column![content, ui::section(tail_column(layout), "Defaults", vec![row])]
+                .width(Length::Fill)
+                .max_width(PAGE_WIDTH)
+                .into()
+        } else {
+            content
         };
         // One scroll position per panel.
         scrollable(container(content).center_x(Length::Fill))

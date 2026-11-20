@@ -92,6 +92,8 @@ pub enum Page {
     Sharing,
     /// What each Flatpak app may reach outside its sandbox (flatpak.rs).
     Flatpak,
+    /// Every setting not at its default (changed.rs).
+    Changed,
     /// The Immich and Jellyfin syncs (services.rs, sync.rs), then their
     /// settings.
     Sync,
@@ -1428,6 +1430,15 @@ pub const PANELS: &[Panel] = &[
         group: Group::System,
         page: Page::Services,
         keywords: "background daemons startup autostart login apps systemd units windows vm games browser dotwatch battery",
+        sections: &[],
+    },
+    Panel {
+        id: "changed",
+        title: "Changed settings",
+        glyph: ico::LIST_CHECKS,
+        group: Group::System,
+        page: Page::Changed,
+        keywords: "modified customised customized non-default defaults reset",
         sections: &[],
     },
     Panel {
