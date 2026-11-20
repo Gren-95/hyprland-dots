@@ -94,6 +94,8 @@ pub enum Page {
     Flatpak,
     /// Every setting not at its default (changed.rs).
     Changed,
+    /// The user's picture and full name (users.rs).
+    Users,
     /// In-use indicators and clipboard settings, then clearing the
     /// clipboard history and recent files (privacy.rs).
     Privacy,
@@ -1501,6 +1503,15 @@ pub const PANELS: &[Panel] = &[
         group: Group::System,
         page: Page::Services,
         keywords: "background daemons startup autostart login apps systemd units windows vm games browser dotwatch battery",
+        sections: &[],
+    },
+    Panel {
+        id: "users",
+        title: "Users",
+        glyph: ico::CIRCLE_USER,
+        group: Group::System,
+        page: Page::Users,
+        keywords: "account avatar picture photo profile name full real face",
         sections: &[],
     },
     Panel {

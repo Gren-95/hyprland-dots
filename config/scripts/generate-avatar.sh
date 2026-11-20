@@ -1,10 +1,13 @@
 #!/bin/bash
-# Generates an initials avatar and installs it to AccountsService
+# Generates an initials avatar and sets it as the user's picture through
+# AccountsService (SetIconFile over D-Bus; polkit lets a user change their
+# own picture, so no sudo). AccountsService copies it to
+# /var/lib/AccountsService/icons/<user>, which ~/.config/hypr/avatar.png
+# points at. Used by dots.sh setup and the settings app (Users).
 set -euo pipefail
 
 USER_NAME=$(whoami)
 INITIAL="${USER_NAME:0:1}"
-DEST="/var/lib/AccountsService/icons/$USER_NAME"
 
 # A private temporary file, not a fixed name in the shared /tmp that another
 # user could create first.
@@ -45,5 +48,7 @@ draw.text(((size - tw) / 2 - bbox[0], (size - th) / 2 - bbox[1]), initial, font=
 img.save(sys.argv[1], "PNG")
 PYEOF
 
-sudo install -m 644 "$TMP_PNG" "$DEST"
-echo "Avatar installed to $DEST"
+USER_PATH=$(busctl call org.freedesktop.Accounts /org/freedesktop/Accounts \
+    org.freedesktop.Accounts FindUserByName s "$USER_NAME" | awk '{print $2}' | tr -d '"')
+busctl call org.freedesktop.Accounts "$USER_PATH" org.freedesktop.Accounts.User SetIconFile s "$TMP_PNG"
+echo "Avatar set for $USER_NAME"

@@ -46,6 +46,7 @@ use crate::sysunits;
 use crate::themes;
 use crate::ui;
 use crate::units;
+use crate::users;
 use crate::windowrules;
 use crate::windows;
 
@@ -144,6 +145,7 @@ pub struct App {
     sharing: sharing::State,
     flatpak: flatpak::State,
     privacy: privacy::State,
+    users: users::State,
     hidden_apps: hiddenapps::State,
     gaming: gaming::State,
     gaming_display: hyprpage::State,
@@ -237,6 +239,7 @@ pub enum Message {
     Sharing(sharing::Msg),
     Flatpak(flatpak::Msg),
     Privacy(privacy::Msg),
+    Users(users::Msg),
     Gaming(gaming::Msg),
     GamingDisplay(hyprpage::Msg),
     Proton(proton::Msg),
@@ -290,6 +293,7 @@ impl App {
             sharing: sharing::State::default(),
             flatpak: flatpak::State::default(),
             privacy: privacy::State::default(),
+            users: users::State::default(),
             hidden_apps: hiddenapps::State::default(),
             gaming: gaming::State::default(),
             gaming_display: hyprpage::State::default(),
@@ -327,6 +331,7 @@ impl App {
     fn refresh_page(&mut self) -> Task<Message> {
         match PANELS[self.panel].page {
             Page::Settings | Page::Changed | Page::Privacy => Task::none(),
+            Page::Users => self.users.update(users::Msg::Load).map(Message::Users),
             Page::Services => Task::batch([
                 self.services.update(services::Msg::Refresh).map(Message::Services),
                 self.units.update(units::Msg::Load).map(Message::Units),
@@ -525,6 +530,7 @@ impl App {
             Message::Sharing(msg) => return self.sharing.update(msg).map(Message::Sharing),
             Message::Flatpak(msg) => return self.flatpak.update(msg).map(Message::Flatpak),
             Message::Privacy(msg) => return self.privacy.update(msg).map(Message::Privacy),
+            Message::Users(msg) => return self.users.update(msg).map(Message::Users),
             Message::Gaming(gaming::Msg::OpenBluetooth) => {
                 if let Some(i) = crate::schema::panel_index("bluetooth") {
                     return self.update(Message::SelectPanel(i));
@@ -881,6 +887,11 @@ impl App {
                     body = body.push(text(error).color(style::RED));
                 }
                 body.into()
+            }
+            Page::Users => {
+                let body = page_column(panel.title, layout);
+                let rows = self.users.rows().into_iter().map(|r| r.map(Message::Users)).collect();
+                ui::section(body, "You", rows).into()
             }
             Page::Privacy => {
                 let mut body = page_column(panel.title, layout);
