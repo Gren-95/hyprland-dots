@@ -17,6 +17,7 @@ use crate::bluetooth;
 use crate::calendar;
 use crate::controls;
 use crate::defaultapps;
+use crate::flatpak;
 use crate::gaming;
 use crate::hiddenapps;
 use crate::hyprpage;
@@ -135,6 +136,7 @@ pub struct App {
     appearance: appearance::State,
     backup: backup::State,
     sharing: sharing::State,
+    flatpak: flatpak::State,
     hidden_apps: hiddenapps::State,
     gaming: gaming::State,
     gaming_display: hyprpage::State,
@@ -219,6 +221,7 @@ pub enum Message {
     Appearance(appearance::Msg),
     Backup(backup::Msg),
     Sharing(sharing::Msg),
+    Flatpak(flatpak::Msg),
     Gaming(gaming::Msg),
     GamingDisplay(hyprpage::Msg),
     Proton(proton::Msg),
@@ -268,6 +271,7 @@ impl App {
             appearance: appearance::State::default(),
             backup: backup::State::default(),
             sharing: sharing::State::default(),
+            flatpak: flatpak::State::default(),
             hidden_apps: hiddenapps::State::default(),
             gaming: gaming::State::default(),
             gaming_display: hyprpage::State::default(),
@@ -325,6 +329,7 @@ impl App {
                 self.sync.update(sync::Msg::Load).map(Message::Sync),
             ]),
             Page::Sharing => self.sharing.update(sharing::Msg::Refresh).map(Message::Sharing),
+            Page::Flatpak => self.flatpak.update(flatpak::Msg::Load).map(Message::Flatpak),
             Page::Notifications => {
                 self.notif_apps.update(notifapps::Msg::Load);
                 Task::none()
@@ -488,6 +493,7 @@ impl App {
                 }
             }
             Message::Sharing(msg) => return self.sharing.update(msg).map(Message::Sharing),
+            Message::Flatpak(msg) => return self.flatpak.update(msg).map(Message::Flatpak),
             Message::Gaming(gaming::Msg::OpenBluetooth) => {
                 if let Some(i) = crate::schema::panel_index("bluetooth") {
                     return self.update(Message::SelectPanel(i));
@@ -811,6 +817,16 @@ impl App {
                     body = body.push(text(error).color(style::RED));
                 }
                 body.into()
+            }
+            Page::Flatpak => {
+                let body = page_column(panel.title, layout);
+                let rows = self
+                    .flatpak
+                    .rows()
+                    .into_iter()
+                    .map(|r| r.map(Message::Flatpak))
+                    .collect();
+                ui::section(body, "Flatpak apps", rows).into()
             }
             Page::Sharing => {
                 let mut body = page_column(panel.title, layout);

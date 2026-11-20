@@ -12,6 +12,7 @@ mod calendar;
 mod cli;
 mod controls;
 mod defaultapps;
+mod flatpak;
 mod focus;
 mod fonts;
 mod gaming;

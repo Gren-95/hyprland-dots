@@ -90,6 +90,8 @@ pub enum Page {
     Recording,
     /// Remote access, remote login and the tailnet (sharing.rs).
     Sharing,
+    /// What each Flatpak app may reach outside its sandbox (flatpak.rs).
+    Flatpak,
     /// The Immich and Jellyfin syncs (services.rs, sync.rs), then their
     /// settings.
     Sync,
@@ -796,7 +798,16 @@ pub const PANELS: &[Panel] = &[
                     "Fade from the colour to a lighter tint of it",
                     true,
                 ),
-                number("border-angle", "Gradient angle", "Direction of the fade", 0, 345, 15, "°", 45),
+                number(
+                    "border-angle",
+                    "Gradient angle",
+                    "Direction of the fade",
+                    0,
+                    345,
+                    15,
+                    "°",
+                    45,
+                ),
             ],
         }],
     },
@@ -1417,6 +1428,15 @@ pub const PANELS: &[Panel] = &[
         group: Group::System,
         page: Page::Services,
         keywords: "background daemons startup autostart login apps systemd units windows vm games browser dotwatch battery",
+        sections: &[],
+    },
+    Panel {
+        id: "flatpak",
+        title: "App permissions",
+        glyph: ico::LOCK,
+        group: Group::System,
+        page: Page::Flatpak,
+        keywords: "flatpak sandbox flatseal network files folders home devices camera privacy override",
         sections: &[],
     },
     Panel {
