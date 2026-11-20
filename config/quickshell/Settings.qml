@@ -12,9 +12,14 @@
 //   1. Declare a typed property with its default below.
 //   2. Add one `_schema` row: { name, file, type } where type is
 //      "bool" | "int" | "real" | "string" | "json".
-// The Instantiator creates a watching FileView per row: external edits load
-// into the property, property writes persist via FileView.setText (atomic,
-// no shell quoting). Absent file = QML default.
+// The Instantiator creates a FileView per row: property writes persist via
+// FileView.setText (atomic, no shell quoting). Absent file = QML default.
+// External edits load into the property through ONE inotifywait over the
+// folder, which reloads the row of the file that changed. A watching
+// FileView per row would hold one inotify instance each; the user's limit
+// is 128 (fs.inotify.max_user_instances), and when the shell takes them all
+// the session D-Bus cannot reload its config (as on a Flatpak install or
+// removal) and the session goes down.
 //
 // Loop safety: typed scalar properties only notify on real change, which
 // breaks the load->assign->save cycle; `json` (var) settings always notify
@@ -362,7 +367,6 @@ Scope {
             property string lastText: ""
 
             path: settings._dir + modelData.file
-            watchChanges: true
             atomicWrites: true
             printErrors: false
 
@@ -393,9 +397,32 @@ Scope {
                 ready = true;
                 if (dirty) { dirty = false; persist(); }
             }
-            onFileChanged: reload()
         }
+        onObjectAdded: (index, object) => settings._views[settings._schema[index].file] = object
+        onObjectRemoved: (index, object) => delete settings._views[settings._schema[index].file]
     }
 
-    Component.onCompleted: Quickshell.execDetached(["mkdir", "-p", _dir])
+    // Row FileViews by file name, for the watcher.
+    property var _views: ({})
+
+    // One watcher for the whole folder: a changed or replaced file reloads
+    // its row. Started again if it stops (inotifywait missing or killed).
+    Process {
+        id: watcher
+        running: true
+        command: ["sh", "-c",
+            "mkdir -p \"$1\" && exec inotifywait -m -q -e close_write,moved_to --format %f \"$1\"",
+            "sh", settings._dir]
+        stdout: SplitParser {
+            onRead: (file) => {
+                const view = settings._views[file];
+                if (view) view.reload();
+            }
+        }
+        onExited: (code) => {
+            console.warn("[Settings] folder watcher stopped (" + code + "); external edits wait for its restart");
+            restartWatcher.start();
+        }
+    }
+    Timer { id: restartWatcher; interval: 5000; onTriggered: watcher.running = true }
 }
