@@ -31,6 +31,7 @@ mod ocr;
 mod placement;
 mod power;
 mod proton;
+mod region;
 mod reveal;
 mod schema;
 mod search;

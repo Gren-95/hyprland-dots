@@ -28,8 +28,9 @@ terminal, or `settings -p <panel>` for one panel; several shell flyouts
 | `window-rules` | Per-app window rules for apps with a window open: float (at a size), opacity, the workspace they open on; kept in `~/.config/hypr/settings.json` and written to the gitignored `settings.lua` as `hl.window_rule` calls (the tracked `rules.lua` is not edited), then Hyprland reloads |
 | `bar` | Height, opacity, window title width, workspace icons, activity icons, scroll action |
 | `baritems` | Where each bar module, Quick Actions item and tray app shows: on the bar, in Quick Actions or hidden (the shell's placement files); tray apps are read live over D-Bus |
-| `clock` | 24-hour clock, seconds, date format; weather location and Fahrenheit (`-p weather` opens it too) |
-| `calendar` | ICS feeds of the day panel (`~/.config/quickshell/calendar.url`; links shown shortened as they hold private tokens): add, switch on and off, name, colour, replace the link, move up, remove; first day of the week, feed refresh interval |
+| `clock` | Seconds in the bar clock; weather location and Fahrenheit (`-p weather` opens it too) |
+| `region` | Time zone (search picker over `timedatectl list-timezones`) and network time, through `timedatectl`, which asks for the password through polkit; 24-hour clock, first day of the week, the bar's date format typed or picked from presets shown as today's date |
+| `calendar` | ICS feeds of the day panel (`~/.config/quickshell/calendar.url`; links shown shortened as they hold private tokens): add, switch on and off, name, colour, replace the link, move up, remove; feed refresh interval |
 | `notifications` | Do not disturb, by hand or every day between two times; toast position, time, count, width and sound; history; auto-dismiss; system event toasts; per app: show, no toasts or mute |
 | `launcher` | Results shown; calculator and quick actions among the results; clipboard thumbnails; apps hidden from the launcher (Ctrl+D there), each with Show again |
 | `osd` | Volume and brightness steps, maximum volume, on-screen display |
@@ -111,6 +112,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/args.rs` | Argument parsing |
 | `src/cli.rs` | `settings get`, `settings set` and the `settings import` prompt |
 | `src/backup.rs` | Export and import of every setting; the Backup section on About |
+| `src/region.rs` | Time zone, network time and date presets on the Region & time panel |
 | `src/schema.rs` | The panels and their settings: file, label, control, default. A test checks every file and type against `Settings.qml` |
 | `src/store.rs` | Reading and writing the setting files in the format `Settings.qml` uses |
 | `src/app.rs` | The iced app: state, messages, the open panel, window-width layout |

@@ -20,6 +20,7 @@ use crate::hiddenapps;
 use crate::backup;
 use crate::appearance;
 use crate::ocr;
+use crate::region;
 use crate::sync;
 use crate::windowrules;
 use crate::sharing;
@@ -126,6 +127,7 @@ pub struct App {
     power: power::State,
     notif_apps: notifapps::State,
     ocr: ocr::State,
+    region: region::State,
     sync: sync::State,
     window_rules: windowrules::State,
     appearance: appearance::State,
@@ -207,6 +209,7 @@ pub enum Message {
     NotifApps(notifapps::Msg),
     HiddenApps(hiddenapps::Msg),
     Ocr(ocr::Msg),
+    Region(region::Msg),
     Sync(sync::Msg),
     WindowRules(windowrules::Msg),
     Appearance(appearance::Msg),
@@ -254,6 +257,7 @@ impl App {
             power: power::State::default(),
             notif_apps: notifapps::State::default(),
             ocr: ocr::State::default(),
+            region: region::State::default(),
             sync: sync::State::default(),
             window_rules: windowrules::State::default(),
             appearance: appearance::State::default(),
@@ -297,6 +301,7 @@ impl App {
             ]),
             Page::Launcher => self.hidden_apps.update(hiddenapps::Msg::Load).map(Message::HiddenApps),
             Page::Recording => self.ocr.update(ocr::Msg::Load).map(Message::Ocr),
+            Page::Region => self.region.update(region::Msg::Load).map(Message::Region),
             Page::Sync => Task::batch([
                 self.services.update(services::Msg::Refresh).map(Message::Services),
                 self.sync.update(sync::Msg::Load).map(Message::Sync),
@@ -433,6 +438,7 @@ impl App {
             Message::NotifApps(msg) => self.notif_apps.update(msg),
             Message::HiddenApps(msg) => return self.hidden_apps.update(msg).map(Message::HiddenApps),
             Message::Ocr(msg) => return self.ocr.update(msg).map(Message::Ocr),
+            Message::Region(msg) => return self.region.update(msg).map(Message::Region),
             Message::Sync(msg) => return self.sync.update(msg).map(Message::Sync),
             Message::WindowRules(msg) => return self.window_rules.update(msg).map(Message::WindowRules),
             Message::Appearance(msg) => return self.appearance.update(msg).map(Message::Appearance),
@@ -720,6 +726,27 @@ impl App {
                     .map(|r| r.map(Message::HiddenApps))
                     .collect();
                 body = ui::section(body, "Hidden apps", hidden);
+                if let Some(error) = &self.error {
+                    body = body.push(text(error).color(style::RED));
+                }
+                body.into()
+            }
+            Page::Region => {
+                let mut body = page_column(panel.title, layout);
+                let time = self.region.time_rows().into_iter().map(|r| r.map(Message::Region)).collect();
+                body = ui::section(body, "Time", time);
+                let current = match self.values.get("clock-date-format") {
+                    Some(Value::Text(t)) => t.as_str(),
+                    _ => "ddd, dd MMM",
+                };
+                for section in panel.sections {
+                    let extra = if section.title == "Date" {
+                        vec![self.region.date_row(current)]
+                    } else {
+                        Vec::new()
+                    };
+                    body = self.section_with(body, section, layout, extra);
+                }
                 if let Some(error) = &self.error {
                     body = body.push(text(error).color(style::RED));
                 }

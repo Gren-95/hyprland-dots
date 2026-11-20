@@ -90,6 +90,8 @@ pub enum Page {
     Sharing,
     /// Per-app window rules (windowrules.rs).
     WindowRules,
+    /// Time zone and network time (region.rs), then the format settings.
+    Region,
     /// The Immich and Jellyfin syncs (services.rs, sync.rs), then their
     /// settings.
     Sync,
@@ -878,17 +880,12 @@ pub const PANELS: &[Panel] = &[
         sections: &[
             Section {
                 title: "Clock",
-                settings: &[
-                    toggle("clock-24h", "24-hour clock", "Show 13:00 instead of 1:00 PM", true),
-                    toggle("clock-seconds", "Seconds", "Show seconds in the bar clock", false),
-                    entry(
-                        "clock-date-format",
-                        "Date format",
-                        "Qt date format of the bar date",
-                        "ddd, dd MMM",
-                        Default::Text("ddd, dd MMM"),
-                    ),
-                ],
+                settings: &[toggle(
+                    "clock-seconds",
+                    "Seconds",
+                    "Show seconds in the bar clock; the time and date formats are in Region & time",
+                    false,
+                )],
             },
             Section {
                 title: "Weather",
@@ -915,12 +912,6 @@ pub const PANELS: &[Panel] = &[
         sections: &[Section {
             title: "Options",
             settings: &[
-                toggle(
-                    "week-start-monday",
-                    "Week starts on Monday",
-                    "Otherwise on Sunday",
-                    true,
-                ),
                 number(
                     "calendar-fetch-interval",
                     "Refresh feeds",
@@ -1504,6 +1495,38 @@ pub const PANELS: &[Panel] = &[
         page: Page::Services,
         keywords: "background daemons startup autostart login apps systemd units windows vm games browser dotwatch battery",
         sections: &[],
+    },
+    Panel {
+        id: "region",
+        title: "Region & time",
+        glyph: ico::GLOBE,
+        group: Group::System,
+        page: Page::Region,
+        keywords: "time zone timezone clock ntp network time date format region",
+        sections: &[
+            Section {
+                title: "Formats",
+                settings: &[
+                    toggle("clock-24h", "24-hour clock", "Show 13:00 instead of 1:00 PM", true),
+                    toggle(
+                        "week-start-monday",
+                        "Week starts on Monday",
+                        "Otherwise on Sunday, in the calendar",
+                        true,
+                    ),
+                ],
+            },
+            Section {
+                title: "Date",
+                settings: &[entry(
+                    "clock-date-format",
+                    "Date format",
+                    "Typed as a Qt date format: d, dd, ddd, dddd for the day, M to MMMM for the month, yy or yyyy",
+                    "ddd, dd MMM",
+                    Default::Text("ddd, dd MMM"),
+                )],
+            },
+        ],
     },
     Panel {
         id: "sync",
