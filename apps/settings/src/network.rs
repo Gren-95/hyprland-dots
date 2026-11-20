@@ -18,6 +18,34 @@ pub struct Snapshot {
     /// Addresses, gateway and DNS of the connection the default route uses.
     /// Addresses, gateway and DNS of each connected Wi-Fi and wired device.
     pub details: Vec<crate::sysinfo::Network>,
+    /// The Wi-Fi device, for a hotspot.
+    pub wifi_device: Option<String>,
+    /// Bluetooth is powered (None: no adapter or bluetoothctl).
+    pub bluetooth_on: Option<bool>,
+    /// The running hotspot: (network name, password).
+    pub hotspot: Option<(String, String)>,
+}
+
+/// The name nmcli gives the hotspot connection.
+const HOTSPOT: &str = "Hotspot";
+
+/// `bluetoothctl show`: whether the adapter is powered.
+pub fn parse_powered(out: &str) -> Option<bool> {
+    out.lines()
+        .find_map(|l| l.trim().strip_prefix("Powered:"))
+        .map(|v| v.trim() == "yes")
+}
+
+/// `nmcli -t -f NAME connection show --active` holds the hotspot.
+fn hotspot() -> Option<(String, String)> {
+    let active = nmcli(&["-t", "-f", "NAME", "connection", "show", "--active"]).ok()?;
+    active.lines().any(|l| l == HOTSPOT).then_some(())?;
+    let get = |field: &str| {
+        nmcli(&["-s", "-g", field, "connection", "show", HOTSPOT])
+            .map(|o| o.trim().to_string())
+            .unwrap_or_default()
+    };
+    Some((get("802-11-wireless.ssid"), get("802-11-wireless-security.psk")))
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -63,6 +91,9 @@ pub enum Msg {
     Refresh,
     Refreshed(Result<Box<Snapshot>, String>),
     SetWifi(bool),
+    /// Wi-Fi and Bluetooth off together (true), or back on.
+    Airplane(bool),
+    Hotspot(bool),
     Rescan,
     Connect(String),
     Password(String),
@@ -198,12 +229,23 @@ fn snapshot() -> Result<Snapshot, String> {
         .iter()
         .filter_map(|d| crate::sysinfo::device_network(d))
         .collect();
+    let wifi_device = status
+        .lines()
+        .map(split_terse)
+        .find(|f| f.len() >= 2 && f[1] == "wifi")
+        .map(|f| f[0].clone());
+    let bluetooth_on = system::run_blocking("bluetoothctl", &args(&["show"]), None)
+        .ok()
+        .and_then(|o| parse_powered(&o));
     Ok(Snapshot {
         wifi_enabled,
         networks,
         wired,
         saved,
         details,
+        wifi_device,
+        bluetooth_on,
+        hotspot: hotspot(),
     })
 }
 
@@ -251,6 +293,37 @@ impl State {
             Msg::SetWifi(on) => {
                 self.busy = Some("wifi".into());
                 return act(args(&["radio", "wifi", if on { "on" } else { "off" }]), None);
+            }
+            Msg::Airplane(on) => {
+                self.busy = Some("wifi".into());
+                let steps = move || -> Result<(), String> {
+                    let state = if on { "off" } else { "on" };
+                    nmcli(&["radio", "wifi", state])?;
+                    // No adapter is fine: there is nothing to switch.
+                    match system::run_blocking("bluetoothctl", &args(&["power", state]), None) {
+                        Err(e) if !e.contains("No default controller") => Err(e),
+                        _ => Ok(()),
+                    }
+                };
+                return Task::perform(system::spawn(steps), |r| {
+                    Msg::Done(r.unwrap_or_else(|| Err("stopped unexpectedly".into())))
+                });
+            }
+            Msg::Hotspot(on) => {
+                self.busy = Some("hotspot".into());
+                if !on {
+                    return act(args(&["connection", "down", HOTSPOT]), None);
+                }
+                let Some(device) = self.snapshot.as_ref().and_then(|s| s.wifi_device.clone()) else {
+                    self.busy = None;
+                    self.error = Some("No Wi-Fi device for a hotspot".into());
+                    return Task::none();
+                };
+                // nmcli makes up the password when none is given.
+                return act(
+                    args(&["device", "wifi", "hotspot", "ifname", &device, "con-name", HOTSPOT]),
+                    None,
+                );
             }
             Msg::Rescan => {
                 self.busy = Some("rescan".into());
@@ -338,6 +411,34 @@ impl State {
         Task::none()
     }
 
+    /// Airplane mode, and the hotspot when there is a Wi-Fi device.
+    fn radio_rows<'a>(&'a self, snap: &'a Snapshot) -> Vec<Element<'a, Msg>> {
+        let idle = self.busy.is_none();
+        let airplane = !snap.wifi_enabled && snap.bluetooth_on != Some(true);
+        let mut rows = vec![ui::item(
+            ico::PLANE,
+            "Airplane mode".into(),
+            "Wi-Fi and Bluetooth off together".into(),
+            vec![ui::switch(airplane, idle.then_some(Msg::Airplane))],
+        )];
+        if snap.wifi_device.is_some() {
+            let detail = match &snap.hotspot {
+                Some((ssid, password)) => format!("On as {ssid} · password {password}"),
+                None => "Share this computer's connection over Wi-Fi; the Wi-Fi network in use disconnects".into(),
+            };
+            rows.push(ui::item(
+                ico::RADIO_TOWER,
+                "Hotspot".into(),
+                detail,
+                vec![ui::switch(
+                    snap.hotspot.is_some(),
+                    (idle && snap.wifi_enabled).then_some(Msg::Hotspot),
+                )],
+            ));
+        }
+        rows
+    }
+
     pub fn view<'a>(&'a self, mut body: Column<'a, Msg>) -> Column<'a, Msg> {
         if let Some(e) = &self.error {
             body = body.push(ui::error(e));
@@ -380,6 +481,7 @@ impl State {
             wifi.push(ui::branch(branch.into(), i + 1 == count));
         }
         body = ui::section(body, "Wi-Fi", wifi);
+        body = ui::section(body, "Airplane mode and hotspot", self.radio_rows(snap));
         if !snap.wired.is_empty() {
             let rows = snap
                 .wired
@@ -528,6 +630,13 @@ impl State {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reads_bluetooth_power() {
+        assert_eq!(parse_powered("Controller AA\n\tPowered: yes\n"), Some(true));
+        assert_eq!(parse_powered("\tPowered: no\n"), Some(false));
+        assert_eq!(parse_powered(""), None);
+    }
 
     #[test]
     fn finds_connected_devices() {
