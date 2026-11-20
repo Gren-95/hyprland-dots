@@ -1,4 +1,4 @@
-// Notification column of the day panel: the quiet-mode switches, the
+// Notification column of the day panel: two small quiet switches, the
 // now-playing card, then the notification history (flat, or one card per app).
 //
 // Pure view over the Notifications service handed in as `notifs`; the toast
@@ -21,32 +21,26 @@ Item {
         anchors.fill: parent
         stretch: pane.history.length === 0
 
-        // Quiet toggles. Both belong to this panel rather than the Quick
-        // Actions grid: DND governs what lands in the list below it, and
-        // Stay Awake is the other "stop interrupting me" switch.
-        DayCard {
+        // Quiet toggles, small, on one line: DND governs what lands in the
+        // list below, Stay Awake is the other "stop interrupting me" switch.
+        RowLayout {
             Layout.fillWidth: true
-            title: "Quiet mode"
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Theme.spacing.md
-                PaneToggle {
-                    glyph: on ? "󰂛" : "󰂚"
-                    label: "Do Not Disturb"
-                    accent: Theme.accent.orange
-                    on: pane.notifs ? pane.notifs.quiet : false
-                    onToggled: pane.notifs.setDnd(!pane.notifs.quiet)
-                }
-                PaneToggle {
-                    glyph: on ? "󰒲" : "󰒳"
-                    label: "Stay Awake"
-                    // Names the automatic condition (media / AC) when something
-                    // other than the manual switch is holding sleep off.
-                    note: on ? (idleService.reason || "manual") : ""
-                    accent: Theme.accent.purple
-                    on: idleService.effectiveInhibited
-                    onToggled: idleService.toggleManual()
-                }
+            spacing: Theme.spacing.md
+            PaneToggle {
+                glyph: on ? "󰂛" : "󰂚"
+                label: "Quiet"
+                accent: Theme.accent.orange
+                on: pane.notifs ? pane.notifs.quiet : false
+                onToggled: pane.notifs.setDnd(!pane.notifs.quiet)
+            }
+            PaneToggle {
+                glyph: on ? "󰒲" : "󰒳"
+                // Names the automatic condition (media / AC) when something
+                // other than the manual switch is holding sleep off.
+                label: on && idleService.reason ? "Awake · " + idleService.reason : "Awake"
+                accent: Theme.accent.purple
+                on: idleService.effectiveInhibited
+                onToggled: idleService.toggleManual()
             }
         }
 
@@ -59,45 +53,21 @@ Item {
         // ====== History header ======
         RowLayout {
             Layout.fillWidth: true
+            Layout.topMargin: Theme.spacing.sm
             spacing: Theme.spacing.md
             Text {
-                text: "NOTIFICATIONS"
-                color: Theme.mutedDeep
+                text: "󰂚"
+                color: Theme.muted
                 font.family: Theme.font
-                font.pixelSize: Theme.fontSize.sm
-                font.letterSpacing: 1
-                font.bold: true
+                font.pixelSize: Theme.fontSize.lg
             }
             CountChip { count: pane.history.length }
             Item { Layout.fillWidth: true }
-            Rectangle {
+            // Clear all: a trash can that turns red on hover.
+            IconButton {
                 visible: pane.history.length > 0
-                implicitWidth: clearText.implicitWidth + Theme.spacing.xl * 2
-                implicitHeight: 34
-                radius: 10 * Theme.radiusScale
-                color: clearMouse.pressed ? Theme.alpha(Theme.accent.red, 0.3)
-                     : clearMouse.containsMouse ? Theme.accent.redDeep : "transparent"
-                border.color: Theme.accent.redDeep
-                border.width: 1
-                scale: clearMouse.pressed ? 0.94 : 1.0
-                Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
-                Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
-                Text {
-                    id: clearText
-                    anchors.centerIn: parent
-                    text: "Clear all"
-                    color: clearMouse.containsMouse ? Theme.fg : Theme.accent.redSoft
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.base
-                    Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
-                }
-                MouseArea {
-                    id: clearMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: pane.notifs.clearHistory()
-                }
+                glyph: "󰩹"
+                onClicked: pane.notifs.clearHistory()
             }
         }
 
@@ -277,9 +247,10 @@ Item {
         }
     }
 
-    // Round "×" button used for dismiss and per-app clear.
+    // Round button, "×" by default: dismiss, per-app clear, clear all.
     component IconButton: Rectangle {
         id: ib
+        property string glyph: "×"
         signal clicked()
         implicitWidth: 34
         implicitHeight: 34
@@ -291,7 +262,7 @@ Item {
         Behavior on scale { NumberAnimation { duration: Theme.duration.fast; easing.type: Theme.easing.standard } }
         Text {
             anchors.centerIn: parent
-            text: "×"
+            text: ib.glyph
             color: ibMa.containsMouse ? Theme.accent.redSoft : Theme.muted
             font.family: Theme.font
             font.pixelSize: Theme.fontSize.xl
@@ -310,13 +281,12 @@ Item {
         id: tgl
         property string glyph: ""
         property string label: ""
-        property string note: ""
         property color accent: Theme.accent.blue
         property bool on: false
         signal toggled()
         Layout.fillWidth: true
         Layout.preferredWidth: 1
-        implicitHeight: 56
+        implicitHeight: 38
         radius: 10 * Theme.radiusScale
         color: tgl.on ? Theme.alpha(tgl.accent, 0.18)
              : (tglMa.containsMouse ? Theme.bgActive : Theme.bgInset)
@@ -336,7 +306,7 @@ Item {
                 text: tgl.glyph
                 color: tgl.on ? tgl.accent : Theme.muted
                 font.family: Theme.font
-                font.pixelSize: Theme.fontSize.xl
+                font.pixelSize: Theme.fontSize.lg
                 Behavior on color { ColorAnimation { duration: Theme.duration.fast } }
             }
             ColumnLayout {
@@ -350,15 +320,6 @@ Item {
                     font.family: Theme.font
                     font.pixelSize: Theme.fontSize.base
                     font.bold: tgl.on
-                    elide: Text.ElideRight
-                }
-                Text {
-                    Layout.fillWidth: true
-                    visible: tgl.note !== ""
-                    text: tgl.note
-                    color: Theme.muted
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.sm
                     elide: Text.ElideRight
                 }
             }

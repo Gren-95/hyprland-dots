@@ -1,5 +1,5 @@
-// Events column of the day panel: everything on the day the calendar grid has
-// selected, then what's coming up after it.
+// Events under the month grid in the day panel: everything on the day the
+// grid has selected, then what's coming up after it.
 //
 // Split out of CalendarPane so clicking a day has somewhere to put its events
 // other than the strip under the month grid — the grid keeps its own column,
@@ -18,6 +18,8 @@ Item {
         pane.cal ? pane.cal.eventsOnDay(pane.cal.selectedDate) : []
     readonly property var upcoming: pane.cal ? pane.cal.upcomingByDay() : []
     readonly property bool configured: pane.cal && pane.cal.icsUrls.length > 0
+    readonly property bool isToday: pane.cal
+        && pane.cal.selectedDate.toDateString() === new Date().toDateString()
     // Upcoming sits behind a button: this column is about the day you clicked,
     // and tipping the next six days into it buries that day's events.
     property bool showUpcoming: false
@@ -28,64 +30,11 @@ Item {
         id: scroll
         anchors.fill: parent
 
-        // ====== The selected day, and how much is on it ======
-        DayCard {
-            Layout.fillWidth: true
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Theme.spacing.lg
-                Text {
-                    text: "󰃭"
-                    color: Theme.accentPrimary
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize.hero
-                }
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 0
-                    Text {
-                        Layout.fillWidth: true
-                        text: pane.cal ? Qt.formatDate(pane.cal.selectedDate, "dddd") : ""
-                        color: Theme.fg
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.xl
-                        font.bold: true
-                        elide: Text.ElideRight
-                    }
-                    Text {
-                        Layout.fillWidth: true
-                        text: pane.cal ? Qt.formatDate(pane.cal.selectedDate, "d MMMM yyyy") : ""
-                        color: Theme.muted
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.base
-                        elide: Text.ElideRight
-                    }
-                }
-                Rectangle {
-                    visible: pane.dayEvents.length > 0
-                    implicitWidth: Math.max(28, dayCount.implicitWidth + 16)
-                    implicitHeight: 28
-                    radius: height / 2
-                    color: Theme.alpha(Theme.accentPrimary, 0.16)
-                    border.color: Theme.alpha(Theme.accentPrimary, 0.45)
-                    border.width: 1
-                    Text {
-                        id: dayCount
-                        anchors.centerIn: parent
-                        text: pane.dayEvents.length
-                        color: Theme.accentPrimary
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize.base
-                        font.bold: true
-                    }
-                }
-            }
-        }
-
         // ====== Events of the day ======
         DayCard {
             Layout.fillWidth: true
-            title: "Events"
+            // The day the grid has selected: "Today", or its date.
+            title: !pane.cal ? "" : (pane.isToday ? "Today" : Qt.formatDate(pane.cal.selectedDate, "dddd d MMMM"))
             spacing: Theme.spacing.md
 
             Text {

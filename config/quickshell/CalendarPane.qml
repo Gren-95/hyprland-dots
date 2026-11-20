@@ -45,7 +45,6 @@ Item {
 
         DayCard {
             Layout.fillWidth: true
-            title: "Calendar"
 
             // ====== Month header ======
             RowLayout {
@@ -144,16 +143,6 @@ Item {
                 }
             }
 
-            Text {
-                Layout.fillWidth: true
-                text: "←/→ day · ↑/↓ week · PgUp/PgDn month · T today · Esc close"
-                color: Theme.mutedDeep
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize.xs
-                horizontalAlignment: Text.AlignHCenter
-                opacity: 0.65
-                elide: Text.ElideRight
-            }
         }
     }
 

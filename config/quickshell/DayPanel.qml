@@ -1,8 +1,8 @@
 // Day panel — the calendar and the notification center as one flyout.
 //
-// Left column is the month grid, the middle one the selected day's events,
+// Left column is the month grid with the selected day's events under it,
 // the right one the quiet switches, now-playing card and notification
-// history. Clicking a day fills the middle column. Opened from the clock
+// history. Clicking a day shows its events under the grid. Opened from the clock
 // (Super+D) or from the bell (Super+N) — both land on the same surface, so
 // "what's on today" and "what just happened" are one glance instead of two.
 //
@@ -29,18 +29,18 @@ Scope {
     // their gaps, event rows that read at two lines, notification bodies that
     // wrap at about 40 characters. Each includes its card padding.
     readonly property int calendarWidth: 420
-    readonly property int eventsWidth: 340
-    readonly property int notifWidth: 420
+    readonly property int notifWidth: 460
     readonly property int columnGap: Theme.spacing.xl
     readonly property int margin: Theme.spacing.xl
-    readonly property int fitWidth: calendarWidth + eventsWidth + notifWidth
-        + columnGap * 2 + margin * 2
-    // The popup is sized to the calendar column (the one whose height never
-    // changes) and stays that size: expanding notifications or events scrolls
-    // inside their column instead of growing the popup.
+    readonly property int fitWidth: calendarWidth + notifWidth + columnGap + margin * 2
+    // The popup is sized to the calendar plus room for a few events, and
+    // stays that size: more events or notifications scroll inside their
+    // column instead of growing the popup.
+    readonly property int eventsRoom: 220
     readonly property real fitHeight: Math.min(
         root.anchorBar && root.anchorBar.screen ? root.anchorBar.screen.height - 160 : 720,
-        dayHeader.implicitHeight + contentCol.spacing + calPane.implicitHeight + margin * 2)
+        dayHeader.implicitHeight + contentCol.spacing + calPane.implicitHeight
+            + Theme.spacing.lg + eventsRoom + margin * 2)
 
     // Opening re-centres the calendar on today, so the panel always comes up
     // showing now rather than wherever the month grid was left.
@@ -122,16 +122,22 @@ Scope {
                 Layout.fillHeight: true
                 spacing: root.columnGap
 
-                CalendarPane {
-                    id: calPane
-                    cal: root.cal
+                ColumnLayout {
                     Layout.preferredWidth: root.calendarWidth
+                    Layout.maximumWidth: root.calendarWidth
                     Layout.fillHeight: true
-                }
-                EventsPane {
-                    cal: root.cal
-                    Layout.preferredWidth: root.eventsWidth
-                    Layout.fillHeight: true
+                    spacing: Theme.spacing.lg
+                    CalendarPane {
+                        id: calPane
+                        cal: root.cal
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: implicitHeight
+                    }
+                    EventsPane {
+                        cal: root.cal
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                    }
                 }
                 NotifPane {
                     notifs: root.notifs
