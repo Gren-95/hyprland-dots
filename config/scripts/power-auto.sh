@@ -1,19 +1,31 @@
 #!/bin/bash
 # power-auto.sh — switch power-profiles-daemon profile based on AC + battery%.
 #
-# Policy:
-#   On AC                       → performance
-#   On battery, ≥ LOW_THRESHOLD → balanced
-#   On battery, < LOW_THRESHOLD → power-saver
+# Policy (Power in the settings app; the defaults in brackets):
+#   On AC                        → power-on-ac [performance]
+#   On battery                   → power-on-battery [balanced]
+#   On battery, < power-saver-below % → power-saver [30; 0 turns it off]
+#
+# Usage: power-auto.sh         watch UPower and follow the policy
+#        power-auto.sh once    apply the policy now and exit (after a change)
 #
 # Listens to UPower's monitor stream (`upower --monitor-detail`) so it
 # reacts on AC plug events AND on battery percentage updates.
 # Started from hypr/modules/autostart.conf.
 set -uo pipefail
 
+source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/settings.sh"
 
-LOW_THRESHOLD=30 # below this %, drop to power-saver
+PROFILES='performance|balanced|power-saver'
+
+# Read on every decision, so a change in the settings app counts at once.
+read_policy() {
+    ON_AC=$(valid "$(setting power-on-ac performance)" "$PROFILES" performance)
+    ON_BATTERY=$(valid "$(setting power-on-battery balanced)" "$PROFILES" balanced)
+    LOW_THRESHOLD=$(valid "$(setting power-saver-below 30)" '[0-9]{1,2}' 30)
+}
 
 # Read current state ("yes"/"no") and percentage from UPower.
 read_state() {
@@ -38,12 +50,13 @@ decide() {
     # decimal-comma locale such as et_EE. Truncate at either separator: bash
     # would read "85,6" as a comma expression worth 6.
     pct=${pct%%[.,]*}
+    read_policy
     if [[ "$on_bat" != "yes" ]]; then
-        echo performance
+        echo "$ON_AC"
     elif [[ -n "$pct" && "$pct" -lt "$LOW_THRESHOLD" ]]; then
         echo power-saver
     else
-        echo balanced
+        echo "$ON_BATTERY"
     fi
 }
 
@@ -59,9 +72,9 @@ apply() {
 
     local label="$target" icon="power-profile-$target-symbolic"
     case "$target" in
-        performance) label="Performance (on AC)" ;;
-        balanced) label="Balanced (on battery)" ;;
-        power-saver) label="Power Saver (battery < ${LOW_THRESHOLD}%)" ;;
+        performance) label="Performance" ;;
+        balanced) label="Balanced" ;;
+        power-saver) label="Power Saver" ;;
     esac
     notify low power-profile "$icon" "Power" "Switched to $label"
 }
@@ -72,6 +85,7 @@ react() {
 
 # Initial state on startup.
 react
+[[ ${1:-} == once ]] && exit 0
 
 # Watch for events. upower emits property changes (including percentage
 # updates) — we just re-derive on any on-battery / percentage line.

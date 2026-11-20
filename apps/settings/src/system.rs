@@ -65,6 +65,7 @@ const AFTER_WRITE: &[(&str, &str, &str)] = &[
     ("night-", "night.sh", "apply"),
     ("gamemode-feral", "gamemode.sh", "feral"),
     ("idle-hold-claude", "claude-activity.sh", "prune"),
+    ("power-", "power-auto.sh", "once"),
 ];
 
 /// Settings that also change something outside the shell, by file: the

@@ -1492,8 +1492,38 @@ pub const PANELS: &[Panel] = &[
         glyph: ico::BATTERY_CHARGING,
         group: Group::System,
         page: Page::Power,
-        keywords: "battery critical suspend health charge cycles capacity temperature",
-        sections: &[Section {
+        keywords: "battery critical suspend health charge cycles capacity temperature profile performance balanced power saver ac charger limit",
+        sections: &[
+            Section {
+                title: "Power mode",
+                settings: &[
+                    choice(
+                        "power-on-ac",
+                        "On the charger",
+                        "The power profile while plugged in",
+                        PROFILES,
+                        "performance",
+                    ),
+                    choice(
+                        "power-on-battery",
+                        "On battery",
+                        "The power profile while on battery",
+                        PROFILES,
+                        "balanced",
+                    ),
+                    number(
+                        "power-saver-below",
+                        "Power saver below",
+                        "On battery under this level, save power whatever the profile above; 0 turns it off",
+                        0,
+                        60,
+                        5,
+                        "%",
+                        30,
+                    ),
+                ],
+            },
+            Section {
             title: "Low battery",
             settings: &[
                 number(
@@ -1534,7 +1564,8 @@ pub const PANELS: &[Panel] = &[
                     "suspend",
                 ),
             ],
-        }],
+        },
+        ],
     },
     Panel {
         id: "about",
@@ -1545,6 +1576,13 @@ pub const PANELS: &[Panel] = &[
         keywords: "system version hardware computer kernel cpu gpu memory disk bug report",
         sections: &[],
     },
+];
+
+/// power-profiles-daemon's profiles (power-auto.sh switches between them).
+const PROFILES: &[(&str, &str)] = &[
+    ("performance", "Performance"),
+    ("balanced", "Balanced"),
+    ("power-saver", "Power saver"),
 ];
 
 /// Old panel names that now open another panel.
