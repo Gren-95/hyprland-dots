@@ -227,7 +227,10 @@ pub fn valid_class(class: &str) -> bool {
 /// A floating size: two whole numbers of pixels, "800 600".
 pub fn valid_size(size: &str) -> bool {
     let parts: Vec<&str> = size.split(' ').collect();
-    parts.len() == 2 && parts.iter().all(|p| p.parse::<u32>().is_ok_and(|n| (50..=10000).contains(&n)))
+    parts.len() == 2
+        && parts
+            .iter()
+            .all(|p| p.parse::<u32>().is_ok_and(|n| (50..=10000).contains(&n)))
 }
 
 /// `hl.window_rule` calls for the rules; checked first, since the values
@@ -554,12 +557,32 @@ mod tests {
         assert!(lua.contains("float = true,\n    size = \"400 600\",\n    opacity = \"0.9\",\n    workspace = \"3\","));
         assert_eq!(rules_lua(&[]).unwrap(), "");
         let bad = |r: WindowRule| rules_lua(&[r]).is_err();
-        assert!(bad(WindowRule { class: "a\"b".into(), ..rule.clone() }));
-        assert!(bad(WindowRule { size: "400".into(), ..rule.clone() }));
-        assert!(bad(WindowRule { workspace: "11".into(), ..rule.clone() }));
-        assert!(bad(WindowRule { opacity: Some(5), ..rule.clone() }));
+        assert!(bad(WindowRule {
+            class: "a\"b".into(),
+            ..rule.clone()
+        }));
+        assert!(bad(WindowRule {
+            size: "400".into(),
+            ..rule.clone()
+        }));
+        assert!(bad(WindowRule {
+            workspace: "11".into(),
+            ..rule.clone()
+        }));
+        assert!(bad(WindowRule {
+            opacity: Some(5),
+            ..rule.clone()
+        }));
         // Size counts only for a floating window.
-        assert!(!rules_lua(&[WindowRule { float: false, size: "x".into(), ..rule.clone() }]).unwrap().contains("size"));
+        assert!(
+            !rules_lua(&[WindowRule {
+                float: false,
+                size: "x".into(),
+                ..rule.clone()
+            }])
+            .unwrap()
+            .contains("size")
+        );
         assert_eq!(WindowRule::from_json(&rule.to_json()), Some(rule));
     }
 

@@ -127,6 +127,9 @@ mod tests {
             parse_jellyfin_conf("JELLYFIN_URL=https://jf.example\nJELLYFIN_API_KEY=abc\n"),
             ("https://jf.example".to_string(), true)
         );
-        assert_eq!(parse_jellyfin_conf("JELLYFIN_URL=''\nJELLYFIN_API_KEY=''\n"), (String::new(), false));
+        assert_eq!(
+            parse_jellyfin_conf("JELLYFIN_URL=''\nJELLYFIN_API_KEY=''\n"),
+            (String::new(), false)
+        );
     }
 }

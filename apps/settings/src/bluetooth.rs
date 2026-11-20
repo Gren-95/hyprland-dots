@@ -456,7 +456,11 @@ impl State {
             let block = if d.blocked { "Unblock" } else { "Block" };
             // A blocked device cannot connect: Unblock is what it needs.
             let main = if d.blocked {
-                ("Unblock", idle.then(|| Msg::Block(d.mac.clone(), false)), Action::Normal)
+                (
+                    "Unblock",
+                    idle.then(|| Msg::Block(d.mac.clone(), false)),
+                    Action::Normal,
+                )
             } else {
                 connect
             };

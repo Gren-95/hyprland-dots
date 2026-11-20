@@ -1,5 +1,5 @@
 //! Idle timings: the four "$name = seconds" variables at the top of
-//! config/hypr/hypridle.conf. The Lock & idle panel edits those lines in
+//! config/hypr/hypridle.conf. The Power & lock panel edits those lines in
 //! place (the file is part of the dots, so the choice travels with them) and
 //! restarts hypridle, which reads its config only at start.
 

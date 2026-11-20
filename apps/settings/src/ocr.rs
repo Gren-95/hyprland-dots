@@ -72,11 +72,7 @@ pub fn chosen(stored: &str, installed: &[String]) -> Vec<String> {
         .filter(|c| installed.iter().any(|i| i == c))
         .map(String::from)
         .collect();
-    if picked.is_empty() {
-        installed.to_vec()
-    } else {
-        picked
-    }
+    if picked.is_empty() { installed.to_vec() } else { picked }
 }
 
 fn store() -> Store {
@@ -151,7 +147,9 @@ impl State {
             return vec![ui::note("Looking…")];
         };
         if installed.is_empty() {
-            return vec![ui::note("Tesseract is not installed, so text cannot be read from screenshots")];
+            return vec![ui::note(
+                "Tesseract is not installed, so text cannot be read from screenshots",
+            )];
         }
         let mut rows: Vec<Element<'_, Msg>> = Vec::new();
         if let Some(e) = &self.error {

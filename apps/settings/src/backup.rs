@@ -279,7 +279,11 @@ const SHOWN_CHANGES: usize = 12;
 fn pick(save: bool) -> Task<Option<String>> {
     let mut list = args(&["--file-selection", "--file-filter=*.json"]);
     if save {
-        list.extend(args(&["--save", "--confirm-overwrite", "--filename=dots-settings.json"]));
+        list.extend(args(&[
+            "--save",
+            "--confirm-overwrite",
+            "--filename=dots-settings.json",
+        ]));
     }
     // zenity exits 1 when cancelled.
     Task::perform(system::run("zenity", list, None), |r| {
@@ -295,7 +299,8 @@ impl State {
             Msg::ExportTo(None) | Msg::ImportFrom(None) => {}
             Msg::ExportTo(Some(path)) => {
                 self.busy = true;
-                let work = move || export_to(Path::new(&path), &Store::default_dir()).map(|_| format!("Saved to {path}"));
+                let work =
+                    move || export_to(Path::new(&path), &Store::default_dir()).map(|_| format!("Saved to {path}"));
                 return Task::perform(system::spawn(work), |r| {
                     Msg::Done(r.unwrap_or_else(|| Err("exporting stopped unexpectedly".into())))
                 });
@@ -328,10 +333,9 @@ impl State {
                     return Task::none();
                 };
                 self.busy = true;
-                return Task::perform(
-                    system::spawn(move || apply(&new, &Store::default_dir())),
-                    |r| Msg::Applied(r.unwrap_or_else(|| Err("importing stopped unexpectedly".into()))),
-                );
+                return Task::perform(system::spawn(move || apply(&new, &Store::default_dir())), |r| {
+                    Msg::Applied(r.unwrap_or_else(|| Err("importing stopped unexpectedly".into())))
+                });
             }
             Msg::Cancel => self.pending = None,
             Msg::Applied(r) => return self.update(Msg::Done(r.map(|_| "Imported".to_string()))),
@@ -389,7 +393,12 @@ impl State {
             ],
         ));
         let count = lines.len();
-        rows.extend(lines.into_iter().enumerate().map(|(i, l)| ui::branch(l, i + 1 == count)));
+        rows.extend(
+            lines
+                .into_iter()
+                .enumerate()
+                .map(|(i, l)| ui::branch(l, i + 1 == count)),
+        );
         rows
     }
 }

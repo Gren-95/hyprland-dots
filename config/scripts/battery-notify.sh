@@ -1,6 +1,6 @@
 #!/bin/bash
 # Battery low notification daemon. The two warning levels come from the
-# settings store (settings app, Power panel): battery-low-pct (default 20) and
+# settings store (settings app, Power & lock panel): battery-low-pct (default 20) and
 # battery-warn-pct for the critical warning (default 10); read every minute.
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"

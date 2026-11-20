@@ -10,41 +10,41 @@ use iced::widget::{Column, Space, column, container, responsive, row, scrollable
 use iced::{Element, Length, Subscription, Task, Theme};
 
 use crate::about;
+use crate::appearance;
 use crate::audio;
+use crate::backup;
 use crate::bluetooth;
 use crate::calendar;
 use crate::controls;
 use crate::defaultapps;
 use crate::gaming;
 use crate::hiddenapps;
-use crate::backup;
-use crate::appearance;
-use crate::ocr;
-use crate::region;
-use crate::sync;
-use crate::windowrules;
-use crate::sharing;
 use crate::hyprpage;
 use crate::idle;
 use crate::keyboard;
 use crate::mouse;
 use crate::network;
 use crate::notifapps;
+use crate::ocr;
 use crate::placement;
 use crate::power;
 use crate::proton;
+use crate::region;
 use crate::reveal;
 use crate::schema::{PANELS, Page, Panel, Section, all_settings};
 use crate::services;
+use crate::sharing;
 use crate::shortcuts;
 use crate::sidebar;
 use crate::startup;
 use crate::store::{Store, Value};
 use crate::style;
+use crate::sync;
 use crate::sysunits;
 use crate::themes;
 use crate::ui;
 use crate::units;
+use crate::windowrules;
 use crate::windows;
 
 /// How often the files are read again, so changes made in the shell show up.
@@ -287,6 +287,20 @@ impl App {
         (app, task)
     }
 
+    /// The timed refresh of a polling page: only the parts that change on
+    /// their own. A part being edited (an idle time slider, the time zone
+    /// picker) would be reset by a read.
+    fn poll_page(&mut self) -> Task<Message> {
+        match PANELS[self.panel].page {
+            Page::Power => self.power.update(power::Msg::Refresh).map(Message::Power),
+            Page::DateTime => {
+                self.calendar.update(calendar::Msg::Refresh);
+                Task::none()
+            }
+            _ => self.refresh_page(),
+        }
+    }
+
     /// Ask the system again, when the open panel shows system state.
     fn refresh_page(&mut self) -> Task<Message> {
         match PANELS[self.panel].page {
@@ -320,12 +334,7 @@ impl App {
             Page::Sound => self.audio.update(audio::Msg::Refresh).map(Message::Audio),
             Page::DateTime => {
                 self.calendar.update(calendar::Msg::Refresh);
-                // The time zones are read once; a change reads them again.
-                if self.region.loaded() {
-                    Task::none()
-                } else {
-                    self.region.update(region::Msg::Load).map(Message::Region)
-                }
+                self.region.update(region::Msg::Load).map(Message::Region)
             }
             Page::Keyboard if self.shortcuts_open => {
                 self.shortcuts.update(shortcuts::Msg::Load).map(Message::Shortcuts)
@@ -336,7 +345,6 @@ impl App {
                 .update(hyprpage::Msg::Load, mouse::SECTIONS)
                 .map(Message::Mouse),
             Page::Bar => self.placement.update(placement::Msg::Refresh).map(Message::Placement),
-            Page::Lock => self.idle.update(idle::Msg::Load).map(Message::Idle),
             Page::Appearance => Task::batch([
                 self.themes.update(themes::Msg::Load).map(Message::Themes),
                 self.appearance.update(appearance::Msg::Load).map(Message::Appearance),
@@ -349,10 +357,15 @@ impl App {
                 self.windows
                     .update(hyprpage::Msg::Load, windows::SECTIONS)
                     .map(Message::Windows),
-                self.window_rules.update(windowrules::Msg::Load).map(Message::WindowRules),
+                self.window_rules
+                    .update(windowrules::Msg::Load)
+                    .map(Message::WindowRules),
             ]),
             Page::About => self.about.update(about::Msg::Load).map(Message::About),
-            Page::Power => self.power.update(power::Msg::Refresh).map(Message::Power),
+            Page::Power => Task::batch([
+                self.power.update(power::Msg::Refresh).map(Message::Power),
+                self.idle.update(idle::Msg::Load).map(Message::Idle),
+            ]),
         }
     }
 
@@ -515,7 +528,7 @@ impl App {
                     return crate::focus::focus_id(crate::focus::nav_id(PANELS[next].id));
                 }
             }
-            Message::Tick => return self.refresh_page(),
+            Message::Tick => return self.poll_page(),
             Message::Pick(file, value) => {
                 self.open_list = None;
                 return self.update(Message::Set(file, value));
@@ -753,7 +766,12 @@ impl App {
             }
             Page::DateTime => {
                 let mut body = page_column(panel.title, layout);
-                let time = self.region.time_rows().into_iter().map(|r| r.map(Message::Region)).collect();
+                let time = self
+                    .region
+                    .time_rows()
+                    .into_iter()
+                    .map(|r| r.map(Message::Region))
+                    .collect();
                 body = ui::section(body, "Time", time);
                 let current = match self.values.get("clock-date-format") {
                     Some(Value::Text(t)) => t.as_str(),
@@ -763,7 +781,12 @@ impl App {
                     let extra = match section.title {
                         "Date" => vec![self.region.date_row(current)],
                         // The feeds, then how often they download.
-                        "Calendar" => self.calendar.rows().into_iter().map(|r| r.map(Message::Calendar)).collect(),
+                        "Calendar" => self
+                            .calendar
+                            .rows()
+                            .into_iter()
+                            .map(|r| r.map(Message::Calendar))
+                            .collect(),
                         _ => Vec::new(),
                     };
                     body = self.section_with(body, section, layout, extra);
@@ -857,7 +880,11 @@ impl App {
                     lucide_iced::bytes::COMMAND,
                     "Keyboard shortcuts".into(),
                     "Search, run and change the key binds · Super+F1".into(),
-                    vec![ui::action("Open", Some(Message::ShowShortcuts(true)), style::Action::Normal)],
+                    vec![ui::action(
+                        "Open",
+                        Some(Message::ShowShortcuts(true)),
+                        style::Action::Normal,
+                    )],
                 );
                 let rest = ui::section(tail_column(layout), "Shortcuts", vec![open]);
                 column![keys, rest].width(Length::Fill).max_width(PAGE_WIDTH).into()
@@ -875,10 +902,6 @@ impl App {
                 }
                 let items = Element::from(self.placement.view(tail_column(layout))).map(Message::Placement);
                 column![body, items].width(Length::Fill).max_width(PAGE_WIDTH).into()
-            }
-            Page::Lock => {
-                let times = Element::from(self.idle.view(page_column(panel.title, layout))).map(Message::Idle);
-                self.with_settings(times, panel, layout)
             }
             Page::Appearance => {
                 let mut body = page_column(panel.title, layout);
@@ -928,7 +951,28 @@ impl App {
             }
             Page::Power => {
                 let battery = Element::from(self.power.view(page_column(panel.title, layout))).map(Message::Power);
-                self.with_settings(battery, panel, layout)
+                // Power sections, the idle times, then the lock sections.
+                let split = panel
+                    .sections
+                    .iter()
+                    .position(|s| s.title == "Stay awake")
+                    .unwrap_or(panel.sections.len());
+                let mut power = tail_column(layout);
+                for section in &panel.sections[..split] {
+                    power = self.section(power, section, layout);
+                }
+                let times = Element::from(self.idle.view(tail_column(layout))).map(Message::Idle);
+                let mut lock = tail_column(layout);
+                for section in &panel.sections[split..] {
+                    lock = self.section(lock, section, layout);
+                }
+                if let Some(error) = &self.error {
+                    lock = lock.push(text(error).color(style::RED));
+                }
+                column![battery, power, times, lock]
+                    .width(Length::Fill)
+                    .max_width(PAGE_WIDTH)
+                    .into()
             }
             Page::About => {
                 let about = Element::from(self.about.view(page_column(panel.title, layout))).map(Message::About);

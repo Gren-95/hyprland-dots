@@ -15,7 +15,7 @@
 # counts as working while its file was touched in the last STALE_MINUTES, so a
 # session that dies without a Stop hook stops blocking idle on its own.
 #
-# The idle-hold-claude setting (Lock & idle in the settings app) switches the
+# The idle-hold-claude setting (Power & lock in the settings app) switches the
 # hold off: sessions are still tracked, but the count reported is 0.
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"

@@ -48,7 +48,7 @@ media_field() {
     printf '%s\n' "$value"
 }
 
-# The settings app's Lock & idle panel can switch each part off
+# The settings app's Power & lock panel can switch each part off
 # (lock-show-battery, lock-show-media).
 case ${1:-} in
     battery) [[ $(setting lock-show-battery 1) == 1 ]] && battery ;;

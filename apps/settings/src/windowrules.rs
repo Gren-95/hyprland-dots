@@ -154,12 +154,21 @@ impl State {
             }
             Msg::Toggle(class) => {
                 self.size_draft.clear();
-                self.open = if self.open.as_ref() == Some(&class) { None } else { Some(class) };
+                self.open = if self.open.as_ref() == Some(&class) {
+                    None
+                } else {
+                    Some(class)
+                };
             }
             Msg::Float(class, on) => return self.change(&class, |r| r.float = on),
             Msg::SizeText(t) => self.size_draft = t,
             Msg::SaveSize(class) => {
-                let size = self.size_draft.split_whitespace().collect::<Vec<_>>().join(" ").replace(['x', '×'], " ");
+                let size = self
+                    .size_draft
+                    .split_whitespace()
+                    .collect::<Vec<_>>()
+                    .join(" ")
+                    .replace(['x', '×'], " ");
                 let size = size.split_whitespace().collect::<Vec<_>>().join(" ");
                 if !size.is_empty() && !hypr::valid_size(&size) {
                     self.error = Some("A size is a width and a height in pixels, like 800 600".into());
@@ -246,7 +255,12 @@ impl State {
             if open {
                 let details = self.details(r, idle);
                 let count = details.len();
-                rows.extend(details.into_iter().enumerate().map(|(i, d)| ui::branch(d, i + 1 == count)));
+                rows.extend(
+                    details
+                        .into_iter()
+                        .enumerate()
+                        .map(|(i, d)| ui::branch(d, i + 1 == count)),
+                );
             }
         }
         if reading.rules.is_empty() {
@@ -292,7 +306,10 @@ impl State {
             ico::PICTURE_IN_PICTURE_2,
             "Float".into(),
             "Open on top of the tiled windows".into(),
-            vec![ui::switch(r.float, idle.then_some(move |on| Msg::Float(class.clone(), on)))],
+            vec![ui::switch(
+                r.float,
+                idle.then_some(move |on| Msg::Float(class.clone(), on)),
+            )],
         )];
         if r.float {
             let field = text_input(if r.size.is_empty() { "800 600" } else { &r.size }, &self.size_draft)
@@ -326,7 +343,11 @@ impl State {
             .iter()
             .map(|w| {
                 let label = if w.is_empty() { "Where it opens" } else { w };
-                (label, r.workspace == *w, idle.then(|| Msg::Workspace(r.class.clone(), w)))
+                (
+                    label,
+                    r.workspace == *w,
+                    idle.then(|| Msg::Workspace(r.class.clone(), w)),
+                )
             })
             .collect();
         rows.push(ui::item(

@@ -1,4 +1,4 @@
-//! Power panel's own part: the battery (charge, health, cycles, charge
+//! Power & lock panel's own part: the battery (charge, health, cycles, charge
 //! limit, power, temperature, model, age), refreshed while the panel is
 //! open, and the charge limit switch when the laptop supports one. The
 //! panel's settings sections follow it (app.rs with_settings).

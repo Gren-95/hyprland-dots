@@ -50,5 +50,5 @@ which are not part of this repo. Add them alongside any existing hooks:
 
 Open `/hooks` once (or restart Claude Code) after editing so the hooks load. The
 Stay Awake switch in the day panel (`Super+N`) notes "Claude working" while a
-session is active. Lock & idle in the settings app (`settings -p lock`) can switch
+session is active. Power & lock in the settings app (`settings -p power`) can switch
 the hold off: the script then reports no working sessions.

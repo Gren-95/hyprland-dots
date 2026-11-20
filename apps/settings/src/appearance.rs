@@ -23,13 +23,13 @@ const CARD: (f32, f32) = (104.0, 146.0);
 /// a gtk-3.0 part in the theme folders, by name.
 pub fn gtk_themes(dirs: &[PathBuf]) -> Vec<String> {
     let mut names: Vec<String> = ["Adwaita", "HighContrast"].map(String::from).into();
-    names.extend(dirs
-        .iter()
-        .filter_map(|d| std::fs::read_dir(d).ok())
-        .flatten()
-        .flatten()
-        .filter(|e| e.path().join("gtk-3.0").is_dir())
-        .map(|e| e.file_name().to_string_lossy().into_owned()),
+    names.extend(
+        dirs.iter()
+            .filter_map(|d| std::fs::read_dir(d).ok())
+            .flatten()
+            .flatten()
+            .filter(|e| e.path().join("gtk-3.0").is_dir())
+            .map(|e| e.file_name().to_string_lossy().into_owned()),
     );
     names.sort_by_key(|n| n.to_lowercase());
     names.dedup();
@@ -136,7 +136,11 @@ fn canonical(path: &str) -> String {
 /// The grid: (wallpaper, thumbnail) pairs.
 fn read_thumbs() -> Vec<(String, String)> {
     let mut list = vec![script("wallpaper-thumbs.sh")];
-    list.extend(wallpapers(&wallpaper_dir()).into_iter().map(|p| p.to_string_lossy().into_owned()));
+    list.extend(
+        wallpapers(&wallpaper_dir())
+            .into_iter()
+            .map(|p| p.to_string_lossy().into_owned()),
+    );
     parse_thumbs(&system::run_blocking("bash", &list, None).unwrap_or_default())
         .into_iter()
         .map(|(w, t)| (canonical(&w), t))
@@ -216,7 +220,13 @@ impl State {
         let choices = r
             .gtk_themes
             .iter()
-            .map(|t| (t.as_str(), *t == r.gtk_theme, (!self.busy).then(|| Msg::GtkTheme(t.clone()))))
+            .map(|t| {
+                (
+                    t.as_str(),
+                    *t == r.gtk_theme,
+                    (!self.busy).then(|| Msg::GtkTheme(t.clone())),
+                )
+            })
             .collect();
         rows.push(ui::item(
             ico::APP_WINDOW,
@@ -229,7 +239,11 @@ impl State {
 
     /// The current wallpaper with Choose, and the grid when open.
     pub fn wallpaper_rows(&self) -> Vec<Element<'_, Msg>> {
-        let current = self.reading.as_ref().map(|r| r.current_wallpaper.as_str()).unwrap_or_default();
+        let current = self
+            .reading
+            .as_ref()
+            .map(|r| r.current_wallpaper.as_str())
+            .unwrap_or_default();
         let name = Path::new(current)
             .file_name()
             .map_or_else(|| "None set".to_string(), |n| n.to_string_lossy().into_owned());

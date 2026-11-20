@@ -14,9 +14,24 @@ use crate::system::{self, args};
 use crate::ui;
 
 /// Qt date formats offered as presets.
-pub const DATE_PRESETS: &[&str] = &["ddd, dd MMM", "ddd d MMMM", "dd.MM.yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "d MMM yyyy"];
+pub const DATE_PRESETS: &[&str] = &[
+    "ddd, dd MMM",
+    "ddd d MMMM",
+    "dd.MM.yyyy",
+    "yyyy-MM-dd",
+    "MM/dd/yyyy",
+    "d MMM yyyy",
+];
 
-const DAYS: [&str; 7] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DAYS: [&str; 7] = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+];
 const MONTHS: [&str; 12] = [
     "January",
     "February",
@@ -62,7 +77,10 @@ pub fn render(format: &str, day: Day) -> String {
     while i < chars.len() {
         let c = chars[i];
         if c == '\'' {
-            let end = chars[i + 1..].iter().position(|&q| q == '\'').map_or(chars.len(), |p| i + 1 + p);
+            let end = chars[i + 1..]
+                .iter()
+                .position(|&q| q == '\'')
+                .map_or(chars.len(), |p| i + 1 + p);
             out.extend(&chars[i + 1..end]);
             i = end + 1;
             continue;
@@ -150,10 +168,6 @@ pub enum Msg {
 }
 
 impl State {
-    pub fn loaded(&self) -> bool {
-        self.reading.is_some()
-    }
-
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
         match msg {
             Msg::Load => return Task::perform(system::spawn(read), |r| Msg::Loaded(r.unwrap_or_default())),
@@ -171,10 +185,9 @@ impl State {
             Msg::Zone(zone) => {
                 self.picking = false;
                 self.busy = true;
-                return Task::perform(
-                    system::run("timedatectl", args(&["set-timezone", &zone]), None),
-                    |r| Msg::Done(r.map(|_| ())),
-                );
+                return Task::perform(system::run("timedatectl", args(&["set-timezone", &zone]), None), |r| {
+                    Msg::Done(r.map(|_| ()))
+                });
             }
             Msg::Ntp(on) => {
                 self.busy = true;

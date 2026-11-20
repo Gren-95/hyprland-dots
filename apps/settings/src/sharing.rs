@@ -158,11 +158,7 @@ impl State {
         if let Some(e) = &self.error {
             rows.push(ui::error(e));
         }
-        let detail = self.state_line(
-            "vnc",
-            p.vnc_running,
-            format!("On · VNC on port {}", self.vnc.port()),
-        );
+        let detail = self.state_line("vnc", p.vnc_running, format!("On · VNC on port {}", self.vnc.port()));
         rows.push(ui::item(
             ico::MONITOR_UP,
             "Remote access".into(),
@@ -243,7 +239,10 @@ mod tests {
             parse_unit("LoadState=loaded\nUnitFileState=enabled\nActiveState=active\n"),
             Some((true, true))
         );
-        assert_eq!(parse_unit("LoadState=not-found\nUnitFileState=\nActiveState=inactive\n"), None);
+        assert_eq!(
+            parse_unit("LoadState=not-found\nUnitFileState=\nActiveState=inactive\n"),
+            None
+        );
     }
 
     #[test]

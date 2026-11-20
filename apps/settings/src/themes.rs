@@ -276,7 +276,12 @@ impl State {
             ),
         ];
         for (title, glyph, themes, open, toggle, kind, on_use) in kinds {
-            rows.push(ui::item(glyph, title.into(), in_use_names(themes), vec![ui::disclosure(open, toggle)]));
+            rows.push(ui::item(
+                glyph,
+                title.into(),
+                in_use_names(themes),
+                vec![ui::disclosure(open, toggle)],
+            ));
             if open {
                 let mut list = vec![folder_row(kind)];
                 list.extend(self.rows(themes, "Looking for themes…", on_use));

@@ -298,7 +298,10 @@ pub fn role_label(id: &str) -> Option<&'static str> {
 
 /// Fill a role by its id (for import).
 pub fn set_role(id: &str, app: String) -> Result<(), String> {
-    let role = ROLES.iter().find(|r| r.id == id).ok_or_else(|| format!("unknown role {id}"))?;
+    let role = ROLES
+        .iter()
+        .find(|r| r.id == id)
+        .ok_or_else(|| format!("unknown role {id}"))?;
     set(role, app)
 }
 

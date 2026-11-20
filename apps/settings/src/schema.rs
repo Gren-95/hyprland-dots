@@ -51,7 +51,8 @@ pub enum Page {
     Network,
     /// Bluetooth devices (bluetooth.rs).
     Bluetooth,
-    /// Audio devices and app volumes (audio.rs).
+    /// Audio devices and app volumes (audio.rs), then the alert, step and
+    /// on-screen display settings.
     Sound,
     /// Time zone and network time (region.rs), the clock and date settings
     /// with date format presets, calendar feeds (calendar.rs) and weather.
@@ -64,8 +65,6 @@ pub enum Page {
     /// Bar settings, then where bar, Quick Actions and tray items show
     /// (placement.rs).
     Bar,
-    /// Idle timings from hypridle.conf (idle.rs), then the panel's settings.
-    Lock,
     /// Appearance settings, the icon and cursor themes (themes.rs), the GTK
     /// theme and the wallpaper picker (appearance.rs).
     Appearance,
@@ -84,7 +83,8 @@ pub enum Page {
     Windows,
     /// What the system is (about.rs).
     About,
-    /// The battery above the power settings (power.rs).
+    /// The battery above the power settings (power.rs), then the idle
+    /// timings from hypridle.conf (idle.rs) above the lock settings.
     Power,
     /// Screenshot and recording settings, then the OCR languages (ocr.rs).
     Recording,
@@ -497,47 +497,21 @@ pub const PANELS: &[Panel] = &[
         glyph: ico::SPEAKER,
         group: Group::InputOutput,
         page: Page::Sound,
-        keywords: "audio speakers headphones microphone mic input output volume mute apps profile mode a2dp headset hfp alert sound",
-        sections: &[Section {
-            title: "Alerts",
-            settings: &[number(
-                "alert-volume",
-                "Alert volume",
-                "How loud the sound with each toast plays",
-                0,
-                100,
-                5,
-                "%",
-                100,
-            )],
-        }],
-    },
-    Panel {
-        id: "keyboard",
-        title: "Keyboard",
-        glyph: ico::KEYBOARD,
-        group: Group::InputOutput,
-        page: Page::Keyboard,
-        keywords: "layout language xkb input repeat delay caps lock num lock typing keybinds keys bind hotkeys shortcuts super rebind",
-        sections: &[],
-    },
-    Panel {
-        id: "mouse",
-        title: "Mouse & touchpad",
-        glyph: ico::MOUSE,
-        group: Group::InputOutput,
-        page: Page::Mouse,
-        keywords: "pointer cursor speed acceleration scroll wheel touchpad trackpad tap click gestures swipe left-handed",
-        sections: &[],
-    },
-    Panel {
-        id: "audio",
-        title: "Audio",
-        glyph: ico::VOLUME_2,
-        group: Group::InputOutput,
-        page: Page::Settings,
-        keywords: "osd on-screen display popup",
+        keywords: "audio speakers headphones microphone mic input output volume mute apps profile mode a2dp headset hfp alert sound osd on-screen display popup",
         sections: &[
+            Section {
+                title: "Alerts",
+                settings: &[number(
+                    "alert-volume",
+                    "Alert volume",
+                    "How loud the sound with each toast plays",
+                    0,
+                    100,
+                    5,
+                    "%",
+                    100,
+                )],
+            },
             Section {
                 title: "Steps",
                 settings: &[
@@ -627,6 +601,24 @@ pub const PANELS: &[Panel] = &[
                 ],
             },
         ],
+    },
+    Panel {
+        id: "keyboard",
+        title: "Keyboard",
+        glyph: ico::KEYBOARD,
+        group: Group::InputOutput,
+        page: Page::Keyboard,
+        keywords: "layout language xkb input repeat delay caps lock num lock typing keybinds keys bind hotkeys shortcuts super rebind",
+        sections: &[],
+    },
+    Panel {
+        id: "mouse",
+        title: "Mouse & touchpad",
+        glyph: ico::MOUSE,
+        group: Group::InputOutput,
+        page: Page::Mouse,
+        keywords: "pointer cursor speed acceleration scroll wheel touchpad trackpad tap click gestures swipe left-handed",
+        sections: &[],
     },
     Panel {
         id: "appearance",
@@ -1284,85 +1276,6 @@ pub const PANELS: &[Panel] = &[
         ],
     },
     Panel {
-        id: "lock",
-        title: "Lock & idle",
-        glyph: ico::LOCK,
-        group: Group::System,
-        page: Page::Lock,
-        keywords: "idle dim lock screen off suspend sleep lid hyprlock hypridle stay awake timeout",
-        sections: &[
-            Section {
-                title: "Stay awake",
-                settings: &[
-                    toggle("idle-stay-awake", "Stay awake", "Never dim, lock or sleep", false),
-                    Setting {
-                        file: "idle-inhibit-media",
-                        label: "Also stay awake",
-                        help: "While something plays, on the charger, or while Claude Code works",
-                        control: Control::Toggles(&[
-                            Toggle {
-                                file: "idle-inhibit-media",
-                                label: "While media plays",
-                                default: false,
-                            },
-                            Toggle {
-                                file: "idle-inhibit-power",
-                                label: "On AC",
-                                default: false,
-                            },
-                            Toggle {
-                                file: "idle-hold-claude",
-                                label: "While Claude Code works",
-                                default: true,
-                            },
-                        ]),
-                        default: Default::Bool(false),
-                    },
-                ],
-            },
-            Section {
-                title: "Lid",
-                settings: &[choice(
-                    "lid-close-action",
-                    "When the lid closes",
-                    "Unless an external display is connected",
-                    &[
-                        ("lock", "Lock"),
-                        ("suspend", "Suspend"),
-                        ("nothing", "Turn the screen off"),
-                    ],
-                    "lock",
-                )],
-            },
-            Section {
-                title: "Lock screen",
-                settings: &[Setting {
-                    file: "lock-show-media",
-                    label: "Show",
-                    help: "What the lock screen shows besides the clock",
-                    control: Control::Toggles(&[
-                        Toggle {
-                            file: "lock-show-media",
-                            label: "Now playing",
-                            default: true,
-                        },
-                        Toggle {
-                            file: "lock-show-weather",
-                            label: "Weather",
-                            default: true,
-                        },
-                        Toggle {
-                            file: "lock-show-battery",
-                            label: "Battery",
-                            default: true,
-                        },
-                    ]),
-                    default: Default::Bool(true),
-                }],
-            },
-        ],
-    },
-    Panel {
         id: "gaming",
         title: "Gaming",
         glyph: ico::GAMEPAD_2,
@@ -1523,11 +1436,11 @@ pub const PANELS: &[Panel] = &[
     },
     Panel {
         id: "power",
-        title: "Power",
+        title: "Power & lock",
         glyph: ico::BATTERY_CHARGING,
         group: Group::System,
         page: Page::Power,
-        keywords: "battery critical suspend health charge cycles capacity temperature profile performance balanced power saver ac charger limit",
+        keywords: "battery critical suspend health charge cycles capacity temperature profile performance balanced power saver ac charger limit idle dim lock screen off sleep lid hyprlock hypridle stay awake timeout",
         sections: &[
             Section {
                 title: "Power mode",
@@ -1559,47 +1472,116 @@ pub const PANELS: &[Panel] = &[
                 ],
             },
             Section {
-            title: "Low battery",
-            settings: &[
-                number(
-                    "battery-critical-pct",
-                    "Action level",
-                    "Level that starts the countdown to the action below; 0 turns it off",
-                    0,
-                    30,
-                    1,
-                    "%",
-                    5,
-                ),
-                number(
-                    "battery-low-pct",
-                    "Low warning",
-                    "Show a warning at this level",
-                    5,
-                    50,
-                    1,
-                    "%",
-                    20,
-                ),
-                number(
-                    "battery-warn-pct",
-                    "Critical warning",
-                    "Show an urgent warning at this level",
-                    3,
-                    30,
-                    1,
-                    "%",
-                    10,
-                ),
-                choice(
-                    "battery-critical-action",
-                    "At critical level",
-                    "What happens when the countdown ends",
-                    &[("suspend", "Suspend"), ("none", "Nothing")],
-                    "suspend",
-                ),
-            ],
-        },
+                title: "Low battery",
+                settings: &[
+                    number(
+                        "battery-critical-pct",
+                        "Action level",
+                        "Level that starts the countdown to the action below; 0 turns it off",
+                        0,
+                        30,
+                        1,
+                        "%",
+                        5,
+                    ),
+                    number(
+                        "battery-low-pct",
+                        "Low warning",
+                        "Show a warning at this level",
+                        5,
+                        50,
+                        1,
+                        "%",
+                        20,
+                    ),
+                    number(
+                        "battery-warn-pct",
+                        "Critical warning",
+                        "Show an urgent warning at this level",
+                        3,
+                        30,
+                        1,
+                        "%",
+                        10,
+                    ),
+                    choice(
+                        "battery-critical-action",
+                        "At critical level",
+                        "What happens when the countdown ends",
+                        &[("suspend", "Suspend"), ("none", "Nothing")],
+                        "suspend",
+                    ),
+                ],
+            },
+            Section {
+                title: "Stay awake",
+                settings: &[
+                    toggle("idle-stay-awake", "Stay awake", "Never dim, lock or sleep", false),
+                    Setting {
+                        file: "idle-inhibit-media",
+                        label: "Also stay awake",
+                        help: "While something plays, on the charger, or while Claude Code works",
+                        control: Control::Toggles(&[
+                            Toggle {
+                                file: "idle-inhibit-media",
+                                label: "While media plays",
+                                default: false,
+                            },
+                            Toggle {
+                                file: "idle-inhibit-power",
+                                label: "On AC",
+                                default: false,
+                            },
+                            Toggle {
+                                file: "idle-hold-claude",
+                                label: "While Claude Code works",
+                                default: true,
+                            },
+                        ]),
+                        default: Default::Bool(false),
+                    },
+                ],
+            },
+            Section {
+                title: "Lid",
+                settings: &[choice(
+                    "lid-close-action",
+                    "When the lid closes",
+                    "Unless an external display is connected",
+                    &[
+                        ("lock", "Lock"),
+                        ("suspend", "Suspend"),
+                        ("nothing", "Turn the screen off"),
+                    ],
+                    "lock",
+                )],
+            },
+            Section {
+                title: "Lock screen",
+                settings: &[Setting {
+                    file: "lock-show-media",
+                    label: "Show",
+                    help: "What the lock screen shows besides the clock",
+                    control: Control::Toggles(&[
+                        Toggle {
+                            file: "lock-show-media",
+                            label: "Now playing",
+                            default: true,
+                        },
+                        Toggle {
+                            file: "lock-show-weather",
+                            label: "Weather",
+                            default: true,
+                        },
+                        Toggle {
+                            file: "lock-show-battery",
+                            label: "Battery",
+                            default: true,
+                        },
+                    ]),
+                    default: Default::Bool(true),
+                }],
+            },
         ],
     },
     Panel {
@@ -1625,7 +1607,12 @@ pub const SHORTCUTS: &str = "shortcuts";
 
 /// Old panel names that now open another panel, and the key binds page's
 /// own name.
-const ALIASES: &[(&str, &str)] = &[(SHORTCUTS, "keyboard"), ("weather", "datetime"), ("idle", "lock"), ("themes", "appearance")];
+const ALIASES: &[(&str, &str)] = &[
+    (SHORTCUTS, "keyboard"),
+    ("weather", "datetime"),
+    ("idle", "power"),
+    ("themes", "appearance"),
+];
 
 pub fn panel_index(id: &str) -> Option<usize> {
     let id = ALIASES.iter().find(|(old, _)| *old == id).map_or(id, |(_, new)| new);

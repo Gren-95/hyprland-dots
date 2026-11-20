@@ -82,7 +82,11 @@ const APPLY: &[Apply] = &[
 ];
 
 fn gsettings_set(key: &str, value: &str) {
-    let _ = run_blocking("gsettings", &args(&["set", "org.gnome.desktop.interface", key, value]), None);
+    let _ = run_blocking(
+        "gsettings",
+        &args(&["set", "org.gnome.desktop.interface", key, value]),
+        None,
+    );
 }
 
 /// Dark or light for apps that follow the system; adw-gtk3 has a theme for
@@ -90,10 +94,18 @@ fn gsettings_set(key: &str, value: &str) {
 fn apply_color_scheme(value: Value) {
     let Value::Text(scheme) = value else { return };
     gsettings_set("color-scheme", &scheme);
-    let theme = run_blocking("gsettings", &args(&["get", "org.gnome.desktop.interface", "gtk-theme"]), None)
-        .unwrap_or_default();
+    let theme = run_blocking(
+        "gsettings",
+        &args(&["get", "org.gnome.desktop.interface", "gtk-theme"]),
+        None,
+    )
+    .unwrap_or_default();
     if theme.contains("adw-gtk3") {
-        let dark = if scheme == "prefer-dark" { "adw-gtk3-dark" } else { "adw-gtk3" };
+        let dark = if scheme == "prefer-dark" {
+            "adw-gtk3-dark"
+        } else {
+            "adw-gtk3"
+        };
         gsettings_set("gtk-theme", dark);
     }
 }
@@ -101,8 +113,12 @@ fn apply_color_scheme(value: Value) {
 /// The GTK font, keeping its size ("Adwaita Sans 11").
 fn apply_app_font(value: Value) {
     let Value::Text(family) = value else { return };
-    let current = run_blocking("gsettings", &args(&["get", "org.gnome.desktop.interface", "font-name"]), None)
-        .unwrap_or_default();
+    let current = run_blocking(
+        "gsettings",
+        &args(&["get", "org.gnome.desktop.interface", "font-name"]),
+        None,
+    )
+    .unwrap_or_default();
     gsettings_set("font-name", &format!("{family} {}", font_size(&current)));
 }
 
