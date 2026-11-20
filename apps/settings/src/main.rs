@@ -21,6 +21,7 @@ mod gaming;
 mod hiddenapps;
 mod hypr;
 mod hyprpage;
+mod icons;
 mod idle;
 mod infocache;
 mod infoview;

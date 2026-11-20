@@ -104,7 +104,7 @@ impl State {
             rows.push(ui::item(
                 ico::SERVER,
                 "Server in sync.conf".into(),
-                format!("{} · used while the server address above is empty", r.jellyfin_url),
+                format!("{} · if no address above", r.jellyfin_url),
                 vec![],
             ));
         }

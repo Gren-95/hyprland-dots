@@ -330,7 +330,7 @@ impl State {
         } else if let Some(badge) = badge {
             row![
                 text(badge).size(13).color(style::FG_MUTED),
-                ui::action("Open folder", folder, Action::Normal)
+                ui::icon_action(lucide_iced::bytes::FOLDER_OPEN, "Open folder", folder, Action::Normal)
             ]
             .spacing(12)
             .align_y(Alignment::Center)
@@ -402,7 +402,8 @@ fn folder_row<'a>(kind: &str) -> Element<'a, Msg> {
         lucide_iced::bytes::FOLDER_OPEN,
         format!("Add {kind} themes"),
         "Put a theme's folder in ~/.local/share/icons, then reopen this panel".into(),
-        vec![ui::action(
+        vec![ui::icon_action(
+            lucide_iced::bytes::FOLDER_OPEN,
             "Open folder",
             Some(Msg::OpenFolder(themes_folder())),
             Action::Normal,

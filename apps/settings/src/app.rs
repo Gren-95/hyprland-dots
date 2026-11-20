@@ -985,8 +985,18 @@ impl App {
                                 s.label.into(),
                                 format!("{} · {}", PANELS[i].title, crate::changed::shown(s, &self.values)),
                                 vec![
-                                    ui::action("Show", Some(Message::Reveal(i, s.file)), style::Action::Normal),
-                                    ui::action("Reset", Some(Message::Reset(s.file)), style::Action::Normal),
+                                    ui::icon_action(
+                                        lucide_iced::bytes::ARROW_UP_RIGHT,
+                                        "Show it",
+                                        Some(Message::Reveal(i, s.file)),
+                                        style::Action::Normal,
+                                    ),
+                                    ui::icon_action(
+                                        lucide_iced::bytes::ROTATE_CCW,
+                                        "Reset to default",
+                                        Some(Message::Reset(s.file)),
+                                        style::Action::Normal,
+                                    ),
                                 ],
                             )
                         })
@@ -1072,8 +1082,9 @@ impl App {
                     lucide_iced::bytes::COMMAND,
                     "Keyboard shortcuts".into(),
                     "Search, run and change the key binds · Super+F1".into(),
-                    vec![ui::action(
-                        "Open",
+                    vec![ui::icon_action(
+                        lucide_iced::bytes::ARROW_UP_RIGHT,
+                        "Open keyboard shortcuts",
                         Some(Message::ShowShortcuts(true)),
                         style::Action::Normal,
                     )],
@@ -1199,18 +1210,15 @@ impl App {
                 lucide_iced::bytes::ROTATE_CCW,
                 "Reset this panel".into(),
                 if asking {
-                    "Every setting on this panel goes back to its default. Press again to confirm.".into()
+                    "All settings here back to default".into()
                 } else {
-                    "Put every setting on this panel back to its default".into()
+                    "All settings here back to default".into()
                 },
-                vec![ui::action(
-                    if asking { "Reset all" } else { "Reset…" },
+                vec![ui::confirm_action(
+                    lucide_iced::bytes::ROTATE_CCW,
+                    "Reset this panel",
+                    asking,
                     Some(Message::ResetPanel(i)),
-                    if asking {
-                        style::Action::Danger
-                    } else {
-                        style::Action::Normal
-                    },
                 )],
             );
             column![content, ui::section(tail_column(layout), "Defaults", vec![row])]

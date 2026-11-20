@@ -303,7 +303,8 @@ impl State {
             ico::NETWORK,
             format!("This device · {}", status.name),
             status.ip.clone(),
-            vec![ui::action(
+            vec![ui::icon_action(
+                ico::COPY,
                 "Copy",
                 idle.then(|| Msg::Copy(status.ip.clone())),
                 Action::Normal,
@@ -358,7 +359,12 @@ impl State {
             "Devices".into(),
             format!("{online} of {} online", status.peers.len()),
             vec![
-                ui::action("Receive files", idle.then_some(Msg::Receive), Action::Normal),
+                ui::icon_action(
+                    ico::DOWNLOAD,
+                    "Receive files",
+                    idle.then_some(Msg::Receive),
+                    Action::Normal,
+                ),
                 ui::disclosure(self.devices_open, Msg::ToggleDevices),
             ],
         );

@@ -45,8 +45,10 @@ dialog, or further down the page.
 - **Sidebar → panel → sections → rows.** A panel is one topic (Keyboard,
   Sound). A section is an uppercase header over one card. A row is one
   option or one item (a network, a device).
-- **One option per row.** The label and help text are on the left, the
-  control on the right, on one line: toggles, dropdowns, two-option groups
+- **One option per row.** A symbol and a short label on the left (the
+  symbol from `icons.rs`, which a test keeps complete), the control on the
+  right, on one line. The help text shows on hover over the label
+  (`ui::tip`), not under it: toggles, dropdowns, two-option groups
   and sliders all sit beside their label. In a narrow panel the control
   moves under the label (`Layout::stacked`); a multi-select group, a pill
   list and a search picker are always under their label, as they need the
@@ -79,6 +81,10 @@ together like keys, so they stay a button group.
 
 ## Buttons on a row
 
+- **Icon buttons first.** A button whose meaning a symbol carries (open,
+  copy, add, remove, reset, details) is an icon with its words on hover
+  (`ui::icon_action`, `ui::disclosure`). Words stay for actions a symbol
+  cannot say (Pair, Apply, Cancel, Keep) and for "Sure?".
 - **One button:** a plain action button (`ui::action`).
 - **Two buttons:** one joined group (`ui::button_group`), the main action
   last.
@@ -100,10 +106,11 @@ together like keys, so they stay a button group.
   dropdowns write when changed, sliders when released, text fields on Enter
   (with "Press Enter to apply" while the typed text differs).
 - **Destructive actions confirm.** Forget, Remove and the like turn into
-  "Sure?" on the first click and act on the second; anything else resets
+  "Sure?" on the first click and act on the second (`ui::confirm_action`:
+  the icon first, the word while it waits); anything else resets
   them. They are red (`Action::Danger`).
 - **Reset to default.** A setting that differs from its default shows a
-  small ↺ button that writes the default back.
+  small ↺ icon button that writes the default back.
 - **Busy:** while a command runs, its row shows "Working…" in place of its
   buttons and the panel's other actions are disabled.
 - **Errors** go at the top of the panel in red, in plain words ("Could not
@@ -116,8 +123,9 @@ together like keys, so they stay a button group.
 ## Wording
 
 - Sentence case everywhere ("Copy to clipboard", not "Copy To Clipboard").
-- Labels say what the option is, help text says what it does, in one short
-  line. No "Enable"/"Disable" in labels: the toggle already says that.
+- Labels say what the option is, in one or two words; help text says what
+  it does, in one short line, on hover. A row's detail line is for state
+  ("On, synchronized", "2 enabled"), kept short. No "Enable"/"Disable" in labels: the toggle already says that.
 - Units always shown next to numbers (ms, px, %, fps, min).
 - Plain words over jargon: "Frame rate", not "FPS cap"; technical names
   (AAC, XKB codes) only as detail.

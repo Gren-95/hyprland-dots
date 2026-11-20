@@ -201,7 +201,7 @@ impl State {
         rows.push(ui::item(
             ico::IMAGE,
             "Picture".into(),
-            "Shown on the lock screen and the login screen".into(),
+            "Lock and login screens".into(),
             vec![ui::button_group(vec![
                 ("Choose…", idle.then_some(Msg::Choose), Action::Normal),
                 ("Make initials picture", idle.then_some(Msg::Initials), Action::Normal),

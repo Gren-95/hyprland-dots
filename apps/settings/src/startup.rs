@@ -202,11 +202,6 @@ impl State {
             return vec![ui::note("Looking…")];
         };
         for e in entries {
-            let remove = if self.confirming.as_ref() == Some(&e.file) {
-                "Sure?"
-            } else {
-                "Remove"
-            };
             let file = e.file.clone();
             rows.push(ui::item(
                 ico::ROCKET,
@@ -217,7 +212,12 @@ impl State {
                     "Off".into()
                 },
                 vec![
-                    ui::action(remove, Some(Msg::Remove(e.file.clone())), Action::Danger),
+                    ui::confirm_action(
+                        ico::TRASH,
+                        "Remove from login",
+                        self.confirming.as_ref() == Some(&e.file),
+                        Some(Msg::Remove(e.file.clone())),
+                    ),
                     ui::switch(e.enabled, Some(move |on| Msg::Switch(file.clone(), on))),
                 ],
             ));
@@ -229,7 +229,7 @@ impl State {
             vec![if self.adding {
                 ui::action("Cancel", Some(Msg::CancelAdd), Action::Normal)
             } else {
-                ui::action("Add…", Some(Msg::StartAdd), Action::Normal)
+                ui::icon_action(ico::PLUS, "Add", Some(Msg::StartAdd), Action::Normal)
             }],
         ));
         if self.adding {

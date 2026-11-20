@@ -207,7 +207,7 @@ impl State {
         let detail = match ts.state.as_str() {
             "Running" => format!("Reachable as {} ({}) on {}", ts.name, ts.ip, ts.tailnet),
             "NeedsLogin" => "Not logged in".into(),
-            "Stopped" => "Off: only the local network can reach this computer".into(),
+            "Stopped" => "Off".into(),
             other => other.to_string(),
         };
         vec![ui::item(
@@ -218,7 +218,12 @@ impl State {
             },
             "Tailscale".into(),
             detail,
-            vec![ui::action("Network settings", Some(Msg::OpenNetwork), Action::Normal)],
+            vec![ui::icon_action(
+                ico::ARROW_UP_RIGHT,
+                "Network settings",
+                Some(Msg::OpenNetwork),
+                Action::Normal,
+            )],
         )]
     }
 }

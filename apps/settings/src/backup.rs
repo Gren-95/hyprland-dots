@@ -402,14 +402,24 @@ impl State {
         rows.push(ui::item(
             ico::DOWNLOAD,
             "Export settings".into(),
-            "The shell, Hyprland choices and default apps, in one file".into(),
-            vec![ui::action("Export…", idle.then_some(Msg::Export), Action::Normal)],
+            "All settings in one file".into(),
+            vec![ui::icon_action(
+                ico::UPLOAD,
+                "Export to a file",
+                idle.then_some(Msg::Export),
+                Action::Normal,
+            )],
         ));
         rows.push(ui::item(
             ico::UPLOAD,
             "Import settings".into(),
             "Shows what changes before anything is written".into(),
-            vec![ui::action("Import…", idle.then_some(Msg::Import), Action::Normal)],
+            vec![ui::icon_action(
+                ico::DOWNLOAD,
+                "Import from a file",
+                idle.then_some(Msg::Import),
+                Action::Normal,
+            )],
         ));
         let Some((_, list)) = &self.pending else { return rows };
         let mut lines: Vec<Element<'_, Msg>> = list

@@ -225,10 +225,14 @@ fn plural(n: usize, word: &str) -> String {
 }
 
 fn repo(r: &Repo) -> Vec<Element<'_, Msg>> {
-    let open = r
-        .url
-        .as_ref()
-        .map(|u| ui::action("Open on GitHub", Some(Msg::Open(u.clone())), Action::Normal));
+    let open = r.url.as_ref().map(|u| {
+        ui::icon_action(
+            ico::EXTERNAL_LINK,
+            "Open on GitHub",
+            Some(Msg::Open(u.clone())),
+            Action::Normal,
+        )
+    });
     let commit = if r.when.is_empty() {
         r.commit.clone()
     } else {

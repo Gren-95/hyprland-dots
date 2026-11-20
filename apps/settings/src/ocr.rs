@@ -187,7 +187,7 @@ impl State {
         rows.push(ui::item(
             ico::SCAN_TEXT,
             "Languages".into(),
-            "What Copy text reads; more come as tesseract-langpack packages".into(),
+            "More: tesseract-langpack packages".into(),
             vec![ui::switch_tree_head(&items, self.open, Msg::Toggle)],
         ));
         if self.open {

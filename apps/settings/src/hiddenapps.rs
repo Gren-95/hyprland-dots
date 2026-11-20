@@ -123,7 +123,12 @@ impl State {
                             ico::EYE_OFF,
                             h.name.clone(),
                             detail,
-                            vec![ui::action("Show again", Some(Msg::Show(h.id.clone())), Action::Normal)],
+                            vec![ui::icon_action(
+                                ico::EYE,
+                                "Show again",
+                                Some(Msg::Show(h.id.clone())),
+                                Action::Normal,
+                            )],
                         )
                     })
                     .collect();

@@ -238,17 +238,17 @@ impl State {
             } else {
                 format!("{name} ({})", r.class)
             };
-            let remove = if self.confirming.as_ref() == Some(&r.class) {
-                "Sure?"
-            } else {
-                "Remove"
-            };
             rows.push(ui::item(
                 ico::APP_WINDOW,
                 title,
                 summary(r),
                 vec![
-                    ui::action(remove, idle.then(|| Msg::Remove(r.class.clone())), Action::Danger),
+                    ui::confirm_action(
+                        ico::TRASH,
+                        "Remove the rule",
+                        self.confirming.as_ref() == Some(&r.class),
+                        idle.then(|| Msg::Remove(r.class.clone())),
+                    ),
                     ui::disclosure(open, Msg::Toggle(r.class.clone())),
                 ],
             ));
@@ -273,7 +273,7 @@ impl State {
             vec![if self.adding {
                 ui::action("Cancel", Some(Msg::CancelAdd), Action::Normal)
             } else {
-                ui::action("Add…", idle.then_some(Msg::StartAdd), Action::Normal)
+                ui::icon_action(ico::PLUS, "Add", idle.then_some(Msg::StartAdd), Action::Normal)
             }],
         ));
         if self.adding {

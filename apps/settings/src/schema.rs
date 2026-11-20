@@ -731,13 +731,13 @@ pub const PANELS: &[Panel] = &[
                     ),
                     toggle(
                         "wallpaper-random-login",
-                        "New wallpaper at login",
+                        "Random at login",
                         "A random one from the folder; off keeps the last wallpaper",
                         false,
                     ),
                     choice(
                         "lock-background",
-                        "Lock screen background",
+                        "Lock screen",
                         "Behind the lock screen, blurred",
                         &[
                             ("random", "A random wallpaper"),
@@ -748,7 +748,7 @@ pub const PANELS: &[Panel] = &[
                     ),
                     Setting {
                         file: "lock-picture",
-                        label: "Lock screen picture",
+                        label: "Lock picture",
                         help: "Used when the background is a picture of my choice",
                         control: Control::Folder {
                             placeholder: "~/Pictures/lock.jpg",
@@ -992,7 +992,7 @@ pub const PANELS: &[Panel] = &[
                     ),
                     toggle(
                         "week-start-monday",
-                        "Week starts on Monday",
+                        "Monday first",
                         "Otherwise on Sunday, in the calendar",
                         true,
                     ),
@@ -1114,7 +1114,7 @@ pub const PANELS: &[Panel] = &[
                 settings: &[
                     toggle(
                         "notif-auto-expire",
-                        "Dismiss matching notifications",
+                        "Dismiss matching",
                         "Remove matching notifications from the history on their own",
                         true,
                     ),
@@ -1502,7 +1502,7 @@ pub const PANELS: &[Panel] = &[
                 title: "Launcher",
                 settings: &[toggle(
                     "game-launcher-games",
-                    "Open on games in game mode",
+                    "Games first in game mode",
                     "The launcher in game mode lists your Steam games and Game apps first; Games switches back to all apps",
                     true,
                 )],

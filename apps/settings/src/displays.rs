@@ -376,13 +376,13 @@ impl State {
             ui::item(
                 ico::SCAN,
                 "Resolution".into(),
-                "And refresh rate".into(),
+                String::new(),
                 vec![ui::select(mode_items, Length::Fixed(240.0))],
             ),
             ui::item(
                 ico::ZOOM_IN,
                 "Scale".into(),
-                "Size of everything on it".into(),
+                String::new(),
                 vec![ui::select(scale_items, Length::Fixed(240.0))],
             ),
             ui::item(
@@ -394,7 +394,7 @@ impl State {
             ui::item(
                 ico::MOVE,
                 "Position".into(),
-                "Top left corner in the layout, in pixels; Enter to apply".into(),
+                "In pixels; Enter to apply".into(),
                 vec![position.into()],
             ),
         ]

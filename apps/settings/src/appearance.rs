@@ -245,7 +245,7 @@ impl State {
         rows.push(ui::item(
             ico::APP_WINDOW,
             "GTK 3 theme".into(),
-            "How older GTK apps look; adw-gtk3 matches the newer ones".into(),
+            "For older GTK apps".into(),
             vec![ui::select(choices, Length::Fixed(260.0))],
         ));
         rows
@@ -269,7 +269,7 @@ impl State {
             "Wallpaper".into(),
             format!("{name} · Super+W deals the wallpaper deck"),
             vec![
-                ui::action("Open folder", Some(Msg::OpenFolder), Action::Normal),
+                ui::icon_action(ico::FOLDER_OPEN, "Open folder", Some(Msg::OpenFolder), Action::Normal),
                 ui::disclosure(self.grid_open, Msg::ToggleGrid),
             ],
         )];

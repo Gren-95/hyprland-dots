@@ -3,7 +3,7 @@
 
 use std::fmt;
 
-use iced::widget::{Column, Row, Space, TextInput, button, column, container, pick_list, row, text};
+use iced::widget::{Column, Row, Space, TextInput, button, column, container, pick_list, row, text, tooltip};
 use iced::{Alignment, Element, Length};
 
 use crate::focus::focusable;
@@ -56,6 +56,51 @@ pub fn note<'a, M: 'a>(message: impl text::IntoFragment<'a>) -> Element<'a, M> {
 /// An error line under a panel's title.
 pub fn error<'a, M: 'a>(message: &'a str) -> Element<'a, M> {
     text(message).size(13).color(style::RED).into()
+}
+
+/// `content` with `words` in a small card under it on hover: help text
+/// and what an icon button does live here instead of on the row.
+pub fn tip<'a, M: 'a>(content: impl Into<Element<'a, M>>, words: impl text::IntoFragment<'a>) -> Element<'a, M> {
+    tooltip(
+        content,
+        container(text(words).size(12))
+            .padding([4, 8])
+            .max_width(340)
+            .style(style::card),
+        tooltip::Position::Bottom,
+    )
+    .into()
+}
+
+/// A small icon button that says what it does on hover; `on_press` None
+/// draws it disabled.
+pub fn icon_action<'a, M: Clone + 'a>(
+    glyph: Icon,
+    words: &'a str,
+    on_press: Option<M>,
+    kind: style::Action,
+) -> Element<'a, M> {
+    let activate = on_press.clone();
+    let b = button(icon(glyph, 15.0))
+        .on_press_maybe(on_press)
+        .padding([6, 8])
+        .style(style::action(kind));
+    tip(focusable(b, activate), words)
+}
+
+/// A destructive action that confirms (UI.md): an icon first, then "Sure?"
+/// in red while it waits for the second press.
+pub fn confirm_action<'a, M: Clone + 'a>(
+    glyph: Icon,
+    words: &'a str,
+    asking: bool,
+    on_press: Option<M>,
+) -> Element<'a, M> {
+    if asking {
+        action("Sure?", on_press, style::Action::Danger)
+    } else {
+        icon_action(glyph, words, on_press, style::Action::Normal)
+    }
 }
 
 /// A small text button; `on_press` None draws it disabled.
@@ -241,15 +286,14 @@ pub fn disclosure<'a, M: Clone + 'a>(open: bool, on_press: M) -> Element<'a, M> 
     } else {
         lucide_iced::bytes::CHEVRON_DOWN
     };
-    let b = button(
-        row![text("Details").size(13), icon(glyph, 14.0)]
-            .spacing(4)
-            .align_y(Alignment::Center),
+    let b = button(icon(glyph, 15.0))
+        .on_press(on_press.clone())
+        .padding([6, 8])
+        .style(style::action(style::Action::Normal));
+    tip(
+        focusable(b, Some(on_press)),
+        if open { "Hide details" } else { "Details" },
     )
-    .on_press(on_press.clone())
-    .padding([5, 10])
-    .style(style::action(style::Action::Normal));
-    focusable(b, Some(on_press)).into()
 }
 
 /// Height from the top of a list row to the middle of its title line, where

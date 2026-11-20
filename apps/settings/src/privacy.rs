@@ -6,7 +6,6 @@ use iced::{Element, Task};
 use lucide_iced::bytes as ico;
 
 use crate::store::home;
-use crate::style::Action;
 use crate::system::{self, args};
 use crate::ui;
 
@@ -96,13 +95,13 @@ impl State {
                 What::Clipboard,
                 ico::CLIPBOARD_X,
                 "Clear clipboard history",
-                "Everything copied so far, text and images",
+                "Copied text and images",
             ),
             (
                 What::Recent,
                 ico::FILE_CLOCK,
                 "Clear recent files",
-                "The list of recently opened files that apps show",
+                "Apps' recent files list",
             ),
         ] {
             let asking = self.confirming == Some(what);
@@ -110,14 +109,15 @@ impl State {
                 glyph,
                 title.into(),
                 if asking {
-                    "This cannot be undone. Press again to clear.".into()
+                    "Cannot be undone".into()
                 } else {
                     detail.into()
                 },
-                vec![ui::action(
-                    if asking { "Clear" } else { "Clear…" },
+                vec![ui::confirm_action(
+                    ico::ERASER,
+                    title,
+                    asking,
                     (!self.busy).then_some(Msg::Clear(what)),
-                    if asking { Action::Danger } else { Action::Normal },
                 )],
             ));
         }

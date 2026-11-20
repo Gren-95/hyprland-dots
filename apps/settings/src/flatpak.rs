@@ -16,22 +16,17 @@ use crate::ui;
 /// A permission with a switch: (kind, value, label, help). The kind is the
 /// [Context] key; its override flags are in `flags`.
 pub const SWITCHES: &[(&str, &str, &str, &str)] = &[
-    ("shared", "network", "Network", "The internet and the local network"),
-    ("sockets", "pulseaudio", "Sound", "Play sound and use the microphone"),
+    ("shared", "network", "Network", "Internet and local network"),
+    ("sockets", "pulseaudio", "Sound", "Speakers and microphone"),
     ("devices", "dri", "Graphics acceleration", "Draw with the GPU"),
-    (
-        "devices",
-        "all",
-        "All devices",
-        "Webcams, game controllers, USB devices and everything else in /dev",
-    ),
-    ("sockets", "cups", "Printing", "Print without the print dialog"),
+    ("devices", "all", "All devices", "Webcam, controllers, USB, all of /dev"),
+    ("sockets", "cups", "Printing", "Without the print dialog"),
     ("sockets", "ssh-auth", "SSH agent", "Use your SSH keys"),
     (
         "sockets",
         "session-bus",
         "Every app and service",
-        "The whole session bus: a common way out of the sandbox",
+        "Whole session bus; can leave the sandbox",
     ),
 ];
 
@@ -337,21 +332,24 @@ impl State {
                 ico::FOLDER_OPEN,
                 folder_label(entry),
                 entry.clone(),
-                vec![ui::action(
-                    "Remove",
+                vec![ui::icon_action(
+                    ico::TRASH,
+                    "Take away access",
                     idle.then(|| Msg::RemoveFolder(app.id.clone(), entry.clone())),
                     Action::Danger,
                 )],
             ));
         }
-        let mut controls = vec![ui::action(
-            "Add folder…",
+        let mut controls = vec![ui::icon_action(
+            ico::FOLDER_PLUS,
+            "Add a folder",
             idle.then(|| Msg::AddFolder(app.id.clone())),
             Action::Normal,
         )];
         if app.overridden {
-            controls.push(ui::action(
-                "Reset",
+            controls.push(ui::icon_action(
+                ico::ROTATE_CCW,
+                "Reset to default",
                 idle.then(|| Msg::Reset(app.id.clone())),
                 Action::Normal,
             ));
@@ -360,9 +358,9 @@ impl State {
             ico::FOLDER_PLUS,
             "Files and folders".into(),
             if app.overridden {
-                "Changes count from the app's next start · Reset goes back to the app's own permissions".into()
+                "From the app's next start".into()
             } else {
-                "Changes count from the app's next start".into()
+                "From the app's next start".into()
             },
             controls,
         ));

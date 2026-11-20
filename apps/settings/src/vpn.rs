@@ -505,7 +505,7 @@ impl State {
         let detail = if self.adding {
             "Adding…"
         } else {
-            "Import a WireGuard (.conf) or OpenVPN (.ovpn) file, or set up WireGuard by hand"
+            "WireGuard or OpenVPN file, or by hand"
         };
         ui::item(
             ico::PLUS,

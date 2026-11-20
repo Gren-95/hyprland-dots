@@ -161,8 +161,13 @@ impl State {
         rows.push(ui::item(
             ico::REFRESH_CW,
             "Update everything".into(),
-            format!("{last} · opens a terminal, takes a snapshot first"),
-            vec![ui::action("Run…", Some(Msg::Run), Action::Normal)],
+            format!("{last} · in a terminal"),
+            vec![ui::icon_action(
+                ico::PLAY,
+                "Run updates",
+                Some(Msg::Run),
+                Action::Normal,
+            )],
         ));
         rows
     }
@@ -171,9 +176,18 @@ impl State {
         let mut rows: Vec<Element<'_, Msg>> = vec![ui::item(
             ico::ARCHIVE,
             "Timeshift snapshots".into(),
-            "Listing them asks for your password".into(),
-            vec![ui::action(
-                if self.snapshots.is_some() { "Refresh" } else { "Show" },
+            "Needs password".into(),
+            vec![ui::icon_action(
+                if self.snapshots.is_some() {
+                    ico::REFRESH_CW
+                } else {
+                    ico::LIST
+                },
+                if self.snapshots.is_some() {
+                    "Refresh"
+                } else {
+                    "Show them"
+                },
                 (!self.busy).then_some(Msg::ListSnapshots),
                 Action::Normal,
             )],

@@ -205,7 +205,7 @@ impl State {
             ico::PLUG,
             "Connect to".into(),
             address,
-            vec![ui::action("Copy", copy_address, Action::Normal)],
+            vec![ui::icon_action(ico::COPY, "Copy", copy_address, Action::Normal)],
         ));
         if let Some((user, password)) = &info.login {
             let shown = if self.show_password {

@@ -4,7 +4,7 @@
 
 use std::collections::HashMap;
 
-use iced::widget::{Column, column, container, row, slider, text};
+use iced::widget::{Column, container, row, slider, text};
 use iced::{Alignment, Element, Length, Task};
 use serde_json::{Value as Json, json};
 
@@ -74,7 +74,7 @@ pub enum Row {
 }
 
 impl Row {
-    fn option(&self) -> &'static str {
+    pub fn option(&self) -> &'static str {
         match self {
             Row::Toggle { option, .. }
             | Row::Binary { option, .. }
@@ -279,12 +279,12 @@ impl State {
                 (label, help, control.into())
             }
         };
-        let info = column![
-            text(label).size(14).color(style::FG),
-            text(help).size(12).color(style::MUTED_DEEP)
-        ]
-        .spacing(2)
-        .width(Length::Fill);
+        // The symbol and the label; the help shows on hover (UI.md).
+        let mut info = row![].spacing(12).align_y(Alignment::Center).width(Length::Fill);
+        if let Some(glyph) = crate::icons::of_option(r.option()) {
+            info = info.push(container(ui::icon(glyph, 18.0)).width(26).center_x(26));
+        }
+        let info = info.push(ui::tip(text(label).size(14).color(style::FG), help));
         Some(
             container(row![info, control].spacing(16).align_y(Alignment::Center))
                 .padding([10, 14])

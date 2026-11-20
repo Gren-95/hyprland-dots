@@ -181,7 +181,8 @@ impl State {
             let id = u.id.clone();
             let mut controls = Vec::new();
             if u.running {
-                controls.push(ui::action(
+                controls.push(ui::icon_action(
+                    ico::ROTATE_CW,
                     "Restart",
                     (!busy).then(|| Msg::Restart(u.id.clone())),
                     Action::Normal,
@@ -225,10 +226,7 @@ impl State {
         ui::collapsed_list(
             ico::SERVER,
             "System services",
-            format!(
-                "{} enabled, {running} running; part of the system, shown only",
-                system.len()
-            ),
+            format!("{} enabled, {running} running · read-only", system.len()),
             self.system_open,
             Msg::ToggleSystem,
             &self.query,

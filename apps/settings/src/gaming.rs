@@ -223,7 +223,12 @@ impl State {
             ico::GAMEPAD_2,
             "Controllers".into(),
             summary,
-            vec![ui::action("Connect…", Some(Msg::OpenBluetooth), Action::Normal)],
+            vec![ui::icon_action(
+                ico::ARROW_UP_RIGHT,
+                "Bluetooth settings",
+                Some(Msg::OpenBluetooth),
+                Action::Normal,
+            )],
         )];
         let count = pads.len();
         rows.extend(pads.into_iter().enumerate().map(|(i, p)| ui::branch(p, i + 1 == count)));

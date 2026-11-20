@@ -232,11 +232,11 @@ impl State {
         rows.push(ui::item(
             ico::GLOBE,
             "Time zone".into(),
-            format!("{} · changing it asks for your password", r.zone.replace('_', " ")),
+            format!("{} · needs password", r.zone.replace('_', " ")),
             vec![if self.picking {
                 ui::action("Cancel", Some(Msg::CancelPick), Action::Normal)
             } else {
-                ui::action("Change…", idle.then_some(Msg::StartPick), Action::Normal)
+                ui::icon_action(ico::PENCIL, "Change", idle.then_some(Msg::StartPick), Action::Normal)
             }],
         ));
         if self.picking {
@@ -263,7 +263,7 @@ impl State {
         rows.push(ui::item(
             ico::REFRESH_CW,
             "Network time".into(),
-            format!("{state} · asks for your password"),
+            format!("{state} · needs password"),
             vec![ui::switch(r.ntp, idle.then_some(Msg::Ntp))],
         ));
         rows

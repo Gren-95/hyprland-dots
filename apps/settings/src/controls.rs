@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use iced::widget::{button, column, container, pick_list, row, slider, text, text_input, tooltip};
+use iced::widget::{button, column, container, pick_list, row, slider, text, text_input};
 use iced::{Alignment, Element, Length};
 
 use crate::app::Message;
@@ -96,29 +96,21 @@ pub fn setting_row<'a>(
     highlighted: bool,
     open: OpenTree,
 ) -> Element<'a, Message> {
-    let title: Element<'a, Message> = if is_default(s, values) {
-        text(s.label).size(14).color(style::FG).into()
-    } else {
+    // The symbol and the label; the help shows on hover (UI.md).
+    let mut title = row![].spacing(12).align_y(Alignment::Center).width(Length::Fill);
+    if let Some(glyph) = crate::icons::of(s.file) {
+        title = title.push(container(ui::icon(glyph, 18.0)).width(26).center_x(26));
+    }
+    title = title.push(ui::tip(text(s.label).size(14).color(style::FG), s.help));
+    if !is_default(s, values) {
         // Changed from the default: offer to put it back (UI.md).
-        let reset = button(text("↺").size(13))
+        let reset = button(ui::icon(lucide_iced::bytes::ROTATE_CCW, 13.0))
             .on_press(Message::Reset(s.file))
-            .padding([0, 6])
+            .padding([2, 6])
             .style(style::action(style::Action::Normal));
-        let reset = tooltip(
-            reset,
-            container(text("Reset to default").size(12))
-                .padding([3, 8])
-                .style(style::card),
-            tooltip::Position::Top,
-        );
-        row![text(s.label).size(14).color(style::FG), reset]
-            .spacing(8)
-            .align_y(Alignment::Center)
-            .into()
-    };
-    let label = column![title, text(s.help).size(12).color(style::MUTED_DEEP)]
-        .spacing(2)
-        .width(Length::Fill);
+        title = title.push(ui::tip(reset, "Reset to default"));
+    }
+    let label = title;
     let control = control(s, values, draft, fonts, stacked, open);
     let buttons = !ui::is_switch_tree(option_labels(s).len());
     let line: Element<'a, Message> = match s.control {

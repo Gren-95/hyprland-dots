@@ -383,7 +383,7 @@ impl State {
             adapter.push(ui::item(
                 ico::RADIO,
                 "Visible to other devices".into(),
-                "For 3 minutes, so a phone or another computer can find this one".into(),
+                "Findable for 3 minutes".into(),
                 vec![ui::switch(snap.discoverable, idle.then_some(Msg::SetVisible))],
             ));
         }
@@ -425,7 +425,7 @@ impl State {
         let mut nearby = vec![ui::item(
             ico::BLUETOOTH_SEARCHING,
             "Nearby devices".into(),
-            "Put the device in pairing mode, then scan".into(),
+            "Pairing mode on, then scan".into(),
             vec![ui::action(
                 scan_label,
                 (!self.scanning).then_some(Msg::Scan),

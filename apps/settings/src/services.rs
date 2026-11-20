@@ -229,7 +229,12 @@ impl State {
                 if up { ico::CIRCLE_CHECK } else { ico::CIRCLE_X },
                 d.label.into(),
                 detail,
-                vec![ui::action(label, (!busy).then_some(Msg::Start(i)), kind)],
+                vec![ui::icon_action(
+                    if up { ico::ROTATE_CW } else { ico::PLAY },
+                    label,
+                    (!busy).then_some(Msg::Start(i)),
+                    kind,
+                )],
             ));
         }
         rows
@@ -253,10 +258,20 @@ impl State {
             let key = s.key;
             let mut controls = Vec::new();
             if let Some(script) = s.run_now {
-                controls.push(ui::action("Sync now", Some(Msg::RunNow(script)), Action::Normal));
+                controls.push(ui::icon_action(
+                    ico::REFRESH_CW,
+                    "Sync now",
+                    Some(Msg::RunNow(script)),
+                    Action::Normal,
+                ));
             }
             if key == "games-browser" && on {
-                controls.push(ui::action("Open", Some(Msg::OpenGamesBrowser), Action::Normal));
+                controls.push(ui::icon_action(
+                    ico::ARROW_UP_RIGHT,
+                    "Open the games browser",
+                    Some(Msg::OpenGamesBrowser),
+                    Action::Normal,
+                ));
             }
             controls.push(ui::switch(on, (!busy).then_some(move |_| Msg::Toggle(key))));
             rows.push(ui::item(service_glyph(key), s.label.into(), detail, controls));

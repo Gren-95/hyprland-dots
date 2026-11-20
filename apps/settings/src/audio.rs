@@ -426,7 +426,7 @@ impl State {
             .collect();
         let headset = card.profiles.iter().any(|(_, l)| l.starts_with("Headset"));
         let help = if headset {
-            "The headset mode adds the microphone, at lower sound quality"
+            "Headset mode adds the mic, lower quality"
         } else {
             "Which outputs and inputs the sound card offers"
         };

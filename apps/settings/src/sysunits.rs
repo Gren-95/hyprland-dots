@@ -239,10 +239,7 @@ impl State {
         rows.extend(ui::collapsed_list(
             ico::SERVER,
             "All enabled",
-            format!(
-                "{} enabled, {running} running; switching asks for your password",
-                enabled.len()
-            ),
+            format!("{} enabled, {running} running · needs password", enabled.len()),
             self.all_open,
             Msg::ToggleAll,
             &self.query,

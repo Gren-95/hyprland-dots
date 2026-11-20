@@ -144,7 +144,7 @@ impl State {
                 ico::BATTERY_PLUS,
                 "Limit charging".into(),
                 format!(
-                    "Stops at {} % and charges again below {} %, so the battery lasts longer; asks for your password",
+                    "Stops at {} %, resumes below {} % · needs password",
                     limit.end, limit.start
                 ),
                 vec![ui::switch(limit.enabled, (!self.busy).then_some(Msg::SetLimit))],

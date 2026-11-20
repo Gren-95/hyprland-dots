@@ -418,13 +418,13 @@ impl State {
         let mut rows = vec![ui::item(
             ico::PLANE,
             "Airplane mode".into(),
-            "Wi-Fi and Bluetooth off together".into(),
+            "Wi-Fi and Bluetooth off".into(),
             vec![ui::switch(airplane, idle.then_some(Msg::Airplane))],
         )];
         if snap.wifi_device.is_some() {
             let detail = match &snap.hotspot {
                 Some((ssid, password)) => format!("On as {ssid} · password {password}"),
-                None => "Share this computer's connection over Wi-Fi; the Wi-Fi network in use disconnects".into(),
+                None => "Share this connection; drops Wi-Fi in use".into(),
             };
             rows.push(ui::item(
                 ico::RADIO_TOWER,
