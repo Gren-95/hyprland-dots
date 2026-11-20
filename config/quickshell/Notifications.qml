@@ -78,7 +78,8 @@ Scope {
         if (!settingsStore.notifSounds) return;
         // An app that asks for silence (the suppress-sound hint) gets it.
         if (n.hints && n.hints["suppress-sound"]) return;
-        Cmd.run(["pw-play", "/usr/share/sounds/freedesktop/stereo/message.oga"]);
+        const volume = Math.max(0, Math.min(100, settingsStore.alertVolume)) / 100;
+        Cmd.run(["pw-play", "--volume=" + volume, "/usr/share/sounds/freedesktop/stereo/message.oga"]);
     }
     property int unreadCount: 0
     // Bound to the day panel's open state (DayPanel owns the surface). Reading

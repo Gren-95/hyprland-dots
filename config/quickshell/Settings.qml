@@ -110,6 +110,7 @@ Scope {
     property int volumeStep: 5                 // % per wheel tick / arrow press
     property int brightnessStep: 5
     property int maxVolume: 100                // % ceiling for all volume paths
+    property int alertVolume: 100              // % loudness of notification sounds
     property bool idleInhibitOnMedia: false    // Stay Awake while media plays
     property bool idleInhibitOnPower: false    // Stay Awake while on AC
     property bool idleStayAwake: false         // the manual Stay Awake toggle
@@ -263,6 +264,7 @@ Scope {
         { name: "volumeStep",           file: "volume-step",            type: "int"  },
         { name: "brightnessStep",       file: "brightness-step",        type: "int"  },
         { name: "maxVolume",            file: "max-volume",             type: "int"  },
+        { name: "alertVolume",          file: "alert-volume",           type: "int"  },
         { name: "idleInhibitOnMedia",   file: "idle-inhibit-media",     type: "bool" },
         { name: "idleInhibitOnPower",   file: "idle-inhibit-power",     type: "bool" },
         { name: "idleStayAwake",        file: "idle-stay-awake",        type: "bool" },

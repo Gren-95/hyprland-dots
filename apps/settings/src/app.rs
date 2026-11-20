@@ -740,7 +740,9 @@ impl App {
                     Some(Value::Int(n)) => *n,
                     _ => 100,
                 };
-                Element::from(self.audio.view(page_column(panel.title, layout), max_volume)).map(Message::Audio)
+                let devices =
+                    Element::from(self.audio.view(page_column(panel.title, layout), max_volume)).map(Message::Audio);
+                self.with_settings(devices, panel, layout)
             }
             Page::Calendar => {
                 let feeds = Element::from(self.calendar.view(page_column(panel.title, layout))).map(Message::Calendar);

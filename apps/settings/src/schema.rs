@@ -490,8 +490,20 @@ pub const PANELS: &[Panel] = &[
         glyph: ico::SPEAKER,
         group: Group::InputOutput,
         page: Page::Sound,
-        keywords: "audio speakers headphones microphone mic input output volume mute apps",
-        sections: &[],
+        keywords: "audio speakers headphones microphone mic input output volume mute apps profile mode a2dp headset hfp alert sound",
+        sections: &[Section {
+            title: "Alerts",
+            settings: &[number(
+                "alert-volume",
+                "Alert volume",
+                "How loud the sound with each toast plays",
+                0,
+                100,
+                5,
+                "%",
+                100,
+            )],
+        }],
     },
     Panel {
         id: "keyboard",
