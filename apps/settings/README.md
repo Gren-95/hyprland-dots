@@ -34,7 +34,7 @@ terminal, or `settings -p <panel>` for one panel; several shell flyouts
 | `launcher` | Results shown; calculator and quick actions among the results; clipboard thumbnails; apps hidden from the launcher (Ctrl+D there), each with Show again |
 | `osd` | Volume and brightness steps, maximum volume, on-screen display |
 | `apps` | Default apps: browser, mail, terminal, text editor, files, images, video, music, PDF — the first four through `config/scripts/default-app.sh`, the rest as XDG mime defaults (`xdg-mime`); choices are the installed apps that handle each |
-| `recording` | Screenshots (folder, PNG or JPEG, cursor, clipboard, actions sheet) and screen recording (folder, file type, frame rate, quality, codec, cursor, sound) — read by `config/scripts/lib/screenshot.sh` and `screenrecord.sh` |
+| `recording` | Screenshots (folder, PNG or JPEG, cursor, clipboard, actions sheet) and screen recording (folder, file type, frame rate, quality, codec, cursor, sound), and the installed Tesseract languages text recognition reads (`ocr.rs`) — read by `config/scripts/lib/screenshot.sh`, `screenrecord.sh` and `screenshot-ocr.sh` |
 | `sysmon` | System monitor refresh interval and sections |
 | `lock` | Idle times (dim, lock, screen off, suspend) edited in `config/hypr/hypridle.conf`, which then restarts hypridle; stay awake; what the lid does; lock screen parts |
 | `about` | Header with the distro logo, system, computer, host name and uptime; processor, memory (size, type, speed, modules, use) and graphics tiles; disk usage meters; kernel, Hyprland, Quickshell, package counts, app version; the dots repository with Open on GitHub and what is not pushed; Copy as text for bug reports (battery and network included) |

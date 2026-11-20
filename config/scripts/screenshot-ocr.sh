@@ -2,6 +2,12 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/settings.sh"
+
+# The languages picked in the settings app (Screenshots & recording), as
+# "eng+est"; every installed one when none is picked.
+installed=$(tesseract --list-langs 2>/dev/null | tail -n +2 | grep -vx osd | paste -sd+)
+LANGS=$(valid "$(setting ocr-languages "$installed")" '[a-z_]+(\+[a-z_]+)*' "$installed")
 
 mkdir -p "$OCR_DIR"
 SCREENSHOT="$OCR_DIR/ocr-$(date +%Y%m%d-%H%M%S).png"
@@ -24,7 +30,7 @@ else
     convert "$SCREENSHOT" -resize 300% -colorspace Gray -contrast-stretch 1% "$PROC"
 fi
 
-TEXT=$(tesseract "$PROC" stdout -l eng+est --oem 1 2>/dev/null)
+TEXT=$(tesseract "$PROC" stdout -l "$LANGS" --oem 1 2>/dev/null)
 rm -f "$PROC"
 
 if [[ -z "${TEXT//[[:space:]]/}" ]]; then

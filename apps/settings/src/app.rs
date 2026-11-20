@@ -17,6 +17,7 @@ use crate::controls;
 use crate::defaultapps;
 use crate::gaming;
 use crate::hiddenapps;
+use crate::ocr;
 use crate::hyprpage;
 use crate::idle;
 use crate::keyboard;
@@ -119,6 +120,7 @@ pub struct App {
     about: about::State,
     power: power::State,
     notif_apps: notifapps::State,
+    ocr: ocr::State,
     hidden_apps: hiddenapps::State,
     gaming: gaming::State,
     gaming_display: hyprpage::State,
@@ -194,6 +196,7 @@ pub enum Message {
     Power(power::Msg),
     NotifApps(notifapps::Msg),
     HiddenApps(hiddenapps::Msg),
+    Ocr(ocr::Msg),
     Gaming(gaming::Msg),
     GamingDisplay(hyprpage::Msg),
     Proton(proton::Msg),
@@ -235,6 +238,7 @@ impl App {
             about: about::State::default(),
             power: power::State::default(),
             notif_apps: notifapps::State::default(),
+            ocr: ocr::State::default(),
             hidden_apps: hiddenapps::State::default(),
             gaming: gaming::State::default(),
             gaming_display: hyprpage::State::default(),
@@ -272,6 +276,7 @@ impl App {
                 self.proton.update(proton::Msg::Load).map(Message::Proton),
             ]),
             Page::Launcher => self.hidden_apps.update(hiddenapps::Msg::Load).map(Message::HiddenApps),
+            Page::Recording => self.ocr.update(ocr::Msg::Load).map(Message::Ocr),
             Page::Notifications => {
                 self.notif_apps.update(notifapps::Msg::Load);
                 Task::none()
@@ -398,6 +403,7 @@ impl App {
             Message::Power(msg) => return self.power.update(msg).map(Message::Power),
             Message::NotifApps(msg) => self.notif_apps.update(msg),
             Message::HiddenApps(msg) => return self.hidden_apps.update(msg).map(Message::HiddenApps),
+            Message::Ocr(msg) => return self.ocr.update(msg).map(Message::Ocr),
             Message::Gaming(gaming::Msg::OpenBluetooth) => {
                 if let Some(i) = crate::schema::panel_index("bluetooth") {
                     return self.update(Message::SelectPanel(i));
@@ -670,6 +676,18 @@ impl App {
                     .map(|r| r.map(Message::HiddenApps))
                     .collect();
                 body = ui::section(body, "Hidden apps", hidden);
+                if let Some(error) = &self.error {
+                    body = body.push(text(error).color(style::RED));
+                }
+                body.into()
+            }
+            Page::Recording => {
+                let mut body = page_column(panel.title, layout);
+                for section in panel.sections {
+                    body = self.section(body, section, layout);
+                }
+                let ocr = self.ocr.rows().into_iter().map(|r| r.map(Message::Ocr)).collect();
+                body = ui::section(body, "Text recognition", ocr);
                 if let Some(error) = &self.error {
                     body = body.push(text(error).color(style::RED));
                 }

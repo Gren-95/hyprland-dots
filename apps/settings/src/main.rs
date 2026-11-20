@@ -25,6 +25,7 @@ mod memory;
 mod mouse;
 mod network;
 mod notifapps;
+mod ocr;
 mod placement;
 mod power;
 mod proton;

@@ -83,6 +83,8 @@ pub enum Page {
     About,
     /// The battery above the power settings (power.rs).
     Power,
+    /// Screenshot and recording settings, then the OCR languages (ocr.rs).
+    Recording,
 }
 
 impl Page {
@@ -1085,8 +1087,8 @@ pub const PANELS: &[Panel] = &[
         title: "Screenshots & recording",
         glyph: ico::VIDEO,
         group: Group::System,
-        page: Page::Settings,
-        keywords: "screenshot capture grim picture record video gpu-screen-recorder screencast",
+        page: Page::Recording,
+        keywords: "screenshot capture grim picture record video gpu-screen-recorder screencast ocr text recognition tesseract language",
         sections: &[
             Section {
                 title: "Screenshots",
