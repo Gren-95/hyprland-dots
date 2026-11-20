@@ -341,11 +341,17 @@ Scope {
                     // launcher on the left; icons carry their own padding.
                     anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
                     spacing: 0
+                    // Something shows left of the modules: tray apps, promoted
+                    // Quick Actions items or the Quick Actions chevron. A
+                    // separator only stands between two visible things.
+                    readonly property bool leftItems: trayItems.count > 0
+                        || quickMod.promotedItems.length > 0 || quickMod.visible
                     RowLayout {
                         // No gaps between tray items: each one is 36 px wide,
                         // and a gap would be a dead zone between targets.
                         spacing: 0
                         Repeater {
+                            id: trayItems
                             // Only tray apps placed on the bar; the rest live
                             // in the overflow chevron (or are hidden).
                             model: {
@@ -371,7 +377,7 @@ Scope {
                             parentBar: bar
                         }
                     }
-                    BarSep { visible: quickMod.promotedItems.length > 0 }
+                    BarSep { visible: quickMod.promotedItems.length > 0 && quickMod.visible }
 
                     QuickActions {
                         id: quickMod
@@ -388,7 +394,7 @@ Scope {
                         ]
                     }
 
-                    BarSep { visible: settingsStore.placement("network") === "bar" }
+                    BarSep { visible: settingsStore.placement("network") === "bar" && rightGroup.leftItems }
 
                     ConnectivityModule {
                         id: btMod
@@ -399,7 +405,11 @@ Scope {
                         onNavigatePrev: { popupOpen = false; quickMod.openAt(0); }
                     }
 
-                    BarSep { visible: settingsStore.placement("audiopower") === "bar" || settingsStore.placement("battery") === "bar" || (micIcon.unmuted && settingsStore.placement("mic") === "bar") }
+                    BarSep {
+                        visible: (settingsStore.placement("audiopower") === "bar" || settingsStore.placement("battery") === "bar"
+                                  || (micIcon.unmuted && settingsStore.placement("mic") === "bar"))
+                                 && (rightGroup.leftItems || settingsStore.placement("network") === "bar")
+                    }
 
                     SoundModule {
                         id: soundMod
