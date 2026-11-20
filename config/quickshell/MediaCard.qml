@@ -92,7 +92,7 @@ DayCard {
     // ----- Art + track -----
     RowLayout {
         Layout.fillWidth: true
-        spacing: Theme.spacing.xl
+        spacing: Theme.spacing.lg
 
         // Album art (square; falls back to a note glyph).
         Rectangle {
@@ -245,7 +245,7 @@ DayCard {
     // ----- Transport controls -----
     RowLayout {
         Layout.alignment: Qt.AlignHCenter
-        spacing: Theme.spacing.xl
+        spacing: Theme.spacing.lg
         MediaBtn {
             glyph: "󰒮"
             enabledLook: media.hasPlayer && media.player.canGoPrevious

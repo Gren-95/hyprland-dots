@@ -30,17 +30,17 @@ Scope {
     // wrap at about 40 characters. Each includes its card padding.
     readonly property int calendarWidth: 420
     readonly property int notifWidth: 460
-    readonly property int columnGap: Theme.spacing.xl
-    readonly property int margin: Theme.spacing.xl
+    readonly property int columnGap: Theme.spacing.md
+    readonly property int margin: Theme.spacing.md
     readonly property int fitWidth: calendarWidth + notifWidth + columnGap + margin * 2
     // The popup is sized to the calendar plus room for a few events, and
     // stays that size: more events or notifications scroll inside their
     // column instead of growing the popup.
-    readonly property int eventsRoom: 220
+    readonly property int eventsRoom: 180
     readonly property real fitHeight: Math.min(
         root.anchorBar && root.anchorBar.screen ? root.anchorBar.screen.height - 160 : 720,
         dayHeader.implicitHeight + contentCol.spacing + calPane.implicitHeight
-            + Theme.spacing.lg + eventsRoom + margin * 2)
+            + Theme.spacing.md + eventsRoom + margin * 2)
 
     // Opening re-centres the calendar on today, so the panel always comes up
     // showing now rather than wherever the month grid was left.
@@ -93,7 +93,7 @@ Scope {
             id: contentCol
             anchors.fill: parent
             anchors.margins: root.margin
-            spacing: Theme.spacing.lg
+            spacing: Theme.spacing.md
 
             RowLayout {
                 id: dayHeader
@@ -126,7 +126,7 @@ Scope {
                     Layout.preferredWidth: root.calendarWidth
                     Layout.maximumWidth: root.calendarWidth
                     Layout.fillHeight: true
-                    spacing: Theme.spacing.lg
+                    spacing: Theme.spacing.md
                     CalendarPane {
                         id: calPane
                         cal: root.cal

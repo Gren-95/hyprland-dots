@@ -12,7 +12,7 @@ Rectangle {
     default property alias contentData: body.data
     property alias headerData: trailing.data
 
-    implicitHeight: col.implicitHeight + Theme.spacing.xl * 2
+    implicitHeight: col.implicitHeight + Theme.spacing.lg * 2
     radius: 10 * Theme.radiusScale
     color: Theme.bg
     border.color: Theme.border
@@ -23,8 +23,8 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.margins: Theme.spacing.xl
-        spacing: Theme.spacing.lg
+        anchors.margins: Theme.spacing.lg
+        spacing: Theme.spacing.md
 
         RowLayout {
             Layout.fillWidth: true

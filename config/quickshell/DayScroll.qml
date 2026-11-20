@@ -31,6 +31,6 @@ Flickable {
         id: col
         width: flick.width - Theme.spacing.md
         height: flick.stretch ? Math.max(implicitHeight, flick.height) : implicitHeight
-        spacing: Theme.spacing.lg
+        spacing: Theme.spacing.md
     }
 }
