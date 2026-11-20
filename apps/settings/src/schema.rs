@@ -180,9 +180,11 @@ pub enum Control {
     Toggles(&'static [Toggle]),
     /// An installed font family, picked from a search list.
     Font,
-    /// A folder: a text field with a Browse button (zenity).
+    /// A folder, or with `picture` an image file: a text field with a
+    /// Browse button (zenity).
     Folder {
         placeholder: &'static str,
+        picture: bool,
     },
     /// A list of texts (JSON array), shown as removable pills with an input
     /// group to add one.
@@ -230,6 +232,7 @@ impl Control {
             Control::Toggles(_) => "a group of switches",
             Control::NumberChoice(_) => "a choice of numbers",
             Control::Font => "a font picker",
+            Control::Folder { picture: true, .. } => "a picture",
             Control::Folder { .. } => "a folder",
             Control::Pills { .. } => "a list of texts",
             Control::Pair { .. } => "a pair of switches",
@@ -462,7 +465,10 @@ const fn folder(
         file,
         label,
         help,
-        control: Control::Folder { placeholder },
+        control: Control::Folder {
+            placeholder,
+            picture: false,
+        },
         default: Default::HomePath(default),
     }
 }
@@ -737,13 +743,42 @@ pub const PANELS: &[Panel] = &[
             },
             Section {
                 title: "Wallpaper",
-                settings: &[folder(
-                    "wallpaper-dir",
-                    "Wallpaper folder",
-                    "Where the wallpaper deck deals cards from",
-                    "~/Pictures/wallpapers",
-                    "Pictures/wallpapers",
-                )],
+                settings: &[
+                    folder(
+                        "wallpaper-dir",
+                        "Wallpaper folder",
+                        "Where the wallpaper deck and random wallpapers come from",
+                        "~/Pictures/wallpapers",
+                        "Pictures/wallpapers",
+                    ),
+                    toggle(
+                        "wallpaper-random-login",
+                        "New wallpaper at login",
+                        "A random one from the folder; off keeps the last wallpaper",
+                        false,
+                    ),
+                    choice(
+                        "lock-background",
+                        "Lock screen background",
+                        "Behind the lock screen, blurred",
+                        &[
+                            ("random", "A random wallpaper"),
+                            ("desktop", "The desktop wallpaper"),
+                            ("picture", "A picture of my choice"),
+                        ],
+                        "random",
+                    ),
+                    Setting {
+                        file: "lock-picture",
+                        label: "Lock screen picture",
+                        help: "Used when the background is a picture of my choice",
+                        control: Control::Folder {
+                            placeholder: "~/Pictures/lock.jpg",
+                            picture: true,
+                        },
+                        default: Default::Text(""),
+                    },
+                ],
             },
         ],
     },

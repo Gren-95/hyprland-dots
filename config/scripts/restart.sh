@@ -10,6 +10,7 @@
 # costs 20 ms instead of a flat 200 ms.
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/settings.sh"
 
 # Poll until a process matching the pattern exists. $2 = pgrep mode (-f or -x),
 # $3 = timeout in centiseconds (default 200 = 2 s).
@@ -102,13 +103,18 @@ QT_QPA_PLATFORMTHEME=hyprqt6engine qs -p "$HOME/.config/quickshell/shell.qml" -d
 #    and verify afterwards rather than one-at-a-time.
 ################################################################################
 awww-daemon >/dev/null 2>&1 &
-# awww-daemon starts blank; once its socket answers, put back the last wallpaper.
+# awww-daemon starts blank; once its socket answers, put back the last
+# wallpaper, or deal a random one (Appearance, New wallpaper at login).
 (
     for _ in $(seq 40); do
         awww query >/dev/null 2>&1 && break
         sleep 0.25
     done
-    awww restore
+    if [[ $(setting wallpaper-random-login 0) == 1 ]]; then
+        bash "$SCRIPTS_DIR/wallpaper.sh" || awww restore
+    else
+        awww restore
+    fi
 ) >/dev/null 2>&1 &
 hypridle >/dev/null 2>&1 &
 # A scheduled night light starts with the session (night.sh resume is quiet).

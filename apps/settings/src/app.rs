@@ -631,16 +631,28 @@ impl App {
             }
             Message::Fonts(fonts) => self.fonts = fonts,
             Message::Browse(file) => {
-                let start = match self.values.get(file) {
-                    Some(Value::Text(t)) => format!("{}/", t.trim_end_matches('/')),
+                let picture = all_settings().any(|s| {
+                    s.file == file && matches!(s.control, crate::schema::Control::Folder { picture: true, .. })
+                });
+                let current = match self.values.get(file) {
+                    Some(Value::Text(t)) => t.clone(),
                     _ => String::new(),
                 };
-                let args = vec![
-                    "--file-selection".into(),
-                    "--directory".into(),
-                    "--title=Choose a folder".into(),
-                    format!("--filename={start}"),
-                ];
+                let args = if picture {
+                    vec![
+                        "--file-selection".into(),
+                        "--title=Choose a picture".into(),
+                        "--file-filter=Pictures | *.jpg *.jpeg *.png *.webp".into(),
+                        format!("--filename={current}"),
+                    ]
+                } else {
+                    vec![
+                        "--file-selection".into(),
+                        "--directory".into(),
+                        "--title=Choose a folder".into(),
+                        format!("--filename={}/", current.trim_end_matches('/')),
+                    ]
+                };
                 return Task::perform(crate::system::pick(args), move |r| Message::Browsed(file, r));
             }
             Message::Browsed(file, Ok(Some(path))) => {

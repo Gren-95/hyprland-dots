@@ -2,6 +2,10 @@
 set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/settings.sh"
+
+# The folder set in the settings app (Appearance, Wallpaper folder).
+WALLPAPER_DIR=$(setting_dir wallpaper-dir "$WALLPAPER_DIR")
 
 # If a path is given as $1, apply that exact wallpaper. Otherwise pick a
 # random one from $WALLPAPER_DIR. awww applies to every output by default and

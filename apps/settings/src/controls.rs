@@ -249,7 +249,7 @@ fn control<'a>(
                 _ => input.into(),
             }
         }
-        (Control::Folder { placeholder }, Value::Text(current)) => {
+        (Control::Folder { placeholder, .. }, Value::Text(current)) => {
             let shown = draft.map(String::as_str).unwrap_or(&current);
             let field = text_input(placeholder, shown)
                 .on_input(move |t| Message::Draft(file, t))

@@ -1,6 +1,8 @@
 #!/bin/bash
 # Copies the current MPRIS album art to a fixed path for hyprlock to read, and
-# repoints the lock background at a random wallpaper.
+# repoints the lock background (Appearance, Lock screen background): a random
+# wallpaper, the desktop wallpaper, or a chosen picture. A choice that cannot
+# be met (no picture set, awww not answering) leaves the previous background.
 #
 # Two rules this script has to obey, both learned from it breaking:
 #
@@ -37,10 +39,24 @@ give_up() {
     exit 0
 }
 
+lock_background() {
+    case $(valid "$(setting lock-background random)" 'random|desktop|picture' random) in
+        desktop) awww query 2>/dev/null | sed -n 's/.*image: //p' | head -n1 ;;
+        picture)
+            local p
+            p=$(setting lock-picture "")
+            printf '%s' "${p/#\~/$HOME}"
+            ;;
+        *)
+            find "$(setting_dir wallpaper-dir "$WALLPAPER_DIR")" -type f \
+                \( -name '*.jpg' -o -name '*.jpeg' -o -name '*.png' -o -name '*.webp' \) \
+                2>/dev/null | shuf -n1
+            ;;
+    esac
+}
+
 if ((!PRINT)); then
-    WP=$(find "$WALLPAPER_DIR" -type f \
-        \( -name '*.jpg' -o -name '*.jpeg' -o -name '*.png' -o -name '*.webp' \) \
-        2>/dev/null | shuf -n1)
+    WP=$(lock_background)
     [[ -n $WP && -f $WP ]] && ln -sf "$WP" "$LOCK_BG"
 fi
 

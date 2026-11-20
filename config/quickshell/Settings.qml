@@ -47,6 +47,9 @@ Scope {
     property bool indicatorAwake: true
     property bool indicatorSync: true
     property int clipboardMaxItems: 750        // cliphist -max-items (clipboard-watch.sh)
+    property bool wallpaperRandomLogin: false  // restart.sh: random wallpaper instead of the last one
+    property string lockBackground: "random"   // hyprlock-art.sh: random | desktop | picture
+    property string lockPicture: ""            // hyprlock-art.sh, for lockBackground "picture"
     property int toastTimeout: 10000           // hard ceiling: every toast, critical included, dies here
     property int notifHistoryCap: 50
     property real fontScale: 1.0               // multiplies every Theme.fontSize token
@@ -226,6 +229,9 @@ Scope {
         { name: "indicatorAwake",       file: "indicator-awake",        type: "bool" },
         { name: "indicatorSync",        file: "indicator-sync",         type: "bool" },
         { name: "clipboardMaxItems",    file: "clipboard-max-items",    type: "int"  },
+        { name: "wallpaperRandomLogin", file: "wallpaper-random-login", type: "bool" },
+        { name: "lockBackground",       file: "lock-background",        type: "string" },
+        { name: "lockPicture",          file: "lock-picture",           type: "string" },
         { name: "toastTimeout",         file: "toast-timeout",          type: "int"  },
         { name: "notifHistoryCap",      file: "notif-history-cap",      type: "int"  },
         { name: "fontScale",            file: "font-scale",             type: "real" },
