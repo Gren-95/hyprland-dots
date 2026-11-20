@@ -122,6 +122,7 @@ const AFTER_WRITE: &[(&str, &str, &str)] = &[
     ("gamemode-feral", "gamemode.sh", "feral"),
     ("idle-hold-claude", "claude-activity.sh", "prune"),
     ("power-", "power-auto.sh", "once"),
+    ("clipboard-max-items", "clipboard-watch.sh", "restart"),
 ];
 
 /// Settings that also change something outside the shell, by file: the

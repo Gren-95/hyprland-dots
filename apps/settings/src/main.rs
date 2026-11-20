@@ -32,6 +32,7 @@ mod notifapps;
 mod ocr;
 mod placement;
 mod power;
+mod privacy;
 mod proton;
 mod region;
 mod reveal;

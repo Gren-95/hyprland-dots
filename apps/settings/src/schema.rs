@@ -94,6 +94,9 @@ pub enum Page {
     Flatpak,
     /// Every setting not at its default (changed.rs).
     Changed,
+    /// In-use indicators and clipboard settings, then clearing the
+    /// clipboard history and recent files (privacy.rs).
+    Privacy,
     /// The Immich and Jellyfin syncs (services.rs, sync.rs), then their
     /// settings.
     Sync,
@@ -1464,6 +1467,70 @@ pub const PANELS: &[Panel] = &[
         page: Page::Services,
         keywords: "background daemons startup autostart login apps systemd units windows vm games browser dotwatch battery",
         sections: &[],
+    },
+    Panel {
+        id: "privacy",
+        title: "Privacy",
+        glyph: ico::EYE_OFF,
+        group: Group::System,
+        page: Page::Privacy,
+        keywords: "privacy indicator dot camera microphone mic screen recording clipboard history recent files clear wipe",
+        sections: &[
+            Section {
+                title: "In-use indicators",
+                settings: &[Setting {
+                    file: "indicator-camera",
+                    label: "Show in the bar",
+                    help: "A dot in the bar while each is in use; Bar hides or shows all of them",
+                    control: Control::Toggles(&[
+                        Toggle {
+                            file: "indicator-camera",
+                            label: "Camera",
+                            default: true,
+                        },
+                        Toggle {
+                            file: "indicator-mic",
+                            label: "Microphone",
+                            default: true,
+                        },
+                        Toggle {
+                            file: "indicator-recording",
+                            label: "Screen recording",
+                            default: true,
+                        },
+                        Toggle {
+                            file: "indicator-remote",
+                            label: "Remote access",
+                            default: true,
+                        },
+                        Toggle {
+                            file: "indicator-awake",
+                            label: "Staying awake",
+                            default: true,
+                        },
+                        Toggle {
+                            file: "indicator-sync",
+                            label: "Syncs",
+                            default: true,
+                        },
+                    ]),
+                    default: Default::Bool(true),
+                }],
+            },
+            Section {
+                title: "Clipboard",
+                settings: &[number(
+                    "clipboard-max-items",
+                    "History length",
+                    "How many copied items the clipboard history keeps",
+                    50,
+                    2000,
+                    50,
+                    "items",
+                    750,
+                )],
+            },
+        ],
     },
     Panel {
         id: "changed",

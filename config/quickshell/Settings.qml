@@ -39,6 +39,14 @@ import Quickshell.Io
 Scope {
     id: settings
     property bool activityIconsVisible: true
+    // Which in-use dots show (StatusIndicators); activityIconsVisible hides all.
+    property bool indicatorCamera: true
+    property bool indicatorMic: true
+    property bool indicatorRecording: true
+    property bool indicatorRemote: true
+    property bool indicatorAwake: true
+    property bool indicatorSync: true
+    property int clipboardMaxItems: 750        // cliphist -max-items (clipboard-watch.sh)
     property int toastTimeout: 10000           // hard ceiling: every toast, critical included, dies here
     property int notifHistoryCap: 50
     property real fontScale: 1.0               // multiplies every Theme.fontSize token
@@ -211,6 +219,13 @@ Scope {
 
     readonly property var _schema: [
         { name: "activityIconsVisible", file: "activity-icons.enabled", type: "bool" },
+        { name: "indicatorCamera",      file: "indicator-camera",       type: "bool" },
+        { name: "indicatorMic",         file: "indicator-mic",          type: "bool" },
+        { name: "indicatorRecording",   file: "indicator-recording",    type: "bool" },
+        { name: "indicatorRemote",      file: "indicator-remote",       type: "bool" },
+        { name: "indicatorAwake",       file: "indicator-awake",        type: "bool" },
+        { name: "indicatorSync",        file: "indicator-sync",         type: "bool" },
+        { name: "clipboardMaxItems",    file: "clipboard-max-items",    type: "int"  },
         { name: "toastTimeout",         file: "toast-timeout",          type: "int"  },
         { name: "notifHistoryCap",      file: "notif-history-cap",      type: "int"  },
         { name: "fontScale",            file: "font-scale",             type: "real" },

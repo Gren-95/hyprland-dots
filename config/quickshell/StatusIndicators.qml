@@ -48,8 +48,16 @@ RowLayout {
     // Master switch from Quick Actions ("Activity icons"); hides the whole
     // cluster when off, regardless of what's active.
     readonly property bool enabled: settingsStore.activityIconsVisible
-    readonly property bool anyOn: enabled && (cameraOn || micOn || recording || remoteOn
-                                  || sleepInhibit || immichOn || jellyfinOn)
+    // Each dot can be switched off on its own (Privacy in the settings app).
+    readonly property bool showCamera: cameraOn && settingsStore.indicatorCamera
+    readonly property bool showMic: micOn && settingsStore.indicatorMic
+    readonly property bool showRecording: recording && settingsStore.indicatorRecording
+    readonly property bool showRemote: remoteOn && settingsStore.indicatorRemote
+    readonly property bool showAwake: sleepInhibit && settingsStore.indicatorAwake
+    readonly property bool showImmich: immichOn && settingsStore.indicatorSync
+    readonly property bool showJellyfin: jellyfinOn && settingsStore.indicatorSync
+    readonly property bool anyOn: enabled && (showCamera || showMic || showRecording || showRemote
+                                  || showAwake || showImmich || showJellyfin)
     readonly property string sleepReason: {
         const r = [];
         if (si.idleHyprOff)   r.push("Stay Awake");
@@ -107,11 +115,11 @@ RowLayout {
         }
     }
 
-    Dot { glyph: "󰄀"; tint: Theme.accent.green;  on: si.cameraOn;     tip: "Camera in use" }
-    Dot { glyph: "󰍬"; tint: Theme.accent.orange; on: si.micOn;        tip: "Microphone in use" }
-    Dot { glyph: "󰑊"; tint: Theme.accent.red;    on: si.recording;   pulse: true; tip: "Screen recording" }
-    Dot { glyph: "󰢹"; tint: Theme.accent.blue;   on: si.remoteOn;     tip: "Remote access · WayVNC :5900" }
-    Dot { glyph: "󰅶"; tint: Theme.accent.yellow; on: si.sleepInhibit; tip: si.sleepReason }
-    Dot { glyph: "󰋩"; tint: Theme.accent.orange;           on: si.immichOn;     tip: "Immich photo sync on" }
-    Dot { glyph: "󰝚"; tint: Theme.accent.purple;           on: si.jellyfinOn;   tip: "Jellyfin music sync on" }
+    Dot { glyph: "󰄀"; tint: Theme.accent.green;  on: si.showCamera;     tip: "Camera in use" }
+    Dot { glyph: "󰍬"; tint: Theme.accent.orange; on: si.showMic;        tip: "Microphone in use" }
+    Dot { glyph: "󰑊"; tint: Theme.accent.red;    on: si.showRecording;   pulse: true; tip: "Screen recording" }
+    Dot { glyph: "󰢹"; tint: Theme.accent.blue;   on: si.showRemote;     tip: "Remote access · WayVNC :5900" }
+    Dot { glyph: "󰅶"; tint: Theme.accent.yellow; on: si.showAwake; tip: si.sleepReason }
+    Dot { glyph: "󰋩"; tint: Theme.accent.orange;           on: si.showImmich;     tip: "Immich photo sync on" }
+    Dot { glyph: "󰝚"; tint: Theme.accent.purple;           on: si.showJellyfin;   tip: "Jellyfin music sync on" }
 }

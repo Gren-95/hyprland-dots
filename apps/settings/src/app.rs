@@ -29,6 +29,7 @@ use crate::notifapps;
 use crate::ocr;
 use crate::placement;
 use crate::power;
+use crate::privacy;
 use crate::proton;
 use crate::region;
 use crate::reveal;
@@ -142,6 +143,7 @@ pub struct App {
     backup: backup::State,
     sharing: sharing::State,
     flatpak: flatpak::State,
+    privacy: privacy::State,
     hidden_apps: hiddenapps::State,
     gaming: gaming::State,
     gaming_display: hyprpage::State,
@@ -234,6 +236,7 @@ pub enum Message {
     Backup(backup::Msg),
     Sharing(sharing::Msg),
     Flatpak(flatpak::Msg),
+    Privacy(privacy::Msg),
     Gaming(gaming::Msg),
     GamingDisplay(hyprpage::Msg),
     Proton(proton::Msg),
@@ -286,6 +289,7 @@ impl App {
             backup: backup::State::default(),
             sharing: sharing::State::default(),
             flatpak: flatpak::State::default(),
+            privacy: privacy::State::default(),
             hidden_apps: hiddenapps::State::default(),
             gaming: gaming::State::default(),
             gaming_display: hyprpage::State::default(),
@@ -322,7 +326,7 @@ impl App {
     /// Ask the system again, when the open panel shows system state.
     fn refresh_page(&mut self) -> Task<Message> {
         match PANELS[self.panel].page {
-            Page::Settings | Page::Changed => Task::none(),
+            Page::Settings | Page::Changed | Page::Privacy => Task::none(),
             Page::Services => Task::batch([
                 self.services.update(services::Msg::Refresh).map(Message::Services),
                 self.units.update(units::Msg::Load).map(Message::Units),
@@ -520,6 +524,7 @@ impl App {
             }
             Message::Sharing(msg) => return self.sharing.update(msg).map(Message::Sharing),
             Message::Flatpak(msg) => return self.flatpak.update(msg).map(Message::Flatpak),
+            Message::Privacy(msg) => return self.privacy.update(msg).map(Message::Privacy),
             Message::Gaming(gaming::Msg::OpenBluetooth) => {
                 if let Some(i) = crate::schema::panel_index("bluetooth") {
                     return self.update(Message::SelectPanel(i));
@@ -858,6 +863,25 @@ impl App {
                         _ => self.sync.jellyfin_rows(),
                     };
                     let extra = extra.into_iter().map(|r| r.map(Message::Sync)).collect();
+                    body = self.section_with(body, section, layout, extra);
+                }
+                if let Some(error) = &self.error {
+                    body = body.push(text(error).color(style::RED));
+                }
+                body.into()
+            }
+            Page::Privacy => {
+                let mut body = page_column(panel.title, layout);
+                for section in panel.sections {
+                    let extra = if section.title == "Clipboard" {
+                        self.privacy
+                            .rows()
+                            .into_iter()
+                            .map(|r| r.map(Message::Privacy))
+                            .collect()
+                    } else {
+                        Vec::new()
+                    };
                     body = self.section_with(body, section, layout, extra);
                 }
                 if let Some(error) = &self.error {
