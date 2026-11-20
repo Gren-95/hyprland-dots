@@ -39,6 +39,7 @@ mod store;
 mod style;
 mod sysinfo;
 mod system;
+mod sysunits;
 mod tailscale;
 mod themes;
 mod ui;
