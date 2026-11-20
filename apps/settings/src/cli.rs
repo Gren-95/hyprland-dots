@@ -98,10 +98,8 @@ pub fn set(store: &Store, key: &str, input: &str) -> Result<(), String> {
     store
         .write(file, &value)
         .map_err(|e| format!("could not save {file}: {e}"))?;
-    for work in crate::system::after_write(file) {
-        let _ = work.join();
-    }
-    Ok(())
+    crate::system::after_write_result(crate::system::after_write(file))
+        .map_err(|e| format!("saved {file}, but could not apply it now: {e}"))
 }
 
 /// `import`: list what the file changes, ask, then apply.

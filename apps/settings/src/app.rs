@@ -124,6 +124,9 @@ pub struct App {
     shortcuts: shortcuts::State,
     /// Keyboard shows its key binds page instead of its settings.
     shortcuts_open: bool,
+    /// A timed refresh is still running: the next tick waits for it, so a
+    /// slow or hung tool cannot pile up reads.
+    polling: bool,
     default_apps: defaultapps::State,
     windows: hyprpage::State,
     about: about::State,
@@ -208,6 +211,10 @@ pub enum Message {
     Shortcuts(shortcuts::Msg),
     /// Open (true) or leave (false) Keyboard's key binds page.
     ShowShortcuts(bool),
+    /// A timed refresh finished.
+    Polled,
+    /// A saved setting was applied outside the shell, or why not.
+    Applied(&'static str, Result<(), String>),
     DefaultApps(defaultapps::Msg),
     Windows(hyprpage::Msg),
     About(about::Msg),
@@ -259,6 +266,7 @@ impl App {
             themes: themes::State::default(),
             shortcuts: shortcuts::State::default(),
             shortcuts_open: open_shortcuts,
+            polling: false,
             default_apps: defaultapps::State::default(),
             windows: hyprpage::State::default(),
             about: about::State::default(),
@@ -391,15 +399,26 @@ impl App {
         }
     }
 
-    fn write(&mut self, file: &'static str, value: Value) {
+    /// Save a setting; the returned task applies it outside the shell
+    /// where needed (Hyprland, GTK, a script) and reports a failure.
+    fn write(&mut self, file: &'static str, value: Value) -> Task<Message> {
         match self.store.write(file, &value) {
             Ok(()) => {
                 self.values.insert(file, value);
                 self.error = None;
-                // Runs on; the window does not wait for it.
-                drop(crate::system::after_write(file));
+                let work = crate::system::after_write(file);
+                if work.is_empty() {
+                    return Task::none();
+                }
+                Task::perform(
+                    crate::system::spawn(move || crate::system::after_write_result(work)),
+                    move |r| Message::Applied(file, r.unwrap_or_else(|| Err("stopped unexpectedly".into()))),
+                )
             }
-            Err(e) => self.error = Some(format!("Could not save {file}: {e}")),
+            Err(e) => {
+                self.error = Some(format!("Could not save {file}: {e}"));
+                Task::none()
+            }
         }
     }
 
@@ -534,7 +553,12 @@ impl App {
                     return crate::focus::focus_id(crate::focus::nav_id(PANELS[next].id));
                 }
             }
-            Message::Tick => return self.poll_page(),
+            Message::Tick if self.polling => {}
+            Message::Tick => {
+                self.polling = true;
+                return self.poll_page().chain(Task::done(Message::Polled));
+            }
+            Message::Polled => self.polling = false,
             Message::Pick(file, value) => {
                 self.open_list = None;
                 return self.update(Message::Set(file, value));
@@ -575,7 +599,11 @@ impl App {
             Message::Set(file, value) => {
                 // A pick from a search picker ends its search.
                 self.drafts.remove(file);
-                self.write(file, value);
+                return self.write(file, value);
+            }
+            Message::Applied(_, Ok(())) => {}
+            Message::Applied(file, Err(e)) => {
+                self.error = Some(format!("Saved {file}, but could not apply it now: {e}"));
             }
             Message::Fonts(fonts) => self.fonts = fonts,
             Message::Browse(file) => {
@@ -593,7 +621,7 @@ impl App {
             }
             Message::Browsed(file, Ok(Some(path))) => {
                 self.drafts.remove(file);
-                self.write(file, Value::Text(path));
+                return self.write(file, Value::Text(path));
             }
             Message::Browsed(_, Ok(None)) => {}
             Message::Browsed(_, Err(e)) => self.error = Some(e),
@@ -605,7 +633,7 @@ impl App {
                     if !items.iter().any(|v| v.as_str() == Some(item)) {
                         items.push(serde_json::Value::String(item.to_string()));
                     }
-                    self.write(file, Value::Json(serde_json::Value::Array(items)));
+                    return self.write(file, Value::Json(serde_json::Value::Array(items)));
                 }
             }
             Message::RemovePill(file, index) => {
@@ -614,15 +642,17 @@ impl App {
                     if index < items.len() {
                         items.remove(index);
                     }
-                    self.write(file, Value::Json(serde_json::Value::Array(items)));
+                    return self.write(file, Value::Json(serde_json::Value::Array(items)));
                 }
             }
             Message::Reset(file) => {
                 if let Some(setting) = all_settings().find(|s| s.file == file) {
+                    let mut tasks = Vec::new();
                     for (file, _, default) in setting.files() {
                         self.drafts.remove(file);
-                        self.write(file, default);
+                        tasks.push(self.write(file, default));
                     }
+                    return Task::batch(tasks);
                 }
             }
             Message::Preview(file, value) => {
@@ -632,7 +662,7 @@ impl App {
             Message::Commit(file) => {
                 self.dragging = None;
                 if let Some(value) = self.values.get(file).cloned() {
-                    self.write(file, value);
+                    return self.write(file, value);
                 }
             }
             Message::Draft(file, draft) => {
@@ -640,7 +670,7 @@ impl App {
             }
             Message::Submit(file) => {
                 if let Some(draft) = self.drafts.remove(file) {
-                    self.write(file, Value::Text(draft.trim().to_string()));
+                    return self.write(file, Value::Text(draft.trim().to_string()));
                 }
             }
             Message::Reveal(panel, file) => {

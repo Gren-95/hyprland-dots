@@ -213,30 +213,54 @@ pub fn read_file(path: &Path) -> Result<Backup, String> {
 pub fn apply(new: &Backup, store_dir: &Path) -> Result<(), String> {
     let store = Store::new(store_dir.to_path_buf());
     let now = current(store_dir);
+    // Every change is tried; a failed one does not stop the rest, and the
+    // error lists what was applied and what was not.
+    let mut applied = 0;
+    let mut failed: Vec<String> = Vec::new();
     let mut work = Vec::new();
     for (file, text) in &new.store {
         if now.store.get(file).map(|t| t.trim()) == Some(text.trim()) {
             continue;
         }
-        store
-            .write(file, &Value::Text(text.clone()))
-            .map_err(|e| format!("could not save {file}: {e}"))?;
-        work.extend(crate::system::after_write(file));
+        match store.write(file, &Value::Text(text.clone())) {
+            Ok(()) => {
+                applied += 1;
+                work.extend(crate::system::after_write(file));
+            }
+            Err(e) => failed.push(format!("{file} ({e})")),
+        }
     }
-    for w in work {
-        let _ = w.join();
+    if let Err(e) = crate::system::after_write_result(work) {
+        failed.push(format!("applying the settings now ({e})"));
     }
     // After the store: the store's after-write work also writes Hyprland
     // options, which the export's own values then replace.
     if !new.hyprland.is_null() && crate::hypr::saved_json() != new.hyprland {
-        crate::hypr::replace_saved(&new.hyprland)?;
+        match crate::hypr::replace_saved(&new.hyprland) {
+            Ok(()) => applied += 1,
+            Err(e) => failed.push(format!("Hyprland ({e})")),
+        }
     }
     for (role, app) in &new.default_apps {
         if now.default_apps.get(role) != Some(app) {
-            crate::defaultapps::set_role(role, app.clone())?;
+            match crate::defaultapps::set_role(role, app.clone()) {
+                Ok(()) => applied += 1,
+                Err(e) => failed.push(format!(
+                    "{} ({e})",
+                    crate::defaultapps::role_label(role).unwrap_or(role)
+                )),
+            }
         }
     }
-    Ok(())
+    if failed.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "Applied {applied} of {} changes. Not applied: {}",
+            applied + failed.len(),
+            failed.join("; ")
+        ))
+    }
 }
 
 /// The Backup section on About: Export… and Import…, and after picking a

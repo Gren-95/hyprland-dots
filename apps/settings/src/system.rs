@@ -127,7 +127,7 @@ const AFTER_WRITE: &[(&str, &str, &str)] = &[
 /// Settings that also change something outside the shell, by file: the
 /// shell reads the setting itself, these make Hyprland or GTK follow. Each
 /// gets the stored value. Add a line here for the next one.
-type Apply = (&'static str, Kind, fn(Value));
+type Apply = (&'static str, Kind, fn(Value) -> Result<(), String>);
 
 const APPLY: &[Apply] = &[
     ("animations", Kind::Bool, apply_animations),
@@ -137,19 +137,20 @@ const APPLY: &[Apply] = &[
     ("cursor-size", Kind::Int, apply_cursor_size),
 ];
 
-fn gsettings_set(key: &str, value: &str) {
-    let _ = run_blocking(
+fn gsettings_set(key: &str, value: &str) -> Result<(), String> {
+    run_blocking(
         "gsettings",
         &args(&["set", "org.gnome.desktop.interface", key, value]),
         None,
-    );
+    )
+    .map(|_| ())
 }
 
 /// Dark or light for apps that follow the system; adw-gtk3 has a theme for
 /// each, so GTK 3 apps follow too.
-fn apply_color_scheme(value: Value) {
-    let Value::Text(scheme) = value else { return };
-    gsettings_set("color-scheme", &scheme);
+fn apply_color_scheme(value: Value) -> Result<(), String> {
+    let Value::Text(scheme) = value else { return Ok(()) };
+    gsettings_set("color-scheme", &scheme)?;
     let theme = run_blocking(
         "gsettings",
         &args(&["get", "org.gnome.desktop.interface", "gtk-theme"]),
@@ -162,20 +163,20 @@ fn apply_color_scheme(value: Value) {
         } else {
             "adw-gtk3"
         };
-        gsettings_set("gtk-theme", dark);
+        gsettings_set("gtk-theme", dark)?;
     }
+    Ok(())
 }
 
 /// The GTK font, keeping its size ("Adwaita Sans 11").
-fn apply_app_font(value: Value) {
-    let Value::Text(family) = value else { return };
+fn apply_app_font(value: Value) -> Result<(), String> {
+    let Value::Text(family) = value else { return Ok(()) };
     let current = run_blocking(
         "gsettings",
         &args(&["get", "org.gnome.desktop.interface", "font-name"]),
         None,
-    )
-    .unwrap_or_default();
-    gsettings_set("font-name", &format!("{family} {}", font_size(&current)));
+    )?;
+    gsettings_set("font-name", &format!("{family} {}", font_size(&current)))
 }
 
 /// The size at the end of a font name ("'Adwaita Sans 11'" is 11).
@@ -190,23 +191,24 @@ pub fn font_size(font_name: &str) -> String {
         .to_string()
 }
 
-fn apply_cursor_size(value: Value) {
-    let Value::Int(size) = value else { return };
+fn apply_cursor_size(value: Value) -> Result<(), String> {
+    let Value::Int(size) = value else { return Ok(()) };
     let script = crate::store::home().join(".config/scripts/cursor-theme.sh");
-    let _ = run_blocking(
+    run_blocking(
         "bash",
         &[script.to_string_lossy().into_owned(), "size".into(), size.to_string()],
         None,
-    );
+    )
+    .map(|_| ())
 }
 
 /// Animations on or off everywhere: Hyprland's animations:enabled (kept in
 /// settings.lua, the option the Windows panel shows) and GTK's
 /// enable-animations.
-fn apply_animations(value: Value) {
+fn apply_animations(value: Value) -> Result<(), String> {
     let on = value != Value::Bool(false);
-    set_hyprland("animations:enabled", serde_json::json!(on));
-    let _ = run_blocking(
+    set_hyprland("animations:enabled", serde_json::json!(on))?;
+    run_blocking(
         "gsettings",
         &args(&[
             "set",
@@ -215,15 +217,16 @@ fn apply_animations(value: Value) {
             if on { "true" } else { "false" },
         ]),
         None,
-    );
+    )
+    .map(|_| ())
 }
 
 /// Window corners in Hyprland, from the shell's corner roundness: the same
 /// 12 px base as the shell's large radius (Theme.radius.lg), times the
 /// scale. The Windows panel shows the result and can fine-tune it.
-fn apply_rounding(value: Value) {
-    let Value::Real(scale) = value else { return };
-    set_hyprland("decoration:rounding", serde_json::json!(window_rounding(scale)));
+fn apply_rounding(value: Value) -> Result<(), String> {
+    let Value::Real(scale) = value else { return Ok(()) };
+    set_hyprland("decoration:rounding", serde_json::json!(window_rounding(scale)))
 }
 
 /// Hyprland's window rounding for a corner roundness scale.
@@ -234,19 +237,19 @@ pub fn window_rounding(scale: f64) -> i64 {
 const WINDOW_RADIUS: f64 = 12.0;
 
 /// One Hyprland option, kept in settings.lua and applied now.
-fn set_hyprland(option: &str, value: serde_json::Value) {
+fn set_hyprland(option: &str, value: serde_json::Value) -> Result<(), String> {
     let option = option.to_string();
-    let _ = crate::hypr::update_blocking(
+    crate::hypr::update_blocking(
         move |s| {
             s.options.insert(option, value);
         },
         "",
-    );
+    )
 }
 
-/// Run what a written setting needs, each on its own thread. The window
-/// lets them run; the CLI waits for the returned threads before it exits.
-pub fn after_write(file: &str) -> Vec<std::thread::JoinHandle<()>> {
+/// Run what a written setting needs, each on its own thread; each thread
+/// ends with whether it worked. See `after_write_result` to wait for them.
+pub fn after_write(file: &str) -> Vec<std::thread::JoinHandle<Result<(), String>>> {
     let mut work = Vec::new();
     if let Some((_, kind, apply)) = APPLY.iter().find(|(f, ..)| *f == file) {
         let (kind, apply) = (*kind, *apply);
@@ -262,11 +265,28 @@ pub fn after_write(file: &str) -> Vec<std::thread::JoinHandle<()>> {
                 .to_string_lossy()
                 .into_owned();
             work.push(std::thread::spawn(move || {
-                let _ = run_blocking("bash", &[path, arg.to_string()], None);
+                run_blocking("bash", &[path, arg.to_string()], None).map(|_| ())
             }));
         }
     }
     work
+}
+
+/// Wait for a write's work: Err joins what failed.
+pub fn after_write_result(work: Vec<std::thread::JoinHandle<Result<(), String>>>) -> Result<(), String> {
+    let failed: Vec<String> = work
+        .into_iter()
+        .filter_map(|w| match w.join() {
+            Ok(Ok(())) => None,
+            Ok(Err(e)) => Some(e),
+            Err(_) => Some("stopped unexpectedly".into()),
+        })
+        .collect();
+    if failed.is_empty() {
+        Ok(())
+    } else {
+        Err(failed.join("; "))
+    }
 }
 
 /// Shorthand for an argument list.

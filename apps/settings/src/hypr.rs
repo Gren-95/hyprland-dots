@@ -382,7 +382,9 @@ pub fn replace_saved(saved: &Json) -> Result<(), String> {
     )
     .map_err(|e| format!("Could not save settings.json: {e}"))?;
     update_blocking(|_| {}, "")?;
-    system::run_blocking("hyprctl", &["reload".to_string()], None).map(|_| ())
+    system::run_blocking("hyprctl", &["reload".to_string()], None)
+        .map(|_| ())
+        .map_err(|e| format!("saved, but Hyprland did not reload: {e}"))
 }
 
 impl Settings {

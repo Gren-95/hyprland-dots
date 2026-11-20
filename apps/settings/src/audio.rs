@@ -38,6 +38,8 @@ pub struct Node {
     /// wpctl's scale: 1.0 is 100%.
     pub volume: f32,
     pub muted: bool,
+    /// wpctl could not read the volume: no slider, which would show 0%.
+    pub unknown: bool,
     /// The card it belongs to (device.id); apps have none.
     pub card: Option<u32>,
 }
@@ -212,10 +214,11 @@ fn snapshot() -> Result<Snapshot, String> {
         card,
     } in nodes
     {
-        let (volume, muted) = system::run_blocking("wpctl", &args(&["get-volume", &id.to_string()]), None)
+        let read = system::run_blocking("wpctl", &args(&["get-volume", &id.to_string()]), None)
             .ok()
-            .and_then(|out| parse_volume(&out))
-            .unwrap_or((0.0, false));
+            .and_then(|out| parse_volume(&out));
+        let unknown = read.is_none();
+        let (volume, muted) = read.unwrap_or_default();
         let is_default = match class {
             Class::Output => name == default_sink,
             Class::Input => name == default_source,
@@ -227,6 +230,7 @@ fn snapshot() -> Result<Snapshot, String> {
             name,
             is_default,
             volume,
+            unknown,
             muted,
             card,
         };
@@ -471,6 +475,9 @@ fn percent<'a>(n: &Node) -> Element<'a, Msg> {
 
 /// A device's volume: mute button, slider across the card, percentage.
 fn volume_line<'a>(n: &Node, max: f32, input: bool) -> Element<'a, Msg> {
+    if n.unknown {
+        return ui::note("Volume unknown: wpctl could not read it");
+    }
     let line = row![mute_button(n, input), volume_slider(n, max), percent(n)]
         .spacing(12)
         .align_y(Alignment::Center);
@@ -479,6 +486,9 @@ fn volume_line<'a>(n: &Node, max: f32, input: bool) -> Element<'a, Msg> {
 
 /// An app that plays sound: mute button, name, slider, percentage.
 fn app_row<'a>(n: &Node, max: f32) -> Element<'a, Msg> {
+    if n.unknown {
+        return ui::note(format!("{}: volume unknown", n.label));
+    }
     let line = row![
         mute_button(n, false),
         text(n.label.clone())
