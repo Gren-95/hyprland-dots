@@ -2,10 +2,10 @@
 // in hypr/modules/keys.lua). One entry per shortcut in the table below; the
 // names are the contract with keys.lua, so renaming one means editing both.
 //
-// Instantiated once per bar (inside the Variants delegate) because several
-// targets are bar-local items; everything it acts on is handed in as a
-// property rather than looked up by id (the `Ref` suffix keeps a property
-// from shadowing the id it is bound to).
+// Instantiated once, in shell.qml's root scope: a copy per bar registered
+// every shortcut once per monitor. The bar-local targets (flyouts, the clock)
+// are the active bar's, handed in as properties rather than looked up by id
+// (the `Ref` suffix keeps a property from shadowing the id it is bound to).
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland

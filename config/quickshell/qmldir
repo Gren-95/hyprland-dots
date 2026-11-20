@@ -91,3 +91,4 @@ WeatherCard WeatherCard.qml
 WeatherService WeatherService.qml
 WorkspaceOverview WorkspaceOverview.qml
 WorkspaceStrip WorkspaceStrip.qml
+BatteryCritical BatteryCritical.qml

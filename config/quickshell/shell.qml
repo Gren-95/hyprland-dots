@@ -73,6 +73,29 @@ Scope {
     SuperWatch { id: superWatch; active: wallpaperDeck.open || workspaceOverview.open }
     RegionSelector { id: regionSelector }
     ScreenshotActions { id: screenshotActions }
+    // Once for the whole shell, not per bar: with two monitors a per-bar
+    // copy registered every shortcut twice and ran the battery action twice.
+    BatteryCritical {
+        criticalPct: settingsStore.batteryCriticalPct
+        action: settingsStore.batteryCriticalAction
+    }
+    Shortcuts {
+        spotlightRef: spotlight
+        gameModeRef: gameMode
+        gameLauncherRef: gameLauncher
+        clipboardRef: clipboard
+        sysmonRef: sysmon
+        dayPanelRef: dayPanel
+        wallpaperDeckRef: wallpaperDeck
+        regionSelectorRef: regionSelector
+        workspaceOverviewRef: workspaceOverview
+        // The active bar's modules: the monitor in focus gets the flyout.
+        soundModRef: shellRoot.activeBar ? shellRoot.activeBar.soundModule : null
+        powerModRef: shellRoot.activeBar ? shellRoot.activeBar.powerModule : null
+        quickModRef: shellRoot.activeBar ? shellRoot.activeBar.quickModule : null
+        btModRef: shellRoot.activeBar ? shellRoot.activeBar.btModule : null
+        clockAnchorRef: shellRoot.activeBar ? shellRoot.activeBar.clockItem : null
+    }
 
     Variants {
         model: Quickshell.screens
@@ -88,6 +111,14 @@ Scope {
             readonly property bool onActiveMonitor: Hyprland.focusedMonitor
                 && Hyprland.focusedMonitor.name === modelData.name
             onOnActiveMonitorChanged: if (onActiveMonitor) shellRoot.activeBar = bar
+
+            // This bar's modules, for the root-scope Shortcuts (which act on
+            // the active bar's).
+            readonly property var soundModule: soundMod
+            readonly property var powerModule: powerMod
+            readonly property var quickModule: quickMod
+            readonly property var btModule: btMod
+            readonly property var clockItem: clockAnchor
 
             anchors { top: true; left: true; right: true }
             implicitHeight: settingsStore.barHeight
@@ -416,41 +447,6 @@ Scope {
                             brightProc.startDetached();
                         }
                         Process { id: brightProc; command: [] }
-
-                        // Critical action. The low-battery warnings come from
-                        // the battery-notify daemon (scripts/battery-notify.sh,
-                        // with its own Services toggle); warning here as well
-                        // sent every one twice. At the critical level a
-                        // cancelable 15 s countdown fires the configured
-                        // action; charging cancels it.
-                        onPctChanged: batteryLogic()
-                        // Plugged in counts even when a charge threshold keeps
-                        // the battery from charging.
-                        onChargingChanged: if (charging) criticalTimer.stop();
-                        onPluggedChanged: if (plugged) criticalTimer.stop();
-                        function batteryLogic() {
-                            if (charging || plugged || pct <= 0) return;
-                            const crit = settingsStore.batteryCriticalPct;
-                            if (crit > 0 && pct <= crit
-                                    && settingsStore.batteryCriticalAction === "suspend"
-                                    && !criticalTimer.running) {
-                                battWarnProc.command = ["notify-send", "-u", "critical",
-                                    "Battery critical", "Suspending in 15 s — plug in to cancel"];
-                                battWarnProc.startDetached();
-                                criticalTimer.start();
-                            }
-                        }
-                        Timer {
-                            id: criticalTimer
-                            interval: 15000
-                            onTriggered: {
-                                if (!batteryIcon.charging && !batteryIcon.plugged) {
-                                    battWarnProc.command = ["systemctl", "suspend"];
-                                    battWarnProc.startDetached();
-                                }
-                            }
-                        }
-                        Process { id: battWarnProc; command: [] }
                     }
 
                     PowerModule {
@@ -492,22 +488,6 @@ Scope {
                     target: dayPanel
                     function onNavigateNext() { dayPanel.close(); quickMod.openAt(0) }
                     function onNavigatePrev() { dayPanel.close(); spotlight.openAt(0) }
-                }
-                Shortcuts {
-                    spotlightRef: spotlight
-                    gameModeRef: gameMode
-                    gameLauncherRef: gameLauncher
-                    clipboardRef: clipboard
-                    sysmonRef: sysmon
-                    dayPanelRef: dayPanel
-                    wallpaperDeckRef: wallpaperDeck
-                    regionSelectorRef: regionSelector
-                    workspaceOverviewRef: workspaceOverview
-                    soundModRef: soundMod
-                    powerModRef: powerMod
-                    quickModRef: quickMod
-                    btModRef: btMod
-                    clockAnchorRef: clockAnchor
                 }
             }
         }
