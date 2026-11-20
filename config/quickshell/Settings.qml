@@ -63,6 +63,9 @@ Scope {
     property bool clockShowSeconds: false
     property string clockDateFormat: "ddd, dd MMM"
     property real animScale: 1.0               // multiplies Theme.duration; 0 = instant
+    property string borderColour: "accent"     // focused window border (HyprBorder): "accent" or a Theme.base name
+    property bool borderGradient: true         // fade to a lighter tint
+    property int borderAngle: 45               // gradient direction, degrees
     property bool animations: true             // off: shell, Hyprland and GTK animations all off
     // Game mode: what it does (gamemode.sh reads the rest of these files).
     property bool gamemodeEffects: true
@@ -230,6 +233,9 @@ Scope {
         { name: "clockShowSeconds",     file: "clock-seconds",          type: "bool" },
         { name: "clockDateFormat",      file: "clock-date-format",      type: "string" },
         { name: "animScale",            file: "anim-scale",             type: "real" },
+        { name: "borderColour",         file: "border-colour",          type: "string" },
+        { name: "borderGradient",       file: "border-gradient",        type: "bool" },
+        { name: "borderAngle",          file: "border-angle",           type: "int"  },
         { name: "animations",           file: "animations",             type: "bool" },
         { name: "gamemodeEffects", file: "gamemode-effects", type: "bool" },
         { name: "gamemodePerformance", file: "gamemode-performance", type: "bool" },

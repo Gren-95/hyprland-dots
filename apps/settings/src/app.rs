@@ -946,8 +946,15 @@ impl App {
                     .into_iter()
                     .map(|r| r.map(Message::WindowRules))
                     .collect();
-                let rules = ui::section(tail_column(layout), "Window rules", rules);
-                column![look, rules].width(Length::Fill).max_width(PAGE_WIDTH).into()
+                let mut rest = tail_column(layout);
+                for section in panel.sections {
+                    rest = self.section(rest, section, layout);
+                }
+                if let Some(error) = &self.error {
+                    rest = rest.push(text(error).color(style::RED));
+                }
+                let rest = ui::section(rest, "Window rules", rules);
+                column![look, rest].width(Length::Fill).max_width(PAGE_WIDTH).into()
             }
             Page::Power => {
                 let battery = Element::from(self.power.view(page_column(panel.title, layout))).map(Message::Power);

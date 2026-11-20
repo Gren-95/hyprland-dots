@@ -46,7 +46,11 @@ Scope {
     EventToasts {}
     WeatherService { id: weatherService }
     AccentService { id: accentService }
-    HyprBorder {}
+    HyprBorder {
+        colourName: settingsStore.borderColour
+        gradient: settingsStore.borderGradient
+        angle: settingsStore.borderAngle
+    }
     Notifications { id: notifService }
     GameModeService { id: gameMode; notifs: notifService }
     Binding { target: TailscaleService; property: "paused"; value: gameMode.active && settingsStore.gamemodeTailscale }

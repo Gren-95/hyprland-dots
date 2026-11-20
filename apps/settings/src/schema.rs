@@ -126,6 +126,7 @@ pub const SHOWN_WHEN: &[(&str, &str)] = &[
     ("dnd-from", "dnd-schedule"),
     ("dnd-to", "dnd-schedule"),
     ("anim-scale", "animations"),
+    ("border-angle", "border-gradient"),
 ];
 
 pub struct Section {
@@ -472,6 +473,20 @@ const ACCENTS: &[(&str, &str)] = &[
     ("slate", "Slate"),
 ];
 
+/// The focused window's border: the accent, or one of the fixed colours.
+const BORDER_COLOURS: &[(&str, &str)] = &[
+    ("accent", "Accent colour"),
+    ("orange", "Orange"),
+    ("blue", "Blue"),
+    ("green", "Green"),
+    ("red", "Red"),
+    ("yellow", "Yellow"),
+    ("purple", "Purple"),
+    ("pink", "Pink"),
+    ("teal", "Teal"),
+    ("slate", "Slate"),
+];
+
 pub const PANELS: &[Panel] = &[
     Panel {
         id: "network",
@@ -765,7 +780,25 @@ pub const PANELS: &[Panel] = &[
         group: Group::Appearance,
         page: Page::Windows,
         keywords: "gaps border rounding blur shadow animations opacity tiling dwindle master focus follows mouse rule app float floating size transparent see-through workspace class",
-        sections: &[],
+        sections: &[Section {
+            title: "Focused window border",
+            settings: &[
+                choice(
+                    "border-colour",
+                    "Colour",
+                    "The border of the window with focus",
+                    BORDER_COLOURS,
+                    "accent",
+                ),
+                toggle(
+                    "border-gradient",
+                    "Gradient",
+                    "Fade from the colour to a lighter tint of it",
+                    true,
+                ),
+                number("border-angle", "Gradient angle", "Direction of the fade", 0, 345, 15, "°", 45),
+            ],
+        }],
     },
     Panel {
         id: "bar",
