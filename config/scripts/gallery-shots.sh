@@ -5,8 +5,10 @@
 #   gallery-shots.sh              # retake every popup shot
 #   gallery-shots.sh sound toast  # retake only the named shots
 #   gallery-shots.sh --list       # print the shot names
+#   gallery-shots.sh --workspace 9 [names]  # take them on workspace 9
 #
-# Switches to an empty workspace so no window shows behind the popups, captures
+# Switches to an empty workspace (or the one given, which should be empty)
+# so no window shows behind the popups, captures
 # a baseline, then opens each popup through its Quickshell global shortcut and
 # crops the capture to whatever changed against the baseline (plus a margin).
 # The bar is ignored in the comparison because its clock and badges change.
@@ -28,6 +30,8 @@ SETTLE_SECONDS=1.5
 TOAST_SECONDS=1.5
 
 # name:shortcut. "toast" has no shortcut; it fires a notification instead.
+# "keybinds" is the settings app's key binds page (Super+F1), a window that
+# tiles on the empty workspace; it is started and closed rather than toggled.
 SHOTS=(
     spotlight:spotlight
     clipboard:clipboard
@@ -37,7 +41,7 @@ SHOTS=(
     power:powermenu
     systemmonitor:sysmon
     daypanel:calendar
-    keybinds:keybinds
+    keybinds:
     toast:
 )
 DEMO_CLIPBOARD=(
@@ -175,6 +179,11 @@ open_popup() {
                 "Orange primary, punchier accents across shell, kitty and btop"
             sleep "$TOAST_SECONDS"
             ;;
+        keybinds)
+            setsid -f "$HOME/.local/bin/settings" -p shortcuts >/dev/null 2>&1
+            sleep 2
+            sleep "$SETTLE_SECONDS"
+            ;;
         *)
             toggle_shortcut "$shortcut"
             sleep "$SETTLE_SECONDS"
@@ -185,9 +194,11 @@ open_popup() {
 
 close_popup() {
     local name=$1 shortcut=$2
-    if [[ "$name" != toast ]]; then
-        toggle_shortcut "$shortcut"
-    fi
+    case "$name" in
+        toast) ;;
+        keybinds) hyprctl clients -j | jq -r '.[] | select(.class == "dots-settings") | .pid' | xargs -r kill ;;
+        *) toggle_shortcut "$shortcut" ;;
+    esac
     sleep 0.8
 }
 
@@ -222,6 +233,16 @@ main() {
         exit 0
     fi
 
+    local workspace='"empty"'
+    if [[ "${1:-}" == "--workspace" ]]; then
+        [[ "${2:-}" =~ ^[0-9]+$ ]] || {
+            echo "--workspace needs a number" >&2
+            exit 2
+        }
+        workspace=$2
+        shift 2
+    fi
+
     local names=("$@") name failed=0
     [[ ${#names[@]} -eq 0 ]] && mapfile -t names < <(shot_names)
     for name in "${names[@]}"; do
@@ -233,7 +254,7 @@ main() {
 
     START_WORKSPACE=$(hyprctl activeworkspace -j | jq -r '.id')
     trap restore_all EXIT
-    dispatch 'hl.dsp.focus({ workspace = "empty" })'
+    dispatch "hl.dsp.focus({ workspace = $workspace })"
     sleep 1
 
     local baseline="$WORK_DIR/baseline.png"

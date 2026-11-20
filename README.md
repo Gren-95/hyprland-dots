@@ -16,7 +16,7 @@ Modals reachable from keybindings or the bar:
   <tr>
     <td align="center" width="33%" valign="top"><img src="screenshots/gallery/spotlight.png" width="100%"/><br><strong>Launcher</strong><br>apps, actions, calculator<br><kbd>Super</kbd>+<kbd>R</kbd></td>
     <td align="center" width="33%" valign="top"><img src="screenshots/gallery/clipboard.png" width="100%"/><br><strong>Clipboard</strong><br>history with thumbnails<br><kbd>Super</kbd>+<kbd>V</kbd></td>
-    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/quickactions.png" width="100%"/><br><strong>Quick Actions</strong><br>toggles and one-shots<br><kbd>Super</kbd>+<kbd>A</kbd></td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/quickactions.png" width="100%"/><br><strong>Quick Actions</strong><br>microphone, screenshot, record, color picker<br><kbd>Super</kbd>+<kbd>A</kbd></td>
   </tr>
   <tr>
     <td align="center" width="33%" valign="top"><img src="screenshots/gallery/network.png" width="100%"/><br><strong>Bluetooth</strong><br>paired devices, scan, pairing<br><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></td>
@@ -25,14 +25,35 @@ Modals reachable from keybindings or the bar:
   </tr>
   <tr>
     <td align="center" width="33%" valign="top"><img src="screenshots/gallery/systemmonitor.png" width="100%"/><br><strong>System Monitor</strong><br>btop-style graphs: CPU, GPU, memory, network, disks, processes<br><kbd>Super</kbd>+<kbd>M</kbd></td>
-    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/daypanel.png" width="100%"/><br><strong>Day Panel</strong><br>calendar, weather, media, notifications<br><kbd>Super</kbd>+<kbd>N</kbd> / <kbd>Super</kbd>+<kbd>D</kbd></td>
-    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/keybinds.png" width="100%"/><br><strong>Keyboard shortcuts</strong><br>search, filter, run, rebind (settings app)<br><kbd>Super</kbd>+<kbd>F1</kbd></td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/daypanel.png" width="100%"/><br><strong>Day Panel</strong><br>calendar, events, quiet toggles, media, notifications<br><kbd>Super</kbd>+<kbd>N</kbd> / <kbd>Super</kbd>+<kbd>D</kbd></td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/keybinds.png" width="100%"/><br><strong>Key binds</strong><br>search, filter, run, rebind (settings app)<br><kbd>Super</kbd>+<kbd>F1</kbd></td>
   </tr>
   <tr>
     <td align="center" width="33%" valign="top"><img src="screenshots/gallery/wallpaper.png" width="100%"/><br><strong>Wallpaper Deck</strong><br>hold <kbd>Super</kbd>, tap <kbd>W</kbd> to deal, release to apply</td>
     <td align="center" width="33%" valign="top"><img src="screenshots/gallery/toast.png" width="100%"/><br><strong>Notification Toast</strong><br>auto-shown on incoming notification</td>
   </tr>
 </table>
+
+### Settings app
+
+Every option of the shell and of Hyprland in one native app (Rust, iced):
+network, Bluetooth, sound, displays, appearance, accessibility, windows and
+window rules, the bar, date and time, notifications, power and lock, privacy,
+Flatpak app permissions, users, updates, services and syncs, with search, a
+list of everything you changed and export/import. Open it from the launcher,
+`settings`, or `settings -p <panel>` for one panel.
+
+<table>
+  <tr>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/settings-appearance.png" width="100%"/><br><strong>Appearance</strong><br>accent, dark or light, themes, fonts</td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/settings-displays.png" width="100%"/><br><strong>Displays</strong><br>resolution, scale, rotation, night light</td>
+    <td align="center" width="33%" valign="top"><img src="screenshots/gallery/settings-accessibility.png" width="100%"/><br><strong>Accessibility</strong><br>text size, contrast, zoom, motion</td>
+  </tr>
+</table>
+
+More in [`apps/settings/README.md`](apps/settings/README.md).
+
+### Lock screen
 
 The lock screen (<kbd>Super</kbd>+<kbd>L</kbd>): clock, now playing, weather, battery and power buttons over the blurred wallpaper:
 
@@ -57,7 +78,7 @@ The lock screen (<kbd>Super</kbd>+<kbd>L</kbd>): clock, now playing, weather, ba
 - [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) — lint checks and the pre-commit hook
 - [`config/quickshell/DESIGN.md`](config/quickshell/DESIGN.md) — QML widget conventions and recipes
 - [`config/scripts/README.md`](config/scripts/README.md) — per-script breakdown (what runs when)
-- [`apps/settings/README.md`](apps/settings/README.md) — the settings app (`settings -p <panel>`)
+- [`apps/settings/README.md`](apps/settings/README.md) — the settings app: every panel and what it changes
 - [`config/hypr/MODULES.md`](config/hypr/MODULES.md) — what each `config/hypr/modules/*.lua` owns
 
 ## Setup
@@ -72,7 +93,7 @@ This will clone the repo to `~/dotfiles` and run the setup script automatically.
 
 Dependencies, manual setup and the Firefox profile step are in [`docs/INSTALL.md`](docs/INSTALL.md).
 
-After install, see [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) for wallpapers and other settings, and `Super+F1` for keybinds.
+After install, open the settings app (`settings`) for wallpapers, displays and everything else, and `Super+F1` for keybinds; [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) covers the files behind them.
 
 ## Dotfiles Manager
 
