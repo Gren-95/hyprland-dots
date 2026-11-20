@@ -286,6 +286,22 @@ fn set(role: &'static Role, id: String) -> Result<(), String> {
     }
 }
 
+/// Every role's id and the app filling it now (for export).
+pub fn current_roles() -> Vec<(&'static str, String)> {
+    ROLES.iter().map(|r| (r.id, current(r))).collect()
+}
+
+/// A role's label, for listing what an import changes.
+pub fn role_label(id: &str) -> Option<&'static str> {
+    ROLES.iter().find(|r| r.id == id).map(|r| r.label)
+}
+
+/// Fill a role by its id (for import).
+pub fn set_role(id: &str, app: String) -> Result<(), String> {
+    let role = ROLES.iter().find(|r| r.id == id).ok_or_else(|| format!("unknown role {id}"))?;
+    set(role, app)
+}
+
 #[derive(Default)]
 pub struct State {
     choices: Option<Vec<Choice>>,

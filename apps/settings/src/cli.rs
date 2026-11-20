@@ -104,6 +104,32 @@ pub fn set(store: &Store, key: &str, input: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// `import`: list what the file changes, ask, then apply.
+pub fn import(path: &std::path::Path) -> Result<(), String> {
+    let new = crate::backup::read_file(path)?;
+    let dir = Store::default_dir();
+    let changes = crate::backup::changes(&crate::backup::current(&dir), &new);
+    if changes.is_empty() {
+        println!("Nothing to change: the settings already match {}", path.display());
+        return Ok(());
+    }
+    for c in &changes {
+        println!("{}: {} -> {}", c.what, c.from, c.to);
+    }
+    print!("{} [y/N] ", crate::backup::plural_question(changes.len()));
+    use std::io::Write;
+    let _ = std::io::stdout().flush();
+    let mut answer = String::new();
+    std::io::stdin()
+        .read_line(&mut answer)
+        .map_err(|e| format!("could not read the answer: {e}"))?;
+    if !matches!(answer.trim(), "y" | "Y" | "yes") {
+        println!("Nothing changed");
+        return Ok(());
+    }
+    crate::backup::apply(&new, &dir)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

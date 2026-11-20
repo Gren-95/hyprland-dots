@@ -15,6 +15,10 @@ pub enum Command {
     Get(Option<String>),
     /// Change one setting.
     Set(String, String),
+    /// Write every setting to a file.
+    Export(String),
+    /// Read settings back from a file, after showing what changes.
+    Import(String),
     Help,
 }
 
@@ -23,10 +27,13 @@ pub fn usage() -> String {
     format!(
         "Usage: settings [-p|--panel <name>] [-s|--search <text>] [--list-panels] [-h|--help]\n\
          \x20      settings get [key]\n\
-         \x20      settings set <key> <value>\n\n\
+         \x20      settings set <key> <value>\n\
+         \x20      settings export <file> | settings import <file>\n\n\
          Opens the settings app, on the given panel if one is named, or with\n\
          the settings matching a search. get prints settings as key and value,\n\
          set changes one (true/false, a number, one of the choices, or JSON).\n\
+         export writes every setting (shell, Hyprland, default apps) to a\n\
+         file; import lists what it would change and asks first.\n\
          Panels: {}\n",
         names.join(", ")
     )
@@ -45,6 +52,18 @@ pub fn parse<I: IntoIterator<Item = String>>(args: I) -> Result<Command, String>
                 Some(extra) => Err(format!("get takes one key, got also {extra}")),
                 None => Ok(Command::Get(key)),
             };
+        }
+        Some(verb @ ("export" | "import")) => {
+            let verb = verb.to_string();
+            args.next();
+            let (Some(file), None) = (args.next(), args.next()) else {
+                return Err(format!("{verb} needs one file"));
+            };
+            return Ok(if verb == "export" {
+                Command::Export(file)
+            } else {
+                Command::Import(file)
+            });
         }
         Some("set") => {
             args.next();
@@ -128,6 +147,14 @@ mod tests {
         assert!(run(&["set", "bar-height"]).is_err());
         assert!(run(&["set", "a", "b", "c"]).is_err());
         assert!(run(&["get", "a", "b"]).is_err());
+    }
+
+    #[test]
+    fn parses_export_and_import() {
+        assert_eq!(run(&["export", "a.json"]), Ok(Command::Export("a.json".into())));
+        assert_eq!(run(&["import", "a.json"]), Ok(Command::Import("a.json".into())));
+        assert!(run(&["export"]).is_err());
+        assert!(run(&["import", "a", "b"]).is_err());
     }
 
     #[test]

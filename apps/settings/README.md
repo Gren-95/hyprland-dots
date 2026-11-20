@@ -18,7 +18,7 @@ terminal, or `settings -p <panel>` for one panel; several shell flyouts
 | Name | Settings |
 |------|----------|
 | `network` | Wi-Fi on/off, nearby networks (connect, disconnect, forget, scan), wired devices, VPN connections (on/off, Details with type, server, address, DNS and Delete; import a WireGuard .conf or OpenVPN .ovpn file; set up WireGuard by hand); Tailscale, when installed, as one VPN row whose Details hold its address to copy, exit node, options (Tailscale DNS, subnet routes, shields up, offer exit node, LAN access), devices with their address and Taildrop send, receive files into ~/Downloads — through `nmcli`; Details on the connected Wi-Fi network or wired device shows its addresses, gateway, DNS, hardware address and interface |
-| `sound` | Output and input: a dropdown of devices (plain text when there is one) the volume with a mute button, and the card's mode (profile, e.g. high quality or headset on Bluetooth); every app playing with its volume and mute — through `pw-dump` and `wpctl`; the alert (toast sound) volume |
+| `sound` | Output and input: a dropdown of devices (plain text when there is one) the volume with a mute button and the card's mode (profile, e.g. high quality or headset on Bluetooth); every app playing with its volume and mute — through `pw-dump` and `wpctl`; the alert (toast sound) volume |
 | `bluetooth` | Bluetooth on/off, visible to other devices for 3 minutes, paired devices (connect, disconnect, rename, trust, block, forget, battery), scanning and pairing — through `bluetoothctl`. Connected AirPods get, behind Details on their row, battery per bud and case, noise control, conversation awareness, codec and an audio reset, through librepods and `config/scripts/airpods.sh` |
 | `keyboard` | Keyboard layouts (search the XKB list, add, remove, reorder), layout switch shortcut, Caps Lock key, Num Lock at start, key repeat delay and speed — written to `config/hypr/settings.lua` (gitignored, loaded last) and applied with `hyprctl eval` |
 | `shortcuts` | Every key bind with its keys (search, change with modifiers and a searchable key list, reset); moves are kept in `config/hypr/settings.lua` as `hl.unbind` + `hl.bind`, `keys.lua` is not edited |
@@ -37,7 +37,7 @@ terminal, or `settings -p <panel>` for one panel; several shell flyouts
 | `recording` | Screenshots (folder, PNG or JPEG, cursor, clipboard, actions sheet) and screen recording (folder, file type, frame rate, quality, codec, cursor, sound), and the installed Tesseract languages text recognition reads (`ocr.rs`) — read by `config/scripts/lib/screenshot.sh`, `screenrecord.sh` and `screenshot-ocr.sh` |
 | `sysmon` | System monitor refresh interval and sections |
 | `lock` | Idle times (dim, lock, screen off, suspend) edited in `config/hypr/hypridle.conf`, which then restarts hypridle; stay awake; what the lid does; lock screen parts |
-| `about` | Header with the distro logo, system, computer, host name and uptime; processor, memory (size, type, speed, modules, use) and graphics tiles; disk usage meters; kernel, Hyprland, Quickshell, package counts, app version; the dots repository with Open on GitHub and what is not pushed; Copy as text for bug reports (battery and network included) |
+| `about` | Header with the distro logo, system, computer, host name and uptime; processor, memory (size, type, speed, modules, use) and graphics tiles; disk usage meters; kernel, Hyprland, Quickshell, package counts, app version; the dots repository with Open on GitHub and what is not pushed; Copy as text for bug reports (battery and network included); Backup: export every setting to one file, or import one after a list of what it changes |
 | `gaming` | Game mode switch; connected controllers with their battery and a Connect button to Bluetooth; the game mode launcher opening on games; Proton versions (collapsed): installed GE-Proton and Valve Proton, the default, games per version, missing versions, the newest GE-Proton release, ProtonPlus; what it does (effects off, hide the bar, Do not disturb, performance profile, keep the screen awake, pause syncs, night light, Docker, Tailscale); turn on with Feral GameMode (`gamemoderun`); variable refresh rate, tearing, direct scanout |
 | `services` | Apps at login (`~/.config/autostart`: switch, remove, add an installed app; started by `autostart-apps.sh`); background services: your systemd user units (switch enables and starts or disables and stops, Restart) and Dotwatch; system services (root-level units): the ones changed from the distribution's default and all enabled ones, in collapsed lists with a switch each (`systemctl enable/disable --now`, which asks for the password through polkit; the core ones are read-only), plus the system's user units for the session, read-only; from `config/scripts/services-status.sh`: the Immich and Jellyfin syncs and on-demand services (Windows VM, games browser) with a switch each, through their toggle scripts |
 | `sharing` | Remote access (WayVNC) with a switch and Details: address to connect to, login (show, copy, new password), listen on (tailnet only, this computer only, local network), port, frame rate, view only, drawing the cursor — read by `wayvnc-toggle.sh`; remote login (sshd, switched with `systemctl enable/disable --now`, which asks for the password through polkit); whether Tailscale makes this computer reachable, with a link to the Network panel |
@@ -53,6 +53,8 @@ settings --list-panels          # panel names and titles
 settings get                    # every setting as "key value"
 settings get bar-height         # one value
 settings set bar-height 40      # change one, checked like the window checks it
+settings export backup.json     # every setting (shell store, Hyprland choices, default apps) in one file
+settings import backup.json     # lists what it changes, then asks before writing
 settings --help
 ```
 
@@ -106,7 +108,8 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 |------|--------------|
 | `src/main.rs` | Command line, window |
 | `src/args.rs` | Argument parsing |
-| `src/cli.rs` | `settings get` and `settings set` |
+| `src/cli.rs` | `settings get`, `settings set` and the `settings import` prompt |
+| `src/backup.rs` | Export and import of every setting; the Backup section on About |
 | `src/schema.rs` | The panels and their settings: file, label, control, default. A test checks every file and type against `Settings.qml` |
 | `src/store.rs` | Reading and writing the setting files in the format `Settings.qml` uses |
 | `src/app.rs` | The iced app: state, messages, the open panel, window-width layout |

@@ -269,13 +269,30 @@ pub fn live_option(name: &str) -> Option<Json> {
     })
 }
 
+/// The saved settings.json as it is on disk (Null when there is none).
+pub fn saved_json() -> Json {
+    fs::read_to_string(dir().join("settings.json"))
+        .ok()
+        .and_then(|t| serde_json::from_str(&t).ok())
+        .unwrap_or(Json::Null)
+}
+
+/// Replace settings.json with `saved`, write settings.lua from it and
+/// reload Hyprland (moved binds only take effect on a reload).
+pub fn replace_saved(saved: &Json) -> Result<(), String> {
+    write(
+        &dir().join("settings.json"),
+        &serde_json::to_string_pretty(saved).unwrap_or_default(),
+    )
+    .map_err(|e| format!("Could not save settings.json: {e}"))?;
+    update_blocking(|_| {}, "")?;
+    system::run_blocking("hyprctl", &["reload".to_string()], None).map(|_| ())
+}
+
 impl Settings {
     /// The saved settings, with what is not saved yet read from Hyprland.
     pub fn load() -> Settings {
-        let saved: Json = fs::read_to_string(dir().join("settings.json"))
-            .ok()
-            .and_then(|t| serde_json::from_str(&t).ok())
-            .unwrap_or(Json::Null);
+        let saved = saved_json();
         Settings {
             keyboard: Keyboard::from_json(&saved["keyboard"]).unwrap_or_else(Keyboard::live),
             binds: saved["binds"]

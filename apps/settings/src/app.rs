@@ -17,6 +17,7 @@ use crate::controls;
 use crate::defaultapps;
 use crate::gaming;
 use crate::hiddenapps;
+use crate::backup;
 use crate::ocr;
 use crate::sharing;
 use crate::hyprpage;
@@ -122,6 +123,7 @@ pub struct App {
     power: power::State,
     notif_apps: notifapps::State,
     ocr: ocr::State,
+    backup: backup::State,
     sharing: sharing::State,
     hidden_apps: hiddenapps::State,
     gaming: gaming::State,
@@ -199,6 +201,7 @@ pub enum Message {
     NotifApps(notifapps::Msg),
     HiddenApps(hiddenapps::Msg),
     Ocr(ocr::Msg),
+    Backup(backup::Msg),
     Sharing(sharing::Msg),
     Gaming(gaming::Msg),
     GamingDisplay(hyprpage::Msg),
@@ -242,6 +245,7 @@ impl App {
             power: power::State::default(),
             notif_apps: notifapps::State::default(),
             ocr: ocr::State::default(),
+            backup: backup::State::default(),
             sharing: sharing::State::default(),
             hidden_apps: hiddenapps::State::default(),
             gaming: gaming::State::default(),
@@ -409,6 +413,13 @@ impl App {
             Message::NotifApps(msg) => self.notif_apps.update(msg),
             Message::HiddenApps(msg) => return self.hidden_apps.update(msg).map(Message::HiddenApps),
             Message::Ocr(msg) => return self.ocr.update(msg).map(Message::Ocr),
+            Message::Backup(msg) => {
+                // An import changed the store: show its values.
+                if matches!(msg, backup::Msg::Applied(Ok(()))) {
+                    self.reload();
+                }
+                return self.backup.update(msg).map(Message::Backup);
+            }
             Message::Sharing(sharing::Msg::OpenNetwork) => {
                 if let Some(i) = crate::schema::panel_index("network") {
                     return self.update(Message::SelectPanel(i));
@@ -774,7 +785,23 @@ impl App {
                 let battery = Element::from(self.power.view(page_column(panel.title, layout))).map(Message::Power);
                 self.with_settings(battery, panel, layout)
             }
-            Page::About => Element::from(self.about.view(page_column(panel.title, layout))).map(Message::About),
+            Page::About => {
+                let about = Element::from(self.about.view(page_column(panel.title, layout))).map(Message::About);
+                let rows = self.backup.rows().into_iter().map(|r| r.map(Message::Backup)).collect();
+                let pad = if layout.stacked { 16.0 } else { 28.0 };
+                let backup = Column::new()
+                    .spacing(10)
+                    .padding(iced::Padding {
+                        top: 0.0,
+                        right: pad,
+                        bottom: pad,
+                        left: pad,
+                    })
+                    .width(Length::Fill)
+                    .max_width(PAGE_WIDTH);
+                let backup = ui::section(backup, "Backup", rows);
+                column![about, backup].width(Length::Fill).max_width(PAGE_WIDTH).into()
+            }
         };
         // One scroll position per panel.
         scrollable(container(content).center_x(Length::Fill))

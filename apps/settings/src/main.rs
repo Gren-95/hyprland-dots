@@ -5,6 +5,7 @@ mod airpods;
 mod app;
 mod args;
 mod audio;
+mod backup;
 mod bluetooth;
 mod calendar;
 mod cli;
@@ -71,6 +72,10 @@ fn main() -> ExitCode {
         Ok(Command::Set(key, value)) => {
             return report(cli::set(&Store::new(Store::default_dir()), &key, &value));
         }
+        Ok(Command::Export(file)) => {
+            return report(backup::export_to(std::path::Path::new(&file), &Store::default_dir()));
+        }
+        Ok(Command::Import(file)) => return report(cli::import(std::path::Path::new(&file))),
         Ok(Command::Help) => {
             print!("{}", args::usage());
             return ExitCode::SUCCESS;
