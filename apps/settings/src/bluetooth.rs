@@ -1,5 +1,5 @@
-//! Bluetooth panel: power, paired devices and pairing new ones through
-//! bluetoothctl.
+//! Bluetooth panel: power, visibility, paired devices (connect, rename,
+//! trust, block, forget) and pairing new ones through bluetoothctl.
 
 use iced::widget::{Column, container, text_input};
 use iced::{Element, Task};
@@ -12,10 +12,14 @@ use crate::ui;
 
 /// How long a scan for new devices runs.
 const SCAN_SECONDS: &str = "20";
+/// How long the computer stays visible to other devices.
+const VISIBLE_SECONDS: &str = "180";
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Snapshot {
     pub powered: bool,
+    /// Other devices can find this computer.
+    pub discoverable: bool,
     /// Connected AirPods, with their extra controls.
     pub airpods: Vec<AirPods>,
     pub paired: Vec<Device>,
@@ -31,6 +35,10 @@ pub struct Device {
     pub icon: String,
     pub connected: bool,
     pub battery: Option<u8>,
+    /// Connects again on its own, without asking.
+    pub trusted: bool,
+    /// Refused: it cannot connect until unblocked.
+    pub blocked: bool,
 }
 
 #[derive(Default)]
@@ -53,6 +61,11 @@ pub enum Msg {
     Refresh,
     Refreshed(Result<Snapshot, String>),
     SetPower(bool),
+    SetVisible(bool),
+    /// Trust or stop trusting a device.
+    Trust(String, bool),
+    /// Block or unblock a device.
+    Block(String, bool),
     Scan,
     ScanDone(Result<(), String>),
     Connect(String),
@@ -96,6 +109,8 @@ pub fn parse_info(mac: &str, name: &str, output: &str) -> Device {
         match key {
             "Icon" => device.icon = value.to_string(),
             "Connected" => device.connected = value == "yes",
+            "Trusted" => device.trusted = value == "yes",
+            "Blocked" => device.blocked = value == "yes",
             // "0x64 (100)": the decimal value is in brackets.
             "Battery Percentage" => {
                 device.battery = value
@@ -113,6 +128,11 @@ pub fn parse_powered(output: &str) -> bool {
     output.lines().any(|l| l.trim() == "Powered: yes")
 }
 
+/// `bluetoothctl show`: whether other devices can find the adapter.
+pub fn parse_discoverable(output: &str) -> bool {
+    output.lines().any(|l| l.trim() == "Discoverable: yes")
+}
+
 /// A name bluez made up from the address ("AA-BB-…") is no name at all.
 fn has_real_name(mac: &str, name: &str) -> bool {
     !name.is_empty() && name != mac.replace(':', "-")
@@ -123,7 +143,8 @@ fn bluetoothctl(list: &[&str]) -> Result<String, String> {
 }
 
 fn snapshot() -> Result<Snapshot, String> {
-    let powered = parse_powered(&bluetoothctl(&["show"])?);
+    let show = bluetoothctl(&["show"])?;
+    let (powered, discoverable) = (parse_powered(&show), parse_discoverable(&show));
     let paired_ids = parse_devices(&bluetoothctl(&["devices", "Paired"])?);
     let mut paired: Vec<Device> = paired_ids
         .iter()
@@ -146,6 +167,7 @@ fn snapshot() -> Result<Snapshot, String> {
         .collect();
     Ok(Snapshot {
         powered,
+        discoverable,
         airpods,
         paired,
         nearby,
@@ -233,6 +255,26 @@ impl State {
                 self.busy = Some("power".into());
                 return act(args(&["power", if on { "on" } else { "off" }]));
             }
+            Msg::SetVisible(on) => {
+                self.busy = Some("power".into());
+                let steps = move || -> Result<(), String> {
+                    if on {
+                        bluetoothctl(&["discoverable-timeout", VISIBLE_SECONDS])?;
+                    }
+                    bluetoothctl(&["discoverable", if on { "on" } else { "off" }]).map(|_| ())
+                };
+                return Task::perform(system::spawn(steps), |r| {
+                    Msg::Done(r.unwrap_or_else(|| Err("bluetoothctl stopped unexpectedly".into())))
+                });
+            }
+            Msg::Trust(mac, on) => {
+                self.busy = Some(mac.clone());
+                return act(vec![if on { "trust" } else { "untrust" }.into(), mac]);
+            }
+            Msg::Block(mac, on) => {
+                self.busy = Some(mac.clone());
+                return act(vec![if on { "block" } else { "unblock" }.into(), mac]);
+            }
             Msg::Scan => {
                 self.scanning = true;
                 let list = args(&["--timeout", SCAN_SECONDS, "scan", "on"]);
@@ -312,16 +354,21 @@ impl State {
         };
         let idle = self.busy.is_none();
         let power = ui::switch(snap.powered, idle.then_some(Msg::SetPower));
-        body = ui::section(
-            body,
-            "Bluetooth",
-            vec![ui::item(
-                ico::BLUETOOTH,
-                "Bluetooth".into(),
-                if snap.powered { "On".into() } else { "Off".into() },
-                vec![power],
-            )],
-        );
+        let mut adapter = vec![ui::item(
+            ico::BLUETOOTH,
+            "Bluetooth".into(),
+            if snap.powered { "On".into() } else { "Off".into() },
+            vec![power],
+        )];
+        if snap.powered {
+            adapter.push(ui::item(
+                ico::RADIO,
+                "Visible to other devices".into(),
+                "For 3 minutes, so a phone or another computer can find this one".into(),
+                vec![ui::switch(snap.discoverable, idle.then_some(Msg::SetVisible))],
+            ));
+        }
+        body = ui::section(body, "Bluetooth", adapter);
         if !snap.powered {
             return body;
         }
@@ -379,10 +426,10 @@ impl State {
 
     /// A paired device; `extras` (AirPods controls) adds a Details button.
     fn paired_row<'a>(&'a self, d: &'a Device, extras: bool) -> Element<'a, Msg> {
-        let mut detail = vec![if d.connected {
-            "Connected".to_string()
-        } else {
-            "Not connected".to_string()
+        let mut detail = vec![match (d.blocked, d.connected) {
+            (true, _) => "Blocked".to_string(),
+            (_, true) => "Connected".to_string(),
+            _ => "Not connected".to_string(),
         }];
         if let Some(b) = d.battery {
             detail.push(format!("Battery {b}%"));
@@ -405,13 +452,21 @@ impl State {
             } else {
                 "Forget"
             };
-            let actions = ui::more_actions(
-                connect,
-                vec![
-                    ("Rename", idle.then(|| Msg::StartRename(d.mac.clone(), d.name.clone()))),
-                    (forget, idle.then(|| Msg::Forget(d.mac.clone()))),
-                ],
-            );
+            let trust = if d.trusted { "Ask before connecting" } else { "Trust" };
+            let block = if d.blocked { "Unblock" } else { "Block" };
+            // A blocked device cannot connect: Unblock is what it needs.
+            let main = if d.blocked {
+                ("Unblock", idle.then(|| Msg::Block(d.mac.clone(), false)), Action::Normal)
+            } else {
+                connect
+            };
+            let mut more = vec![("Rename", idle.then(|| Msg::StartRename(d.mac.clone(), d.name.clone())))];
+            if !d.blocked {
+                more.push((trust, idle.then(|| Msg::Trust(d.mac.clone(), !d.trusted))));
+                more.push((block, idle.then(|| Msg::Block(d.mac.clone(), true))));
+            }
+            more.push((forget, idle.then(|| Msg::Forget(d.mac.clone()))));
+            let actions = ui::more_actions(main, more);
             if extras {
                 let open = self.details_open.as_ref() == Some(&d.mac);
                 vec![ui::disclosure(open, Msg::ToggleDetails(d.mac.clone())), actions]
@@ -457,6 +512,9 @@ mod tests {
         assert_eq!(d.icon, "audio-headphones");
         assert!(d.connected);
         assert_eq!(d.battery, Some(90));
+        assert!(!d.trusted && !d.blocked);
+        let t = parse_info("X", "Y", "\tTrusted: yes\n\tBlocked: yes\n");
+        assert!(t.trusted && t.blocked);
         assert_eq!(parse_info("X", "Y", "\tConnected: no\n").battery, None);
     }
 
@@ -464,6 +522,8 @@ mod tests {
     fn reads_power_and_skips_made_up_names() {
         assert!(parse_powered("Controller 98:59 (public)\n\tPowered: yes\n"));
         assert!(!parse_powered("\tPowered: no\n"));
+        assert!(parse_discoverable("\tPowered: yes\n\tDiscoverable: yes\n"));
+        assert!(!parse_discoverable("\tDiscoverable: no\n"));
         assert!(!has_real_name("AA:BB:CC", "AA-BB-CC"));
         assert!(has_real_name("AA:BB:CC", "JBL"));
     }
