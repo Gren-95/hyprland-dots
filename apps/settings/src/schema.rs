@@ -96,6 +96,8 @@ pub enum Page {
     Changed,
     /// The user's picture and full name (users.rs).
     Users,
+    /// Monitors (displays.rs), then the night light settings.
+    Displays,
     /// Running update-all.sh and the Timeshift snapshots (updates.rs).
     Updates,
     /// In-use indicators and clipboard settings, then clearing the
@@ -687,35 +689,6 @@ pub const PANELS: &[Panel] = &[
                 ],
             },
             Section {
-                title: "Night light",
-                settings: &[
-                    number(
-                        "night-temperature",
-                        "Colour temperature",
-                        "Lower is warmer; Super+Ctrl+N switches the night light",
-                        2500,
-                        6500,
-                        100,
-                        "K",
-                        4000,
-                    ),
-                    toggle(
-                        "night-schedule",
-                        "On a schedule",
-                        "Warm from the start time until the end time",
-                        false,
-                    ),
-                    choice("night-from", "From", "When the warm colour starts", HALF_HOURS, "21:00"),
-                    choice(
-                        "night-to",
-                        "Until",
-                        "When the normal colour comes back",
-                        HALF_HOURS,
-                        "07:00",
-                    ),
-                ],
-            },
-            Section {
                 title: "Text",
                 settings: &[
                     Setting {
@@ -786,6 +759,43 @@ pub const PANELS: &[Panel] = &[
                 ],
             },
         ],
+    },
+    Panel {
+        id: "displays",
+        title: "Displays",
+        glyph: ico::MONITOR,
+        group: Group::Appearance,
+        page: Page::Displays,
+        keywords: "monitor screen resolution refresh rate hz scale rotation rotate position night light blue warm",
+        sections: &[Section {
+            title: "Night light",
+            settings: &[
+                number(
+                    "night-temperature",
+                    "Colour temperature",
+                    "Lower is warmer; Super+Ctrl+N switches the night light",
+                    2500,
+                    6500,
+                    100,
+                    "K",
+                    4000,
+                ),
+                toggle(
+                    "night-schedule",
+                    "On a schedule",
+                    "Warm from the start time until the end time",
+                    false,
+                ),
+                choice("night-from", "From", "When the warm colour starts", HALF_HOURS, "21:00"),
+                choice(
+                    "night-to",
+                    "Until",
+                    "When the normal colour comes back",
+                    HALF_HOURS,
+                    "07:00",
+                ),
+            ],
+        }],
     },
     Panel {
         id: "accessibility",

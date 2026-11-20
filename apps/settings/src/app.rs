@@ -17,6 +17,7 @@ use crate::bluetooth;
 use crate::calendar;
 use crate::controls;
 use crate::defaultapps;
+use crate::displays;
 use crate::flatpak;
 use crate::gaming;
 use crate::hiddenapps;
@@ -147,6 +148,7 @@ pub struct App {
     flatpak: flatpak::State,
     privacy: privacy::State,
     users: users::State,
+    displays: displays::State,
     updates: updates::State,
     hidden_apps: hiddenapps::State,
     gaming: gaming::State,
@@ -242,6 +244,7 @@ pub enum Message {
     Flatpak(flatpak::Msg),
     Privacy(privacy::Msg),
     Users(users::Msg),
+    Displays(displays::Msg),
     Updates(updates::Msg),
     Gaming(gaming::Msg),
     GamingDisplay(hyprpage::Msg),
@@ -297,6 +300,7 @@ impl App {
             flatpak: flatpak::State::default(),
             privacy: privacy::State::default(),
             users: users::State::default(),
+            displays: displays::State::default(),
             updates: updates::State::default(),
             hidden_apps: hiddenapps::State::default(),
             gaming: gaming::State::default(),
@@ -336,6 +340,7 @@ impl App {
         match PANELS[self.panel].page {
             Page::Settings | Page::Changed | Page::Privacy => Task::none(),
             Page::Users => self.users.update(users::Msg::Load).map(Message::Users),
+            Page::Displays => self.displays.update(displays::Msg::Load).map(Message::Displays),
             Page::Updates => self.updates.update(updates::Msg::Load).map(Message::Updates),
             Page::Services => Task::batch([
                 self.services.update(services::Msg::Refresh).map(Message::Services),
@@ -473,6 +478,11 @@ impl App {
             _ => None,
         });
         let mut subscriptions = vec![iced::time::every(RELOAD_EVERY).map(|_| Message::Reload), keys];
+        // A display change counts down to its undo, panel open or not.
+        if self.displays.counting() {
+            subscriptions
+                .push(iced::time::every(Duration::from_secs(1)).map(|_| Message::Displays(displays::Msg::Second)));
+        }
         if PANELS[self.panel].page.polls() {
             subscriptions.push(iced::time::every(SYSTEM_REFRESH_EVERY).map(|_| Message::Tick));
         }
@@ -536,6 +546,7 @@ impl App {
             Message::Flatpak(msg) => return self.flatpak.update(msg).map(Message::Flatpak),
             Message::Privacy(msg) => return self.privacy.update(msg).map(Message::Privacy),
             Message::Users(msg) => return self.users.update(msg).map(Message::Users),
+            Message::Displays(msg) => return self.displays.update(msg).map(Message::Displays),
             Message::Updates(msg) => return self.updates.update(msg).map(Message::Updates),
             Message::Gaming(gaming::Msg::OpenBluetooth) => {
                 if let Some(i) = crate::schema::panel_index("bluetooth") {
@@ -910,6 +921,32 @@ impl App {
                     .map(|r| r.map(Message::Updates))
                     .collect();
                 ui::section(body, "Snapshots", snaps).into()
+            }
+            Page::Displays => {
+                let mut body = page_column(panel.title, layout);
+                let rows = self
+                    .displays
+                    .rows()
+                    .into_iter()
+                    .map(|r| r.map(Message::Displays))
+                    .collect();
+                body = ui::section(body, "Monitors", rows);
+                for section in panel.sections {
+                    let extra = if section.title == "Night light" {
+                        self.displays
+                            .night_rows()
+                            .into_iter()
+                            .map(|r| r.map(Message::Displays))
+                            .collect()
+                    } else {
+                        Vec::new()
+                    };
+                    body = self.section_with(body, section, layout, extra);
+                }
+                if let Some(error) = &self.error {
+                    body = body.push(text(error).color(style::RED));
+                }
+                body.into()
             }
             Page::Users => {
                 let body = page_column(panel.title, layout);

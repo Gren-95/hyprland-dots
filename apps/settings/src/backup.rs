@@ -184,6 +184,21 @@ pub fn changes(now: &Backup, new: &Backup) -> Vec<Change> {
                 to: brief(&classes(&new.hyprland["rules"])),
             });
         }
+        if now.hyprland["monitors"] != new.hyprland["monitors"] {
+            let outputs = |v: &Json| {
+                v.as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|m| m["output"].as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            };
+            out.push(Change {
+                what: "Monitors".into(),
+                from: brief(&outputs(&now.hyprland["monitors"])),
+                to: brief(&outputs(&new.hyprland["monitors"])),
+            });
+        }
     }
     for (role, app) in &new.default_apps {
         if now.default_apps.get(role) != Some(app) {

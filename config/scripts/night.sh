@@ -7,7 +7,7 @@
 #   apply  restarts a running night light with the current settings (the
 #          settings app runs it after a night-* setting changes).
 #
-# Settings (settings app, Appearance > Night light):
+# Settings (settings app, Displays > Night light):
 #   night-temperature   colour temperature in Kelvin (default 4000)
 #   night-schedule      1: follow night-from / night-to (default 0)
 #   night-from, night-to  HH:MM, default 21:00 and 07:00

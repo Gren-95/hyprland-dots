@@ -13,6 +13,7 @@ mod changed;
 mod cli;
 mod controls;
 mod defaultapps;
+mod displays;
 mod flatpak;
 mod focus;
 mod fonts;

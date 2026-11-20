@@ -181,6 +181,83 @@ pub struct Settings {
     pub binds: BTreeMap<String, Rebind>,
     /// Window rules made in the app, one per window class.
     pub rules: Vec<WindowRule>,
+    /// Monitor setups made in the app (Displays), one per output.
+    pub monitors: Vec<MonitorSetup>,
+}
+
+/// One monitor as set in Displays: written as `hl.monitor` after the
+/// tracked monitors.lua, so it wins for that output.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct MonitorSetup {
+    pub output: String,
+    /// "1920x1200@60.00".
+    pub mode: String,
+    /// "0x0".
+    pub position: String,
+    pub scale: f64,
+    /// 0 normal, 1 90°, 2 180°, 3 270° (4 to 7 flipped).
+    pub transform: i64,
+}
+
+impl MonitorSetup {
+    fn from_json(v: &Json) -> Option<MonitorSetup> {
+        Some(MonitorSetup {
+            output: v["output"].as_str()?.to_string(),
+            mode: v["mode"].as_str()?.to_string(),
+            position: v["position"].as_str()?.to_string(),
+            scale: v["scale"].as_f64()?,
+            transform: v["transform"].as_i64()?,
+        })
+    }
+
+    fn to_json(&self) -> Json {
+        json!({
+            "output": self.output,
+            "mode": self.mode,
+            "position": self.position,
+            "scale": self.scale,
+            "transform": self.transform,
+        })
+    }
+
+    /// The `hl.monitor` call; checked, since the values end up in Lua.
+    pub fn lua_call(&self) -> Result<String, String> {
+        let number = |s: &str| s.parse::<i64>().is_ok();
+        let output_ok = !self.output.is_empty()
+            && self
+                .output
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || "-_".contains(c));
+        let mode_ok = self.mode.split_once('x').is_some_and(|(w, rest)| {
+            let (h, rate) = rest.split_once('@').unwrap_or((rest, "60"));
+            number(w) && number(h) && rate.parse::<f64>().is_ok_and(|r| r > 0.0)
+        });
+        let position_ok = self
+            .position
+            .split_once('x')
+            .is_some_and(|(x, y)| number(x) && number(y));
+        if !output_ok
+            || !mode_ok
+            || !position_ok
+            || !(0.25..=4.0).contains(&self.scale)
+            || !(0..=7).contains(&self.transform)
+        {
+            return Err(format!("unexpected monitor setting for {}", self.output));
+        }
+        Ok(format!(
+            "hl.monitor({{ output = \"{}\", mode = \"{}\", position = \"{}\", scale = {}, transform = {} }})",
+            self.output, self.mode, self.position, self.scale, self.transform
+        ))
+    }
+}
+
+/// The `hl.monitor` calls for the saved monitor setups.
+pub fn monitors_lua(monitors: &[MonitorSetup]) -> Result<String, String> {
+    if monitors.is_empty() {
+        return Ok(String::new());
+    }
+    let calls: Result<Vec<String>, String> = monitors.iter().map(MonitorSetup::lua_call).collect();
+    Ok(format!("\n-- Monitors (Displays panel)\n{}\n", calls?.join("\n")))
 }
 
 /// A rule for every window of one class: float (at a size), see-through,
@@ -419,6 +496,10 @@ impl Settings {
                 .as_array()
                 .map(|a| a.iter().filter_map(WindowRule::from_json).collect())
                 .unwrap_or_default(),
+            monitors: saved["monitors"]
+                .as_array()
+                .map(|a| a.iter().filter_map(MonitorSetup::from_json).collect())
+                .unwrap_or_default(),
         }
     }
 
@@ -428,7 +509,9 @@ impl Settings {
             self.keyboard.lua()?,
             options_lua(&self.options)?
         ))
-        .and_then(|head| Ok(head + &binds_lua(&self.binds)? + &rules_lua(&self.rules)?))
+        .and_then(|head| {
+            Ok(head + &binds_lua(&self.binds)? + &rules_lua(&self.rules)? + &monitors_lua(&self.monitors)?)
+        })
     }
 
     fn json(&self) -> Json {
@@ -443,7 +526,14 @@ impl Settings {
             })
             .collect();
         let rules: Vec<Json> = self.rules.iter().map(WindowRule::to_json).collect();
-        json!({ "keyboard": self.keyboard.to_json(), "options": self.options, "binds": binds, "rules": rules })
+        let monitors: Vec<Json> = self.monitors.iter().map(MonitorSetup::to_json).collect();
+        json!({
+            "keyboard": self.keyboard.to_json(),
+            "options": self.options,
+            "binds": binds,
+            "rules": rules,
+            "monitors": monitors,
+        })
     }
 
     /// The part re-applied on every save. Binds are left out: binding the
@@ -548,6 +638,33 @@ fn write(path: &PathBuf, text: &str) -> io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn writes_monitors() {
+        let m = MonitorSetup {
+            output: "eDP-1".into(),
+            mode: "1920x1200@60.00".into(),
+            position: "0x0".into(),
+            scale: 1.25,
+            transform: 1,
+        };
+        assert_eq!(
+            m.lua_call().unwrap(),
+            "hl.monitor({ output = \"eDP-1\", mode = \"1920x1200@60.00\", position = \"0x0\", scale = 1.25, transform = 1 })"
+        );
+        assert_eq!(MonitorSetup::from_json(&m.to_json()), Some(m.clone()));
+        let bad = |edit: fn(&mut MonitorSetup)| {
+            let mut b = m.clone();
+            edit(&mut b);
+            b.lua_call().is_err()
+        };
+        assert!(bad(|b| b.output = "eDP\"); os.exit()".into()));
+        assert!(bad(|b| b.mode = "big".into()));
+        assert!(bad(|b| b.position = "0,0".into()));
+        assert!(bad(|b| b.scale = 9.0));
+        assert!(bad(|b| b.transform = 8));
+        assert_eq!(monitors_lua(&[]).unwrap(), "");
+    }
 
     #[test]
     fn writes_window_rules() {
