@@ -1,8 +1,9 @@
 //! Running system tools (nmcli, bluetoothctl) without blocking the window:
 //! each command runs on its own thread and the result comes back as a future.
 
-use std::io::Write;
+use std::io::{Read, Write};
 use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
 
 use iced::futures::channel::oneshot;
 
@@ -34,21 +35,76 @@ pub fn run_blocking(program: &str, args: &[String], stdin: Option<&str>) -> Resu
         // Errors surface through the exit status below.
         let _ = pipe.write_all(input.as_bytes());
     }
-    let output = child.wait_with_output().map_err(|e| format!("{program}: {e}"))?;
-    if output.status.success() {
-        Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+    // Read both pipes while waiting, so a chatty child cannot fill one and
+    // block; a child that outlives RUN_TIMEOUT is killed, so a hung tool
+    // still ends in an error instead of a page that waits forever.
+    let drain = |pipe: Option<Box<dyn Read + Send>>| {
+        std::thread::spawn(move || {
+            let mut out = Vec::new();
+            if let Some(mut p) = pipe {
+                let _ = p.read_to_end(&mut out);
+            }
+            out
+        })
+    };
+    let stdout = drain(child.stdout.take().map(|p| Box::new(p) as Box<dyn Read + Send>));
+    let stderr = drain(child.stderr.take().map(|p| Box::new(p) as Box<dyn Read + Send>));
+    let deadline = Instant::now() + RUN_TIMEOUT;
+    let status = loop {
+        match child.try_wait().map_err(|e| format!("{program}: {e}"))? {
+            Some(status) => break status,
+            None if Instant::now() >= deadline => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(format!("{program} did not finish in {} s", RUN_TIMEOUT.as_secs()));
+            }
+            None => std::thread::sleep(Duration::from_millis(20)),
+        }
+    };
+    let stdout = stdout.join().unwrap_or_default();
+    let stderr = stderr.join().unwrap_or_default();
+    if status.success() {
+        Ok(String::from_utf8_lossy(&stdout).into_owned())
     } else {
-        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        let stderr = String::from_utf8_lossy(&stderr).trim().to_string();
+        let stdout = String::from_utf8_lossy(&stdout).trim().to_string();
         Err(if !stderr.is_empty() {
             stderr
         } else if !stdout.is_empty() {
             stdout
         } else {
-            format!("{program} failed ({})", output.status)
+            format!("{program} failed ({status})")
         })
     }
 }
+
+/// A zenity file or folder chooser: Ok(Some(path)), Ok(None) when cancelled
+/// (zenity exits 1), Err when zenity cannot run.
+pub async fn pick(args: Vec<String>) -> Result<Option<String>, String> {
+    match run("zenity", args, None).await {
+        Ok(out) => Ok(Some(out.trim().to_string()).filter(|p| !p.is_empty())),
+        Err(e) if e.starts_with("could not run") => Err("The file chooser (zenity) is not installed".into()),
+        Err(_) => Ok(None),
+    }
+}
+
+/// A failed change that asked polkit for the password: a refused or
+/// cancelled prompt reads as such, anything else as the tool's own error.
+pub fn polkit_error(e: &str) -> String {
+    let lower = e.to_lowercase();
+    if ["not authorized", "authentication", "access denied", "dismissed"]
+        .iter()
+        .any(|w| lower.contains(w))
+    {
+        "Not changed: the password was not given".into()
+    } else {
+        format!("Not changed: {e}")
+    }
+}
+
+/// The longest any tool may run: long enough to type a password into the
+/// polkit prompt or pair a Bluetooth device.
+const RUN_TIMEOUT: Duration = Duration::from_secs(120);
 
 /// Run on a background thread, for a sequence of blocking calls.
 pub async fn spawn<T: Send + 'static>(work: impl FnOnce() -> T + Send + 'static) -> Option<T> {
@@ -221,6 +277,26 @@ pub fn args(list: &[&str]) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reads_large_output_and_errors() {
+        let big = run_blocking("sh", &args(&["-c", "head -c 300000 /dev/zero; echo oops >&2"]), None).unwrap();
+        assert_eq!(big.len(), 300000);
+        assert_eq!(
+            run_blocking("sh", &args(&["-c", "echo nope >&2; exit 3"]), None),
+            Err("nope".into())
+        );
+        assert!(
+            run_blocking("no-such-tool-here", &[], None)
+                .unwrap_err()
+                .starts_with("could not run")
+        );
+        assert_eq!(
+            polkit_error("Interactive authentication required."),
+            "Not changed: the password was not given"
+        );
+        assert_eq!(polkit_error("Unknown unit x"), "Not changed: Unknown unit x");
+    }
 
     #[test]
     fn reads_the_font_size() {

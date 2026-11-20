@@ -190,7 +190,7 @@ pub enum Message {
     /// Open a folder chooser for a folder setting.
     Browse(&'static str),
     /// The chooser's answer; None when it was cancelled.
-    Browsed(&'static str, Option<String>),
+    Browsed(&'static str, Result<Option<String>, String>),
     /// Put a setting (every file of it) back to its default.
     Reset(&'static str),
     /// A search result: open the panel, scroll to the setting, outline it.
@@ -589,16 +589,14 @@ impl App {
                     "--title=Choose a folder".into(),
                     format!("--filename={start}"),
                 ];
-                // zenity exits 1 when cancelled: nothing to change then.
-                return Task::perform(crate::system::run("zenity", args, None), move |r| {
-                    Message::Browsed(file, r.ok().map(|p| p.trim().to_string()).filter(|p| !p.is_empty()))
-                });
+                return Task::perform(crate::system::pick(args), move |r| Message::Browsed(file, r));
             }
-            Message::Browsed(file, Some(path)) => {
+            Message::Browsed(file, Ok(Some(path))) => {
                 self.drafts.remove(file);
                 self.write(file, Value::Text(path));
             }
-            Message::Browsed(_, None) => {}
+            Message::Browsed(_, Ok(None)) => {}
+            Message::Browsed(_, Err(e)) => self.error = Some(e),
             Message::AddPill(file) => {
                 let typed = self.drafts.remove(file).unwrap_or_default();
                 let item = typed.trim();

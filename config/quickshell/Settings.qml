@@ -406,7 +406,7 @@ Scope {
     property var _views: ({})
 
     // One watcher for the whole folder: a changed or replaced file reloads
-    // its row. Started again if it stops (inotifywait missing or killed).
+    // its row. Started again if it stops (killed), with a back-off.
     Process {
         id: watcher
         running: true
@@ -419,10 +419,28 @@ Scope {
                 if (view) view.reload();
             }
         }
+        // A restart may have missed edits: read every file again.
+        onStarted: if (settings._watcherRestarts > 0) {
+            for (const file in settings._views) settings._views[file].reload();
+        }
         onExited: (code) => {
-            console.warn("[Settings] folder watcher stopped (" + code + "); external edits wait for its restart");
+            // 127: inotifywait is not installed; retrying cannot help.
+            if (code === 127) {
+                console.warn("[Settings] inotifywait (inotify-tools) is missing: changes made outside the shell load at its next start");
+                return;
+            }
+            console.warn("[Settings] folder watcher stopped (" + code + "); restarting");
             restartWatcher.start();
         }
     }
-    Timer { id: restartWatcher; interval: 5000; onTriggered: watcher.running = true }
+    property int _watcherRestarts: 0
+    // Backs off to a minute, so a watcher that keeps failing does not spin.
+    Timer {
+        id: restartWatcher
+        interval: Math.min(60000, 5000 * (settings._watcherRestarts + 1))
+        onTriggered: {
+            settings._watcherRestarts += 1;
+            watcher.running = true;
+        }
+    }
 }

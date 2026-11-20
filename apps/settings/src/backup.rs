@@ -253,9 +253,9 @@ pub struct State {
 #[derive(Debug, Clone)]
 pub enum Msg {
     Export,
-    ExportTo(Option<String>),
+    ExportTo(Result<Option<String>, String>),
     Import,
-    ImportFrom(Option<String>),
+    ImportFrom(Result<Option<String>, String>),
     Read(Result<(Backup, Vec<Change>), String>),
     Apply,
     Cancel,
@@ -276,7 +276,7 @@ pub fn plural_question(count: usize) -> String {
 /// How many changes show before "and N more".
 const SHOWN_CHANGES: usize = 12;
 
-fn pick(save: bool) -> Task<Option<String>> {
+fn pick(save: bool) -> Task<Result<Option<String>, String>> {
     let mut list = args(&["--file-selection", "--file-filter=*.json"]);
     if save {
         list.extend(args(&[
@@ -285,10 +285,7 @@ fn pick(save: bool) -> Task<Option<String>> {
             "--filename=dots-settings.json",
         ]));
     }
-    // zenity exits 1 when cancelled.
-    Task::perform(system::run("zenity", list, None), |r| {
-        r.ok().map(|p| p.trim().to_string()).filter(|p| !p.is_empty())
-    })
+    Task::perform(system::pick(list), |r| r)
 }
 
 impl State {
@@ -296,8 +293,9 @@ impl State {
         match msg {
             Msg::Export => return pick(true).map(Msg::ExportTo),
             Msg::Import => return pick(false).map(Msg::ImportFrom),
-            Msg::ExportTo(None) | Msg::ImportFrom(None) => {}
-            Msg::ExportTo(Some(path)) => {
+            Msg::ExportTo(Ok(None)) | Msg::ImportFrom(Ok(None)) => {}
+            Msg::ExportTo(Err(e)) | Msg::ImportFrom(Err(e)) => self.error = Some(e),
+            Msg::ExportTo(Ok(Some(path))) => {
                 self.busy = true;
                 let work =
                     move || export_to(Path::new(&path), &Store::default_dir()).map(|_| format!("Saved to {path}"));
@@ -305,7 +303,7 @@ impl State {
                     Msg::Done(r.unwrap_or_else(|| Err("exporting stopped unexpectedly".into())))
                 });
             }
-            Msg::ImportFrom(Some(path)) => {
+            Msg::ImportFrom(Ok(Some(path))) => {
                 self.busy = true;
                 let work = move || {
                     let new = read_file(Path::new(&path))?;

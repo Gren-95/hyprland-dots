@@ -125,11 +125,24 @@ pub struct Reading {
     pub synced: bool,
     pub zones: Vec<String>,
     pub today: Day,
+    /// Why the time settings could not be read (timedatectl missing).
+    pub problem: Option<String>,
 }
 
 fn read() -> Reading {
-    let (zone, ntp, synced) =
-        parse_show(&system::run_blocking("timedatectl", &args(&["show"]), None).unwrap_or_default());
+    let today = parse_day(&system::run_blocking("date", &args(&["+%Y %m %d %u"]), None).unwrap_or_default())
+        .unwrap_or_default();
+    let show = match system::run_blocking("timedatectl", &args(&["show"]), None) {
+        Ok(out) => out,
+        Err(e) => {
+            return Reading {
+                today,
+                problem: Some(format!("Could not read the time settings: {e}")),
+                ..Reading::default()
+            };
+        }
+    };
+    let (zone, ntp, synced) = parse_show(&show);
     Reading {
         zone,
         ntp,
@@ -139,8 +152,8 @@ fn read() -> Reading {
             .lines()
             .map(String::from)
             .collect(),
-        today: parse_day(&system::run_blocking("date", &args(&["+%Y %m %d %u"]), None).unwrap_or_default())
-            .unwrap_or_default(),
+        today,
+        problem: None,
     }
 }
 
@@ -197,7 +210,7 @@ impl State {
                 });
             }
             Msg::Done(r) => {
-                self.error = r.err().map(|_| "Not changed: the password was not given".into());
+                self.error = r.err().map(|e| system::polkit_error(&e));
                 return self.update(Msg::Load);
             }
         }
@@ -208,6 +221,9 @@ impl State {
         let Some(r) = &self.reading else {
             return vec![ui::note("Looking…")];
         };
+        if let Some(p) = &r.problem {
+            return vec![ui::note(p.clone())];
+        }
         let mut rows: Vec<Element<'_, Msg>> = Vec::new();
         if let Some(e) = &self.error {
             rows.push(ui::error(e));

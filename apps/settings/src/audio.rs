@@ -44,6 +44,8 @@ pub struct Node {
 
 #[derive(Default)]
 pub struct State {
+    /// Why the last read failed; cleared by the next good one.
+    read_error: Option<String>,
     snapshot: Option<Snapshot>,
     /// Node whose slider is being dragged, with the shown volume.
     dragging: Option<(u32, f32)>,
@@ -279,8 +281,9 @@ impl State {
                     }
                 }
                 self.snapshot = Some(snapshot);
+                self.read_error = None;
             }
-            Msg::Refreshed(Err(e)) => self.error = Some(e),
+            Msg::Refreshed(Err(e)) => self.read_error = Some(format!("Could not read the sound devices: {e}")),
             Msg::SetDefault(id) => {
                 self.busy = true;
                 return wpctl(vec!["set-default".into(), id.to_string()]);
@@ -325,8 +328,16 @@ impl State {
         if let Some(e) = &self.error {
             body = body.push(ui::error(e));
         }
+        if let Some(e) = &self.read_error {
+            body = body.push(ui::error(e));
+        }
         let Some(snap) = &self.snapshot else {
-            return ui::section(body, "Output", vec![ui::note("Loading…")]);
+            let note = if self.read_error.is_some() {
+                "Not available"
+            } else {
+                "Loading…"
+            };
+            return ui::section(body, "Output", vec![ui::note(note)]);
         };
         let max = max_volume.max(1) as f32 / 100.0;
         body = ui::section(body, "Output", self.device_card(snap, &snap.outputs, false, max));

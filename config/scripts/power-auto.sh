@@ -27,14 +27,22 @@ read_policy() {
     LOW_THRESHOLD=$(valid "$(setting power-saver-below 30)" '[0-9]{1,2}' 30)
 }
 
-# Read current state ("yes"/"no") and percentage from UPower.
+# Read current state ("yes"/"no", or "unknown" when UPower does not answer)
+# and percentage from UPower.
 read_state() {
     upower -i /org/freedesktop/UPower/devices/DisplayDevice 2>/dev/null
 }
 
 current_on_bat() {
-    local s
-    s=$(read_state | awk -F': *' '/state:/ {print $2; exit}')
+    local info s
+    info=$(read_state)
+    # No answer is not "on the charger": keep the profile rather than switch
+    # a laptop on battery to the charger's profile.
+    [[ -n $info ]] || {
+        echo unknown
+        return
+    }
+    s=$(awk -F': *' '/state:/ {print $2; exit}' <<<"$info")
     case "$s" in
         discharging | pending-discharge) echo yes ;;
         *) echo no ;;
@@ -80,7 +88,15 @@ apply() {
 }
 
 react() {
-    apply "$(decide "$(current_on_bat)" "$(current_pct)")"
+    local on_bat
+    on_bat=$(current_on_bat)
+    [[ $on_bat == unknown ]] && return 0
+    apply "$(decide "$on_bat" "$(current_pct)")"
+}
+
+command -v upower >/dev/null || {
+    echo "power-auto: upower is not installed" >&2
+    exit 1
 }
 
 # Initial state on startup.
@@ -88,9 +104,14 @@ react
 [[ ${1:-} == once ]] && exit 0
 
 # Watch for events. upower emits property changes (including percentage
-# updates) — we just re-derive on any on-battery / percentage line.
-upower --monitor-detail 2>/dev/null | while read -r line; do
-    case "$line" in
-        *"on-battery:"* | *"percentage:"*) react ;;
-    esac
+# updates) — we just re-derive on any on-battery / percentage line. When the
+# monitor ends (UPower restarted), read the state again and watch again.
+while true; do
+    upower --monitor-detail 2>/dev/null | while read -r line; do
+        case "$line" in
+            *"on-battery:"* | *"percentage:"*) react ;;
+        esac
+    done
+    sleep 5
+    react
 done

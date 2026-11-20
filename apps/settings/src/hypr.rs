@@ -534,7 +534,11 @@ pub fn options_lua(options: &BTreeMap<String, Json>) -> Result<String, String> {
 }
 
 fn write(path: &PathBuf, text: &str) -> io::Result<()> {
-    let tmp = path.with_extension("tmp");
+    // settings.json and settings.lua each get their own temporary file.
+    let tmp = path.with_extension(format!(
+        "{}.tmp",
+        path.extension().and_then(|e| e.to_str()).unwrap_or_default()
+    ));
     fs::write(&tmp, text)?;
     fs::rename(&tmp, path)
 }

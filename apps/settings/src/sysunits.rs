@@ -171,9 +171,7 @@ impl State {
             }
             Msg::Query(q) => self.query = q,
             Msg::Done(r) => {
-                self.error = r
-                    .err()
-                    .map(|_| "Not changed: the password was not given, or systemd refused".into());
+                self.error = r.err().map(|e| system::polkit_error(&e));
                 return self.update(Msg::Load);
             }
         }

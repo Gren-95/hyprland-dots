@@ -43,6 +43,8 @@ pub struct Device {
 
 #[derive(Default)]
 pub struct State {
+    /// Why the last read failed; cleared by the next good one.
+    read_error: Option<String>,
     snapshot: Option<Snapshot>,
     /// MAC of the device being worked on, or "power".
     busy: Option<String>,
@@ -249,8 +251,17 @@ impl State {
         }
         match msg {
             Msg::Refresh => return refresh(),
-            Msg::Refreshed(Ok(snapshot)) => self.snapshot = Some(snapshot),
-            Msg::Refreshed(Err(e)) => self.error = Some(e),
+            Msg::Refreshed(Ok(snapshot)) => {
+                self.snapshot = Some(snapshot);
+                self.read_error = None;
+            }
+            Msg::Refreshed(Err(e)) => {
+                self.read_error = Some(if e.contains("No default controller") {
+                    "No Bluetooth adapter found".into()
+                } else {
+                    format!("Could not read Bluetooth: {e}")
+                })
+            }
             Msg::SetPower(on) => {
                 self.busy = Some("power".into());
                 return act(args(&["power", if on { "on" } else { "off" }]));
@@ -349,8 +360,16 @@ impl State {
         if let Some(e) = &self.error {
             body = body.push(ui::error(e));
         }
+        if let Some(e) = &self.read_error {
+            body = body.push(ui::error(e));
+        }
         let Some(snap) = &self.snapshot else {
-            return ui::section(body, "Bluetooth", vec![ui::note("Loading…")]);
+            let note = if self.read_error.is_some() {
+                "Not available"
+            } else {
+                "Loading…"
+            };
+            return ui::section(body, "Bluetooth", vec![ui::note(note)]);
         };
         let idle = self.busy.is_none();
         let power = ui::switch(snap.powered, idle.then_some(Msg::SetPower));

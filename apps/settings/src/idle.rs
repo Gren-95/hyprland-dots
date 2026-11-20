@@ -107,7 +107,13 @@ impl State {
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
         match msg {
             Msg::Load => {
-                let text = fs::read_to_string(path()).unwrap_or_default();
+                let text = match fs::read_to_string(path()) {
+                    Ok(t) => t,
+                    Err(e) => {
+                        self.error = Some(format!("Could not read hypridle.conf: {e}"));
+                        return Task::none();
+                    }
+                };
                 let values: Option<Vec<u64>> = TIMES.iter().map(|(name, ..)| read_var(&text, name)).collect();
                 match values {
                     Some(v) => self.values = Some(v),

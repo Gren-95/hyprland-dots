@@ -206,15 +206,37 @@ fn write(text: &str) -> io::Result<()> {
 }
 
 impl State {
-    fn load(&mut self) {
-        let (comments, feeds) = parse(&fs::read_to_string(path()).unwrap_or_default());
+    /// Read calendar.url; a missing file is no feeds. A file that cannot be
+    /// read keeps the list shown and says so, and no change is written over
+    /// it (that would drop the feeds it holds).
+    fn load(&mut self) -> Result<(), String> {
+        let text = match fs::read_to_string(path()) {
+            Ok(t) => t,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => String::new(),
+            Err(e) => {
+                let e = format!("Could not read calendar.url: {e}");
+                self.error = Some(e.clone());
+                return Err(e);
+            }
+        };
+        if self
+            .error
+            .as_deref()
+            .is_some_and(|e| e.starts_with("Could not read calendar.url"))
+        {
+            self.error = None;
+        }
+        let (comments, feeds) = parse(&text);
         self.comments = comments;
         self.feeds = feeds;
+        Ok(())
     }
 
     /// Change the feeds and write the file.
     fn change(&mut self, edit: impl FnOnce(&mut Vec<Feed>) -> Result<(), String>) {
-        self.load();
+        if self.load().is_err() {
+            return;
+        }
         let mut feeds = self.feeds.clone();
         let result = edit(&mut feeds).and_then(|()| {
             write(&render(&self.comments, &feeds)).map_err(|e| format!("Could not save calendar.url: {e}"))
@@ -234,7 +256,9 @@ impl State {
         }
         match msg {
             // Keep what the user is editing; the list itself follows the file.
-            Msg::Refresh => self.load(),
+            Msg::Refresh => {
+                let _ = self.load();
+            }
             Msg::Draft(text) => self.draft = text,
             Msg::Add => match normalize(&self.draft) {
                 Ok(url) if self.feeds.iter().any(|f| f.url == url) => {

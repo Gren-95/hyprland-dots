@@ -113,17 +113,28 @@ pub struct Reading {
     pub gtk_themes: Vec<String>,
     pub gtk_theme: String,
     pub current_wallpaper: String,
+    /// awww could not be asked (not running): the wallpaper is unknown.
+    pub wallpaper_unknown: bool,
 }
 
 fn read() -> Reading {
     Reading {
         gtk_themes: gtk_themes(&theme_dirs()),
         gtk_theme: gsettings_get("gtk-theme"),
-        current_wallpaper: canonical(
-            &system::run_blocking("awww", &args(&["query"]), None)
-                .map(|o| parse_current(&o))
-                .unwrap_or_default(),
-        ),
+        ..wallpaper()
+    }
+}
+
+fn wallpaper() -> Reading {
+    match system::run_blocking("awww", &args(&["query"]), None) {
+        Ok(out) => Reading {
+            current_wallpaper: canonical(&parse_current(&out)),
+            ..Reading::default()
+        },
+        Err(_) => Reading {
+            wallpaper_unknown: true,
+            ..Reading::default()
+        },
     }
 }
 
@@ -134,17 +145,18 @@ fn canonical(path: &str) -> String {
 }
 
 /// The grid: (wallpaper, thumbnail) pairs.
-fn read_thumbs() -> Vec<(String, String)> {
+fn read_thumbs() -> Result<Vec<(String, String)>, String> {
     let mut list = vec![script("wallpaper-thumbs.sh")];
     list.extend(
         wallpapers(&wallpaper_dir())
             .into_iter()
             .map(|p| p.to_string_lossy().into_owned()),
     );
-    parse_thumbs(&system::run_blocking("bash", &list, None).unwrap_or_default())
+    let out = system::run_blocking("bash", &list, None).map_err(|e| format!("Could not make the previews: {e}"))?;
+    Ok(parse_thumbs(&out)
         .into_iter()
         .map(|(w, t)| (canonical(&w), t))
-        .collect()
+        .collect())
 }
 
 #[derive(Default)]
@@ -152,7 +164,7 @@ pub struct State {
     reading: Option<Reading>,
     /// The wallpaper grid is open, and its cards once made.
     grid_open: bool,
-    thumbs: Option<Vec<(String, String)>>,
+    thumbs: Option<Result<Vec<(String, String)>, String>>,
     busy: bool,
     error: Option<String>,
 }
@@ -163,7 +175,7 @@ pub enum Msg {
     Loaded(Reading),
     GtkTheme(String),
     ToggleGrid,
-    Thumbs(Vec<(String, String)>),
+    Thumbs(Result<Vec<(String, String)>, String>),
     Wallpaper(String),
     OpenFolder,
     Done(Result<(), String>),
@@ -186,7 +198,9 @@ impl State {
                 self.grid_open = !self.grid_open;
                 if self.grid_open {
                     // Made again on every opening: the folder may have changed.
-                    return Task::perform(system::spawn(read_thumbs), |t| Msg::Thumbs(t.unwrap_or_default()));
+                    return Task::perform(system::spawn(read_thumbs), |t| {
+                        Msg::Thumbs(t.unwrap_or_else(|| Err("Making the previews stopped unexpectedly".into())))
+                    });
                 }
             }
             Msg::Thumbs(t) => self.thumbs = Some(t),
@@ -244,9 +258,12 @@ impl State {
             .as_ref()
             .map(|r| r.current_wallpaper.as_str())
             .unwrap_or_default();
-        let name = Path::new(current)
-            .file_name()
-            .map_or_else(|| "None set".to_string(), |n| n.to_string_lossy().into_owned());
+        let unknown = self.reading.as_ref().is_some_and(|r| r.wallpaper_unknown);
+        let name = match Path::new(current).file_name() {
+            Some(n) => n.to_string_lossy().into_owned(),
+            None if unknown => "Unknown: the wallpaper daemon (awww) is not running".to_string(),
+            None => "None set".to_string(),
+        };
         let mut rows = vec![ui::item(
             ico::IMAGE,
             "Wallpaper".into(),
@@ -259,9 +276,16 @@ impl State {
         if !self.grid_open {
             return rows;
         }
-        let Some(thumbs) = &self.thumbs else {
-            rows.push(ui::note("Making previews…"));
-            return rows;
+        let thumbs = match &self.thumbs {
+            None => {
+                rows.push(ui::note("Making previews…"));
+                return rows;
+            }
+            Some(Err(e)) => {
+                rows.push(ui::error(e));
+                return rows;
+            }
+            Some(Ok(t)) => t,
         };
         if thumbs.is_empty() {
             rows.push(ui::note("No pictures in the wallpaper folder"));

@@ -299,7 +299,7 @@ pub enum Msg {
     Detailed(String, Info),
     Delete(String),
     Import,
-    Picked(Option<String>),
+    Picked(Result<Option<String>, String>),
     Create,
     Edit(Field, String),
     Add,
@@ -366,12 +366,11 @@ impl State {
                     "--file-filter=VPN files | *.conf *.ovpn",
                     "--file-filter=All files | *",
                 ]);
-                return Task::perform(system::run("zenity", list, None), |r| {
-                    Msg::Picked(r.ok().map(|p| p.trim().to_string()).filter(|p| !p.is_empty()))
-                });
+                return Task::perform(system::pick(list), Msg::Picked);
             }
-            Msg::Picked(None) => {}
-            Msg::Picked(Some(path)) => {
+            Msg::Picked(Ok(None)) => {}
+            Msg::Picked(Err(e)) => self.error = Some(e),
+            Msg::Picked(Ok(Some(path))) => {
                 self.adding = true;
                 return spawn_done(move || import_file(path));
             }

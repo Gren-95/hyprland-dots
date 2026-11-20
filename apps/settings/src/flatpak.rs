@@ -132,6 +132,8 @@ pub struct App {
     pub context: Vec<(String, Vec<String>)>,
     /// The user's overrides of this app.
     pub overridden: bool,
+    /// Why its permissions could not be read.
+    pub error: Option<String>,
 }
 
 impl App {
@@ -165,29 +167,39 @@ impl App {
     }
 }
 
-fn read() -> Vec<App> {
-    let list = system::run_blocking("flatpak", &args(&["list", "--app", "--columns=application,name"]), None)
-        .unwrap_or_default();
-    parse_apps(&list)
+/// The apps with their permissions. Err when flatpak itself cannot list
+/// them (not installed); an app whose permissions cannot be read carries
+/// the error instead.
+fn read() -> Result<Vec<App>, String> {
+    let list = system::run_blocking("flatpak", &args(&["list", "--app", "--columns=application,name"]), None).map_err(
+        |e| {
+            if e.starts_with("could not run") {
+                "Flatpak is not installed".to_string()
+            } else {
+                format!("Could not list the Flatpak apps: {e}")
+            }
+        },
+    )?;
+    Ok(parse_apps(&list)
         .into_iter()
         .map(|(id, name)| {
-            let info =
-                system::run_blocking("flatpak", &args(&["info", "--show-permissions", &id]), None).unwrap_or_default();
+            let info = system::run_blocking("flatpak", &args(&["info", "--show-permissions", &id]), None);
             let own = system::run_blocking("flatpak", &args(&["override", "--user", "--show", &id]), None)
                 .unwrap_or_default();
             App {
-                context: parse_context(&info),
+                context: info.as_deref().map(parse_context).unwrap_or_default(),
+                error: info.err().map(|e| format!("Could not read its permissions: {e}")),
                 overridden: !own.trim().is_empty(),
                 id,
                 name,
             }
         })
-        .collect()
+        .collect())
 }
 
 #[derive(Default)]
 pub struct State {
-    apps: Option<Vec<App>>,
+    apps: Option<Result<Vec<App>, String>>,
     open: Option<String>,
     busy: bool,
     error: Option<String>,
@@ -196,12 +208,12 @@ pub struct State {
 #[derive(Debug, Clone)]
 pub enum Msg {
     Load,
-    Loaded(Vec<App>),
+    Loaded(Result<Vec<App>, String>),
     Toggle(String),
     Set(String, &'static str, &'static str, bool),
     RemoveFolder(String, String),
     AddFolder(String),
-    Picked(String, Option<String>),
+    Picked(String, Result<Option<String>, String>),
     Reset(String),
     Done(Result<(), String>),
 }
@@ -215,7 +227,11 @@ fn override_task(list: Vec<String>) -> Task<Msg> {
 impl State {
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
         match msg {
-            Msg::Load => return Task::perform(system::spawn(read), |a| Msg::Loaded(a.unwrap_or_default())),
+            Msg::Load => {
+                return Task::perform(system::spawn(read), |a| {
+                    Msg::Loaded(a.unwrap_or_else(|| Err("Reading the apps stopped unexpectedly".into())))
+                });
+            }
             Msg::Loaded(apps) => {
                 self.apps = Some(apps);
                 self.busy = false;
@@ -239,16 +255,11 @@ impl State {
             }
             Msg::AddFolder(id) => {
                 let list = args(&["--file-selection", "--directory", "--title=Folder the app may use"]);
-                // zenity exits 1 when cancelled.
-                return Task::perform(system::run("zenity", list, None), move |r| {
-                    Msg::Picked(
-                        id.clone(),
-                        r.ok().map(|p| p.trim().to_string()).filter(|p| !p.is_empty()),
-                    )
-                });
+                return Task::perform(system::pick(list), move |r| Msg::Picked(id.clone(), r));
             }
-            Msg::Picked(_, None) => {}
-            Msg::Picked(id, Some(path)) => {
+            Msg::Picked(_, Ok(None)) => {}
+            Msg::Picked(_, Err(e)) => self.error = Some(e),
+            Msg::Picked(id, Ok(Some(path))) => {
                 self.busy = true;
                 return override_task(vec![format!("--filesystem={path}"), id]);
             }
@@ -265,8 +276,10 @@ impl State {
     }
 
     pub fn rows(&self) -> Vec<Element<'_, Msg>> {
-        let Some(apps) = &self.apps else {
-            return vec![ui::note("Looking…")];
+        let apps = match &self.apps {
+            None => return vec![ui::note("Looking…")],
+            Some(Err(e)) => return vec![ui::note(e.clone())],
+            Some(Ok(apps)) => apps,
         };
         let mut rows: Vec<Element<'_, Msg>> = Vec::new();
         if let Some(e) = &self.error {
@@ -280,10 +293,15 @@ impl State {
             rows.push(ui::item(
                 ico::BOX,
                 app.name.clone(),
-                app.summary(),
-                vec![ui::disclosure(open, Msg::Toggle(app.id.clone()))],
+                app.error.clone().unwrap_or_else(|| app.summary()),
+                // Switches showing unread permissions as off would mislead.
+                if app.error.is_some() {
+                    vec![]
+                } else {
+                    vec![ui::disclosure(open, Msg::Toggle(app.id.clone()))]
+                },
             ));
-            if open {
+            if open && app.error.is_none() {
                 let details = self.details(app);
                 let count = details.len();
                 rows.extend(

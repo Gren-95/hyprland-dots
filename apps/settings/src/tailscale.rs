@@ -165,6 +165,8 @@ pub struct State {
 #[derive(Debug, Clone)]
 pub enum Msg {
     Refresh,
+    /// wl-copy finished: the note to show, or why it failed.
+    Copied(Result<String, String>),
     Refreshed(Option<(Status, Option<Prefs>)>),
     Power(bool),
     ExitNode(String),
@@ -174,7 +176,7 @@ pub enum Msg {
     ToggleOptions,
     Copy(String),
     Send(String),
-    SendPicked(String, Option<String>),
+    SendPicked(String, Result<Option<String>, String>),
     Receive,
     Done(Result<String, String>),
 }
@@ -190,6 +192,8 @@ impl State {
 
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
         match msg {
+            Msg::Copied(Ok(note)) => self.note = Some(note),
+            Msg::Copied(Err(e)) => self.error = Some(format!("Could not copy: {e}")),
             Msg::Refresh => return Task::perform(system::spawn(load), |d| Msg::Refreshed(d.flatten())),
             Msg::Refreshed(d) => self.data = Some(d),
             Msg::Power(on) => {
@@ -208,20 +212,17 @@ impl State {
             Msg::ToggleDevices => self.devices_open = !self.devices_open,
             Msg::ToggleOptions => self.options_open = !self.options_open,
             Msg::Copy(text) => {
-                self.note = Some(format!("Copied {text}"));
-                return Task::perform(system::run("wl-copy", vec![text], None), |_| Msg::Refresh);
+                return Task::perform(system::run("wl-copy", vec![text.clone()], None), move |r| {
+                    Msg::Copied(r.map(|_| format!("Copied {text}")))
+                });
             }
             Msg::Send(host) => {
                 let list = args(&["--file-selection", "--title=Send a file with Taildrop"]);
-                return Task::perform(system::run("zenity", list, None), move |r| {
-                    Msg::SendPicked(
-                        host.clone(),
-                        r.ok().map(|p| p.trim().to_string()).filter(|p| !p.is_empty()),
-                    )
-                });
+                return Task::perform(system::pick(list), move |r| Msg::SendPicked(host.clone(), r));
             }
-            Msg::SendPicked(_, None) => {}
-            Msg::SendPicked(host, Some(path)) => {
+            Msg::SendPicked(_, Ok(None)) => {}
+            Msg::SendPicked(_, Err(e)) => self.error = Some(e),
+            Msg::SendPicked(host, Ok(Some(path))) => {
                 self.busy = true;
                 self.note = Some(format!("Sending to {host}…"));
                 return Task::perform(

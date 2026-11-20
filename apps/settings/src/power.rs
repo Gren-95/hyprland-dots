@@ -120,9 +120,7 @@ impl State {
             }
             Msg::Done(r) => {
                 self.busy = false;
-                self.error = r
-                    .err()
-                    .map(|_| "Not changed: the password was not given, or UPower refused".into());
+                self.error = r.err().map(|e| system::polkit_error(&e));
                 return self.update(Msg::Refresh);
             }
         }

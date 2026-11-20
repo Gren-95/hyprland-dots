@@ -125,9 +125,7 @@ impl State {
             }
             Msg::OpenNetwork => {}
             Msg::Done(r) => {
-                self.error = r
-                    .err()
-                    .map(|_| "Not changed: the password was not given, or it did not start".into());
+                self.error = r.err().map(|e| system::polkit_error(&e));
                 // Remote access may have started or stopped: its address too.
                 let vnc = if self.vnc_open {
                     self.vnc.update(crate::vnc::Msg::Load).map(Msg::VncDetails)

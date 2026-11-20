@@ -86,9 +86,20 @@ fn stored() -> String {
     }
 }
 
-fn load() -> Vec<String> {
-    let out = system::run_blocking("tesseract", &args(&["--list-langs"]), None).unwrap_or_default();
-    parse_langs(&out)
+/// The installed languages; Err says why there are none to read.
+fn load() -> Result<Vec<String>, String> {
+    let out = system::run_blocking("tesseract", &args(&["--list-langs"]), None).map_err(|e| {
+        if e.starts_with("could not run") {
+            "Tesseract is not installed, so text cannot be read from screenshots".to_string()
+        } else {
+            format!("Tesseract could not list its languages: {e}")
+        }
+    })?;
+    let langs = parse_langs(&out);
+    if langs.is_empty() {
+        return Err("No Tesseract language is installed (for English: tesseract-langpack-eng)".into());
+    }
+    Ok(langs)
 }
 
 #[derive(Default)]
@@ -105,7 +116,7 @@ pub struct State {
 #[derive(Debug, Clone)]
 pub enum Msg {
     Load,
-    Loaded(Vec<String>),
+    Loaded(Result<Vec<String>, String>),
     Toggle,
     Flip(String),
 }
@@ -113,8 +124,17 @@ pub enum Msg {
 impl State {
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
         match msg {
-            Msg::Load => return Task::perform(system::spawn(load), |l| Msg::Loaded(l.unwrap_or_default())),
-            Msg::Loaded(langs) => {
+            Msg::Load => {
+                return Task::perform(system::spawn(load), |l| {
+                    Msg::Loaded(l.unwrap_or_else(|| Err("Reading the languages stopped unexpectedly".into())))
+                });
+            }
+            Msg::Loaded(Err(e)) => {
+                self.installed = Some(Vec::new());
+                self.error = Some(e);
+            }
+            Msg::Loaded(Ok(langs)) => {
+                self.error = None;
                 self.chosen = chosen(&stored(), &langs);
                 self.names = langs.iter().map(|c| name(c)).collect();
                 self.installed = Some(langs);
@@ -147,9 +167,7 @@ impl State {
             return vec![ui::note("Looking…")];
         };
         if installed.is_empty() {
-            return vec![ui::note(
-                "Tesseract is not installed, so text cannot be read from screenshots",
-            )];
+            return vec![ui::note(self.error.clone().unwrap_or_default())];
         }
         let mut rows: Vec<Element<'_, Msg>> = Vec::new();
         if let Some(e) = &self.error {
