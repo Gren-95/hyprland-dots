@@ -32,7 +32,7 @@ Scope {
     // Per-feed colors, indexed by the feed's position in calendar.url, so
     // each subscription reads as its own color in the grid and event rows.
     // Theme.base, not Theme.accent: "Accent everywhere" must not merge them.
-    // The settings app's Calendar panel shows the same list (calendar.rs).
+    // The settings app's Date & time panel shows the same list (calendar.rs).
     readonly property var feedColors: [
         Theme.base.blue,
         Theme.base.orange,

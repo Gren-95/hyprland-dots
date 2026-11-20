@@ -1,4 +1,4 @@
-//! Region & time panel's own rows: the time zone (picked from
+//! Date & time panel's own rows: the time zone (picked from
 //! `timedatectl list-timezones`) and network time, set through timedatectl,
 //! which asks polkit for the password; and date format presets, each shown
 //! as today's date in it, beside the typed format (a store setting).
@@ -150,6 +150,10 @@ pub enum Msg {
 }
 
 impl State {
+    pub fn loaded(&self) -> bool {
+        self.reading.is_some()
+    }
+
     pub fn update(&mut self, msg: Msg) -> Task<Msg> {
         match msg {
             Msg::Load => return Task::perform(system::spawn(read), |r| Msg::Loaded(r.unwrap_or_default())),

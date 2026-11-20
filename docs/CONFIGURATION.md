@@ -52,7 +52,7 @@ menus are unaffected.
 $EDITOR config/hypr/modules/keys.lua
 ```
 
-Press `Super+F1` to open the settings app's Keyboard shortcuts panel: every active bind, searchable and runnable. A bind moved to other keys there is kept in the gitignored `config/hypr/settings.lua`, so `keys.lua` stays as it is.
+Press `Super+F1` to open the settings app's key binds (Keyboard, Shortcuts): every active bind, searchable and runnable. A bind moved to other keys there is kept in the gitignored `config/hypr/settings.lua`, so `keys.lua` stays as it is.
 
 ## OSD
 
@@ -133,7 +133,7 @@ The day panel calendar reads ICS feed URLs from
 as a `#off` comment and not fetched; `#color` is one of blue, orange, red, green,
 purple, pink, teal (without it a feed gets a colour by its position); `#name` is
 shown in the settings app. Other `#` comments and blank lines are ignored. The
-settings app's Calendar panel (`settings -p calendar`) edits all of this. Feeds are fetched every
+settings app's Date & time panel (`settings -p datetime`) edits all of this. Feeds are fetched every
 `calendar-fetch-interval` minutes (default 10); a feed that fails to fetch keeps
 its last events. The file is gitignored because feed URLs often carry a private
 token.

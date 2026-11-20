@@ -1,4 +1,4 @@
-//! Window rules panel: per-app rules (float at a size, see-through, open on
+//! Windows panel's window rules: per-app rules (float at a size, see-through, open on
 //! a workspace), one per window class. Kept in settings.json and written to
 //! the gitignored settings.lua as `hl.window_rule` calls (hypr.rs); the
 //! tracked rules.lua is not touched. Hyprland reloads after a change, and

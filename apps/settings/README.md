@@ -20,20 +20,15 @@ terminal, or `settings -p <panel>` for one panel; several shell flyouts
 | `network` | Wi-Fi on/off, nearby networks (connect, disconnect, forget, scan), wired devices, VPN connections (on/off, Details with type, server, address, DNS and Delete; import a WireGuard .conf or OpenVPN .ovpn file; set up WireGuard by hand); Tailscale, when installed, as one VPN row whose Details hold its address to copy, exit node, options (Tailscale DNS, subnet routes, shields up, offer exit node, LAN access), devices with their address and Taildrop send, receive files into ~/Downloads — through `nmcli`; Details on the connected Wi-Fi network or wired device shows its addresses, gateway, DNS, hardware address and interface |
 | `sound` | Output and input: a dropdown of devices (plain text when there is one) the volume with a mute button and the card's mode (profile, e.g. high quality or headset on Bluetooth); every app playing with its volume and mute — through `pw-dump` and `wpctl`; the alert (toast sound) volume |
 | `bluetooth` | Bluetooth on/off, visible to other devices for 3 minutes, paired devices (connect, disconnect, rename, trust, block, forget, battery), scanning and pairing — through `bluetoothctl`. Connected AirPods get, behind Details on their row, battery per bud and case, noise control, conversation awareness, codec and an audio reset, through librepods and `config/scripts/airpods.sh` |
-| `keyboard` | Keyboard layouts (search the XKB list, add, remove, reorder), layout switch shortcut, Caps Lock key, Num Lock at start, key repeat delay and speed — written to `config/hypr/settings.lua` (gitignored, loaded last) and applied with `hyprctl eval` |
-| `shortcuts` | Every key bind with its keys (search, change with modifiers and a searchable key list, reset); moves are kept in `config/hypr/settings.lua` as `hl.unbind` + `hl.bind`, `keys.lua` is not edited |
+| `keyboard` | Keyboard layouts (search the XKB list, add, remove, reorder), layout switch shortcut, Caps Lock key, Num Lock at start, key repeat delay and speed — written to `config/hypr/settings.lua` (gitignored, loaded last) and applied with `hyprctl eval`; Open under Shortcuts shows every key bind with its keys (search, change with modifiers and a searchable key list, reset) on its own page; moves are kept in `config/hypr/settings.lua` as `hl.unbind` + `hl.bind`, `keys.lua` is not edited (`-p shortcuts` opens that page) |
 | `mouse` | Pointer speed, acceleration, left-handed, natural scrolling and scroll speed for mice; tap to click, natural scrolling, off while typing, right-click method, middle click and scroll speed for touchpads; workspace swipe direction and distance — Hyprland options saved to `config/hypr/settings.lua` |
 | `appearance` | Accent colour, dark or light apps (gsettings color-scheme; adw-gtk3 follows), the GTK 3 theme, icon and cursor themes (each a row with the one in use that opens to the installed themes with previews, recently used first, applied through `config/scripts/icon-theme.sh` and `cursor-theme.sh`, with Open folder), shell font, app font (gsettings font-name) and text size, cursor size (`cursor-theme.sh size`), corner roundness, animations on or off (shell, Hyprland and GTK together) and their speed, wallpaper folder and a wallpaper picker (a grid of the folder from `wallpaper-thumbs.sh`, applied with `wallpaper.sh`); `themes` opens it too |
-| `windows` | Gaps, border width, corner rounding, animations, blur, shadows, unfocused opacity, tiling layout, focus follows mouse, resize by border — Hyprland options in `config/hypr/settings.lua` (they win over HyprMod's `hyprland-gui.lua`) |
-| `window-rules` | Per-app window rules for apps with a window open: float (at a size), opacity, the workspace they open on; kept in `~/.config/hypr/settings.json` and written to the gitignored `settings.lua` as `hl.window_rule` calls (the tracked `rules.lua` is not edited), then Hyprland reloads |
-| `bar` | Height, opacity, window title width, workspace icons, activity icons, scroll action |
-| `baritems` | Where each bar module, Quick Actions item and tray app shows: on the bar, in Quick Actions or hidden (the shell's placement files); tray apps are read live over D-Bus |
-| `clock` | Seconds in the bar clock; weather location and Fahrenheit (`-p weather` opens it too) |
-| `region` | Time zone (search picker over `timedatectl list-timezones`) and network time, through `timedatectl`, which asks for the password through polkit; 24-hour clock, first day of the week, the bar's date format typed or picked from presets shown as today's date |
-| `calendar` | ICS feeds of the day panel (`~/.config/quickshell/calendar.url`; links shown shortened as they hold private tokens): add, switch on and off, name, colour, replace the link, move up, remove; feed refresh interval |
+| `windows` | Gaps, border width, corner rounding, animations, blur, shadows, unfocused opacity, tiling layout, focus follows mouse, resize by border — Hyprland options in `config/hypr/settings.lua` (they win over HyprMod's `hyprland-gui.lua`); window rules for apps with a window open: float (at a size), opacity, the workspace they open on, kept in `~/.config/hypr/settings.json` and written to `settings.lua` as `hl.window_rule` calls (the tracked `rules.lua` is not edited), then Hyprland reloads |
+| `bar` | Height, opacity, window title width, workspace icons, activity icons, scroll action; where each bar module, Quick Actions item and tray app shows: on the bar, in Quick Actions or hidden (the shell's placement files); tray apps are read live over D-Bus |
+| `datetime` | Time zone (search picker over `timedatectl list-timezones`) and network time, through `timedatectl`, which asks for the password through polkit; 24-hour clock, seconds; the bar's date format typed or picked from presets shown as today's date, first day of the week; ICS feeds of the day panel (`~/.config/quickshell/calendar.url`; links shown shortened as they hold private tokens): add, switch on and off, name, colour, replace the link, move up, remove, and the refresh interval; weather location and Fahrenheit (`-p weather` opens it too) |
 | `notifications` | Do not disturb, by hand or every day between two times; toast position, time, count, width and sound; history; auto-dismiss; system event toasts; per app: show, no toasts or mute |
 | `launcher` | Results shown; calculator and quick actions among the results; clipboard thumbnails; apps hidden from the launcher (Ctrl+D there), each with Show again |
-| `osd` | Volume and brightness steps, maximum volume, on-screen display |
+| `audio` | Volume and brightness steps, maximum volume, on-screen display |
 | `apps` | Default apps: browser, mail, terminal, text editor, files, images, video, music, PDF — the first four through `config/scripts/default-app.sh`, the rest as XDG mime defaults (`xdg-mime`); choices are the installed apps that handle each |
 | `recording` | Screenshots (folder, PNG or JPEG, cursor, clipboard, actions sheet) and screen recording (folder, file type, frame rate, quality, codec, cursor, sound), and the installed Tesseract languages text recognition reads (`ocr.rs`) — read by `config/scripts/lib/screenshot.sh`, `screenrecord.sh` and `screenshot-ocr.sh` |
 | `sysmon` | System monitor refresh interval and sections |
@@ -112,7 +107,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/args.rs` | Argument parsing |
 | `src/cli.rs` | `settings get`, `settings set` and the `settings import` prompt |
 | `src/backup.rs` | Export and import of every setting; the Backup section on About |
-| `src/region.rs` | Time zone, network time and date presets on the Region & time panel |
+| `src/region.rs` | Time zone, network time and date presets on the Date & time panel |
 | `src/schema.rs` | The panels and their settings: file, label, control, default. A test checks every file and type against `Settings.qml` |
 | `src/store.rs` | Reading and writing the setting files in the format `Settings.qml` uses |
 | `src/app.rs` | The iced app: state, messages, the open panel, window-width layout |
@@ -147,15 +142,15 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/infoview.rs` | Fact rows, tiles, battery and network blocks shared by About, Power and Network |
 | `src/sysinfo.rs` | What the system is, for About: hardware, battery, network, packages, repository |
 | `src/windows.rs` | The Windows rows |
-| `src/windowrules.rs` | Window rules panel |
+| `src/windowrules.rs` | Window rules on the Windows panel |
 | `src/mouse.rs` | The Mouse & touchpad rows |
 | `src/defaultapps.rs` | Default apps panel: desktop entries, roles |
-| `src/shortcuts.rs` | Keyboard shortcuts panel |
+| `src/shortcuts.rs` | Key binds page of the Keyboard panel |
 | `src/keysearch.rs` | Key-combo search, the rules of the Super+F1 viewer |
 | `src/themes.rs` | Icon and cursor themes on the Appearance panel |
 | `src/appearance.rs` | GTK theme and wallpaper picker on the Appearance panel |
 | `src/idle.rs` | Idle times: the variables in hypridle.conf |
-| `src/placement.rs` | Bar items panel: placement files and the live tray list |
+| `src/placement.rs` | Item placement on the Bar panel: placement files and the live tray list |
 | `src/keyboard.rs` | Keyboard panel and the XKB layout list |
 | `src/system.rs` | Running nmcli and bluetoothctl on a background thread |
 | `src/ui.rs` | Shared pieces: section cards, list rows, action buttons |

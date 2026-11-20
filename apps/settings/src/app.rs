@@ -121,6 +121,8 @@ pub struct App {
     idle: idle::State,
     themes: themes::State,
     shortcuts: shortcuts::State,
+    /// Keyboard shows its key binds page instead of its settings.
+    shortcuts_open: bool,
     default_apps: defaultapps::State,
     windows: hyprpage::State,
     about: about::State,
@@ -202,6 +204,8 @@ pub enum Message {
     Idle(idle::Msg),
     Themes(themes::Msg),
     Shortcuts(shortcuts::Msg),
+    /// Open (true) or leave (false) Keyboard's key binds page.
+    ShowShortcuts(bool),
     DefaultApps(defaultapps::Msg),
     Windows(hyprpage::Msg),
     About(about::Msg),
@@ -228,7 +232,7 @@ pub enum Message {
 impl App {
     /// The app, and the first refresh of its panel when that shows system
     /// state.
-    pub fn new(panel: usize, query: String, store: Store) -> (Self, Task<Message>) {
+    pub fn new(panel: usize, query: String, open_shortcuts: bool, store: Store) -> (Self, Task<Message>) {
         let searching = !query.is_empty();
         let mut app = App {
             panel,
@@ -251,6 +255,7 @@ impl App {
             idle: idle::State::default(),
             themes: themes::State::default(),
             shortcuts: shortcuts::State::default(),
+            shortcuts_open: open_shortcuts,
             default_apps: defaultapps::State::default(),
             windows: hyprpage::State::default(),
             about: about::State::default(),
@@ -301,12 +306,10 @@ impl App {
             ]),
             Page::Launcher => self.hidden_apps.update(hiddenapps::Msg::Load).map(Message::HiddenApps),
             Page::Recording => self.ocr.update(ocr::Msg::Load).map(Message::Ocr),
-            Page::Region => self.region.update(region::Msg::Load).map(Message::Region),
             Page::Sync => Task::batch([
                 self.services.update(services::Msg::Refresh).map(Message::Services),
                 self.sync.update(sync::Msg::Load).map(Message::Sync),
             ]),
-            Page::WindowRules => self.window_rules.update(windowrules::Msg::Load).map(Message::WindowRules),
             Page::Sharing => self.sharing.update(sharing::Msg::Refresh).map(Message::Sharing),
             Page::Notifications => {
                 self.notif_apps.update(notifapps::Msg::Load);
@@ -315,30 +318,39 @@ impl App {
             Page::Network => self.network.update(network::Msg::Refresh).map(Message::Network),
             Page::Bluetooth => self.bluetooth.update(bluetooth::Msg::Refresh).map(Message::Bluetooth),
             Page::Sound => self.audio.update(audio::Msg::Refresh).map(Message::Audio),
-            Page::Calendar => {
+            Page::DateTime => {
                 self.calendar.update(calendar::Msg::Refresh);
-                Task::none()
+                // The time zones are read once; a change reads them again.
+                if self.region.loaded() {
+                    Task::none()
+                } else {
+                    self.region.update(region::Msg::Load).map(Message::Region)
+                }
+            }
+            Page::Keyboard if self.shortcuts_open => {
+                self.shortcuts.update(shortcuts::Msg::Load).map(Message::Shortcuts)
             }
             Page::Keyboard => self.keyboard.update(keyboard::Msg::Load).map(Message::Keyboard),
             Page::Mouse => self
                 .mouse
                 .update(hyprpage::Msg::Load, mouse::SECTIONS)
                 .map(Message::Mouse),
-            Page::BarItems => self.placement.update(placement::Msg::Refresh).map(Message::Placement),
+            Page::Bar => self.placement.update(placement::Msg::Refresh).map(Message::Placement),
             Page::Lock => self.idle.update(idle::Msg::Load).map(Message::Idle),
             Page::Appearance => Task::batch([
                 self.themes.update(themes::Msg::Load).map(Message::Themes),
                 self.appearance.update(appearance::Msg::Load).map(Message::Appearance),
             ]),
-            Page::Shortcuts => self.shortcuts.update(shortcuts::Msg::Load).map(Message::Shortcuts),
             Page::DefaultApps => self
                 .default_apps
                 .update(defaultapps::Msg::Load)
                 .map(Message::DefaultApps),
-            Page::Windows => self
-                .windows
-                .update(hyprpage::Msg::Load, windows::SECTIONS)
-                .map(Message::Windows),
+            Page::Windows => Task::batch([
+                self.windows
+                    .update(hyprpage::Msg::Load, windows::SECTIONS)
+                    .map(Message::Windows),
+                self.window_rules.update(windowrules::Msg::Load).map(Message::WindowRules),
+            ]),
             Page::About => self.about.update(about::Msg::Load).map(Message::About),
             Page::Power => self.power.update(power::Msg::Refresh).map(Message::Power),
         }
@@ -414,6 +426,7 @@ impl App {
         match message {
             Message::SelectPanel(i) => {
                 self.panel = i;
+                self.shortcuts_open = false;
                 self.nav_focus = None;
                 self.open_list = None;
                 // The results stay in a full sidebar; a compact one folds
@@ -431,6 +444,13 @@ impl App {
             Message::Idle(msg) => return self.idle.update(msg).map(Message::Idle),
             Message::Themes(msg) => return self.themes.update(msg).map(Message::Themes),
             Message::Shortcuts(msg) => return self.shortcuts.update(msg).map(Message::Shortcuts),
+            Message::ShowShortcuts(open) => {
+                self.shortcuts_open = open;
+                return self.refresh_page().chain(iced::widget::operation::snap_to(
+                    PANELS[self.panel].id,
+                    iced::widget::scrollable::RelativeOffset::START,
+                ));
+            }
             Message::DefaultApps(msg) => return self.default_apps.update(msg).map(Message::DefaultApps),
             Message::Windows(msg) => return self.windows.update(msg, windows::SECTIONS).map(Message::Windows),
             Message::About(msg) => return self.about.update(msg).map(Message::About),
@@ -731,7 +751,7 @@ impl App {
                 }
                 body.into()
             }
-            Page::Region => {
+            Page::DateTime => {
                 let mut body = page_column(panel.title, layout);
                 let time = self.region.time_rows().into_iter().map(|r| r.map(Message::Region)).collect();
                 body = ui::section(body, "Time", time);
@@ -740,10 +760,11 @@ impl App {
                     _ => "ddd, dd MMM",
                 };
                 for section in panel.sections {
-                    let extra = if section.title == "Date" {
-                        vec![self.region.date_row(current)]
-                    } else {
-                        Vec::new()
+                    let extra = match section.title {
+                        "Date" => vec![self.region.date_row(current)],
+                        // The feeds, then how often they download.
+                        "Calendar" => self.calendar.rows().into_iter().map(|r| r.map(Message::Calendar)).collect(),
+                        _ => Vec::new(),
                     };
                     body = self.section_with(body, section, layout, extra);
                 }
@@ -767,16 +788,6 @@ impl App {
                     body = body.push(text(error).color(style::RED));
                 }
                 body.into()
-            }
-            Page::WindowRules => {
-                let body = page_column(panel.title, layout);
-                let rows = self
-                    .window_rules
-                    .rows()
-                    .into_iter()
-                    .map(|r| r.map(Message::WindowRules))
-                    .collect();
-                ui::section(body, "Apps", rows).into()
             }
             Page::Sharing => {
                 let mut body = page_column(panel.title, layout);
@@ -830,18 +841,40 @@ impl App {
                     Element::from(self.audio.view(page_column(panel.title, layout), max_volume)).map(Message::Audio);
                 self.with_settings(devices, panel, layout)
             }
-            Page::Calendar => {
-                let feeds = Element::from(self.calendar.view(page_column(panel.title, layout))).map(Message::Calendar);
-                self.with_settings(feeds, panel, layout)
+            Page::Keyboard if self.shortcuts_open => {
+                let pad = if layout.stacked { 16.0 } else { 28.0 };
+                let back = ui::action("‹ Keyboard", Some(Message::ShowShortcuts(false)), style::Action::Normal);
+                let binds = Element::from(self.shortcuts.view(page_column("Keyboard shortcuts", layout)))
+                    .map(Message::Shortcuts);
+                column![container(back).padding(iced::Padding::from([0.0, pad]).top(pad)), binds]
+                    .width(Length::Fill)
+                    .max_width(PAGE_WIDTH)
+                    .into()
             }
             Page::Keyboard => {
-                Element::from(self.keyboard.view(page_column(panel.title, layout))).map(Message::Keyboard)
+                let keys = Element::from(self.keyboard.view(page_column(panel.title, layout))).map(Message::Keyboard);
+                let open = ui::item(
+                    lucide_iced::bytes::COMMAND,
+                    "Keyboard shortcuts".into(),
+                    "Search, run and change the key binds · Super+F1".into(),
+                    vec![ui::action("Open", Some(Message::ShowShortcuts(true)), style::Action::Normal)],
+                );
+                let rest = ui::section(tail_column(layout), "Shortcuts", vec![open]);
+                column![keys, rest].width(Length::Fill).max_width(PAGE_WIDTH).into()
             }
             Page::Mouse => {
                 Element::from(self.mouse.view(page_column(panel.title, layout), mouse::SECTIONS)).map(Message::Mouse)
             }
-            Page::BarItems => {
-                Element::from(self.placement.view(page_column(panel.title, layout))).map(Message::Placement)
+            Page::Bar => {
+                let mut body = page_column(panel.title, layout);
+                for section in panel.sections {
+                    body = self.section(body, section, layout);
+                }
+                if let Some(error) = &self.error {
+                    body = body.push(text(error).color(style::RED));
+                }
+                let items = Element::from(self.placement.view(tail_column(layout))).map(Message::Placement);
+                column![body, items].width(Length::Fill).max_width(PAGE_WIDTH).into()
             }
             Page::Lock => {
                 let times = Element::from(self.idle.view(page_column(panel.title, layout))).map(Message::Idle);
@@ -878,14 +911,21 @@ impl App {
                 }
                 body.into()
             }
-            Page::Shortcuts => {
-                Element::from(self.shortcuts.view(page_column(panel.title, layout))).map(Message::Shortcuts)
-            }
             Page::DefaultApps => {
                 Element::from(self.default_apps.view(page_column(panel.title, layout))).map(Message::DefaultApps)
             }
-            Page::Windows => Element::from(self.windows.view(page_column(panel.title, layout), windows::SECTIONS))
-                .map(Message::Windows),
+            Page::Windows => {
+                let look = Element::from(self.windows.view(page_column(panel.title, layout), windows::SECTIONS))
+                    .map(Message::Windows);
+                let rules = self
+                    .window_rules
+                    .rows()
+                    .into_iter()
+                    .map(|r| r.map(Message::WindowRules))
+                    .collect();
+                let rules = ui::section(tail_column(layout), "Window rules", rules);
+                column![look, rules].width(Length::Fill).max_width(PAGE_WIDTH).into()
+            }
             Page::Power => {
                 let battery = Element::from(self.power.view(page_column(panel.title, layout))).map(Message::Power);
                 self.with_settings(battery, panel, layout)
@@ -923,17 +963,7 @@ impl App {
         panel: &'static Panel,
         layout: Layout,
     ) -> Element<'a, Message> {
-        let pad = if layout.stacked { 16.0 } else { 28.0 };
-        let mut options = Column::new()
-            .spacing(10)
-            .padding(iced::Padding {
-                top: 0.0,
-                right: pad,
-                bottom: pad,
-                left: pad,
-            })
-            .width(Length::Fill)
-            .max_width(PAGE_WIDTH);
+        let mut options = tail_column(layout);
         for section in panel.sections {
             options = self.section(options, section, layout);
         }
@@ -990,6 +1020,22 @@ fn sharing_rows(rows: Vec<Element<'_, sharing::Msg>>) -> Vec<Element<'_, Message
 
 fn services_rows(rows: Vec<Element<'_, services::Msg>>) -> Vec<Element<'_, Message>> {
     rows.into_iter().map(|r| r.map(Message::Services)).collect()
+}
+
+/// The column that continues a panel's page below another part: the page's
+/// side and bottom padding, no title.
+fn tail_column<'a, M: 'a>(layout: Layout) -> Column<'a, M> {
+    let pad = if layout.stacked { 16.0 } else { 28.0 };
+    Column::new()
+        .spacing(10)
+        .padding(iced::Padding {
+            top: 0.0,
+            right: pad,
+            bottom: pad,
+            left: pad,
+        })
+        .width(Length::Fill)
+        .max_width(PAGE_WIDTH)
 }
 
 /// A panel's column, starting with its title.

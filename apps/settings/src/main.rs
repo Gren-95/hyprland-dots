@@ -62,8 +62,12 @@ use args::Command;
 use store::Store;
 
 fn main() -> ExitCode {
-    let (panel, search) = match args::parse(std::env::args().skip(1)) {
-        Ok(Command::Open { panel, search }) => (panel, search),
+    let (panel, search, shortcuts) = match args::parse(std::env::args().skip(1)) {
+        Ok(Command::Open {
+            panel,
+            search,
+            shortcuts,
+        }) => (panel, search, shortcuts),
         Ok(Command::ListPanels) => {
             for p in schema::PANELS {
                 println!("{}\t{}", p.id, p.title);
@@ -92,7 +96,7 @@ fn main() -> ExitCode {
     };
 
     let result = iced::application(
-        move || App::new(panel, search.clone(), Store::new(Store::default_dir())),
+        move || App::new(panel, search.clone(), shortcuts, Store::new(Store::default_dir())),
         App::update,
         App::view,
     )

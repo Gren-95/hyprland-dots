@@ -53,21 +53,22 @@ pub enum Page {
     Bluetooth,
     /// Audio devices and app volumes (audio.rs).
     Sound,
-    /// Calendar feeds (calendar.rs), then the panel's settings.
-    Calendar,
-    /// Keyboard layouts and repeat in Hyprland (keyboard.rs, hypr.rs).
+    /// Time zone and network time (region.rs), the clock and date settings
+    /// with date format presets, calendar feeds (calendar.rs) and weather.
+    DateTime,
+    /// Keyboard layouts and repeat in Hyprland (keyboard.rs, hypr.rs), and
+    /// the key binds (shortcuts.rs) on their own page behind a button.
     Keyboard,
     /// Mouse, touchpad and gesture options in Hyprland (mouse.rs).
     Mouse,
-    /// Where bar, Quick Actions and tray items show (placement.rs).
-    BarItems,
+    /// Bar settings, then where bar, Quick Actions and tray items show
+    /// (placement.rs).
+    Bar,
     /// Idle timings from hypridle.conf (idle.rs), then the panel's settings.
     Lock,
     /// Appearance settings, the icon and cursor themes (themes.rs), the GTK
     /// theme and the wallpaper picker (appearance.rs).
     Appearance,
-    /// Key binds moved to other keys (shortcuts.rs).
-    Shortcuts,
     /// Background services: daemons, syncs, on-demand services (services.rs).
     Services,
     /// The game mode switch, its settings and display options (gaming.rs).
@@ -78,7 +79,8 @@ pub enum Page {
     Notifications,
     /// Which app fills each role (defaultapps.rs).
     DefaultApps,
-    /// Window gaps, borders, effects and focus in Hyprland (windows.rs).
+    /// Window gaps, borders, effects and focus in Hyprland (windows.rs),
+    /// then the per-app window rules (windowrules.rs).
     Windows,
     /// What the system is (about.rs).
     About,
@@ -88,10 +90,6 @@ pub enum Page {
     Recording,
     /// Remote access, remote login and the tailnet (sharing.rs).
     Sharing,
-    /// Per-app window rules (windowrules.rs).
-    WindowRules,
-    /// Time zone and network time (region.rs), then the format settings.
-    Region,
     /// The Immich and Jellyfin syncs (services.rs, sync.rs), then their
     /// settings.
     Sync,
@@ -112,8 +110,8 @@ impl Page {
                 | Page::Network
                 | Page::Bluetooth
                 | Page::Sound
-                | Page::Calendar
-                | Page::BarItems
+                | Page::DateTime
+                | Page::Bar
         )
     }
 }
@@ -520,16 +518,7 @@ pub const PANELS: &[Panel] = &[
         glyph: ico::KEYBOARD,
         group: Group::InputOutput,
         page: Page::Keyboard,
-        keywords: "layout language xkb input repeat delay caps lock num lock typing",
-        sections: &[],
-    },
-    Panel {
-        id: "shortcuts",
-        title: "Keyboard shortcuts",
-        glyph: ico::COMMAND,
-        group: Group::InputOutput,
-        page: Page::Shortcuts,
-        keywords: "keybinds keys bind hotkeys shortcuts super rebind",
+        keywords: "layout language xkb input repeat delay caps lock num lock typing keybinds keys bind hotkeys shortcuts super rebind",
         sections: &[],
     },
     Panel {
@@ -542,8 +531,8 @@ pub const PANELS: &[Panel] = &[
         sections: &[],
     },
     Panel {
-        id: "osd",
-        title: "Volume & OSD",
+        id: "audio",
+        title: "Audio",
         glyph: ico::VOLUME_2,
         group: Group::InputOutput,
         page: Page::Settings,
@@ -778,21 +767,12 @@ pub const PANELS: &[Panel] = &[
         ],
     },
     Panel {
-        id: "window-rules",
-        title: "Window rules",
-        glyph: ico::APP_WINDOW_MAC,
-        group: Group::Appearance,
-        page: Page::WindowRules,
-        keywords: "window rule app float floating size opacity transparent see-through workspace class",
-        sections: &[],
-    },
-    Panel {
         id: "windows",
         title: "Windows",
         glyph: ico::APP_WINDOW,
         group: Group::Appearance,
         page: Page::Windows,
-        keywords: "gaps border rounding blur shadow animations opacity tiling dwindle master focus follows mouse",
+        keywords: "gaps border rounding blur shadow animations opacity tiling dwindle master focus follows mouse rule app float floating size transparent see-through workspace class",
         sections: &[],
     },
     Panel {
@@ -800,8 +780,8 @@ pub const PANELS: &[Panel] = &[
         title: "Bar",
         glyph: ico::PANEL_TOP,
         group: Group::Appearance,
-        page: Page::Settings,
-        keywords: "",
+        page: Page::Bar,
+        keywords: "modules quick actions tray icons hide show overflow placement layout",
         sections: &[
             Section {
                 title: "Size",
@@ -862,29 +842,49 @@ pub const PANELS: &[Panel] = &[
         ],
     },
     Panel {
-        id: "baritems",
-        title: "Bar items",
-        glyph: ico::MENU,
-        group: Group::Appearance,
-        page: Page::BarItems,
-        keywords: "bar modules quick actions tray icons hide show overflow placement layout",
-        sections: &[],
-    },
-    Panel {
-        id: "clock",
-        title: "Clock & weather",
+        id: "datetime",
+        title: "Date & time",
         glyph: ico::CLOCK,
         group: Group::Workspace,
-        page: Page::Settings,
-        keywords: "time date weather temperature forecast location fahrenheit",
+        page: Page::DateTime,
+        keywords: "clock time zone timezone ntp network region ics webcal feeds events google outlook weather temperature forecast location",
         sections: &[
             Section {
                 title: "Clock",
-                settings: &[toggle(
-                    "clock-seconds",
-                    "Seconds",
-                    "Show seconds in the bar clock; the time and date formats are in Region & time",
-                    false,
+                settings: &[
+                    toggle("clock-24h", "24-hour clock", "Show 13:00 instead of 1:00 PM", true),
+                    toggle("clock-seconds", "Seconds", "Show seconds in the bar clock", false),
+                ],
+            },
+            Section {
+                title: "Date",
+                settings: &[
+                    entry(
+                        "clock-date-format",
+                        "Date format",
+                        "Typed as a Qt date format: d, dd, ddd, dddd for the day, M to MMMM for the month, yy or yyyy",
+                        "ddd, dd MMM",
+                        Default::Text("ddd, dd MMM"),
+                    ),
+                    toggle(
+                        "week-start-monday",
+                        "Week starts on Monday",
+                        "Otherwise on Sunday, in the calendar",
+                        true,
+                    ),
+                ],
+            },
+            Section {
+                title: "Calendar",
+                settings: &[number(
+                    "calendar-fetch-interval",
+                    "Refresh feeds",
+                    "Minutes between calendar feed downloads",
+                    1,
+                    120,
+                    1,
+                    "min",
+                    10,
                 )],
             },
             Section {
@@ -901,29 +901,6 @@ pub const PANELS: &[Panel] = &[
                 ],
             },
         ],
-    },
-    Panel {
-        id: "calendar",
-        title: "Calendar",
-        glyph: ico::CALENDAR,
-        group: Group::Workspace,
-        page: Page::Calendar,
-        keywords: "ics webcal feeds events google outlook",
-        sections: &[Section {
-            title: "Options",
-            settings: &[
-                number(
-                    "calendar-fetch-interval",
-                    "Refresh feeds",
-                    "Minutes between calendar feed downloads",
-                    1,
-                    120,
-                    1,
-                    "min",
-                    10,
-                ),
-            ],
-        }],
     },
     Panel {
         id: "notifications",
@@ -1497,38 +1474,6 @@ pub const PANELS: &[Panel] = &[
         sections: &[],
     },
     Panel {
-        id: "region",
-        title: "Region & time",
-        glyph: ico::GLOBE,
-        group: Group::System,
-        page: Page::Region,
-        keywords: "time zone timezone clock ntp network time date format region",
-        sections: &[
-            Section {
-                title: "Formats",
-                settings: &[
-                    toggle("clock-24h", "24-hour clock", "Show 13:00 instead of 1:00 PM", true),
-                    toggle(
-                        "week-start-monday",
-                        "Week starts on Monday",
-                        "Otherwise on Sunday, in the calendar",
-                        true,
-                    ),
-                ],
-            },
-            Section {
-                title: "Date",
-                settings: &[entry(
-                    "clock-date-format",
-                    "Date format",
-                    "Typed as a Qt date format: d, dd, ddd, dddd for the day, M to MMMM for the month, yy or yyyy",
-                    "ddd, dd MMM",
-                    Default::Text("ddd, dd MMM"),
-                )],
-            },
-        ],
-    },
-    Panel {
         id: "sync",
         title: "Sync",
         glyph: ico::REFRESH_CW,
@@ -1675,8 +1620,12 @@ const PROFILES: &[(&str, &str)] = &[
     ("power-saver", "Power saver"),
 ];
 
-/// Old panel names that now open another panel.
-const ALIASES: &[(&str, &str)] = &[("weather", "clock"), ("idle", "lock"), ("themes", "appearance")];
+/// The panel name that opens Keyboard on its key binds page.
+pub const SHORTCUTS: &str = "shortcuts";
+
+/// Old panel names that now open another panel, and the key binds page's
+/// own name.
+const ALIASES: &[(&str, &str)] = &[(SHORTCUTS, "keyboard"), ("weather", "datetime"), ("idle", "lock"), ("themes", "appearance")];
 
 pub fn panel_index(id: &str) -> Option<usize> {
     let id = ALIASES.iter().find(|(old, _)| *old == id).map_or(id, |(_, new)| new);

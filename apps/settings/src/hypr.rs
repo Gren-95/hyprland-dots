@@ -266,7 +266,7 @@ pub fn rules_lua(rules: &[WindowRule]) -> Result<String, String> {
         out.push_str(&format!("hl.window_rule({{\n{}\n}})\n", lines.join("\n")));
     }
     if !out.is_empty() {
-        out = format!("\n-- Window rules (Window rules panel)\n{out}");
+        out = format!("\n-- Window rules (Windows panel, window rules)\n{out}");
     }
     Ok(out)
 }

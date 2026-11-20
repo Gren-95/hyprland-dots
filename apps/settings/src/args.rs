@@ -1,14 +1,16 @@
 //! Command line: `settings [-p|--panel <name>] [-s|--search <text>] [--list-panels] [-h|--help]`.
 
-use crate::schema::{PANELS, panel_index};
+use crate::schema::{PANELS, SHORTCUTS, panel_index};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Command {
     /// Open the window on this panel (index into PANELS), with this text in
-    /// the search field.
+    /// the search field; `shortcuts` opens the key binds page of Keyboard
+    /// (`-p shortcuts`).
     Open {
         panel: usize,
         search: String,
+        shortcuts: bool,
     },
     ListPanels,
     /// Print every setting, or one.
@@ -34,7 +36,7 @@ pub fn usage() -> String {
          set changes one (true/false, a number, one of the choices, or JSON).\n\
          export writes every setting (shell, Hyprland, default apps) to a\n\
          file; import lists what it would change and asks first.\n\
-         Panels: {}\n",
+         Panels: {}, {SHORTCUTS} (the key binds, in Keyboard)\n",
         names.join(", ")
     )
 }
@@ -42,6 +44,7 @@ pub fn usage() -> String {
 /// Parse the arguments after the program name.
 pub fn parse<I: IntoIterator<Item = String>>(args: I) -> Result<Command, String> {
     let mut panel = 0;
+    let mut shortcuts = false;
     let mut search = String::new();
     let mut args = args.into_iter().peekable();
     match args.peek().map(String::as_str) {
@@ -86,10 +89,12 @@ pub fn parse<I: IntoIterator<Item = String>>(args: I) -> Result<Command, String>
             "-p" | "--panel" => {
                 let name = args.next().ok_or_else(|| format!("{arg} needs a panel name"))?;
                 panel = find_panel(&name)?;
+                shortcuts = name == SHORTCUTS;
             }
             _ => {
                 if let Some(name) = arg.strip_prefix("--panel=") {
                     panel = find_panel(name)?;
+                    shortcuts = name == SHORTCUTS;
                 } else if let Some(text) = arg.strip_prefix("--search=") {
                     search = text.to_string();
                 } else {
@@ -98,7 +103,11 @@ pub fn parse<I: IntoIterator<Item = String>>(args: I) -> Result<Command, String>
             }
         }
     }
-    Ok(Command::Open { panel, search })
+    Ok(Command::Open {
+        panel,
+        search,
+        shortcuts,
+    })
 }
 
 fn find_panel(name: &str) -> Result<usize, String> {
@@ -119,7 +128,8 @@ mod tests {
             run(&[]),
             Ok(Command::Open {
                 panel: 0,
-                search: String::new()
+                search: String::new(),
+                shortcuts: false
             })
         );
     }
@@ -130,6 +140,7 @@ mod tests {
         let open = Ok(Command::Open {
             panel: notifications,
             search: String::new(),
+            shortcuts: false,
         });
         assert_eq!(run(&["-p", "notifications"]), open);
         assert_eq!(run(&["--panel", "notifications"]), open);
@@ -159,12 +170,25 @@ mod tests {
 
     #[test]
     fn old_panel_names_still_open() {
-        let clock = panel_index("clock").unwrap();
+        let clock = panel_index("datetime").unwrap();
         assert_eq!(
             run(&["-p", "weather"]),
             Ok(Command::Open {
                 panel: clock,
-                search: String::new()
+                search: String::new(),
+                shortcuts: false
+            })
+        );
+    }
+
+    #[test]
+    fn opens_the_key_binds_page() {
+        assert_eq!(
+            run(&["-p", "shortcuts"]),
+            Ok(Command::Open {
+                panel: panel_index("keyboard").unwrap(),
+                search: String::new(),
+                shortcuts: true
             })
         );
     }
@@ -174,6 +198,7 @@ mod tests {
         let open = Ok(Command::Open {
             panel: 0,
             search: "volume step".to_string(),
+            shortcuts: false,
         });
         assert_eq!(run(&["-s", "volume step"]), open);
         assert_eq!(run(&["--search", "volume step"]), open);

@@ -1,4 +1,4 @@
-//! Bar items panel: where each bar module, Quick Actions item and tray app
+//! Bar panel's items: where each bar module, Quick Actions item and tray app
 //! shows, written to the shell's placement files (Settings.qml):
 //! bar-placement.json, qa-placement.json and tray-placement.json map an item
 //! to "bar", "overflow" (the Quick Actions panel) or "hidden"; the activity

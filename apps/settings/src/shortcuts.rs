@@ -1,4 +1,4 @@
-//! Keyboard shortcuts panel: the key binds from hypr-binds.sh, each movable
+//! Key binds page of the Keyboard panel: the key binds from hypr-binds.sh, each movable
 //! to other keys. A move is kept in settings.lua (hypr.rs `binds`: the old
 //! keys unbound, the action bound to the new ones) and applied to the live
 //! Hyprland at once; keys.lua is never edited.

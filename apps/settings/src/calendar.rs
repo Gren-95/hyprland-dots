@@ -14,7 +14,7 @@ use std::io;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
-use iced::widget::{Column, column, container, row, text, text_input};
+use iced::widget::{column, container, row, text, text_input};
 use iced::{Alignment, Element, Length};
 
 use crate::style::{self, Action};
@@ -326,11 +326,12 @@ impl State {
         }
     }
 
-    pub fn view<'a>(&'a self, mut body: Column<'a, Msg>) -> Column<'a, Msg> {
+    /// The feeds, each with its editor when open, then the add field.
+    pub fn rows(&self) -> Vec<Element<'_, Msg>> {
+        let mut rows: Vec<Element<'_, Msg>> = Vec::new();
         if let Some(e) = &self.error {
-            body = body.push(ui::error(e));
+            rows.push(ui::error(e));
         }
-        let mut rows: Vec<Element<'a, Msg>> = Vec::new();
         for (i, feed) in self.feeds.iter().enumerate() {
             rows.push(self.feed_row(i, feed));
             if let Some(editor) = self.editor.as_ref().filter(|e| e.index == i) {
@@ -349,7 +350,7 @@ impl State {
                 .padding([8, 14])
                 .into(),
         );
-        ui::section(body, "Feeds", rows)
+        rows
     }
 
     fn feed_row<'a>(&'a self, i: usize, feed: &'a Feed) -> Element<'a, Msg> {

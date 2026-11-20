@@ -1,5 +1,5 @@
-//! Key-combo search for the Keyboard shortcuts panel (ported from the old
-//! Quickshell keybinds viewer, which this panel replaced): a query made of
+//! Key-combo search for the key binds page (ported from the old
+//! Quickshell keybinds viewer, which this page replaced): a query made of
 //! modifier words and at most one key ("super s", "Super+Shift+S",
 //! "ctrl alt del") finds binds on that combo, exact matches first, then
 //! binds with more modifiers. Anything else, or a combo nothing has, is a
