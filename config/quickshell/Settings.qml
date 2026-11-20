@@ -116,6 +116,10 @@ Scope {
     property string colorScheme: "prefer-dark"
     property string appFont: "Adwaita Sans"
     property int cursorSize: 24
+    // Read by immich-sync.sh and jellyfin-music-sync.sh.
+    property string immichFolder: Quickshell.env("HOME") + "/Pictures"
+    property string jellyfinUrl: ""
+    property string jellyfinFolder: Quickshell.env("HOME") + "/Music"
     property string powerOnAc: "performance"   // power-auto.sh: profile on the charger
     property string powerOnBattery: "balanced" // power-auto.sh: profile on battery
     property int powerSaverBelow: 30           // power-auto.sh: power saver below this %; 0 = never
@@ -276,6 +280,9 @@ Scope {
         { name: "colorScheme",          file: "color-scheme",           type: "string" },
         { name: "appFont",              file: "app-font",               type: "string" },
         { name: "cursorSize",           file: "cursor-size",            type: "int"  },
+        { name: "immichFolder",         file: "immich-folder",          type: "string" },
+        { name: "jellyfinUrl",          file: "jellyfin-url",           type: "string" },
+        { name: "jellyfinFolder",       file: "jellyfin-folder",        type: "string" },
         { name: "powerOnAc",            file: "power-on-ac",            type: "string" },
         { name: "powerOnBattery",       file: "power-on-battery",       type: "string" },
         { name: "powerSaverBelow",      file: "power-saver-below",      type: "int"  },

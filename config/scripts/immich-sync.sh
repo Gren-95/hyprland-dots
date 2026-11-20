@@ -4,6 +4,11 @@ set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/server.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/settings.sh"
+
+# The folder uploaded (Sync in the settings app). The server and key are the
+# immich CLI's login (`immich login <url> <key>`), never the app's.
+UPLOAD_DIR=$(setting_dir immich-folder "$PICTURES_DIR")
 
 # Where `dots.sh setup` can put the CLI: npm with a user prefix, or bun.
 # Cron runs with PATH=/usr/bin:/bin, so neither is on PATH there.
@@ -50,7 +55,7 @@ run_upload() {
     fi
 
     local output exit_code
-    output=$("$bin" upload --recursive "$PICTURES_DIR" --ignore "**/{ocr,Screenshots}/**" 2>&1)
+    output=$("$bin" upload --recursive "$UPLOAD_DIR" --ignore "**/{ocr,Screenshots}/**" 2>&1)
     exit_code=$?
     echo "$output" >>"$IMMICH_LOG"
 

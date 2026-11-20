@@ -20,6 +20,7 @@ use crate::hiddenapps;
 use crate::backup;
 use crate::appearance;
 use crate::ocr;
+use crate::sync;
 use crate::windowrules;
 use crate::sharing;
 use crate::hyprpage;
@@ -125,6 +126,7 @@ pub struct App {
     power: power::State,
     notif_apps: notifapps::State,
     ocr: ocr::State,
+    sync: sync::State,
     window_rules: windowrules::State,
     appearance: appearance::State,
     backup: backup::State,
@@ -205,6 +207,7 @@ pub enum Message {
     NotifApps(notifapps::Msg),
     HiddenApps(hiddenapps::Msg),
     Ocr(ocr::Msg),
+    Sync(sync::Msg),
     WindowRules(windowrules::Msg),
     Appearance(appearance::Msg),
     Backup(backup::Msg),
@@ -251,6 +254,7 @@ impl App {
             power: power::State::default(),
             notif_apps: notifapps::State::default(),
             ocr: ocr::State::default(),
+            sync: sync::State::default(),
             window_rules: windowrules::State::default(),
             appearance: appearance::State::default(),
             backup: backup::State::default(),
@@ -293,6 +297,10 @@ impl App {
             ]),
             Page::Launcher => self.hidden_apps.update(hiddenapps::Msg::Load).map(Message::HiddenApps),
             Page::Recording => self.ocr.update(ocr::Msg::Load).map(Message::Ocr),
+            Page::Sync => Task::batch([
+                self.services.update(services::Msg::Refresh).map(Message::Services),
+                self.sync.update(sync::Msg::Load).map(Message::Sync),
+            ]),
             Page::WindowRules => self.window_rules.update(windowrules::Msg::Load).map(Message::WindowRules),
             Page::Sharing => self.sharing.update(sharing::Msg::Refresh).map(Message::Sharing),
             Page::Notifications => {
@@ -425,6 +433,7 @@ impl App {
             Message::NotifApps(msg) => self.notif_apps.update(msg),
             Message::HiddenApps(msg) => return self.hidden_apps.update(msg).map(Message::HiddenApps),
             Message::Ocr(msg) => return self.ocr.update(msg).map(Message::Ocr),
+            Message::Sync(msg) => return self.sync.update(msg).map(Message::Sync),
             Message::WindowRules(msg) => return self.window_rules.update(msg).map(Message::WindowRules),
             Message::Appearance(msg) => return self.appearance.update(msg).map(Message::Appearance),
             Message::Backup(msg) => {
@@ -665,7 +674,6 @@ impl App {
                     .collect();
                 background.extend(services_rows(self.services.daemon_rows()));
                 body = ui::section(body, "Background services", background);
-                body = ui::section(body, "Scheduled", services_rows(self.services.scheduled_rows()));
                 body = ui::section(body, "On demand", services_rows(self.services.on_demand_rows()));
                 let mut system: Vec<Element<'_, Message>> = self
                     .sysunits
@@ -712,6 +720,22 @@ impl App {
                     .map(|r| r.map(Message::HiddenApps))
                     .collect();
                 body = ui::section(body, "Hidden apps", hidden);
+                if let Some(error) = &self.error {
+                    body = body.push(text(error).color(style::RED));
+                }
+                body.into()
+            }
+            Page::Sync => {
+                let mut body = page_column(panel.title, layout);
+                body = ui::section(body, "Syncs", services_rows(self.services.scheduled_rows()));
+                for section in panel.sections {
+                    let extra: Vec<Element<'_, sync::Msg>> = match section.title {
+                        "Immich" => self.sync.immich_rows(),
+                        _ => self.sync.jellyfin_rows(),
+                    };
+                    let extra = extra.into_iter().map(|r| r.map(Message::Sync)).collect();
+                    body = self.section_with(body, section, layout, extra);
+                }
                 if let Some(error) = &self.error {
                     body = body.push(text(error).color(style::RED));
                 }

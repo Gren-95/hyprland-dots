@@ -90,6 +90,9 @@ pub enum Page {
     Sharing,
     /// Per-app window rules (windowrules.rs).
     WindowRules,
+    /// The Immich and Jellyfin syncs (services.rs, sync.rs), then their
+    /// settings.
+    Sync,
 }
 
 impl Page {
@@ -101,6 +104,7 @@ impl Page {
             Page::Gaming
                 | Page::Services
                 | Page::Sharing
+                | Page::Sync
                 | Page::Notifications
                 | Page::Power
                 | Page::Network
@@ -1498,8 +1502,47 @@ pub const PANELS: &[Panel] = &[
         glyph: ico::SERVER_COG,
         group: Group::System,
         page: Page::Services,
-        keywords: "background daemons startup autostart login apps systemd units sync immich jellyfin windows vm games browser dotwatch battery",
+        keywords: "background daemons startup autostart login apps systemd units windows vm games browser dotwatch battery",
         sections: &[],
+    },
+    Panel {
+        id: "sync",
+        title: "Sync",
+        glyph: ico::REFRESH_CW,
+        group: Group::System,
+        page: Page::Sync,
+        keywords: "sync immich photos upload jellyfin music download server folder schedule",
+        sections: &[
+            Section {
+                title: "Immich",
+                settings: &[folder(
+                    "immich-folder",
+                    "Folder",
+                    "Photos in here are uploaded",
+                    "~/Pictures",
+                    "Pictures",
+                )],
+            },
+            Section {
+                title: "Jellyfin",
+                settings: &[
+                    entry(
+                        "jellyfin-url",
+                        "Server address",
+                        "Like https://jellyfin.example.com; empty uses the one in sync.conf",
+                        "From sync.conf",
+                        Default::Text(""),
+                    ),
+                    folder(
+                        "jellyfin-folder",
+                        "Folder",
+                        "The music goes here; files in it that are not on the server are deleted",
+                        "~/Music",
+                        "Music",
+                    ),
+                ],
+            },
+        ],
     },
     Panel {
         id: "sharing",

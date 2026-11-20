@@ -6,6 +6,12 @@ set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/paths.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/notify.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/server.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/settings.sh"
+
+# The music folder and server address can be set in the settings app (Sync);
+# the API key comes from the environment or sync.conf, never from the app.
+MUSIC_DIR=$(setting_dir jellyfin-folder "$MUSIC_DIR")
+URL_SETTING=$(valid "$(setting jellyfin-url "")" 'https?://[^[:space:]]+' "")
 
 CONFIG="$JELLYFIN_CONF"
 LOG="$JELLYFIN_LOG"
@@ -54,13 +60,16 @@ load_config() {
         print_info "Migrated config from $old_config to $CONFIG"
     fi
 
+    # A key in the environment wins over the one in the file.
+    local env_key=${JELLYFIN_API_KEY:-}
     if [[ -f "$CONFIG" ]]; then
         # shellcheck source=/dev/null
         source "$CONFIG"
     fi
     # Unset until the config provides them; set -u would abort otherwise.
     JELLYFIN_URL=${JELLYFIN_URL:-}
-    JELLYFIN_API_KEY=${JELLYFIN_API_KEY:-}
+    JELLYFIN_API_KEY=${env_key:-${JELLYFIN_API_KEY:-}}
+    [[ -n "$URL_SETTING" ]] && JELLYFIN_URL=$URL_SETTING
 
     # Run from the timer or cron with nothing configured: there is nobody to
     # ask, so there is nothing to do yet.

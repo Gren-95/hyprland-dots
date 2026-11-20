@@ -41,6 +41,7 @@ mod sidebar;
 mod startup;
 mod store;
 mod style;
+mod sync;
 mod sysinfo;
 mod system;
 mod sysunits;

@@ -2,8 +2,8 @@
 //! (scripts/services-status.sh, shared with the bar's Services flyout).
 //! Dotwatch shows whether it runs and can be started or restarted (the
 //! systemd user units are units.rs, the autostart apps startup.rs);
-//! the scheduled syncs and the on-demand services have a switch, through
-//! the same toggle scripts the flyout uses. Remote access is on the
+//! the on-demand services have a switch, through the same toggle scripts
+//! the flyout uses. The scheduled syncs are drawn on the Sync panel. Remote access is on the
 //! Sharing panel (sharing.rs).
 
 use iced::{Element, Task};
@@ -37,6 +37,8 @@ struct Switchable {
     label: &'static str,
     detail: &'static str,
     toggle: &'static [&'static str],
+    /// The script that runs it once now (Sync now), for scheduled ones.
+    run_now: Option<&'static str>,
 }
 
 const SCHEDULED: &[Switchable] = &[
@@ -45,12 +47,14 @@ const SCHEDULED: &[Switchable] = &[
         label: "Immich sync",
         detail: "Photos, every hour",
         toggle: &["sync-toggle.sh", "toggle", "immich"],
+        run_now: Some("immich-sync.sh"),
     },
     Switchable {
         key: "jellyfin",
         label: "Jellyfin sync",
         detail: "Music, every day",
         toggle: &["sync-toggle.sh", "toggle", "jellyfin"],
+        run_now: Some("jellyfin-music-sync.sh"),
     },
 ];
 
@@ -60,12 +64,14 @@ const ON_DEMAND: &[Switchable] = &[
         label: "Windows VM",
         detail: "The WinApps container",
         toggle: &["winvm-toggle.sh", "toggle"],
+        run_now: None,
     },
     Switchable {
         key: "games-browser",
         label: "Games browser",
         detail: "Web page of the games library on port 8080",
         toggle: &["games-browser-toggle.sh", "toggle"],
+        run_now: None,
     },
 ];
 
@@ -139,6 +145,7 @@ pub struct State {
     status: Option<Status>,
     /// The service being switched, until the next probe shows it.
     busy: Option<&'static str>,
+    note: Option<String>,
     error: Option<String>,
 }
 
@@ -148,6 +155,8 @@ pub enum Msg {
     Refreshed(Status),
     Start(usize),
     Toggle(&'static str),
+    /// Run a scheduled sync once now, detached.
+    RunNow(&'static str),
     OpenGamesBrowser,
     Done(Result<(), String>),
 }
@@ -176,6 +185,12 @@ impl State {
                 let mut list = vec![script(s.toggle[0])];
                 list.extend(s.toggle[1..].iter().map(|a| a.to_string()));
                 return Task::perform(system::run("bash", list, None), |r| Msg::Done(r.map(|_| ())));
+            }
+            Msg::RunNow(name) => {
+                self.note = Some("Syncing in the background; a notification tells how it went".into());
+                return Task::perform(system::spawn(move || start(name)), |r| {
+                    Msg::Done(r.unwrap_or_else(|| Err("starting stopped unexpectedly".into())))
+                });
             }
             Msg::OpenGamesBrowser => {
                 return Task::perform(system::run("xdg-open", vec![GAMES_BROWSER_URL.into()], None), |r| {
@@ -237,6 +252,9 @@ impl State {
             }
             let key = s.key;
             let mut controls = Vec::new();
+            if let Some(script) = s.run_now {
+                controls.push(ui::action("Sync now", Some(Msg::RunNow(script)), Action::Normal));
+            }
             if key == "games-browser" && on {
                 controls.push(ui::action("Open", Some(Msg::OpenGamesBrowser), Action::Normal));
             }
@@ -246,8 +264,14 @@ impl State {
         rows
     }
 
+    /// The syncs, for the Sync panel (with a note after Sync now).
     pub fn scheduled_rows(&self) -> Vec<Element<'_, Msg>> {
-        self.switch_rows(SCHEDULED)
+        let mut rows = Vec::new();
+        if let Some(n) = &self.note {
+            rows.push(ui::note(n.clone()));
+        }
+        rows.extend(self.switch_rows(SCHEDULED));
+        rows
     }
 
     pub fn on_demand_rows(&self) -> Vec<Element<'_, Msg>> {
