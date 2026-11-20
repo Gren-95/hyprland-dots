@@ -334,6 +334,17 @@ if ((${#absent[@]} > 0)); then
     printf '\e[2mNot installed: %s\e[0m\n' "${absent[*]}"
 fi
 
+# For the settings app (Updates): when this run finished and how.
+mkdir -p "$STATE_DIR"
+if ((${#failed[@]} == 0)); then
+    printf '%s\tok\n' "$(date +%s)" >"$LAST_UPDATE"
+else
+    printf '%s\tfailed: %s\n' "$(date +%s)" "$(
+        IFS=,
+        echo "${failed[*]}"
+    )" >"$LAST_UPDATE"
+fi
+
 # Exit code 1 means a reboot is needed (kernel, glibc, systemd, ...).
 # -C: use the metadata dnf update just fetched instead of refreshing again.
 if ! dnf needs-restarting -r -C >/dev/null 2>&1; then

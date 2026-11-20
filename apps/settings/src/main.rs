@@ -53,6 +53,7 @@ mod tailscale;
 mod themes;
 mod ui;
 mod units;
+mod updates;
 mod users;
 mod vnc;
 mod vpn;

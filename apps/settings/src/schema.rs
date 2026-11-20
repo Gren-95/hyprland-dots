@@ -96,6 +96,8 @@ pub enum Page {
     Changed,
     /// The user's picture and full name (users.rs).
     Users,
+    /// Running update-all.sh and the Timeshift snapshots (updates.rs).
+    Updates,
     /// In-use indicators and clipboard settings, then clearing the
     /// clipboard history and recent files (privacy.rs).
     Privacy,
@@ -113,6 +115,7 @@ impl Page {
             Page::Gaming
                 | Page::Services
                 | Page::Sharing
+                | Page::Updates
                 | Page::Sync
                 | Page::Notifications
                 | Page::Power
@@ -1503,6 +1506,15 @@ pub const PANELS: &[Panel] = &[
         group: Group::System,
         page: Page::Services,
         keywords: "background daemons startup autostart login apps systemd units windows vm games browser dotwatch battery",
+        sections: &[],
+    },
+    Panel {
+        id: "updates",
+        title: "Updates",
+        glyph: ico::DOWNLOAD,
+        group: Group::System,
+        page: Page::Updates,
+        keywords: "update upgrade dnf flatpak packages firmware timeshift snapshot backup restore",
         sections: &[],
     },
     Panel {
