@@ -76,7 +76,57 @@ type Apply = (&'static str, Kind, fn(Value));
 const APPLY: &[Apply] = &[
     ("animations", Kind::Bool, apply_animations),
     ("radius-scale", Kind::Real, apply_rounding),
+    ("color-scheme", Kind::Text, apply_color_scheme),
+    ("app-font", Kind::Text, apply_app_font),
+    ("cursor-size", Kind::Int, apply_cursor_size),
 ];
+
+fn gsettings_set(key: &str, value: &str) {
+    let _ = run_blocking("gsettings", &args(&["set", "org.gnome.desktop.interface", key, value]), None);
+}
+
+/// Dark or light for apps that follow the system; adw-gtk3 has a theme for
+/// each, so GTK 3 apps follow too.
+fn apply_color_scheme(value: Value) {
+    let Value::Text(scheme) = value else { return };
+    gsettings_set("color-scheme", &scheme);
+    let theme = run_blocking("gsettings", &args(&["get", "org.gnome.desktop.interface", "gtk-theme"]), None)
+        .unwrap_or_default();
+    if theme.contains("adw-gtk3") {
+        let dark = if scheme == "prefer-dark" { "adw-gtk3-dark" } else { "adw-gtk3" };
+        gsettings_set("gtk-theme", dark);
+    }
+}
+
+/// The GTK font, keeping its size ("Adwaita Sans 11").
+fn apply_app_font(value: Value) {
+    let Value::Text(family) = value else { return };
+    let current = run_blocking("gsettings", &args(&["get", "org.gnome.desktop.interface", "font-name"]), None)
+        .unwrap_or_default();
+    gsettings_set("font-name", &format!("{family} {}", font_size(&current)));
+}
+
+/// The size at the end of a font name ("'Adwaita Sans 11'" is 11).
+pub fn font_size(font_name: &str) -> String {
+    font_name
+        .trim()
+        .trim_matches('\'')
+        .rsplit_once(' ')
+        .map(|(_, size)| size)
+        .filter(|s| s.parse::<f64>().is_ok())
+        .unwrap_or("11")
+        .to_string()
+}
+
+fn apply_cursor_size(value: Value) {
+    let Value::Int(size) = value else { return };
+    let script = crate::store::home().join(".config/scripts/cursor-theme.sh");
+    let _ = run_blocking(
+        "bash",
+        &[script.to_string_lossy().into_owned(), "size".into(), size.to_string()],
+        None,
+    );
+}
 
 /// Animations on or off everywhere: Hyprland's animations:enabled (kept in
 /// settings.lua, the option the Windows panel shows) and GTK's
@@ -155,6 +205,13 @@ pub fn args(list: &[&str]) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reads_the_font_size() {
+        assert_eq!(font_size("'Adwaita Sans 11'\n"), "11");
+        assert_eq!(font_size("'Cantarell 10.5'"), "10.5");
+        assert_eq!(font_size("'Sans'"), "11");
+    }
 
     #[test]
     fn window_rounding_follows_the_scale() {

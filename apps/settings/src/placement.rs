@@ -88,7 +88,7 @@ const ACTIONS: &[(&str, &str, crate::ui::Icon, &str)] = &[
     ("record", "Record", ico::VIDEO, "overflow"),
     ("colorpicker", "Color picker", ico::PIPETTE, "overflow"),
     ("keybinds", "Keybinds", ico::CIRCLE_QUESTION_MARK, "overflow"),
-    ("iconscursors", "Icons & cursors", ico::SHAPES, "overflow"),
+    ("iconscursors", "Appearance", ico::PALETTE, "overflow"),
 ];
 
 #[derive(Debug, Clone, Default)]

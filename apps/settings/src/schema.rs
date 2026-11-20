@@ -63,8 +63,9 @@ pub enum Page {
     BarItems,
     /// Idle timings from hypridle.conf (idle.rs), then the panel's settings.
     Lock,
-    /// Icon and cursor themes (themes.rs).
-    Themes,
+    /// Appearance settings, the icon and cursor themes (themes.rs), the GTK
+    /// theme and the wallpaper picker (appearance.rs).
+    Appearance,
     /// Key binds moved to other keys (shortcuts.rs).
     Shortcuts,
     /// Background services: daemons, syncs, on-demand services (services.rs).
@@ -635,8 +636,8 @@ pub const PANELS: &[Panel] = &[
         title: "Appearance",
         glyph: ico::PALETTE,
         group: Group::Appearance,
-        page: Page::Settings,
-        keywords: "",
+        page: Page::Appearance,
+        keywords: "theme dark light gtk icon theme cursor pointer size papirus breeze adwaita hyprcursor xcursor wallpaper background font",
         sections: &[
             Section {
                 title: "Colour",
@@ -653,6 +654,13 @@ pub const PANELS: &[Panel] = &[
                         "Accent everywhere",
                         "Use the accent colour for every coloured icon and highlight; red, green and yellow keep their meaning",
                         true,
+                    ),
+                    choice(
+                        "color-scheme",
+                        "Apps",
+                        "Whether apps that follow the system are dark or light",
+                        &[("prefer-dark", "Dark"), ("default", "Light")],
+                        "prefer-dark",
                     ),
                 ],
             },
@@ -695,6 +703,13 @@ pub const PANELS: &[Panel] = &[
                         control: Control::Font,
                         default: Default::Text("Iosevka Nerd Font"),
                     },
+                    Setting {
+                        file: "app-font",
+                        label: "App font",
+                        help: "Font family of GTK apps",
+                        control: Control::Font,
+                        default: Default::Text("Adwaita Sans"),
+                    },
                     scale(
                         "font-scale",
                         "Text size",
@@ -709,6 +724,13 @@ pub const PANELS: &[Panel] = &[
             Section {
                 title: "Shape and motion",
                 settings: &[
+                    Setting {
+                        file: "cursor-size",
+                        label: "Cursor size",
+                        help: "Of the pointer, in Hyprland and in apps",
+                        control: Control::NumberChoice(&[(24, "Normal"), (32, "Large"), (48, "Larger")]),
+                        default: Default::Int(24),
+                    },
                     scale(
                         "radius-scale",
                         "Corner roundness",
@@ -746,15 +768,6 @@ pub const PANELS: &[Panel] = &[
                 )],
             },
         ],
-    },
-    Panel {
-        id: "themes",
-        title: "Icons & cursors",
-        glyph: ico::SHAPES,
-        group: Group::Appearance,
-        page: Page::Themes,
-        keywords: "icon theme cursor pointer papirus breeze adwaita hyprcursor xcursor",
-        sections: &[],
     },
     Panel {
         id: "windows",
@@ -1586,7 +1599,7 @@ const PROFILES: &[(&str, &str)] = &[
 ];
 
 /// Old panel names that now open another panel.
-const ALIASES: &[(&str, &str)] = &[("weather", "clock"), ("idle", "lock")];
+const ALIASES: &[(&str, &str)] = &[("weather", "clock"), ("idle", "lock"), ("themes", "appearance")];
 
 pub fn panel_index(id: &str) -> Option<usize> {
     let id = ALIASES.iter().find(|(old, _)| *old == id).map_or(id, |(_, new)| new);

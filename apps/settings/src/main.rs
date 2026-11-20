@@ -3,6 +3,7 @@
 mod about;
 mod airpods;
 mod app;
+mod appearance;
 mod args;
 mod audio;
 mod backup;

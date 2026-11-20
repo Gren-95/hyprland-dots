@@ -1,9 +1,10 @@
-//! Icons & cursors panel: icon and cursor themes with previews, applied
+//! Icon and cursor themes on the Appearance panel, each a row showing the
+//! one in use that opens to the installed themes with previews, applied
 //! through scripts/icon-theme.sh and scripts/cursor-theme.sh (`list`, `get`,
 //! `set <id>`). Recently applied themes come first (iconThemeRecents,
 //! cursorThemeRecents in the settings store), then the rest by name.
 
-use iced::widget::{Column, Row, column, container, image, row, svg, text};
+use iced::widget::{Row, column, container, image, row, svg, text};
 use iced::{Alignment, Element, Length, Task};
 use serde_json::Value as Json;
 
@@ -42,6 +43,9 @@ pub struct Themes {
 pub struct State {
     icons: Option<Themes>,
     cursors: Option<Themes>,
+    /// The lists are open.
+    icons_open: bool,
+    cursors_open: bool,
     /// Theme being applied.
     busy: Option<String>,
     error: Option<String>,
@@ -56,6 +60,8 @@ pub enum Msg {
     UseCursor(String),
     /// Open a folder in the file manager.
     OpenFolder(String),
+    ToggleIcons,
+    ToggleCursors,
     Applied(Result<(), String>),
 }
 
@@ -225,6 +231,8 @@ impl State {
                 self.busy = Some(id.clone());
                 return apply("cursor-theme.sh", CURSOR_RECENTS, id, replaced);
             }
+            Msg::ToggleIcons => self.icons_open = !self.icons_open,
+            Msg::ToggleCursors => self.cursors_open = !self.cursors_open,
             Msg::OpenFolder(path) => {
                 // The folder for new themes may not exist yet.
                 let _ = std::fs::create_dir_all(&path);
@@ -241,16 +249,42 @@ impl State {
         Task::none()
     }
 
-    pub fn view<'a>(&'a self, mut body: Column<'a, Msg>) -> Column<'a, Msg> {
+    /// The icon and cursor theme rows, each opening to its list.
+    pub fn rows_all(&self) -> Vec<Element<'_, Msg>> {
+        let mut rows: Vec<Element<'_, Msg>> = Vec::new();
         if let Some(e) = &self.error {
-            body = body.push(ui::error(e));
+            rows.push(ui::error(e));
         }
-        let mut icons = vec![folder_row("icon")];
-        icons.extend(self.rows(&self.icons, "Looking for icon themes…", Msg::UseIcon));
-        body = ui::section(body, "Icon theme", icons);
-        let mut cursors = vec![folder_row("cursor")];
-        cursors.extend(self.rows(&self.cursors, "Looking for cursor themes…", Msg::UseCursor));
-        ui::section(body, "Cursor theme", cursors)
+        let kinds = [
+            (
+                "Icon theme",
+                lucide_iced::bytes::SHAPES,
+                &self.icons,
+                self.icons_open,
+                Msg::ToggleIcons,
+                "icon",
+                Msg::UseIcon as fn(String) -> Msg,
+            ),
+            (
+                "Cursor theme",
+                lucide_iced::bytes::MOUSE_POINTER_2,
+                &self.cursors,
+                self.cursors_open,
+                Msg::ToggleCursors,
+                "cursor",
+                Msg::UseCursor as fn(String) -> Msg,
+            ),
+        ];
+        for (title, glyph, themes, open, toggle, kind, on_use) in kinds {
+            rows.push(ui::item(glyph, title.into(), in_use_names(themes), vec![ui::disclosure(open, toggle)]));
+            if open {
+                let mut list = vec![folder_row(kind)];
+                list.extend(self.rows(themes, "Looking for themes…", on_use));
+                let count = list.len();
+                rows.extend(list.into_iter().enumerate().map(|(i, r)| ui::branch(r, i + 1 == count)));
+            }
+        }
+        rows
     }
 
     fn rows<'a>(
@@ -335,6 +369,29 @@ fn themes_folder() -> String {
 
 /// The first row of a section: where to put new themes, with a button that
 /// opens it.
+/// The themes in use by name, with where each is used when that differs
+/// ("Bibata (Apps) · rose-pine (Hyprland)").
+fn in_use_names(themes: &Option<Themes>) -> String {
+    let Some(themes) = themes else {
+        return "Looking…".into();
+    };
+    let name = |id: &str| {
+        themes
+            .list
+            .iter()
+            .find(|t| t.id == id)
+            .map_or_else(|| id.to_string(), |t| t.name.clone())
+    };
+    match themes.in_use.as_slice() {
+        [(id, _)] => name(id),
+        many => many
+            .iter()
+            .map(|(id, badge)| format!("{} ({badge})", name(id)))
+            .collect::<Vec<_>>()
+            .join(" · "),
+    }
+}
+
 fn folder_row<'a>(kind: &str) -> Element<'a, Msg> {
     ui::item(
         lucide_iced::bytes::FOLDER_OPEN,

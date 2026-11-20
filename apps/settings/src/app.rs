@@ -18,6 +18,7 @@ use crate::defaultapps;
 use crate::gaming;
 use crate::hiddenapps;
 use crate::backup;
+use crate::appearance;
 use crate::ocr;
 use crate::sharing;
 use crate::hyprpage;
@@ -123,6 +124,7 @@ pub struct App {
     power: power::State,
     notif_apps: notifapps::State,
     ocr: ocr::State,
+    appearance: appearance::State,
     backup: backup::State,
     sharing: sharing::State,
     hidden_apps: hiddenapps::State,
@@ -201,6 +203,7 @@ pub enum Message {
     NotifApps(notifapps::Msg),
     HiddenApps(hiddenapps::Msg),
     Ocr(ocr::Msg),
+    Appearance(appearance::Msg),
     Backup(backup::Msg),
     Sharing(sharing::Msg),
     Gaming(gaming::Msg),
@@ -245,6 +248,7 @@ impl App {
             power: power::State::default(),
             notif_apps: notifapps::State::default(),
             ocr: ocr::State::default(),
+            appearance: appearance::State::default(),
             backup: backup::State::default(),
             sharing: sharing::State::default(),
             hidden_apps: hiddenapps::State::default(),
@@ -304,7 +308,10 @@ impl App {
                 .map(Message::Mouse),
             Page::BarItems => self.placement.update(placement::Msg::Refresh).map(Message::Placement),
             Page::Lock => self.idle.update(idle::Msg::Load).map(Message::Idle),
-            Page::Themes => self.themes.update(themes::Msg::Load).map(Message::Themes),
+            Page::Appearance => Task::batch([
+                self.themes.update(themes::Msg::Load).map(Message::Themes),
+                self.appearance.update(appearance::Msg::Load).map(Message::Appearance),
+            ]),
             Page::Shortcuts => self.shortcuts.update(shortcuts::Msg::Load).map(Message::Shortcuts),
             Page::DefaultApps => self
                 .default_apps
@@ -413,6 +420,7 @@ impl App {
             Message::NotifApps(msg) => self.notif_apps.update(msg),
             Message::HiddenApps(msg) => return self.hidden_apps.update(msg).map(Message::HiddenApps),
             Message::Ocr(msg) => return self.ocr.update(msg).map(Message::Ocr),
+            Message::Appearance(msg) => return self.appearance.update(msg).map(Message::Appearance),
             Message::Backup(msg) => {
                 // An import changed the store: show its values.
                 if matches!(msg, backup::Msg::Applied(Ok(()))) {
@@ -772,7 +780,37 @@ impl App {
                 let times = Element::from(self.idle.view(page_column(panel.title, layout))).map(Message::Idle);
                 self.with_settings(times, panel, layout)
             }
-            Page::Themes => Element::from(self.themes.view(page_column(panel.title, layout))).map(Message::Themes),
+            Page::Appearance => {
+                let mut body = page_column(panel.title, layout);
+                for section in panel.sections {
+                    if section.title == "Wallpaper" {
+                        let picker = self
+                            .appearance
+                            .wallpaper_rows()
+                            .into_iter()
+                            .map(|r| r.map(Message::Appearance))
+                            .collect();
+                        body = self.section_with(body, section, layout, picker);
+                        continue;
+                    }
+                    body = self.section(body, section, layout);
+                    // The theme rows (not store settings) follow Colour.
+                    if section.title == "Colour" {
+                        let mut themes: Vec<Element<'_, Message>> = self
+                            .appearance
+                            .style_rows()
+                            .into_iter()
+                            .map(|r| r.map(Message::Appearance))
+                            .collect();
+                        themes.extend(self.themes.rows_all().into_iter().map(|r| r.map(Message::Themes)));
+                        body = ui::section(body, "Themes", themes);
+                    }
+                }
+                if let Some(error) = &self.error {
+                    body = body.push(text(error).color(style::RED));
+                }
+                body.into()
+            }
             Page::Shortcuts => {
                 Element::from(self.shortcuts.view(page_column(panel.title, layout))).map(Message::Shortcuts)
             }
@@ -842,6 +880,18 @@ impl App {
         section: &'static Section,
         layout: Layout,
     ) -> Column<'a, Message> {
+        self.section_with(body, section, layout, Vec::new())
+    }
+
+    /// A section of store settings followed by `extra` rows that belong to
+    /// it but are not store settings.
+    fn section_with<'a>(
+        &'a self,
+        body: Column<'a, Message>,
+        section: &'static Section,
+        layout: Layout,
+        extra: Vec<Element<'a, Message>>,
+    ) -> Column<'a, Message> {
         let shown = |s: &&'static crate::schema::Setting| {
             let switch = crate::schema::SHOWN_WHEN
                 .iter()
@@ -863,7 +913,7 @@ impl App {
                 self.open_list,
             )
         });
-        ui::section(body, section.title, rows.collect())
+        ui::section(body, section.title, rows.chain(extra).collect())
     }
 }
 

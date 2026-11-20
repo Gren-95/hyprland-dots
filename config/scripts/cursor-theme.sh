@@ -5,8 +5,9 @@
 #   cursor-theme.sh list        JSON array of cursor themes with preview images
 #   cursor-theme.sh get         {"apps": <XCURSOR_THEME>, "hyprland": <HYPRCURSOR_THEME>}
 #   cursor-theme.sh set <id>    switch to the theme with that directory name
+#   cursor-theme.sh size <px>   switch the cursor size (Appearance in the app)
 #
-# The settings app's Icons & cursors panel (apps/settings, themes.rs) calls
+# The settings app's Appearance panel (icon and cursor themes) (apps/settings, themes.rs) calls
 # all three; `list` is cursor-previews.py.
 #
 # The themes live in the hl.env lines of config/hypr/modules/autostart.lua.
@@ -62,13 +63,27 @@ apply() {
     hyprctl setcursor "$id" "${size:-24}" >/dev/null
 }
 
+# Cursor size for Hyprland, apps (XCURSOR_SIZE, gsettings) and now.
+resize() {
+    local px=$1
+    [[ $px =~ ^[0-9]{2,3}$ ]] || {
+        echo "cursor-theme: invalid size: $px" >&2
+        exit 1
+    }
+    set_env XCURSOR_SIZE "$px"
+    set_env HYPRCURSOR_SIZE "$px"
+    gsettings set org.gnome.desktop.interface cursor-size "$px"
+    hyprctl setcursor "$(env_value HYPRCURSOR_THEME)" "$px" >/dev/null
+}
+
 case ${1:-} in
     list) exec python3 "$SCRIPT_DIR/cursor-previews.py" ;;
     get) jq -n --arg apps "$(env_value XCURSOR_THEME)" --arg hyprland "$(env_value HYPRCURSOR_THEME)" \
         '{apps: $apps, hyprland: $hyprland}' ;;
     set) apply "${2:-}" ;;
+    size) resize "${2:-}" ;;
     *)
-        echo "usage: cursor-theme.sh list | get | set <id>" >&2
+        echo "usage: cursor-theme.sh list | get | set <id> | size <px>" >&2
         exit 2
         ;;
 esac

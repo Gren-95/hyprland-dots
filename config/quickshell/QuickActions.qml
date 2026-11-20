@@ -45,7 +45,7 @@ Item {
         { glyph: "󰈊", label: "Color picker", accent: Theme.accent.pink, action: "colorpicker", cmd: ["hyprpicker", "-a"] },
         { glyph: "󰒓", label: "Settings",     accent: Theme.accent.slate, action: "settings", cmd: [Paths.home + "/.local/bin/settings"] },
         { glyph: "󰋖", label: "Keybinds",     accent: Theme.accent.blue, action: "keybinds", cmd: [Paths.home + "/.local/bin/settings", "-p", "shortcuts"] },
-        { glyph: "󰀻", label: "Icons & cursors", accent: Theme.accent.purple, action: "iconscursors", cmd: [Paths.home + "/.local/bin/settings", "-p", "themes"] },
+        { glyph: "󰀻", label: "Appearance", accent: Theme.accent.purple, action: "iconscursors", cmd: [Paths.home + "/.local/bin/settings", "-p", "appearance"] },
     ]
 
     // What renders in the panel: entries placed in "overflow" (the default).

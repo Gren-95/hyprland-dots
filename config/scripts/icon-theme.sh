@@ -6,7 +6,7 @@
 #   icon-theme.sh get         name of the current icon theme
 #   icon-theme.sh set <id>    switch to the theme with that directory name
 #
-# The settings app's Icons & cursors panel (apps/settings, themes.rs) calls
+# The settings app's Appearance panel (icon and cursor themes) (apps/settings, themes.rs) calls
 # all three.
 # `list` prints [{id, name, comment, path, samples: [file, ...]}], one sample per
 # slot in SAMPLE_SLOTS, taken from the theme itself (not from the themes it

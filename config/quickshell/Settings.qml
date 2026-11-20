@@ -111,6 +111,11 @@ Scope {
     property int brightnessStep: 5
     property int maxVolume: 100                // % ceiling for all volume paths
     property int alertVolume: 100              // % loudness of notification sounds
+    // Applied by the settings app (gsettings, Hyprland); kept here so every
+    // setting lives in one store.
+    property string colorScheme: "prefer-dark"
+    property string appFont: "Adwaita Sans"
+    property int cursorSize: 24
     property string powerOnAc: "performance"   // power-auto.sh: profile on the charger
     property string powerOnBattery: "balanced" // power-auto.sh: profile on battery
     property int powerSaverBelow: 30           // power-auto.sh: power saver below this %; 0 = never
@@ -268,6 +273,9 @@ Scope {
         { name: "brightnessStep",       file: "brightness-step",        type: "int"  },
         { name: "maxVolume",            file: "max-volume",             type: "int"  },
         { name: "alertVolume",          file: "alert-volume",           type: "int"  },
+        { name: "colorScheme",          file: "color-scheme",           type: "string" },
+        { name: "appFont",              file: "app-font",               type: "string" },
+        { name: "cursorSize",           file: "cursor-size",            type: "int"  },
         { name: "powerOnAc",            file: "power-on-ac",            type: "string" },
         { name: "powerOnBattery",       file: "power-on-battery",       type: "string" },
         { name: "powerSaverBelow",      file: "power-saver-below",      type: "int"  },

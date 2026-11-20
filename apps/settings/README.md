@@ -23,8 +23,7 @@ terminal, or `settings -p <panel>` for one panel; several shell flyouts
 | `keyboard` | Keyboard layouts (search the XKB list, add, remove, reorder), layout switch shortcut, Caps Lock key, Num Lock at start, key repeat delay and speed — written to `config/hypr/settings.lua` (gitignored, loaded last) and applied with `hyprctl eval` |
 | `shortcuts` | Every key bind with its keys (search, change with modifiers and a searchable key list, reset); moves are kept in `config/hypr/settings.lua` as `hl.unbind` + `hl.bind`, `keys.lua` is not edited |
 | `mouse` | Pointer speed, acceleration, left-handed, natural scrolling and scroll speed for mice; tap to click, natural scrolling, off while typing, right-click method, middle click and scroll speed for touchpads; workspace swipe direction and distance — Hyprland options saved to `config/hypr/settings.lua` |
-| `appearance` | Accent colour, font and text size, corner roundness, animations on or off (shell, Hyprland and GTK together) and their speed, wallpaper folder |
-| `themes` | Icon and cursor themes with previews, recently used first; applied through `config/scripts/icon-theme.sh` and `cursor-theme.sh` (the Quick Actions tile opens this panel) ; Open folder on each theme and on an "Add themes" row for ~/.local/share/icons |
+| `appearance` | Accent colour, dark or light apps (gsettings color-scheme; adw-gtk3 follows), the GTK 3 theme, icon and cursor themes (each a row with the one in use that opens to the installed themes with previews, recently used first, applied through `config/scripts/icon-theme.sh` and `cursor-theme.sh`, with Open folder), shell font, app font (gsettings font-name) and text size, cursor size (`cursor-theme.sh size`), corner roundness, animations on or off (shell, Hyprland and GTK together) and their speed, wallpaper folder and a wallpaper picker (a grid of the folder from `wallpaper-thumbs.sh`, applied with `wallpaper.sh`); `themes` opens it too |
 | `windows` | Gaps, border width, corner rounding, animations, blur, shadows, unfocused opacity, tiling layout, focus follows mouse, resize by border — Hyprland options in `config/hypr/settings.lua` (they win over HyprMod's `hyprland-gui.lua`) |
 | `bar` | Height, opacity, window title width, workspace icons, activity icons, scroll action |
 | `baritems` | Where each bar module, Quick Actions item and tray app shows: on the bar, in Quick Actions or hidden (the shell's placement files); tray apps are read live over D-Bus |
@@ -147,7 +146,8 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/defaultapps.rs` | Default apps panel: desktop entries, roles |
 | `src/shortcuts.rs` | Keyboard shortcuts panel |
 | `src/keysearch.rs` | Key-combo search, the rules of the Super+F1 viewer |
-| `src/themes.rs` | Icons & cursors panel |
+| `src/themes.rs` | Icon and cursor themes on the Appearance panel |
+| `src/appearance.rs` | GTK theme and wallpaper picker on the Appearance panel |
 | `src/idle.rs` | Idle times: the variables in hypridle.conf |
 | `src/placement.rs` | Bar items panel: placement files and the live tray list |
 | `src/keyboard.rs` | Keyboard panel and the XKB layout list |

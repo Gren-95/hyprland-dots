@@ -212,6 +212,27 @@ pub fn action_at(kind: Action, joint: Joint) -> impl Fn(&Theme, button::Status) 
     }
 }
 
+/// A wallpaper card in the picker: the one in use framed in the accent, the
+/// others when hovered.
+pub fn wallpaper_card(theme: &Theme, status: button::Status, chosen: bool) -> button::Style {
+    let accent = theme.palette().primary;
+    let hovered = matches!(status, button::Status::Hovered | button::Status::Pressed);
+    let color = match (chosen, hovered) {
+        (true, _) => accent,
+        (false, true) => FG_MUTED,
+        (false, false) => Color::TRANSPARENT,
+    };
+    button::Style {
+        background: None,
+        border: Border {
+            color,
+            width: 2.0,
+            radius: border::radius(8.0),
+        },
+        ..button::Style::default()
+    }
+}
+
 /// One option of a segmented control: the selected one filled with the
 /// accent, the others like a plain button.
 pub fn segment(selected: bool, joint: Joint) -> impl Fn(&Theme, button::Status) -> button::Style {
