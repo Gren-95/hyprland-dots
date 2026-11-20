@@ -50,6 +50,7 @@ mod ui;
 mod units;
 mod vnc;
 mod vpn;
+mod windowrules;
 mod windows;
 
 use std::process::ExitCode;

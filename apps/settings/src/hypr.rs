@@ -5,6 +5,9 @@
 //! gitignored: they are this machine's choices, not part of the dots.
 //! Anything not saved yet is read from the running Hyprland, so the app
 //! starts from what is in effect.
+//!
+//! Window rules are written to settings.lua too but only take effect on a
+//! reload: windowrules.rs reloads Hyprland after saving them.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -176,6 +179,96 @@ pub struct Settings {
     /// Key binds moved to other keys, by their original combo
     /// ("SUPER + R").
     pub binds: BTreeMap<String, Rebind>,
+    /// Window rules made in the app, one per window class.
+    pub rules: Vec<WindowRule>,
+}
+
+/// A rule for every window of one class: float (at a size), see-through,
+/// open on a workspace. Empty fields leave Hyprland's own behaviour.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct WindowRule {
+    pub class: String,
+    pub float: bool,
+    /// "800 600"; only for floating windows.
+    pub size: String,
+    /// Percent, 10 to 100; None leaves it.
+    pub opacity: Option<i64>,
+    /// "1" to "10"; empty leaves it.
+    pub workspace: String,
+}
+
+impl WindowRule {
+    fn from_json(v: &Json) -> Option<WindowRule> {
+        Some(WindowRule {
+            class: v["class"].as_str()?.to_string(),
+            float: v["float"].as_bool().unwrap_or(false),
+            size: v["size"].as_str().unwrap_or_default().to_string(),
+            opacity: v["opacity"].as_i64(),
+            workspace: v["workspace"].as_str().unwrap_or_default().to_string(),
+        })
+    }
+
+    fn to_json(&self) -> Json {
+        json!({
+            "class": self.class,
+            "float": self.float,
+            "size": self.size,
+            "opacity": self.opacity,
+            "workspace": self.workspace,
+        })
+    }
+}
+
+/// A window class a rule can name: letters, digits, dot, dash, underscore.
+pub fn valid_class(class: &str) -> bool {
+    !class.is_empty() && class.chars().all(|c| c.is_ascii_alphanumeric() || "._-".contains(c))
+}
+
+/// A floating size: two whole numbers of pixels, "800 600".
+pub fn valid_size(size: &str) -> bool {
+    let parts: Vec<&str> = size.split(' ').collect();
+    parts.len() == 2 && parts.iter().all(|p| p.parse::<u32>().is_ok_and(|n| (50..=10000).contains(&n)))
+}
+
+/// `hl.window_rule` calls for the rules; checked first, since the values
+/// end up in Lua source.
+pub fn rules_lua(rules: &[WindowRule]) -> Result<String, String> {
+    let mut out = String::new();
+    for r in rules {
+        if !valid_class(&r.class) {
+            return Err(format!("not a window class: {}", r.class));
+        }
+        let mut lines = vec![format!(
+            "    match = {{\n        class = \"^({})$\",\n    }},",
+            r.class.replace('.', "\\\\.")
+        )];
+        if r.float {
+            lines.push("    float = true,".into());
+            if !r.size.is_empty() {
+                if !valid_size(&r.size) {
+                    return Err(format!("not a window size: {}", r.size));
+                }
+                lines.push(format!("    size = \"{}\",", r.size));
+            }
+        }
+        if let Some(o) = r.opacity {
+            if !(10..=100).contains(&o) {
+                return Err(format!("opacity out of range: {o}"));
+            }
+            lines.push(format!("    opacity = \"{}\",", o as f64 / 100.0));
+        }
+        if !r.workspace.is_empty() {
+            if !r.workspace.parse::<u32>().is_ok_and(|n| (1..=10).contains(&n)) {
+                return Err(format!("not a workspace: {}", r.workspace));
+            }
+            lines.push(format!("    workspace = \"{}\",", r.workspace));
+        }
+        out.push_str(&format!("hl.window_rule({{\n{}\n}})\n", lines.join("\n")));
+    }
+    if !out.is_empty() {
+        out = format!("\n-- Window rules (Window rules panel)\n{out}");
+    }
+    Ok(out)
 }
 
 /// A key bind on other keys: the new combo, its action (one `hl.dsp.*` call)
@@ -317,6 +410,10 @@ impl Settings {
                 .as_object()
                 .map(|o| o.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
                 .unwrap_or_default(),
+            rules: saved["rules"]
+                .as_array()
+                .map(|a| a.iter().filter_map(WindowRule::from_json).collect())
+                .unwrap_or_default(),
         }
     }
 
@@ -326,7 +423,7 @@ impl Settings {
             self.keyboard.lua()?,
             options_lua(&self.options)?
         ))
-        .and_then(|head| Ok(head + &binds_lua(&self.binds)?))
+        .and_then(|head| Ok(head + &binds_lua(&self.binds)? + &rules_lua(&self.rules)?))
     }
 
     fn json(&self) -> Json {
@@ -340,7 +437,8 @@ impl Settings {
                 )
             })
             .collect();
-        json!({ "keyboard": self.keyboard.to_json(), "options": self.options, "binds": binds })
+        let rules: Vec<Json> = self.rules.iter().map(WindowRule::to_json).collect();
+        json!({ "keyboard": self.keyboard.to_json(), "options": self.options, "binds": binds, "rules": rules })
     }
 
     /// The part re-applied on every save. Binds are left out: binding the
@@ -441,6 +539,29 @@ fn write(path: &PathBuf, text: &str) -> io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn writes_window_rules() {
+        let rule = WindowRule {
+            class: "org.gnome.Calculator".into(),
+            float: true,
+            size: "400 600".into(),
+            opacity: Some(90),
+            workspace: "3".into(),
+        };
+        let lua = rules_lua(std::slice::from_ref(&rule)).unwrap();
+        assert!(lua.contains("class = \"^(org\\\\.gnome\\\\.Calculator)$\","));
+        assert!(lua.contains("float = true,\n    size = \"400 600\",\n    opacity = \"0.9\",\n    workspace = \"3\","));
+        assert_eq!(rules_lua(&[]).unwrap(), "");
+        let bad = |r: WindowRule| rules_lua(&[r]).is_err();
+        assert!(bad(WindowRule { class: "a\"b".into(), ..rule.clone() }));
+        assert!(bad(WindowRule { size: "400".into(), ..rule.clone() }));
+        assert!(bad(WindowRule { workspace: "11".into(), ..rule.clone() }));
+        assert!(bad(WindowRule { opacity: Some(5), ..rule.clone() }));
+        // Size counts only for a floating window.
+        assert!(!rules_lua(&[WindowRule { float: false, size: "x".into(), ..rule.clone() }]).unwrap().contains("size"));
+        assert_eq!(WindowRule::from_json(&rule.to_json()), Some(rule));
+    }
 
     fn sample() -> Keyboard {
         Keyboard {

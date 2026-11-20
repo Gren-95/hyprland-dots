@@ -25,6 +25,7 @@ terminal, or `settings -p <panel>` for one panel; several shell flyouts
 | `mouse` | Pointer speed, acceleration, left-handed, natural scrolling and scroll speed for mice; tap to click, natural scrolling, off while typing, right-click method, middle click and scroll speed for touchpads; workspace swipe direction and distance — Hyprland options saved to `config/hypr/settings.lua` |
 | `appearance` | Accent colour, dark or light apps (gsettings color-scheme; adw-gtk3 follows), the GTK 3 theme, icon and cursor themes (each a row with the one in use that opens to the installed themes with previews, recently used first, applied through `config/scripts/icon-theme.sh` and `cursor-theme.sh`, with Open folder), shell font, app font (gsettings font-name) and text size, cursor size (`cursor-theme.sh size`), corner roundness, animations on or off (shell, Hyprland and GTK together) and their speed, wallpaper folder and a wallpaper picker (a grid of the folder from `wallpaper-thumbs.sh`, applied with `wallpaper.sh`); `themes` opens it too |
 | `windows` | Gaps, border width, corner rounding, animations, blur, shadows, unfocused opacity, tiling layout, focus follows mouse, resize by border — Hyprland options in `config/hypr/settings.lua` (they win over HyprMod's `hyprland-gui.lua`) |
+| `window-rules` | Per-app window rules for apps with a window open: float (at a size), opacity, the workspace they open on; kept in `~/.config/hypr/settings.json` and written to the gitignored `settings.lua` as `hl.window_rule` calls (the tracked `rules.lua` is not edited), then Hyprland reloads |
 | `bar` | Height, opacity, window title width, workspace icons, activity icons, scroll action |
 | `baritems` | Where each bar module, Quick Actions item and tray app shows: on the bar, in Quick Actions or hidden (the shell's placement files); tray apps are read live over D-Bus |
 | `clock` | 24-hour clock, seconds, date format; weather location and Fahrenheit (`-p weather` opens it too) |
@@ -142,6 +143,7 @@ install -Dm755 target/release/settings ~/.local/bin/settings
 | `src/infoview.rs` | Fact rows, tiles, battery and network blocks shared by About, Power and Network |
 | `src/sysinfo.rs` | What the system is, for About: hardware, battery, network, packages, repository |
 | `src/windows.rs` | The Windows rows |
+| `src/windowrules.rs` | Window rules panel |
 | `src/mouse.rs` | The Mouse & touchpad rows |
 | `src/defaultapps.rs` | Default apps panel: desktop entries, roles |
 | `src/shortcuts.rs` | Keyboard shortcuts panel |

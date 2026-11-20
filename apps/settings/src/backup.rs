@@ -169,6 +169,21 @@ pub fn changes(now: &Backup, new: &Backup) -> Vec<Change> {
         }
         object_changes("Hyprland", &now.hyprland["options"], &new.hyprland["options"], &mut out);
         object_changes("Shortcut", &now.hyprland["binds"], &new.hyprland["binds"], &mut out);
+        if now.hyprland["rules"] != new.hyprland["rules"] {
+            let classes = |v: &Json| {
+                v.as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|r| r["class"].as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            };
+            out.push(Change {
+                what: "Window rules".into(),
+                from: brief(&classes(&now.hyprland["rules"])),
+                to: brief(&classes(&new.hyprland["rules"])),
+            });
+        }
     }
     for (role, app) in &new.default_apps {
         if now.default_apps.get(role) != Some(app) {

@@ -20,6 +20,7 @@ use crate::hiddenapps;
 use crate::backup;
 use crate::appearance;
 use crate::ocr;
+use crate::windowrules;
 use crate::sharing;
 use crate::hyprpage;
 use crate::idle;
@@ -124,6 +125,7 @@ pub struct App {
     power: power::State,
     notif_apps: notifapps::State,
     ocr: ocr::State,
+    window_rules: windowrules::State,
     appearance: appearance::State,
     backup: backup::State,
     sharing: sharing::State,
@@ -203,6 +205,7 @@ pub enum Message {
     NotifApps(notifapps::Msg),
     HiddenApps(hiddenapps::Msg),
     Ocr(ocr::Msg),
+    WindowRules(windowrules::Msg),
     Appearance(appearance::Msg),
     Backup(backup::Msg),
     Sharing(sharing::Msg),
@@ -248,6 +251,7 @@ impl App {
             power: power::State::default(),
             notif_apps: notifapps::State::default(),
             ocr: ocr::State::default(),
+            window_rules: windowrules::State::default(),
             appearance: appearance::State::default(),
             backup: backup::State::default(),
             sharing: sharing::State::default(),
@@ -289,6 +293,7 @@ impl App {
             ]),
             Page::Launcher => self.hidden_apps.update(hiddenapps::Msg::Load).map(Message::HiddenApps),
             Page::Recording => self.ocr.update(ocr::Msg::Load).map(Message::Ocr),
+            Page::WindowRules => self.window_rules.update(windowrules::Msg::Load).map(Message::WindowRules),
             Page::Sharing => self.sharing.update(sharing::Msg::Refresh).map(Message::Sharing),
             Page::Notifications => {
                 self.notif_apps.update(notifapps::Msg::Load);
@@ -420,6 +425,7 @@ impl App {
             Message::NotifApps(msg) => self.notif_apps.update(msg),
             Message::HiddenApps(msg) => return self.hidden_apps.update(msg).map(Message::HiddenApps),
             Message::Ocr(msg) => return self.ocr.update(msg).map(Message::Ocr),
+            Message::WindowRules(msg) => return self.window_rules.update(msg).map(Message::WindowRules),
             Message::Appearance(msg) => return self.appearance.update(msg).map(Message::Appearance),
             Message::Backup(msg) => {
                 // An import changed the store: show its values.
@@ -710,6 +716,16 @@ impl App {
                     body = body.push(text(error).color(style::RED));
                 }
                 body.into()
+            }
+            Page::WindowRules => {
+                let body = page_column(panel.title, layout);
+                let rows = self
+                    .window_rules
+                    .rows()
+                    .into_iter()
+                    .map(|r| r.map(Message::WindowRules))
+                    .collect();
+                ui::section(body, "Apps", rows).into()
             }
             Page::Sharing => {
                 let mut body = page_column(panel.title, layout);

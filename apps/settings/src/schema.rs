@@ -88,6 +88,8 @@ pub enum Page {
     Recording,
     /// Remote access, remote login and the tailnet (sharing.rs).
     Sharing,
+    /// Per-app window rules (windowrules.rs).
+    WindowRules,
 }
 
 impl Page {
@@ -768,6 +770,15 @@ pub const PANELS: &[Panel] = &[
                 )],
             },
         ],
+    },
+    Panel {
+        id: "window-rules",
+        title: "Window rules",
+        glyph: ico::APP_WINDOW_MAC,
+        group: Group::Appearance,
+        page: Page::WindowRules,
+        keywords: "window rule app float floating size opacity transparent see-through workspace class",
+        sections: &[],
     },
     Panel {
         id: "windows",
