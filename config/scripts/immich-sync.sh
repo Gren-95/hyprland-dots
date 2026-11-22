@@ -12,7 +12,7 @@ UPLOAD_DIR=$(setting_dir immich-folder "$PICTURES_DIR")
 
 # Where `dots.sh setup` can put the CLI: npm with a user prefix, or bun.
 # Cron runs with PATH=/usr/bin:/bin, so neither is on PATH there.
-IMMICH_BIN_CANDIDATES=("$HOME/.npm-global/bin/immich" "$HOME/.bun/bin/immich")
+IMMICH_BIN_CANDIDATES=("$HOME/.local/share/npm-global/bin/immich" "$HOME/.local/share/bun/bin/immich")
 LOG_MAX_BYTES=$((1024 * 1024))
 
 # Keep one rotated generation so the log cannot grow without bound.

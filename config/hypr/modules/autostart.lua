@@ -5,6 +5,9 @@ hl.env("XCURSOR_THEME", "Adwaita")
 hl.env("QT_QPA_PLATFORMTHEME", "hyprqt6engine")
 hl.env("QML_IMPORT_PATH", os.getenv("HOME") .. "/.local/lib64/qt6/qml")
 hl.env("CARGO_HOME", os.getenv("HOME") .. "/.local/share/cargo")
+hl.env("BUN_INSTALL", os.getenv("HOME") .. "/.local/share/bun")
+hl.env("NPM_CONFIG_USERCONFIG", os.getenv("HOME") .. "/.config/npm/npmrc")
+hl.env("PYTHON_HISTORY", os.getenv("HOME") .. "/.local/state/python/history")
 
 -- Silence Quickshell's per-desktop-entry parse warnings — they come from
 

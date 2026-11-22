@@ -82,5 +82,5 @@ end
 
 # Outside is-interactive: scripts + non-interactive shells (Claude Code,
 # editor terminals) inherit these.
-fish_add_path -g $HOME/.bun/bin $HOME/.local/bin $HOME/bin $HOME/.nix-profile/bin $HOME/.npm-global/bin
+fish_add_path -g $BUN_INSTALL/bin $HOME/.local/bin $HOME/bin $HOME/.nix-profile/bin $HOME/.local/share/npm-global/bin
 command -q sccache; and set -gx RUSTC_WRAPPER sccache

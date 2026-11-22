@@ -28,7 +28,7 @@ leaving out `Screenshots/` and `ocr/` folders. Notifies when new photos are uplo
 the CLI (bun or npm), logs in, and asks for the interval. By hand:
 
 ```bash
-npm install -g @immich/cli --prefix ~/.npm-global   # or: bun install -g @immich/cli
+npm install -g @immich/cli --prefix ~/.local/share/npm-global   # or: bun install -g @immich/cli
 immich login https://your-immich-server/api YOUR_API_KEY
 bash ~/.config/scripts/sync-toggle.sh schedule immich "0 * * * *"
 bash ~/.config/scripts/sync-toggle.sh enable immich
