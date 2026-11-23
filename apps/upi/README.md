@@ -24,7 +24,7 @@ upi --list                # the steps
 2. **Check.** Every source is checked at once and nothing needs sudo:
    `dnf check-update` and the unneeded packages, `fwupdmgr get-updates`,
    `flatpak remote-ls --updates`, Gear Lever's update list, `npm outdated`,
-   each uv tool against PyPI, bun against the npm registry, and each fish
+   each uv tool against PyPI (or, when installed from git, its repository's newest commit), bun against the npm registry, and each fish
    plugin's upstream commit (`git ls-remote`). Under each source comes
    everything that would change, from what to what: packages with their
    installed and new versions, firmware per device, Flatpak apps (runtimes

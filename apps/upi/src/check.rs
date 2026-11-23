@@ -454,25 +454,121 @@ pub fn parse_uv(out: &str) -> Vec<(String, String)> {
         .collect()
 }
 
+/// Where a uv tool comes from: PyPI, or a git repository at a ref.
+#[derive(Debug, Clone, PartialEq)]
+pub enum UvSource {
+    PyPi,
+    Git {
+        url: String,
+        reference: String,
+    },
+    /// A local path or a direct URL: nothing to compare against.
+    Other,
+}
+
+/// A quoted value after `key = ` in one line of TOML.
+fn toml_value<'a>(line: &'a str, key: &str) -> Option<&'a str> {
+    let rest = &line[line.find(&format!("{key} = \""))? + key.len() + 4..];
+    rest.split('"').next()
+}
+
+/// The tool's own requirement in its `uv-receipt.toml`.
+pub fn parse_uv_receipt(receipt: &str, name: &str) -> UvSource {
+    let Some(line) = receipt
+        .lines()
+        .find(|l| l.contains("requirements") && toml_value(l, "name") == Some(name))
+    else {
+        return UvSource::PyPi;
+    };
+    if let Some(url) = toml_value(line, "git") {
+        let reference = ["rev", "tag", "branch"]
+            .iter()
+            .find_map(|k| toml_value(line, k))
+            .unwrap_or("HEAD");
+        return UvSource::Git {
+            url: url.to_string(),
+            reference: reference.to_string(),
+        };
+    }
+    if toml_value(line, "path").is_some()
+        || toml_value(line, "url").is_some()
+        || toml_value(line, "directory").is_some()
+    {
+        return UvSource::Other;
+    }
+    UvSource::PyPi
+}
+
+/// The commit a git-installed tool was built from: its dist-info's
+/// direct_url.json (PEP 610).
+fn uv_installed_commit(tool_dir: &std::path::Path) -> Option<String> {
+    let lib = std::fs::read_dir(tool_dir.join("lib")).ok()?;
+    for py in lib.flatten() {
+        let Ok(site) = std::fs::read_dir(py.path().join("site-packages")) else {
+            continue;
+        };
+        for info in site.flatten() {
+            let Ok(text) = std::fs::read_to_string(info.path().join("direct_url.json")) else {
+                continue;
+            };
+            if let Ok(j) = serde_json::from_str::<serde_json::Value>(&text)
+                && let Some(c) = j["vcs_info"]["commit_id"].as_str()
+            {
+                return Some(c.to_string());
+            }
+        }
+    }
+    None
+}
+
+/// What one tool would change to: Ok(None) when current.
+fn uv_tool(name: &str, current: &str, tools_dir: &std::path::Path) -> Result<Option<Item>, String> {
+    let receipt = std::fs::read_to_string(tools_dir.join(name).join("uv-receipt.toml")).unwrap_or_default();
+    match parse_uv_receipt(&receipt, name) {
+        UvSource::PyPi => {
+            let latest = sys::get_json(&format!("https://pypi.org/pypi/{name}/json"))?["info"]["version"]
+                .as_str()
+                .map(String::from)
+                .ok_or("PyPI gave no version")?;
+            Ok((latest != current).then(|| Item::new(name, current, latest)))
+        }
+        UvSource::Git { url, reference } => {
+            let installed = uv_installed_commit(&tools_dir.join(name)).ok_or("no installed commit recorded")?;
+            let ran = run("git", &["ls-remote", &url, &reference])?;
+            let remote = crate::fisher::commits(&ran.out);
+            let remote = remote
+                .split(',')
+                .next()
+                .filter(|c| !c.is_empty())
+                .ok_or("could not read the repository")?;
+            let short = |c: &str| c[..c.len().min(7)].to_string();
+            Ok((remote != installed).then(|| {
+                Item::new(
+                    name,
+                    format!("{current} · {}", short(&installed)),
+                    format!("{} (git)", short(remote)),
+                )
+            }))
+        }
+        UvSource::Other => Err("installed from a path or URL".into()),
+    }
+}
+
 fn uv() -> Result<Check, String> {
     let ran = run("uv", &["tool", "list"])?;
     if !ran.ok() {
         return Err(ran.tail(2));
     }
+    let dir = run("uv", &["tool", "dir"])?;
+    let tools_dir = std::path::PathBuf::from(dir.out.trim());
     let tools = parse_uv(&ran.out);
-    // PyPI's latest version of each tool, all at once.
-    let latest: Vec<Result<String, String>> = thread::scope(|s| {
+    // Each tool against PyPI, or its git repository, all at once.
+    let results: Vec<Result<Option<Item>, String>> = thread::scope(|s| {
         let jobs: Vec<_> = tools
             .iter()
-            .map(|(name, _)| {
-                s.spawn(move || {
-                    sys::get_json(&format!("https://pypi.org/pypi/{name}/json")).and_then(|j| {
-                        j["info"]["version"]
-                            .as_str()
-                            .map(String::from)
-                            .ok_or("no version".into())
-                    })
-                })
+            .map(|(name, current)| {
+                let dir = &tools_dir;
+                s.spawn(move || uv_tool(name, current, dir))
             })
             .collect();
         jobs.into_iter()
@@ -480,21 +576,16 @@ fn uv() -> Result<Check, String> {
             .collect()
     });
     let mut items = Vec::new();
-    let mut unknown = Vec::new();
-    for ((name, current), latest) in tools.iter().zip(latest) {
-        match latest {
-            Ok(l) if l != *current => items.push(Item::new(name.as_str(), current.as_str(), l)),
-            Ok(_) => {}
-            Err(_) => unknown.push(name.clone()),
+    let mut check_warnings = Vec::new();
+    for ((name, _), result) in tools.iter().zip(results) {
+        match result {
+            Ok(Some(item)) => items.push(item),
+            Ok(None) => {}
+            Err(e) => check_warnings.push(format!("{name}: not checked ({e})")),
         }
     }
     let mut check = Check::new(Step::Uv, updates(items, Vec::new()));
-    if !unknown.is_empty() {
-        // Tools from git or a local path: `uv tool upgrade` still updates them.
-        check
-            .warnings
-            .push(format!("not on PyPI, not checked: {}", unknown.join(", ")));
-    }
+    check.warnings = check_warnings;
     Ok(check)
 }
 
@@ -634,6 +725,37 @@ mod tests {
                 ("posting".to_string(), "2.3.0".to_string())
             ]
         );
+    }
+
+    #[test]
+    fn reads_uv_receipts() {
+        let git = r#"[tool]
+requirements = [{ name = "hyprmod", git = "https://github.com/BlueManCZ/hyprmod.git" }]
+"#;
+        assert_eq!(
+            parse_uv_receipt(git, "hyprmod"),
+            UvSource::Git {
+                url: "https://github.com/BlueManCZ/hyprmod.git".into(),
+                reference: "HEAD".into()
+            }
+        );
+        let tagged = r#"requirements = [{ name = "x", git = "https://g/x.git", tag = "v2" }]"#;
+        assert_eq!(
+            parse_uv_receipt(tagged, "x"),
+            UvSource::Git {
+                url: "https://g/x.git".into(),
+                reference: "v2".into()
+            }
+        );
+        assert_eq!(
+            parse_uv_receipt(r#"requirements = [{ name = "ruff" }]"#, "ruff"),
+            UvSource::PyPi
+        );
+        assert_eq!(
+            parse_uv_receipt(r#"requirements = [{ name = "mine", path = "/src/mine" }]"#, "mine"),
+            UvSource::Other
+        );
+        assert_eq!(parse_uv_receipt("", "ruff"), UvSource::PyPi);
     }
 
     #[test]
