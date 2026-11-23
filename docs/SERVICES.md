@@ -24,12 +24,18 @@ asleep runs on the next boot instead of being skipped.
 Uploads `~/Pictures/` to your Immich server on its schedule while enabled,
 leaving out `Screenshots/` and `ocr/` folders. Notifies when new photos are uploaded. When the server is unreachable (for example away from home) the run is skipped quietly with a line in `~/.cache/immich-sync.log`, and the next run tries again.
 
-**Setup:** run `dots.sh setup` and answer yes to the Immich step: it installs
-the CLI (bun or npm), logs in, and asks for the interval. By hand:
+Uploads run with [immich-rs](https://github.com/Gren-95/immich-rs), a Rust
+rewrite of the Immich CLI with the same options and output, installed at
+`~/.local/bin/immich-rs`.
+
+**Setup:** run `dots.sh setup` and answer yes to the Immich step: it builds
+immich-rs from source (needs cargo), logs in, and asks for the interval. By hand:
 
 ```bash
-npm install -g @immich/cli --prefix ~/.local/share/npm-global   # or: bun install -g @immich/cli
-immich login https://your-immich-server/api YOUR_API_KEY
+git clone https://github.com/Gren-95/immich-rs ~/.local/src/immich-rs
+cargo build --release --locked --manifest-path ~/.local/src/immich-rs/Cargo.toml
+install -Dm755 ~/.local/src/immich-rs/target/release/immich-rs ~/.local/bin/immich-rs
+immich-rs login https://your-immich-server/api YOUR_API_KEY
 bash ~/.config/scripts/sync-toggle.sh schedule immich "0 * * * *"
 bash ~/.config/scripts/sync-toggle.sh enable immich
 ```

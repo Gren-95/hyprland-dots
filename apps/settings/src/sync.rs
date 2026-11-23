@@ -1,5 +1,5 @@
 //! Sync panel's own rows: where each sync connects, read from its own
-//! configuration. The Immich server is the immich CLI's login; the Jellyfin
+//! configuration. The Immich server is the immich-rs login; the Jellyfin
 //! key comes from the environment or sync.conf. The app only says whether a
 //! key is there: it never reads one into the window or writes one.
 
@@ -10,7 +10,7 @@ use crate::store::home;
 use crate::system;
 use crate::ui;
 
-/// The immich CLI login file (paths.sh IMMICH_AUTH): its `url:` line.
+/// The immich-rs login file (paths.sh IMMICH_AUTH): its `url:` line.
 pub fn parse_immich_url(auth: &str) -> String {
     auth.lines()
         .find_map(|l| l.strip_prefix("url:"))
@@ -85,9 +85,9 @@ impl State {
     pub fn immich_rows(&self) -> Vec<Element<'_, Msg>> {
         let Some(r) = &self.reading else { return Vec::new() };
         let detail = if r.immich_url.is_empty() {
-            "Not logged in: run immich login <server> <key> in a terminal".to_string()
+            "Not logged in: run immich-rs login <server> <key> in a terminal".to_string()
         } else {
-            format!("{} · change it with immich login", r.immich_url)
+            format!("{} · change it with immich-rs login", r.immich_url)
         };
         vec![ui::item(ico::SERVER, "Server".into(), detail, vec![])]
     }
@@ -119,8 +119,8 @@ mod tests {
     #[test]
     fn reads_where_syncs_connect() {
         assert_eq!(
-            parse_immich_url("url: http://192.168.0.200:2283/api\nkey: secret\n"),
-            "http://192.168.0.200:2283"
+            parse_immich_url("url: http://192.0.2.10:2283/api\nkey: secret\n"),
+            "http://192.0.2.10:2283"
         );
         assert_eq!(parse_immich_url(""), "");
         assert_eq!(

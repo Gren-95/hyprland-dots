@@ -7,12 +7,12 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib/server.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/settings.sh"
 
 # The folder uploaded (Sync in the settings app). The server and key are the
-# immich CLI's login (`immich login <url> <key>`), never the app's.
+# immich-rs login (`immich-rs login <url> <key>`), never the app's.
 UPLOAD_DIR=$(setting_dir immich-folder "$PICTURES_DIR")
 
-# Where `dots.sh setup` can put the CLI: npm with a user prefix, or bun.
-# Cron runs with PATH=/usr/bin:/bin, so neither is on PATH there.
-IMMICH_BIN_CANDIDATES=("$HOME/.local/share/npm-global/bin/immich" "$HOME/.local/share/bun/bin/immich")
+# Where `dots.sh setup` installs immich-rs. Cron runs with PATH=/usr/bin:/bin,
+# so the full path is used rather than a PATH lookup.
+IMMICH_BIN="$HOME/.local/bin/immich-rs"
 LOG_MAX_BYTES=$((1024 * 1024))
 
 # Keep one rotated generation so the log cannot grow without bound.
@@ -23,22 +23,28 @@ rotate_log() {
     fi
 }
 
+# One line for the failure notification. immich-rs prints what failed first on
+# stderr ("Failed to connect to server <url>: 401"); an API error follows it as
+# JSON whose "message" says why ("Invalid API key").
+failure_summary() {
+    local errors=$1 exit_code=$2 what reason
+    what=$(head -1 <<<"$errors")
+    reason=$(grep -oPm1 '"message": "\K[^"]+' <<<"$errors")
+    if [[ -z "$what" ]]; then
+        echo "immich-rs exited with code $exit_code"
+    else
+        echo "$what${reason:+ ($reason)}"
+    fi
+}
+
 run_upload() {
     rotate_log
 
-    local bin="" candidate
-    if command -v immich >/dev/null 2>&1; then
-        bin="immich"
-    else
-        for candidate in "${IMMICH_BIN_CANDIDATES[@]}"; do
-            [[ -x "$candidate" ]] && bin="$candidate" && break
-        done
-    fi
-    if [[ -z "$bin" ]]; then
-        echo "$(date): immich CLI not found (PATH, ${IMMICH_BIN_CANDIDATES[*]}), upload skipped" >>"$IMMICH_LOG"
+    if [[ ! -x "$IMMICH_BIN" ]]; then
+        echo "$(date): immich-rs not found at $IMMICH_BIN, upload skipped" >>"$IMMICH_LOG"
         # Same key every run, so an hourly cron replaces the notification
         # instead of stacking a new one.
-        notify normal immich-sync dialog-warning "Immich sync skipped" "The immich CLI is not installed. Run dots.sh setup to install it."
+        notify normal immich-sync dialog-warning "Immich sync skipped" "immich-rs is not installed. Run dots.sh setup to install it."
         return 0
     fi
 
@@ -54,13 +60,19 @@ run_upload() {
         return 0
     fi
 
-    local output exit_code
-    output=$("$bin" upload --recursive "$UPLOAD_DIR" --ignore "**/{ocr,Screenshots}/**" 2>&1)
+    # stderr apart from stdout, so the notification shows the error itself
+    # rather than the progress lines before it.
+    local output errors exit_code err_file
+    err_file=$(mktemp)
+    output=$("$IMMICH_BIN" upload --recursive "$UPLOAD_DIR" --ignore "**/{ocr,Screenshots}/**" 2>"$err_file")
     exit_code=$?
-    echo "$output" >>"$IMMICH_LOG"
+    errors=$(<"$err_file")
+    rm -f "$err_file"
+    [[ -n "$output" ]] && echo "$output" >>"$IMMICH_LOG"
+    [[ -n "$errors" ]] && echo "$errors" >>"$IMMICH_LOG"
 
     if [[ "$exit_code" -ne 0 ]]; then
-        notify critical immich-sync dialog-error "Immich Sync Failed" "$(echo "$output" | tail -1)"
+        notify critical immich-sync dialog-error "Immich Sync Failed" "$(failure_summary "$errors" "$exit_code")"
         return
     fi
 

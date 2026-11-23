@@ -932,34 +932,27 @@ check_optional_deps() {
     fi
 }
 
-# Install and configure Immich CLI
+# Install and configure the Immich CLI: immich-rs
+# (https://github.com/Gren-95/immich-rs), built from source into
+# ~/.local/bin/immich-rs, where immich-sync.sh runs it from.
 setup_immich_cli() {
-    log_info "Setting up Immich CLI..."
+    local src="$HOME/.local/src/immich-rs"
+    log_info "Setting up immich-rs..."
 
-    # Find a package manager
-    local pm=""
-    if command_exists bun; then
-        pm="bun"
-    elif command_exists npm; then
-        pm="npm"
-    else
-        log_warning "Neither bun nor npm found — installing Node.js via dnf"
-        sudo dnf install -y nodejs npm
-        pm="npm"
+    if ! command_exists cargo && ! sudo dnf install -y rust cargo; then
+        log_error "Could not install the Rust toolchain"
+        return 1
     fi
 
-    # Install @immich/cli globally
-    if command_exists immich; then
-        log_success "Immich CLI already installed ($(immich --version 2>/dev/null || echo 'unknown version'))"
+    if [[ -d "$src/.git" ]]; then
+        git -C "$src" pull --ff-only || return 1
     else
-        log_info "Installing @immich/cli via $pm..."
-        if [[ "$pm" == "bun" ]]; then
-            bun install -g @immich/cli
-        else
-            npm install -g @immich/cli
-        fi
-        log_success "Immich CLI installed"
+        mkdir -p "$(dirname "$src")"
+        git clone https://github.com/Gren-95/immich-rs "$src" || return 1
     fi
+    cargo build --release --locked --manifest-path "$src/Cargo.toml" || return 1
+    install -Dm755 "$src/target/release/immich-rs" "$HOME/.local/bin/immich-rs" || return 1
+    log_success "immich-rs installed ($("$HOME/.local/bin/immich-rs" --version))"
 
     # Wait for user to provide server URL and API key
     echo ""
@@ -976,7 +969,7 @@ setup_immich_cli() {
         log_warning "API key cannot be empty"
     done
 
-    immich login "$immich_url/api" "$immich_key" &&
+    "$HOME/.local/bin/immich-rs" login "$immich_url/api" "$immich_key" &&
         log_success "Logged in to Immich" ||
         log_error "Login failed — check your URL and API key"
 
@@ -1252,7 +1245,7 @@ show_summary() {
     echo "  - Super+Shift+N: Change wallpaper"
     echo "  - Super+R: Open app launcher"
     echo ""
-    echo "  - immich login <url>/api <key>: Configure Immich CLI"
+    echo "  - immich-rs login <url>/api <key>: Configure the Immich sync"
     echo "For more info, see README.md"
     echo "========================================"
 }
@@ -1275,7 +1268,7 @@ setup_avatar() {
 }
 
 # Run one setup step; a failure is reported and setup carries on. Each step is
-# independent (a failed npm install must not cost the avatar, the units and the
+# independent (a failed build must not cost the avatar, the units and the
 # summary), and every step can be repeated by running setup again.
 # Called in an `if`, so set -e does not stop the step at its first error.
 setup_step() {
@@ -1367,7 +1360,7 @@ cmd_setup() {
     if [[ "$ASSUME_YES" == true ]]; then
         log_info "--yes: skipping Immich/Jellyfin and Gcode Viewer (credentials or a long build); run dots.sh setup interactively for those"
     else
-        if ask "Install and configure Immich CLI? (y/N)" N; then
+        if ask "Install and configure the Immich sync (builds immich-rs from source)? (y/N)" N; then
             setup_step "Immich CLI" setup_immich_cli
         fi
 
