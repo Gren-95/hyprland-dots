@@ -28,13 +28,13 @@ Uploads run with [immich-rs](https://github.com/Gren-95/immich-rs), a Rust
 rewrite of the Immich CLI with the same options and output, installed at
 `~/.local/bin/immich-rs`.
 
-**Setup:** run `dots.sh setup` and answer yes to the Immich step: it builds
-immich-rs from source (needs cargo), logs in, and asks for the interval. By hand:
+**Setup:** run `dots.sh setup` and answer yes to the Immich step: it downloads
+the newest immich-rs release for your architecture (x86_64 or aarch64), checks it
+against the release's checksums, logs in, and asks for the interval. Run the step
+again to update immich-rs. By hand, install it as its
+[README](https://github.com/Gren-95/immich-rs#install) shows, then:
 
 ```bash
-git clone https://github.com/Gren-95/immich-rs ~/.local/src/immich-rs
-cargo build --release --locked --manifest-path ~/.local/src/immich-rs/Cargo.toml
-install -Dm755 ~/.local/src/immich-rs/target/release/immich-rs ~/.local/bin/immich-rs
 immich-rs login https://your-immich-server/api YOUR_API_KEY
 bash ~/.config/scripts/sync-toggle.sh schedule immich "0 * * * *"
 bash ~/.config/scripts/sync-toggle.sh enable immich

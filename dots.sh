@@ -932,27 +932,36 @@ check_optional_deps() {
     fi
 }
 
-# Install and configure the Immich CLI: immich-rs
-# (https://github.com/Gren-95/immich-rs), built from source into
-# ~/.local/bin/immich-rs, where immich-sync.sh runs it from.
-setup_immich_cli() {
-    local src="$HOME/.local/src/immich-rs"
-    log_info "Setting up immich-rs..."
+# immich-rs (https://github.com/Gren-95/immich-rs), the Immich CLI the sync
+# uploads with: the newest release's static build for this machine, checked
+# against the release's SHA256SUMS, installed to ~/.local/bin/immich-rs (where
+# immich-sync.sh runs it from). A failed download or check leaves an installed
+# copy as it was.
+IMMICH_RS_RELEASE="https://github.com/Gren-95/immich-rs/releases/latest/download"
 
-    if ! command_exists cargo && ! sudo dnf install -y rust cargo; then
-        log_error "Could not install the Rust toolchain"
+install_immich_rs() {
+    local asset tmp ok=false
+    asset="immich-rs-$(uname -m)-linux.tar.gz"
+    tmp=$(mktemp -d)
+    log_info "Downloading $asset..."
+    if curl -fsSL -o "$tmp/$asset" "$IMMICH_RS_RELEASE/$asset" &&
+        curl -fsSL -o "$tmp/SHA256SUMS" "$IMMICH_RS_RELEASE/SHA256SUMS" &&
+        (cd "$tmp" && sha256sum --check --ignore-missing --quiet SHA256SUMS) &&
+        tar -xzf "$tmp/$asset" -C "$tmp" immich-rs &&
+        install -Dm755 "$tmp/immich-rs" "$HOME/.local/bin/immich-rs"; then
+        ok=true
+    fi
+    rm -rf "$tmp"
+    if [[ $ok != true ]]; then
+        log_error "Could not install immich-rs from $IMMICH_RS_RELEASE/$asset"
         return 1
     fi
+    log_success "immich-rs $("$HOME/.local/bin/immich-rs" --version) installed"
+}
 
-    if [[ -d "$src/.git" ]]; then
-        git -C "$src" pull --ff-only || return 1
-    else
-        mkdir -p "$(dirname "$src")"
-        git clone https://github.com/Gren-95/immich-rs "$src" || return 1
-    fi
-    cargo build --release --locked --manifest-path "$src/Cargo.toml" || return 1
-    install -Dm755 "$src/target/release/immich-rs" "$HOME/.local/bin/immich-rs" || return 1
-    log_success "immich-rs installed ($("$HOME/.local/bin/immich-rs" --version))"
+# Install and configure the Immich sync: immich-rs, its login and schedule.
+setup_immich_cli() {
+    install_immich_rs || return 1
 
     # Wait for user to provide server URL and API key
     echo ""
@@ -1360,7 +1369,7 @@ cmd_setup() {
     if [[ "$ASSUME_YES" == true ]]; then
         log_info "--yes: skipping Immich/Jellyfin and Gcode Viewer (credentials or a long build); run dots.sh setup interactively for those"
     else
-        if ask "Install and configure the Immich sync (builds immich-rs from source)? (y/N)" N; then
+        if ask "Install and configure the Immich sync (downloads immich-rs)? (y/N)" N; then
             setup_step "Immich CLI" setup_immich_cli
         fi
 
