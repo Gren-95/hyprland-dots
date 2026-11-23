@@ -30,8 +30,8 @@ rewrite of the Immich CLI with the same options and output, installed at
 
 **Setup:** run `dots.sh setup` and answer yes to the Immich step: it downloads
 the newest immich-rs release for your architecture (x86_64 or aarch64), checks it
-against the release's checksums, logs in, and asks for the interval. Run the step
-again to update immich-rs. By hand, install it as its
+against the release's checksums, logs in, and asks for the interval. `upi` keeps
+immich-rs on the newest release. By hand, install it as its
 [README](https://github.com/Gren-95/immich-rs#install) shows, then:
 
 ```bash

@@ -9,6 +9,7 @@ mod check;
 mod extras;
 mod fisher;
 mod github;
+mod immich;
 mod plugins;
 mod record;
 mod steps;

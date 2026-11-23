@@ -11,6 +11,8 @@ pub enum Step {
     Npm,
     Uv,
     Bun,
+    /// The Immich CLI the photo sync uploads with, from its GitHub releases.
+    ImmichRs,
     Fisher,
     VsCode,
     Tldr,
@@ -21,8 +23,8 @@ pub enum Step {
 use Step::*;
 
 impl Step {
-    pub const ALL: [Step; 12] = [
-        Dnf, Plugins, Firmware, Flatpak, AppImages, Npm, Uv, Bun, Fisher, VsCode, Tldr, Dots,
+    pub const ALL: [Step; 13] = [
+        Dnf, Plugins, Firmware, Flatpak, AppImages, Npm, Uv, Bun, ImmichRs, Fisher, VsCode, Tldr, Dots,
     ];
 
     /// The name on the command line (`upi dnf flatpak`).
@@ -36,6 +38,7 @@ impl Step {
             Npm => "npm",
             Uv => "uv",
             Bun => "bun",
+            ImmichRs => "immich-rs",
             Fisher => "fisher",
             VsCode => "vscode",
             Tldr => "tldr",
@@ -53,6 +56,7 @@ impl Step {
             Npm => "npm globals",
             Uv => "uv tools",
             Bun => "bun",
+            ImmichRs => "immich-rs",
             Fisher => "fish plugins",
             VsCode => "VS Code extensions",
             Tldr => "tldr pages",
@@ -70,6 +74,7 @@ impl Step {
             Npm => "npm",
             Uv => "uv",
             Bun => "bun",
+            ImmichRs => "curl",
             Fisher => "fish",
             VsCode => "code",
             Tldr => "tldr",

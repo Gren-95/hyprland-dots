@@ -3,7 +3,7 @@
 //! questions: the plan was confirmed before the run, and sudo runs with -n on
 //! the credentials asked for at the start.
 
-use crate::check::Check;
+use crate::check::{Check, Found};
 use crate::fisher::{self, Applied};
 use crate::github;
 use crate::steps::Step;
@@ -70,6 +70,7 @@ pub fn run(log: &Log, check: &Check) -> Outcome {
         Step::Npm => simple(log, check, "updated", &[("npm", &["update", "-g"], &[0])]),
         Step::Uv => simple(log, check, "updated", &[("uv", &["tool", "upgrade", "--all"], &[0])]),
         Step::Bun => bun(log, check),
+        Step::ImmichRs => immich_rs(log, check),
         Step::Fisher => fisher_plugins(log, check),
         Step::Plugins => hypr_plugins(log, check),
         Step::VsCode => simple(log, check, "updated", &[("code", &["--update-extensions"], &[0])]),
@@ -162,6 +163,19 @@ fn bun(log: &Log, check: &Check) -> Outcome {
         }
         Ok(r) if r.ok() => Outcome::Done(counted(check, "updated")),
         Ok(r) => failed("bun upgrade", &r),
+        Err(e) => Outcome::Failed(e),
+    }
+}
+
+fn immich_rs(log: &Log, check: &Check) -> Outcome {
+    let Found::Updates { items, .. } = &check.found else {
+        return Outcome::Done(String::new());
+    };
+    let Some(item) = items.first() else {
+        return Outcome::Done(String::new());
+    };
+    match crate::immich::update(log, &item.to) {
+        Ok(()) => Outcome::Done(counted(check, "updated")),
         Err(e) => Outcome::Failed(e),
     }
 }

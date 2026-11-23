@@ -150,6 +150,15 @@ fn one(step: Step) -> Check {
         Step::Npm => npm(),
         Step::Uv => uv(),
         Step::Bun => bun(),
+        Step::ImmichRs => crate::immich::check().map(|found| {
+            Check::new(
+                step,
+                found.map_or_else(
+                    || Found::Absent("not in ~/.local/bin (dots.sh setup installs it there)".into()),
+                    |items| updates(items, Vec::new()),
+                ),
+            )
+        }),
         Step::Fisher => return fisher_check(),
         Step::Plugins => return plugins_check(),
         Step::VsCode => crate::extras::vscode().map(|items| Check::new(step, updates(items, Vec::new()))),
