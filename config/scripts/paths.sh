@@ -21,10 +21,6 @@ DATA_DIR="/mnt/DATA"
 CONFIG_DIR="$HOME/.config"
 SCRIPTS_DIR="$HOME/.config/scripts"
 HYPR_DIR="$HOME/.config/hypr"
-STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dots"
-# When update-all.sh last finished and how: "<unix time>\t<ok | failed: steps>"
-# (read by the settings app's Updates panel).
-LAST_UPDATE="$STATE_DIR/last-update"
 
 # Cache / runtime
 CACHE_DIR="$HOME/.cache"

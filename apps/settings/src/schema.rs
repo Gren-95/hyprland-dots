@@ -98,7 +98,7 @@ pub enum Page {
     Users,
     /// Monitors (displays.rs), then the night light settings.
     Displays,
-    /// Running update-all.sh and the Timeshift snapshots (updates.rs).
+    /// Running upi and the Timeshift snapshots (updates.rs).
     Updates,
     /// In-use indicators and clipboard settings, then clearing the
     /// clipboard history and recent files (privacy.rs).

@@ -79,6 +79,7 @@ The lock screen (<kbd>Super</kbd>+<kbd>L</kbd>): clock, now playing, weather, ba
 - [`config/quickshell/DESIGN.md`](config/quickshell/DESIGN.md) — QML widget conventions and recipes
 - [`config/scripts/README.md`](config/scripts/README.md) — per-script breakdown (what runs when)
 - [`apps/settings/README.md`](apps/settings/README.md) — the settings app: every panel and what it changes
+- [`apps/upi/README.md`](apps/upi/README.md) — `upi`, the updater: check, snapshot, update every package source
 - [`config/hypr/MODULES.md`](config/hypr/MODULES.md) — what each `config/hypr/modules/*.lua` owns
 
 ## Setup

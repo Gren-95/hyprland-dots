@@ -58,3 +58,4 @@ __pycache__/
 
 # Rust build output (apps/settings)
 apps/settings/target/
+apps/upi/target/

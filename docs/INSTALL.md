@@ -19,7 +19,7 @@ Dependencies and manual setup. The one-command install is in the [README](../REA
 - `brightnessctl` `playerctl` — brightness and media control (Quickshell OSD watches `/sys` for changes)
 - `pulseaudio-utils` `bluez` — `pactl` and `bluetoothctl` for the Bluetooth audio recovery unit
 - `ImageMagick` — OCR preprocessing and lock screen album art
-- `timeshift` — pre-update snapshot in `upi` (update-all.sh stops without it)
+- `timeshift` — pre-update snapshot in `upi` (it stops without one; `upi --no-snapshot` skips it)
 - `gnome-keyring` — secrets store
 - `powerprofilesctl` — power profiles
 - `python3` + `python3-pillow` — avatar generation
@@ -128,6 +128,7 @@ The setup script will:
 - Set script permissions and enable the tracked git hooks
 - Link the Nautilus thumbnailers (3MF, PSD, STL, GLB, OBJ, WOFF2, AppImage), and install the programs the 3D and AppImage ones run to `/usr/local/bin` (sudo)
 - Build the settings app to `~/.local/bin/settings` and add its launcher entry
+- Build `upi`, the updater, to `~/.local/bin/upi`
 - Install and enable the systemd user units (`dots.sh units`)
 - Configure the GTK theme (and the Tailscale operator when Tailscale is installed)
 - Install `system/sysctl.d/90-dots-inotify.conf` to `/etc/sysctl.d` (sudo): 1024 inotify instances per user instead of 128, so the session D-Bus can always reload its config

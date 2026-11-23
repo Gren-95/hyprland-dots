@@ -1137,6 +1137,15 @@ setup_settings_app() {
     log_success "Settings app installed: run settings, or settings -p <panel>"
 }
 
+# upi (apps/upi): checks and updates every package source, `upi --help`.
+setup_upi() {
+    local app="$DOTS_DIR/apps/upi"
+    log_info "Building upi..."
+    cargo build --release --locked --manifest-path "$app/Cargo.toml" || return 1
+    install -Dm755 "$app/target/release/upi" "$HOME/.local/bin/upi" || return 1
+    log_success "upi installed: run upi, or upi --check"
+}
+
 # Gcode Viewer (https://github.com/Gren-95/gcode-viewer): builds from source,
 # registers it as the default opener for .gcode and installs its thumbnailer
 # (sudo, same /usr sandbox reason as above).
@@ -1342,8 +1351,9 @@ cmd_setup() {
     fi
 
     echo ""
-    if ask "Build and install the settings app (needs cargo)? (Y/n)" Y; then
+    if ask "Build and install the settings app and upi (needs cargo)? (Y/n)" Y; then
         setup_step "Settings app" setup_settings_app
+        setup_step "upi" setup_upi
     fi
 
     # System setup
