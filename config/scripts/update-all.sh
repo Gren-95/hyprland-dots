@@ -5,9 +5,10 @@
 # Every later step runs regardless of earlier failures; a summary at the end
 # lists what failed.
 #
-# Only one run at a time, and not on a nearly full disk. The machine is kept
-# awake for the whole run: hypridle would otherwise suspend it after 15 minutes
-# without input, in the middle of a package transaction.
+# Only one run at a time, not on a nearly full disk, and not offline (google.com
+# or amazon.com must answer). The machine is kept awake for the whole run:
+# hypridle would otherwise suspend it after 15 minutes without input, in the
+# middle of a package transaction.
 #
 # Usage:
 #   update-all.sh
@@ -295,6 +296,21 @@ read -r free_bytes < <(df --output=avail --block-size=1 / | tail -n 1)
 if ((free_bytes < MIN_FREE_GIB * 1024 ** 3)); then
     printf '\e[1;31m!! Only %d GiB free on /, need at least %d GiB\e[0m\n' \
         "$((free_bytes / 1024 ** 3))" "$MIN_FREE_GIB"
+    exit 1
+fi
+
+# Refuse to start offline: every step downloads, and a run without a network
+# only piles up failures. Any HTTP answer from either host counts (no -f: a
+# 4xx/5xx still proves the network is there).
+online() {
+    local url
+    for url in https://www.google.com https://www.amazon.com; do
+        curl -sS --head --max-time 5 -o /dev/null "$url" 2>/dev/null && return 0
+    done
+    return 1
+}
+if ! online; then
+    printf '\e[1;31m!! No network: neither google.com nor amazon.com answered\e[0m\n'
     exit 1
 fi
 
