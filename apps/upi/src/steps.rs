@@ -3,6 +3,8 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Step {
     Dnf,
+    /// After dnf: a new Hyprland needs its plugins rebuilt.
+    Plugins,
     Firmware,
     Flatpak,
     AppImages,
@@ -10,17 +12,24 @@ pub enum Step {
     Uv,
     Bun,
     Fisher,
+    VsCode,
+    Tldr,
+    /// Only says whether the dots repo is behind; never pulls.
+    Dots,
 }
 
 use Step::*;
 
 impl Step {
-    pub const ALL: [Step; 8] = [Dnf, Firmware, Flatpak, AppImages, Npm, Uv, Bun, Fisher];
+    pub const ALL: [Step; 12] = [
+        Dnf, Plugins, Firmware, Flatpak, AppImages, Npm, Uv, Bun, Fisher, VsCode, Tldr, Dots,
+    ];
 
     /// The name on the command line (`upi dnf flatpak`).
     pub fn id(self) -> &'static str {
         match self {
             Dnf => "dnf",
+            Plugins => "plugins",
             Firmware => "firmware",
             Flatpak => "flatpak",
             AppImages => "appimages",
@@ -28,12 +37,16 @@ impl Step {
             Uv => "uv",
             Bun => "bun",
             Fisher => "fisher",
+            VsCode => "vscode",
+            Tldr => "tldr",
+            Dots => "dots",
         }
     }
 
     pub fn name(self) -> &'static str {
         match self {
             Dnf => "System packages",
+            Plugins => "Hyprland plugins",
             Firmware => "Firmware",
             Flatpak => "Flatpak apps",
             AppImages => "AppImages",
@@ -41,6 +54,9 @@ impl Step {
             Uv => "uv tools",
             Bun => "bun",
             Fisher => "fish plugins",
+            VsCode => "VS Code extensions",
+            Tldr => "tldr pages",
+            Dots => "dots repo",
         }
     }
 
@@ -48,12 +64,16 @@ impl Step {
     pub fn tool(self) -> &'static str {
         match self {
             Dnf => "dnf",
+            Plugins => "hyprctl",
             Firmware => "fwupdmgr",
             Flatpak | AppImages => "flatpak",
             Npm => "npm",
             Uv => "uv",
             Bun => "bun",
             Fisher => "fish",
+            VsCode => "code",
+            Tldr => "tldr",
+            Dots => "git",
         }
     }
 

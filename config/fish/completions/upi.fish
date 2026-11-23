@@ -1,5 +1,5 @@
 # Completions for upi (apps/upi): its steps and options.
-set -l steps dnf firmware flatpak appimages npm uv bun fisher
+set -l steps dnf plugins firmware flatpak appimages npm uv bun fisher vscode tldr dots
 complete -c upi -f
 complete -c upi -n "not __fish_seen_argument -l last -l list -l help" -a "$steps" -d step
 complete -c upi -s c -l check -d "Only list what would update"

@@ -6,8 +6,10 @@
 
 mod args;
 mod check;
+mod extras;
 mod fisher;
 mod github;
+mod plugins;
 mod record;
 mod steps;
 mod sys;
@@ -98,6 +100,7 @@ fn plan_line(ui: &Ui, c: &Check) {
         }
         Found::Absent(why) => (Mark::Absent, why.clone()),
         Found::Limited(why) => (Mark::Limited, format!("skipped: {why}")),
+        Found::Notice(what) => (Mark::Pending, what.clone()),
         Found::Failed(why) => (
             Mark::Failed,
             format!(
@@ -251,6 +254,7 @@ fn save(
                 (Some((_, Outcome::Limited(e), t)), _) => ("rate-limited", e.clone(), *t),
                 (None, Found::Absent(why)) => ("absent", why.clone(), 0),
                 (None, Found::Limited(why)) => ("rate-limited", why.clone(), 0),
+                (None, Found::Notice(what)) => ("notice", what.clone(), 0),
                 (None, _) => ("up-to-date", String::new(), 0),
             };
             StepRecord {

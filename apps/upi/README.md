@@ -1,8 +1,9 @@
 # upi
 
-Updates everything on the machine in one go: system packages (dnf), firmware
-(fwupd), Flatpak apps, AppImages (Gear Lever), npm globals, uv tools, bun and
-fish plugins (fisher).
+Updates everything on the machine in one go: system packages (dnf), Hyprland
+plugins built from source, firmware (fwupd), Flatpak apps, AppImages (Gear
+Lever), npm globals, uv tools, bun, fish plugins (fisher), VS Code extensions
+and the tldr pages, and says when the dots repo is behind GitHub.
 
 ```bash
 upi                       # check, list, ask once, snapshot, update
@@ -43,6 +44,29 @@ upi --list                # the steps
 6. **Summary.** What updated, what failed, whether a reboot is needed
    (`dnf needs-restarting -r`), a desktop notification, and the log path.
 
+## Hyprland plugins
+
+A plugin in `~/.local/lib/hyprland/plugins/<name>.so` whose source is a git
+checkout in `~/.local/src/<name>` (hyprexpo here) is rebuilt when Hyprland
+changes, also when the dnf step brings a new Hyprland in the same run, and
+when the branch it follows has new commits. The branch is the checkout's
+upstream, or the remote branch it was last checked out from; after a build
+it is kept with the built commit and Hyprland version in
+`~/.local/state/dots/upi/plugins/<name>`. The build is `make -B all` against
+the Lua that Hyprland itself links (from its rpm requirements; a plugin's
+check for another Lua version is skipped then), stripped, and swapped in by
+rename. It loads at the next login: Hyprland keeps the plugin it has loaded,
+and a build for a newly installed Hyprland does not fit the one running.
+
+## The small ones
+
+- **VS Code extensions:** each installed extension against the marketplace:
+  the newest version that is not a pre-release, is for Linux x64, and fits
+  the installed VS Code; `code --update-extensions` updates them.
+- **tldr pages:** the page cache (`~/.cache/tldr`) is refreshed when it is
+  missing or over a week old.
+- **dots repo:** fetched, then said when behind or not pushed; never pulled.
+
 ## GitHub API limit
 
 Gear Lever, bun and fisher use GitHub's unauthenticated API, 60 requests an
@@ -70,6 +94,8 @@ version is read from the npm registry, so checking it costs nothing.
 | `src/fisher.rs` | fish plugins against fish_plugins and their upstream commits |
 | `src/github.rs` | The GitHub API quota |
 | `src/record.rs` | The run record and logs |
+| `src/plugins.rs` | Hyprland plugins built from source: find, check, rebuild |
+| `src/extras.rs` | VS Code extensions, tldr pages, the dots repo |
 | `src/sys.rs` | Running programs, the lock, disk and network checks, keep-awake, sudo |
 | `src/ui.rs` | Spinner, result lines, the question |
 

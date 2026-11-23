@@ -111,7 +111,10 @@ mod tests {
         assert_eq!(steps(&["flatpak", "dnf"]), [Step::Dnf, Step::Flatpak]);
         assert_eq!(steps(&["dnf,npm"]), [Step::Dnf, Step::Npm]);
         assert_eq!(
-            steps(&["--skip", "dnf,firmware,flatpak,appimages,npm,uv"]),
+            steps(&[
+                "--skip",
+                "dnf,plugins,firmware,flatpak,appimages,npm,uv,vscode,tldr,dots"
+            ]),
             [Step::Bun, Step::Fisher]
         );
         assert_eq!(steps(&["flatpak", "--skip=flatpak", "npm"]), [Step::Npm]);

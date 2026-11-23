@@ -71,6 +71,11 @@ pub fn run(log: &Log, check: &Check) -> Outcome {
         Step::Uv => simple(log, check, "updated", &[("uv", &["tool", "upgrade", "--all"], &[0])]),
         Step::Bun => bun(log, check),
         Step::Fisher => fisher_plugins(log, check),
+        Step::Plugins => hypr_plugins(log, check),
+        Step::VsCode => simple(log, check, "updated", &[("code", &["--update-extensions"], &[0])]),
+        Step::Tldr => simple(log, check, "refreshed", &[("tldr", &["--update"], &[0])]),
+        // Only ever a notice: there is nothing to run.
+        Step::Dots => Outcome::Done(String::new()),
     }
 }
 
@@ -176,6 +181,22 @@ fn fisher_plugins(log: &Log, check: &Check) -> Outcome {
     } else {
         Outcome::Failed(errors.join("\n"))
     }
+}
+
+/// Rebuild the plugins the check listed. They load at the next login.
+fn hypr_plugins(log: &Log, check: &Check) -> Outcome {
+    let names: Vec<String> = match &check.found {
+        crate::check::Found::Updates { items, .. } => items.iter().map(|i| i.name.clone()).collect(),
+        _ => Vec::new(),
+    };
+    let mut done = 0;
+    for p in check.plugins.iter().filter(|p| names.contains(&p.name)) {
+        if let Err(e) = crate::plugins::rebuild(log, p) {
+            return Outcome::Failed(format!("{}: {e}", p.name));
+        }
+        done += 1;
+    }
+    Outcome::Done(format!("{done} rebuilt; loads at the next login"))
 }
 
 /// `dnf needs-restarting -r`: exit 1 when the kernel or a core library

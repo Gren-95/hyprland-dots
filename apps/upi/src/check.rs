@@ -24,6 +24,8 @@ pub enum Found {
     Limited(String),
     /// The check itself failed; the step still runs and reports.
     Failed(String),
+    /// Something to know, with nothing to run (the dots repo is behind).
+    Notice(String),
 }
 
 /// One source's check, with what its update needs from it.
@@ -39,6 +41,8 @@ pub struct Check {
     pub fisher: Vec<fisher::Action>,
     /// dnf has unneeded packages to remove.
     pub unneeded: usize,
+    /// Hyprland plugins built from source.
+    pub plugins: Vec<crate::plugins::Plugin>,
 }
 
 impl Check {
@@ -50,6 +54,7 @@ impl Check {
             appimages: Vec::new(),
             fisher: Vec::new(),
             unneeded: 0,
+            plugins: Vec::new(),
         }
     }
 
@@ -108,7 +113,7 @@ fn updates(items: Vec<Item>, notes: Vec<String>) -> Found {
 
 /// Every step, checked in parallel, in step order.
 pub fn all(steps: &[Step]) -> Vec<Check> {
-    thread::scope(|s| {
+    let mut checks: Vec<Check> = thread::scope(|s| {
         let jobs: Vec<_> = steps.iter().map(|&step| s.spawn(move || one(step))).collect();
         jobs.into_iter()
             .zip(steps)
@@ -117,7 +122,20 @@ pub fn all(steps: &[Step]) -> Vec<Check> {
                     .unwrap_or_else(|_| Check::new(step, Found::Failed("the check stopped".into())))
             })
             .collect()
-    })
+    });
+    // A Hyprland that dnf brings in this run needs the plugins rebuilt for it.
+    let new_hyprland = checks.iter().find_map(|c| match (&c.step, &c.found) {
+        (Step::Dnf, Found::Updates { items, .. }) => items.iter().find(|i| i.name == "hyprland").map(|i| i.to.clone()),
+        _ => None,
+    });
+    if let Some(target) = new_hyprland
+        && let Some(c) = checks
+            .iter_mut()
+            .find(|c| c.step == Step::Plugins && !c.plugins.is_empty())
+    {
+        c.found = updates(crate::plugins::items(&c.plugins, &target), Vec::new());
+    }
+    checks
 }
 
 fn one(step: Step) -> Check {
@@ -133,6 +151,10 @@ fn one(step: Step) -> Check {
         Step::Uv => uv(),
         Step::Bun => bun(),
         Step::Fisher => return fisher_check(),
+        Step::Plugins => return plugins_check(),
+        Step::VsCode => crate::extras::vscode().map(|items| Check::new(step, updates(items, Vec::new()))),
+        Step::Tldr => Ok(Check::new(step, updates(crate::extras::tldr(), Vec::new()))),
+        Step::Dots => crate::extras::dots().map(|n| Check::new(step, n.map_or(Found::UpToDate, Found::Notice))),
     };
     match result {
         Ok(check) => check,
@@ -205,11 +227,7 @@ fn dnf() -> Result<Check, String> {
         .iter()
         .map(|(key, to)| {
             // Kernels are installed side by side: the newest stands for them.
-            let from = installed
-                .get(key)
-                .and_then(|v| v.last())
-                .cloned()
-                .unwrap_or_default();
+            let from = installed.get(key).and_then(|v| v.last()).cloned().unwrap_or_default();
             Item::new(package_name(key), from, to.clone())
         })
         .collect();
@@ -495,6 +513,31 @@ fn bun() -> Result<Check, String> {
         Vec::new()
     };
     Ok(Check::new(Step::Bun, updates(items, Vec::new())))
+}
+
+// ---- Hyprland plugins ----
+
+fn plugins_check() -> Check {
+    let found = match crate::plugins::discover() {
+        Ok(f) => f,
+        Err(e) => return Check::new(Step::Plugins, Found::Failed(e)),
+    };
+    if found.is_empty() {
+        return Check::new(Step::Plugins, Found::Absent("no plugin built from ~/.local/src".into()));
+    }
+    let (plugins, errors): (Vec<_>, Vec<_>) = found.into_iter().partition(|r| r.is_ok());
+    let plugins: Vec<crate::plugins::Plugin> = plugins.into_iter().flatten().collect();
+    let target = match crate::plugins::installed_hyprland() {
+        Ok(t) => t,
+        Err(e) => return Check::new(Step::Plugins, Found::Failed(e)),
+    };
+    let mut check = Check::new(
+        Step::Plugins,
+        updates(crate::plugins::items(&plugins, &target), Vec::new()),
+    );
+    check.warnings = errors.into_iter().filter_map(Result::err).collect();
+    check.plugins = plugins;
+    check
 }
 
 // ---- fisher ----
