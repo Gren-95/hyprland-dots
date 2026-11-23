@@ -78,10 +78,21 @@ fn last(ui: &Ui) -> ExitCode {
             "failed" => Mark::Failed,
             "rate-limited" => Mark::Limited,
             "absent" => Mark::Absent,
+            "notice" => Mark::Pending,
             _ => Mark::UpToDate,
         };
-        let took = (s.status != "absent").then(|| std::time::Duration::from_secs(s.seconds));
-        ui.line(mark, &s.name, took, s.detail.lines().next().unwrap_or_default());
+        // A time only for steps that ran (a step skipped at the check took none).
+        let ran = match s.status.as_str() {
+            "updated" | "failed" => true,
+            "rate-limited" => s.seconds > 0,
+            _ => false,
+        };
+        let took = ran.then(|| std::time::Duration::from_secs(s.seconds));
+        let detail = match s.status.as_str() {
+            "up-to-date" => "up to date",
+            _ => s.detail.lines().next().unwrap_or_default(),
+        };
+        ui.line(mark, &s.name, took, detail);
         for c in &s.changes {
             ui.note(c);
         }

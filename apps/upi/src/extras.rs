@@ -158,6 +158,15 @@ pub fn parse_ahead_behind(out: &str) -> Option<(u64, u64)> {
     Some((n.next()??, n.next()??))
 }
 
+/// "1 commit", "3 commits".
+fn commits(n: u64) -> String {
+    if n == 1 {
+        "1 commit".into()
+    } else {
+        format!("{n} commits")
+    }
+}
+
 /// How the repo stands against its upstream, after a fetch; None when even.
 pub fn dots() -> Result<Option<String>, String> {
     let repo = dots_repo().ok_or("~/.config/scripts does not link into a git repo")?;
@@ -177,8 +186,8 @@ pub fn dots() -> Result<Option<String>, String> {
     let shown = dir.replacen(&home, "~", 1);
     Ok(match (ahead, behind) {
         (0, 0) => None,
-        (0, b) => Some(format!("{b} commits behind: git -C {shown} pull")),
-        (a, 0) => Some(format!("{a} commits not pushed")),
+        (0, b) => Some(format!("{} behind: git -C {shown} pull", commits(b))),
+        (a, 0) => Some(format!("{} not pushed", commits(a))),
         (a, b) => Some(format!("{a} ahead and {b} behind its upstream")),
     })
 }
