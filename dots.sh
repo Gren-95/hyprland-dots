@@ -932,36 +932,41 @@ check_optional_deps() {
     fi
 }
 
-# immich-rs (https://github.com/Gren-95/immich-rs), the Immich CLI the sync
-# uploads with: the newest release's static build for this machine, checked
-# against the release's SHA256SUMS, installed to ~/.local/bin/immich-rs (where
-# immich-sync.sh runs it from). A failed download or check leaves an installed
-# copy as it was.
-IMMICH_RS_RELEASE="https://github.com/Gren-95/immich-rs/releases/latest/download"
-
-install_immich_rs() {
-    local asset tmp ok=false
-    asset="immich-rs-$(uname -m)-linux.tar.gz"
+# The sync tools, both static Rust builds released on GitHub:
+# immich-rs (https://github.com/Gren-95/immich-rs) for immich-sync.sh and
+# jellyfin-music-rs (https://github.com/Gren-95/jellyfin-music-rs) for
+# jellyfin-music-sync.sh. install_release_tool <name> downloads the newest
+# release's build for this machine, checks it against the release's
+# SHA256SUMS and installs it to ~/.local/bin/<name>, where the sync scripts run
+# it from; upi keeps it updated. A failed download or check leaves an
+# installed copy as it was.
+install_release_tool() {
+    local name=$1 base asset tmp ok=false
+    base="https://github.com/Gren-95/$name/releases/latest/download"
+    asset="$name-$(uname -m)-linux.tar.gz"
     tmp=$(mktemp -d)
     log_info "Downloading $asset..."
-    if curl -fsSL -o "$tmp/$asset" "$IMMICH_RS_RELEASE/$asset" &&
-        curl -fsSL -o "$tmp/SHA256SUMS" "$IMMICH_RS_RELEASE/SHA256SUMS" &&
+    if curl -fsSL -o "$tmp/$asset" "$base/$asset" &&
+        curl -fsSL -o "$tmp/SHA256SUMS" "$base/SHA256SUMS" &&
         (cd "$tmp" && sha256sum --check --ignore-missing --quiet SHA256SUMS) &&
-        tar -xzf "$tmp/$asset" -C "$tmp" immich-rs &&
-        install -Dm755 "$tmp/immich-rs" "$HOME/.local/bin/immich-rs"; then
+        tar -xzf "$tmp/$asset" -C "$tmp" "$name" &&
+        install -Dm755 "$tmp/$name" "$HOME/.local/bin/$name"; then
         ok=true
     fi
     rm -rf "$tmp"
     if [[ $ok != true ]]; then
-        log_error "Could not install immich-rs from $IMMICH_RS_RELEASE/$asset"
+        log_error "Could not install $name from $base/$asset"
         return 1
     fi
-    log_success "immich-rs $("$HOME/.local/bin/immich-rs" --version) installed"
+    # The version is the last word: "3.4.2", or "jellyfin-music-rs 0.1.0".
+    local version
+    version=$("$HOME/.local/bin/$name" --version)
+    log_success "$name ${version##* } installed"
 }
 
 # Install and configure the Immich sync: immich-rs, its login and schedule.
 setup_immich_cli() {
-    install_immich_rs || return 1
+    install_release_tool immich-rs || return 1
 
     # Wait for user to provide server URL and API key
     echo ""
@@ -1013,7 +1018,7 @@ setup_immich_cli() {
 
 # Set up Jellyfin music sync
 setup_jellyfin_sync() {
-    log_info "Setting up Jellyfin music sync..."
+    install_release_tool jellyfin-music-rs || return 1
 
     # The timer that runs the sync once a day is installed with the other user
     # units (copies, kept in sync with systemd/user/ by `dots.sh units`).
@@ -1023,12 +1028,12 @@ setup_jellyfin_sync() {
         log_warning "Could not install the Jellyfin units. Re-run: dots.sh units"
     fi
 
-    # Prompt for credentials now
+    # The login is checked against the server before it is saved (mode 0600).
     local conf="$HOME/.config/jellyfin/sync.conf"
     if [[ ! -f "$conf" ]]; then
         log_info "Configure Jellyfin server connection"
         while true; do
-            read -rp "  Server URL (e.g. http://192.168.0.200:8096): " jf_url
+            read -rp "  Server URL (e.g. https://jellyfin.example.com): " jf_url
             [[ -n "$jf_url" ]] && break
             log_warning "URL cannot be empty"
         done
@@ -1038,17 +1043,13 @@ setup_jellyfin_sync() {
             [[ -n "$jf_key" ]] && break
             log_warning "API key cannot be empty"
         done
-        mkdir -p "$(dirname "$conf")"
-        # The sync script sources this file, so the values are written with
-        # %q: quotes, backticks and $( in them stay text. umask 077 keeps the
-        # key private from the moment the file exists.
-        (
-            umask 077
-            printf 'JELLYFIN_URL=%q\nJELLYFIN_API_KEY=%q\n' "$jf_url" "$jf_key" >"$conf"
-        )
-        log_success "Jellyfin credentials saved"
+        if ! "$HOME/.local/bin/jellyfin-music-rs" --config "$conf" login "$jf_url" "$jf_key"; then
+            log_error "Login failed — check the URL and API key, and that the server is reachable"
+            return 1
+        fi
+        log_success "Jellyfin login saved"
     else
-        log_success "Jellyfin credentials already configured"
+        log_success "Jellyfin login already configured"
     fi
 
     read -p "Enable Jellyfin background sync now? (Y/n) " -n 1 -r
@@ -1374,7 +1375,7 @@ cmd_setup() {
         fi
 
         echo ""
-        if ask "Set up Jellyfin music sync? (y/N)" N; then
+        if ask "Set up Jellyfin music sync (downloads jellyfin-music-rs)? (y/N)" N; then
             setup_step "Jellyfin sync" setup_jellyfin_sync
         fi
 

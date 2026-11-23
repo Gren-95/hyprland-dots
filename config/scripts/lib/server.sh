@@ -1,6 +1,7 @@
 #!/bin/bash
 # server.sh — reachability check for the self-hosted servers the sync scripts
-# talk to (Immich, Jellyfin), which are only reachable on the home network.
+# talk to (Immich; jellyfin-music-rs checks for itself), which are only
+# reachable on the home network.
 #
 # Source from another script:
 #   source "$(dirname "${BASH_SOURCE[0]}")/lib/server.sh"

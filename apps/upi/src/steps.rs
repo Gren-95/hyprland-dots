@@ -13,6 +13,8 @@ pub enum Step {
     Bun,
     /// The Immich CLI the photo sync uploads with, from its GitHub releases.
     ImmichRs,
+    /// The Jellyfin music sync, from its GitHub releases.
+    JellyfinMusicRs,
     Fisher,
     VsCode,
     Tldr,
@@ -23,8 +25,21 @@ pub enum Step {
 use Step::*;
 
 impl Step {
-    pub const ALL: [Step; 13] = [
-        Dnf, Plugins, Firmware, Flatpak, AppImages, Npm, Uv, Bun, ImmichRs, Fisher, VsCode, Tldr, Dots,
+    pub const ALL: [Step; 14] = [
+        Dnf,
+        Plugins,
+        Firmware,
+        Flatpak,
+        AppImages,
+        Npm,
+        Uv,
+        Bun,
+        ImmichRs,
+        JellyfinMusicRs,
+        Fisher,
+        VsCode,
+        Tldr,
+        Dots,
     ];
 
     /// The name on the command line (`upi dnf flatpak`).
@@ -39,6 +54,7 @@ impl Step {
             Uv => "uv",
             Bun => "bun",
             ImmichRs => "immich-rs",
+            JellyfinMusicRs => "jellyfin-music-rs",
             Fisher => "fisher",
             VsCode => "vscode",
             Tldr => "tldr",
@@ -57,6 +73,7 @@ impl Step {
             Uv => "uv tools",
             Bun => "bun",
             ImmichRs => "immich-rs",
+            JellyfinMusicRs => "jellyfin-music-rs",
             Fisher => "fish plugins",
             VsCode => "VS Code extensions",
             Tldr => "tldr pages",
@@ -74,7 +91,7 @@ impl Step {
             Npm => "npm",
             Uv => "uv",
             Bun => "bun",
-            ImmichRs => "curl",
+            ImmichRs | JellyfinMusicRs => "curl",
             Fisher => "fish",
             VsCode => "code",
             Tldr => "tldr",

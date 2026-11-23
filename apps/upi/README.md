@@ -2,8 +2,9 @@
 
 Updates everything on the machine in one go: system packages (dnf), Hyprland
 plugins built from source, firmware (fwupd), Flatpak apps, AppImages (Gear
-Lever), npm globals, uv tools, bun, immich-rs, fish plugins (fisher), VS Code
-extensions and the tldr pages, and says when the dots repo is behind GitHub.
+Lever), npm globals, uv tools, bun, immich-rs, jellyfin-music-rs, fish plugins
+(fisher), VS Code extensions and the tldr pages, and says when the dots repo is
+behind GitHub.
 
 ```bash
 upi                       # check, list, ask once, snapshot, update
@@ -63,9 +64,9 @@ and a build for a newly installed Hyprland does not fit the one running.
 - **VS Code extensions:** each installed extension against the marketplace:
   the newest version that is not a pre-release, is for Linux x64, and fits
   the installed VS Code; `code --update-extensions` updates them.
-- **immich-rs:** `~/.local/bin/immich-rs` (the Immich sync's CLI) against
-  its newest GitHub release, read from where `releases/latest` redirects (no
-  API quota). The update downloads that release's build for this machine,
+- **immich-rs, jellyfin-music-rs:** `~/.local/bin/immich-rs` and
+  `~/.local/bin/jellyfin-music-rs` (the sync tools), each against its newest
+  GitHub release, read from where `releases/latest` redirects (no API quota). The update downloads that release's build for this machine,
   checks it against the release's `SHA256SUMS` and swaps it in by rename, so
   a running sync keeps its copy; any failure leaves the installed one as it was.
 - **tldr pages:** the page cache (`~/.cache/tldr`) is refreshed when it is
@@ -101,7 +102,7 @@ version is read from the npm registry, so checking it costs nothing.
 | `src/record.rs` | The run record and logs |
 | `src/plugins.rs` | Hyprland plugins built from source: find, check, rebuild |
 | `src/extras.rs` | VS Code extensions, tldr pages, the dots repo |
-| `src/immich.rs` | immich-rs against its newest release, and its install |
+| `src/release_tools.rs` | immich-rs and jellyfin-music-rs against their newest releases, and their install |
 | `src/sys.rs` | Running programs, the lock, disk and network checks, keep-awake, sudo |
 | `src/ui.rs` | Spinner, result lines, the question |
 

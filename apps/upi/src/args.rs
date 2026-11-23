@@ -113,7 +113,7 @@ mod tests {
         assert_eq!(
             steps(&[
                 "--skip",
-                "dnf,plugins,firmware,flatpak,appimages,npm,uv,immich-rs,vscode,tldr,dots"
+                "dnf,plugins,firmware,flatpak,appimages,npm,uv,immich-rs,jellyfin-music-rs,vscode,tldr,dots"
             ]),
             [Step::Bun, Step::Fisher]
         );

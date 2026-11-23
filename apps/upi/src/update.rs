@@ -70,7 +70,8 @@ pub fn run(log: &Log, check: &Check) -> Outcome {
         Step::Npm => simple(log, check, "updated", &[("npm", &["update", "-g"], &[0])]),
         Step::Uv => simple(log, check, "updated", &[("uv", &["tool", "upgrade", "--all"], &[0])]),
         Step::Bun => bun(log, check),
-        Step::ImmichRs => immich_rs(log, check),
+        Step::ImmichRs => release_tool(log, check, crate::release_tools::IMMICH_RS),
+        Step::JellyfinMusicRs => release_tool(log, check, crate::release_tools::JELLYFIN_MUSIC_RS),
         Step::Fisher => fisher_plugins(log, check),
         Step::Plugins => hypr_plugins(log, check),
         Step::VsCode => simple(log, check, "updated", &[("code", &["--update-extensions"], &[0])]),
@@ -167,14 +168,14 @@ fn bun(log: &Log, check: &Check) -> Outcome {
     }
 }
 
-fn immich_rs(log: &Log, check: &Check) -> Outcome {
+fn release_tool(log: &Log, check: &Check, name: &str) -> Outcome {
     let Found::Updates { items, .. } = &check.found else {
         return Outcome::Done(String::new());
     };
     let Some(item) = items.first() else {
         return Outcome::Done(String::new());
     };
-    match crate::immich::update(log, &item.to) {
+    match crate::release_tools::update(log, name, &item.to) {
         Ok(()) => Outcome::Done(counted(check, "updated")),
         Err(e) => Outcome::Failed(e),
     }

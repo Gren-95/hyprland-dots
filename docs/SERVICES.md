@@ -47,20 +47,34 @@ Auth is stored in `~/.config/immich/auth.yml` (gitignored).
 
 ### Jellyfin (music sync)
 
-Syncs your Jellyfin music library to `~/Music/` once a day. Jellyfin is the master — tracks removed from Jellyfin are deleted locally. Notifies after each sync with a download/skip/remove summary. When the server is unreachable the sync is skipped quietly (logged in `~/.cache/jellyfin-sync.log`); a connection lost mid-sync stops the run without deleting anything, and a server that reports zero tracks never empties `~/Music`.
+Syncs your Jellyfin music library to `~/Music/` once a day with
+[jellyfin-music-rs](https://github.com/Gren-95/jellyfin-music-rs), installed at
+`~/.local/bin/jellyfin-music-rs`. Jellyfin is the master: tracks removed there
+are deleted locally, unless that would remove more than half of them (a server
+with a half-mounted drive). Tracks are saved as
+`~/Music/<Artist>/<Album>/<Track>`, with a `cover.jpg` per album and your
+playlists in `~/Music/Playlists/`. Downloads resume after a dropped connection.
 
-**Setup:** run `dots.sh setup` and answer yes to the Jellyfin step, or by hand:
+It notifies when tracks were downloaded, updated, removed or failed, and when
+something needs a look (a rejected key, the deletion guard). An unreachable
+server, an empty library or a dropped connection skips the run quietly, with a
+line in `~/.cache/jellyfin-sync.log`, which also lists every track the sync
+handled.
+
+**Setup:** run `dots.sh setup` and answer yes to the Jellyfin step: it
+downloads jellyfin-music-rs, installs the timer and checks your login. By hand:
 
 ```bash
-bash ~/.config/scripts/jellyfin-music-sync.sh   # first run asks for the URL and API key
+bash ~/.config/scripts/jellyfin-music-sync.sh   # in a terminal, first asks for the URL and API key
 ./dots.sh units   # from the repo: installs jellyfin-sync.{service,timer}
 ```
 
 Then switch "Jellyfin sync" on in the settings app's Sync panel, which enables the timer.
-Tracks are saved as `~/Music/<Artist>/<Album>/<Track>`. To change the time,
-`sync-toggle.sh schedule jellyfin "*-*-* 04:00:00"` writes a timer drop-in.
+To change the time, `sync-toggle.sh schedule jellyfin "*-*-* 04:00:00"` writes a timer drop-in.
+`upi` keeps jellyfin-music-rs on the newest release.
 
-Config is stored in `~/.config/jellyfin/sync.conf` (gitignored). To reconfigure, delete the file and run the script again.
+The login is stored in `~/.config/jellyfin/sync.conf` (gitignored, mode 0600). To change it, run
+`jellyfin-music-rs --config ~/.config/jellyfin/sync.conf login <url> <key>`.
 
 ### Windows VM (WinApps)
 

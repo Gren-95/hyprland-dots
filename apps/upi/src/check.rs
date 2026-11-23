@@ -150,15 +150,8 @@ fn one(step: Step) -> Check {
         Step::Npm => npm(),
         Step::Uv => uv(),
         Step::Bun => bun(),
-        Step::ImmichRs => crate::immich::check().map(|found| {
-            Check::new(
-                step,
-                found.map_or_else(
-                    || Found::Absent("not in ~/.local/bin (dots.sh setup installs it there)".into()),
-                    |items| updates(items, Vec::new()),
-                ),
-            )
-        }),
+        Step::ImmichRs => release_tool(step, crate::release_tools::IMMICH_RS),
+        Step::JellyfinMusicRs => release_tool(step, crate::release_tools::JELLYFIN_MUSIC_RS),
         Step::Fisher => return fisher_check(),
         Step::Plugins => return plugins_check(),
         Step::VsCode => crate::extras::vscode().map(|items| Check::new(step, updates(items, Vec::new()))),
@@ -169,6 +162,18 @@ fn one(step: Step) -> Check {
         Ok(check) => check,
         Err(e) => Check::new(step, Found::Failed(e)),
     }
+}
+
+/// A tool from dots' own GitHub releases, installed in ~/.local/bin.
+fn release_tool(step: Step, name: &str) -> Result<Check, String> {
+    let found = crate::release_tools::check(name)?;
+    Ok(Check::new(
+        step,
+        found.map_or_else(
+            || Found::Absent("not in ~/.local/bin (dots.sh setup installs it there)".into()),
+            |items| updates(items, Vec::new()),
+        ),
+    ))
 }
 
 fn run(program: &str, args: &[&str]) -> Result<sys::Ran, String> {
