@@ -80,6 +80,9 @@ fn last(ui: &Ui) -> ExitCode {
         };
         let took = (s.status != "absent").then(|| std::time::Duration::from_secs(s.seconds));
         ui.line(mark, &s.name, took, s.detail.lines().next().unwrap_or_default());
+        for c in &s.changes {
+            ui.note(c);
+        }
     }
     ui.dim(&format!("{}\nLog: {}", run.headline(), run.log));
     ExitCode::SUCCESS
@@ -89,7 +92,10 @@ fn last(ui: &Ui) -> ExitCode {
 fn plan_line(ui: &Ui, c: &Check) {
     let (mark, text) = match &c.found {
         Found::UpToDate => (Mark::UpToDate, "up to date".to_string()),
-        Found::Updates { items, notes } => (Mark::Pending, ui::summary(items, notes)),
+        Found::Updates { items, notes } => {
+            let names: Vec<String> = items.iter().map(|i| i.name.clone()).collect();
+            (Mark::Pending, ui::summary(&names, notes))
+        }
         Found::Absent(why) => (Mark::Absent, why.clone()),
         Found::Limited(why) => (Mark::Limited, format!("skipped: {why}")),
         Found::Failed(why) => (
@@ -103,6 +109,14 @@ fn plan_line(ui: &Ui, c: &Check) {
     ui.line(mark, c.step.name(), None, &text);
     for w in &c.warnings {
         ui.note(w);
+    }
+    // Everything that changes, from what to what.
+    if let Found::Updates { items, .. } = &c.found {
+        let rows: Vec<_> = items
+            .iter()
+            .map(|i| (i.name.clone(), i.from.clone(), i.to.clone()))
+            .collect();
+        ui.changes(&rows);
     }
 }
 
@@ -159,6 +173,13 @@ fn update_all(ui: &Ui, o: &Options) -> Result<ExitCode, String> {
     let log_path = record::logs_dir().join(format!("{stamp}.log"));
     let log = Log::create(&log_path)?;
     record::prune_logs();
+    log.line("Plan");
+    for c in &todo {
+        log.line(&format!("\n{}", c.step.name()));
+        for i in items_of(c) {
+            log.line(&format!("  {}", i.line()));
+        }
+    }
     println!();
 
     let snapshot = if o.snapshot {
@@ -239,6 +260,12 @@ fn save(
                 count: if status == "updated" { c.count() } else { 0 },
                 seconds,
                 detail,
+                // What it set out to change, for steps that ran.
+                changes: if result.is_some() {
+                    items_of(c).iter().map(|i| i.line()).collect()
+                } else {
+                    Vec::new()
+                },
             }
         })
         .collect();
@@ -254,6 +281,13 @@ fn save(
         eprintln!("upi: {e}");
     }
     run
+}
+
+fn items_of(c: &Check) -> &[check::Item] {
+    match &c.found {
+        Found::Updates { items, .. } => items,
+        _ => &[],
+    }
 }
 
 /// A desktop notification with the outcome, for when the terminal is behind

@@ -15,7 +15,7 @@ pub enum Found {
     UpToDate,
     /// Something to update: the items, and notes such as "kernel 6.12".
     Updates {
-        items: Vec<String>,
+        items: Vec<Item>,
         notes: Vec<String>,
     },
     /// Not installed, or not set up.
@@ -67,7 +67,38 @@ impl Check {
     }
 }
 
-fn updates(items: Vec<String>, notes: Vec<String>) -> Found {
+/// One thing that changes: its version now and after ("" when not known).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Item {
+    pub name: String,
+    pub from: String,
+    pub to: String,
+}
+
+/// What a removal goes to.
+pub const REMOVED: &str = "removed";
+
+impl Item {
+    pub fn new(name: impl Into<String>, from: impl Into<String>, to: impl Into<String>) -> Item {
+        Item {
+            name: name.into(),
+            from: from.into(),
+            to: to.into(),
+        }
+    }
+
+    /// "firefox 158.0.1-2 → 160.0-1", "plugin → (new) abc1234".
+    pub fn line(&self) -> String {
+        match (self.from.is_empty(), self.to.is_empty()) {
+            (true, true) => self.name.clone(),
+            (true, false) => format!("{} (new) → {}", self.name, self.to),
+            (false, true) => format!("{} {} → newer", self.name, self.from),
+            (false, false) => format!("{} {} → {}", self.name, self.from, self.to),
+        }
+    }
+}
+
+fn updates(items: Vec<Item>, notes: Vec<String>) -> Found {
     if items.is_empty() && notes.is_empty() {
         Found::UpToDate
     } else {
@@ -116,7 +147,7 @@ fn run(program: &str, args: &[&str]) -> Result<sys::Ran, String> {
 // ---- dnf ----
 
 /// `dnf check-update` lines: "name.arch  version  repo". Returns
-/// (name, version) pairs.
+/// (name.arch, new version) pairs.
 pub fn parse_dnf(out: &str) -> Vec<(String, String)> {
     out.lines()
         .filter_map(|l| {
@@ -124,15 +155,42 @@ pub fn parse_dnf(out: &str) -> Vec<(String, String)> {
             let [nevra, version, _repo] = f.as_slice() else {
                 return None;
             };
-            let (name, _arch) = nevra.rsplit_once('.')?;
+            nevra.rsplit_once('.')?;
             version
                 .chars()
                 .next()
                 .is_some_and(|c| c.is_ascii_digit())
-                .then(|| (name.to_string(), version.to_string()))
+                .then(|| (nevra.to_string(), version.to_string()))
         })
         .collect()
 }
+
+/// "name.arch\tversion" lines (rpm -qa, the format below): versions by
+/// name.arch, several when more than one is installed (kernels).
+pub fn parse_installed(out: &str) -> std::collections::HashMap<String, Vec<String>> {
+    let mut map: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
+    for l in out.lines() {
+        if let Some((key, version)) = l.split_once('\t') {
+            map.entry(key.to_string()).or_default().push(version.to_string());
+        }
+    }
+    for versions in map.values_mut() {
+        versions.sort();
+    }
+    map
+}
+
+/// "firefox.x86_64" is shown as "firefox"; other arches keep theirs.
+fn package_name(name_arch: &str) -> String {
+    match name_arch.rsplit_once('.') {
+        Some((name, "x86_64" | "noarch")) => name.to_string(),
+        Some((name, arch)) => format!("{name} ({arch})"),
+        None => name_arch.to_string(),
+    }
+}
+
+/// rpm's version in dnf's format: the epoch only when set.
+const RPM_FORMAT: &str = "%{NAME}.%{ARCH}\\t%|EPOCH?{%{EPOCH}:}:{}|%{VERSION}-%{RELEASE}\\n";
 
 fn dnf() -> Result<Check, String> {
     let ran = run("dnf", &["check-update", "-q"])?;
@@ -142,37 +200,69 @@ fn dnf() -> Result<Check, String> {
         100 => parse_dnf(&ran.out),
         _ => return Err(ran.tail(2)),
     };
-    let unneeded = run("dnf", &["repoquery", "--unneeded", "-q"])
-        .map(|r| r.out.lines().filter(|l| !l.trim().is_empty()).count())
-        .unwrap_or(0);
+    let installed = parse_installed(&run("rpm", &["-qa", "--qf", RPM_FORMAT])?.out);
+    let mut items: Vec<Item> = packages
+        .iter()
+        .map(|(key, to)| {
+            // Kernels are installed side by side: the newest stands for them.
+            let from = installed
+                .get(key)
+                .and_then(|v| v.last())
+                .cloned()
+                .unwrap_or_default();
+            Item::new(package_name(key), from, to.clone())
+        })
+        .collect();
     let mut notes = Vec::new();
-    if let Some((_, v)) = packages.iter().find(|(n, _)| n == "kernel" || n == "kernel-core") {
+    if let Some((_, v)) = packages
+        .iter()
+        .find(|(n, _)| n.starts_with("kernel.") || n.starts_with("kernel-core."))
+    {
         notes.push(format!("kernel {}", v.split('-').next().unwrap_or(v)));
     }
-    if unneeded > 0 {
-        notes.push(format!("{unneeded} to remove"));
+    // What autoremove takes away, after the upgrades.
+    let unneeded: Vec<Item> = run(
+        "dnf",
+        &[
+            "repoquery",
+            "--unneeded",
+            "-q",
+            "--queryformat",
+            "%{name}.%{arch}\t%{evr}\n",
+        ],
+    )
+    .map(|r| parse_installed(&r.out))
+    .unwrap_or_default()
+    .into_iter()
+    .map(|(key, v)| Item::new(package_name(&key), v.join(", "), REMOVED))
+    .collect();
+    if !unneeded.is_empty() {
+        notes.push(format!("{} to remove", unneeded.len()));
     }
-    let items = packages.into_iter().map(|(n, _)| n).collect();
+    let count = unneeded.len();
+    let mut removals = unneeded;
+    removals.sort_by(|a, b| a.name.cmp(&b.name));
+    items.extend(removals);
     let mut check = Check::new(Step::Dnf, updates(items, notes));
-    check.unneeded = unneeded;
+    check.unneeded = count;
     Ok(check)
 }
 
 // ---- firmware ----
 
-/// `fwupdmgr get-updates --json`: "device version" for each device with a
-/// release waiting.
-pub fn parse_fwupd(json: &serde_json::Value) -> Vec<String> {
+/// `fwupdmgr get-updates --json`: each device with a release waiting, from
+/// its version to the release's.
+pub fn parse_fwupd(json: &serde_json::Value) -> Vec<Item> {
     json["Devices"]
         .as_array()
         .into_iter()
         .flatten()
         .filter_map(|d| {
             let release = d["Releases"].as_array()?.first()?;
-            Some(format!(
-                "{} {}",
+            Some(Item::new(
                 d["Name"].as_str()?,
-                release["Version"].as_str().unwrap_or_default()
+                d["Version"].as_str().unwrap_or_default(),
+                release["Version"].as_str().unwrap_or_default(),
             ))
         })
         .collect()
@@ -191,22 +281,46 @@ fn firmware() -> Result<Check, String> {
 
 // ---- Flatpak ----
 
-/// `flatpak remote-ls --updates --columns=application`: the last part of
-/// each id ("org.mozilla.firefox" is "firefox").
-pub fn parse_flatpak(out: &str) -> Vec<String> {
+/// Tab-separated "application\tversion\tbranch" lines (`flatpak list` and
+/// `flatpak remote-ls --updates` with those columns), keyed by
+/// application and branch, with the version (often empty for runtimes).
+pub fn parse_flatpak(out: &str) -> Vec<(String, String, String)> {
     out.lines()
-        .map(str::trim)
-        .filter(|l| !l.is_empty())
-        .map(|l| l.rsplit('.').next().unwrap_or(l).to_string())
+        .filter_map(|l| {
+            let mut f = l.split('\t');
+            let app = f.next()?.trim();
+            let version = f.next().unwrap_or_default().trim();
+            let branch = f.next().unwrap_or_default().trim();
+            (!app.is_empty()).then(|| (app.to_string(), version.to_string(), branch.to_string()))
+        })
         .collect()
 }
 
 fn flatpak() -> Result<Check, String> {
-    let ran = run("flatpak", &["remote-ls", "--updates", "--columns=application"])?;
+    let columns = "--columns=application,version,branch";
+    let ran = run("flatpak", &["remote-ls", "--updates", columns])?;
     if !ran.ok() {
         return Err(ran.tail(2));
     }
-    Ok(Check::new(Step::Flatpak, updates(parse_flatpak(&ran.out), Vec::new())))
+    let installed = parse_flatpak(&run("flatpak", &["list", columns])?.out);
+    let items = parse_flatpak(&ran.out)
+        .into_iter()
+        .map(|(app, to, branch)| {
+            let from = installed
+                .iter()
+                .find(|(a, _, b)| *a == app && *b == branch)
+                .map(|(_, v, _)| v.clone())
+                .unwrap_or_default();
+            // Runtimes carry no version: a new build of the same branch.
+            let (from, to) = if from.is_empty() && to.is_empty() {
+                (branch.clone(), format!("{branch} (new build)"))
+            } else {
+                (from, to)
+            };
+            Item::new(app, from, to)
+        })
+        .collect();
+    Ok(Check::new(Step::Flatpak, updates(items, Vec::new())))
 }
 
 // ---- AppImages (Gear Lever) ----
@@ -271,9 +385,10 @@ fn appimages() -> Check {
         Ok(j) => parse_gearlever_updates(&j),
         Err(e) => return with_warnings(Found::Failed(format!("Gear Lever: {e}"))),
     };
+    // Gear Lever's list has no versions: "→ newer".
     let names = paths
         .iter()
-        .map(|p| p.rsplit('/').next().unwrap_or(p).to_string())
+        .map(|p| Item::new(p.rsplit('/').next().unwrap_or(p), "installed", ""))
         .collect();
     let mut check = with_warnings(updates(names, Vec::new()));
     check.appimages = paths;
@@ -282,16 +397,16 @@ fn appimages() -> Check {
 
 // ---- npm, uv, bun ----
 
-/// `npm outdated -g --json`: "name current → latest".
-pub fn parse_npm(json: &serde_json::Value) -> Vec<String> {
+/// `npm outdated -g --json`: each package from current to latest.
+pub fn parse_npm(json: &serde_json::Value) -> Vec<Item> {
     json.as_object()
         .into_iter()
         .flatten()
         .map(|(name, v)| {
-            format!(
-                "{name} {} → {}",
-                v["current"].as_str().unwrap_or("?"),
-                v["latest"].as_str().unwrap_or("?")
+            Item::new(
+                name.as_str(),
+                v["current"].as_str().unwrap_or_default(),
+                v["latest"].as_str().unwrap_or_default(),
             )
         })
         .collect()
@@ -350,7 +465,7 @@ fn uv() -> Result<Check, String> {
     let mut unknown = Vec::new();
     for ((name, current), latest) in tools.iter().zip(latest) {
         match latest {
-            Ok(l) if l != *current => items.push(format!("{name} {current} → {l}")),
+            Ok(l) if l != *current => items.push(Item::new(name.as_str(), current.as_str(), l)),
             Ok(_) => {}
             Err(_) => unknown.push(name.clone()),
         }
@@ -375,7 +490,7 @@ fn bun() -> Result<Check, String> {
         .map(String::from)
         .ok_or("the npm registry gave no bun version")?;
     let items = if latest != current {
-        vec![format!("bun {current} → {latest}")]
+        vec![Item::new("bun", current, latest)]
     } else {
         Vec::new()
     };
@@ -390,10 +505,13 @@ fn fisher_check() -> Check {
             let items = plan
                 .actions
                 .iter()
-                .map(|a| match a.kind {
-                    fisher::Kind::Remove => format!("remove {}", a.plugin),
-                    fisher::Kind::Install => format!("install {}", a.plugin),
-                    fisher::Kind::Update => a.plugin.clone(),
+                .map(|a| {
+                    let short = |c: &str| c.split(',').map(|x| &x[..x.len().min(7)]).collect::<Vec<_>>().join(",");
+                    match a.kind {
+                        fisher::Kind::Remove => Item::new(a.plugin.as_str(), "installed", REMOVED),
+                        fisher::Kind::Install => Item::new(a.plugin.as_str(), "", short(&a.remote)),
+                        fisher::Kind::Update => Item::new(a.plugin.as_str(), short(&a.recorded), short(&a.remote)),
+                    }
                 })
                 .collect();
             let mut check = Check::new(Step::Fisher, updates(items, Vec::new()));
@@ -411,28 +529,41 @@ mod tests {
 
     #[test]
     fn reads_dnf() {
-        let out = "\nfirefox.x86_64   133.0-1.fc44   updates\nkernel.x86_64   6.12.4-200.fc44   updates\nObsoleting packages\nbad line\n";
+        let out = "\nfirefox.x86_64   160.0-1.fc44   updates\nSDL3.i686   3.4.20-1.fc44   updates\nObsoleting packages\nbad line\n";
         assert_eq!(
             parse_dnf(out),
             [
-                ("firefox".to_string(), "133.0-1.fc44".to_string()),
-                ("kernel".to_string(), "6.12.4-200.fc44".to_string())
+                ("firefox.x86_64".to_string(), "160.0-1.fc44".to_string()),
+                ("SDL3.i686".to_string(), "3.4.20-1.fc44".to_string())
             ]
         );
         assert!(parse_dnf("").is_empty());
+        let installed =
+            parse_installed("firefox.x86_64\t158.0.1-2.fc44\nkernel.x86_64\t7.3.4-202\nkernel.x86_64\t7.3.4-201\n");
+        assert_eq!(installed["firefox.x86_64"], ["158.0.1-2.fc44"]);
+        assert_eq!(installed["kernel.x86_64"], ["7.3.4-201", "7.3.4-202"]);
+        assert_eq!(package_name("firefox.x86_64"), "firefox");
+        assert_eq!(package_name("SDL3.i686"), "SDL3 (i686)");
     }
 
     #[test]
     fn reads_firmware_and_flatpak() {
         let j = serde_json::json!({"Devices": [
-            {"Name": "System Firmware", "Releases": [{"Version": "1.32.0"}]},
-            {"Name": "Touchpad", "Releases": []}
+            {"Name": "System Firmware", "Version": "1.31.0", "Releases": [{"Version": "1.32.0"}]},
+            {"Name": "Touchpad", "Version": "2", "Releases": []}
         ]});
-        assert_eq!(parse_fwupd(&j), ["System Firmware 1.32.0"]);
+        assert_eq!(parse_fwupd(&j), [Item::new("System Firmware", "1.31.0", "1.32.0")]);
         assert!(parse_fwupd(&serde_json::json!({"Devices": []})).is_empty());
         assert_eq!(
-            parse_flatpak("org.mozilla.firefox\n\norg.gnome.Platform\n"),
-            ["firefox", "Platform"]
+            parse_flatpak("org.mozilla.firefox\t133.0\tstable\norg.gnome.Platform\t\t48\n\n"),
+            [
+                (
+                    "org.mozilla.firefox".to_string(),
+                    "133.0".to_string(),
+                    "stable".to_string()
+                ),
+                ("org.gnome.Platform".to_string(), String::new(), "48".to_string())
+            ]
         );
     }
 
@@ -451,7 +582,7 @@ mod tests {
     #[test]
     fn reads_npm_and_uv() {
         let j = serde_json::json!({"typescript": {"current": "5.6.2", "wanted": "5.6.2", "latest": "5.7.1"}});
-        assert_eq!(parse_npm(&j), ["typescript 5.6.2 → 5.7.1"]);
+        assert_eq!(parse_npm(&j), [Item::new("typescript", "5.6.2", "5.7.1")]);
         assert!(parse_npm(&serde_json::json!({})).is_empty());
         assert_eq!(
             parse_uv("ruff v0.6.9\n- ruff\nposting v2.3.0\n- posting\n"),
@@ -463,8 +594,19 @@ mod tests {
     }
 
     #[test]
+    fn describes_items() {
+        assert_eq!(Item::new("firefox", "158", "160").line(), "firefox 158 → 160");
+        assert_eq!(Item::new("fzf.fish", "", "abc1234").line(), "fzf.fish (new) → abc1234");
+        assert_eq!(
+            Item::new("cura.appimage", "installed", "").line(),
+            "cura.appimage installed → newer"
+        );
+        assert_eq!(Item::new("old-lib", "1.0", REMOVED).line(), "old-lib 1.0 → removed");
+    }
+
+    #[test]
     fn counts_work() {
-        let c = Check::new(Step::Npm, updates(vec!["a".into()], Vec::new()));
+        let c = Check::new(Step::Npm, updates(vec![Item::new("a", "1", "2")], Vec::new()));
         assert!(c.has_work());
         assert_eq!(c.count(), 1);
         assert_eq!(updates(Vec::new(), Vec::new()), Found::UpToDate);

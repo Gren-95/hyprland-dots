@@ -33,6 +33,8 @@ pub struct Action {
     pub plugin: String,
     /// The upstream commit(s) to remember after an install or update.
     pub remote: String,
+    /// The commit(s) recorded at the last install or update.
+    pub recorded: String,
 }
 
 /// What to do, and what could not be checked.
@@ -105,6 +107,7 @@ pub fn plan() -> Result<Plan, String> {
                 kind: Kind::Remove,
                 plugin: p.to_string(),
                 remote: String::new(),
+                recorded: String::new(),
             });
         }
     }
@@ -139,6 +142,7 @@ pub fn plan() -> Result<Plan, String> {
             kind,
             plugin: p.to_string(),
             remote,
+            recorded: recorded.trim().to_string(),
         });
     }
     Ok(plan)

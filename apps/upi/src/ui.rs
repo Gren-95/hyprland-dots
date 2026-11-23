@@ -140,6 +140,24 @@ impl Ui {
     }
 }
 
+impl Ui {
+    /// Rows of (name, from, to), in aligned columns under a step.
+    pub fn changes(&self, rows: &[(String, String, String)]) {
+        let width = |pick: fn(&(String, String, String)) -> &String| {
+            rows.iter().map(|r| pick(r).chars().count()).max().unwrap_or(0).min(40)
+        };
+        let (name_w, from_w) = (width(|r| &r.0), width(|r| &r.1));
+        for (name, from, to) in rows {
+            let to = if to.is_empty() { "newer" } else { to };
+            println!(
+                "    {name:<name_w$}  {} {}",
+                self.paint("\x1b[2m", &format!("{from:<from_w$} →")),
+                self.paint("\x1b[1m", to)
+            );
+        }
+    }
+}
+
 /// "38 s", "2 m 10 s", "1 h 3 m".
 pub fn duration(d: Duration) -> String {
     let s = d.as_secs();

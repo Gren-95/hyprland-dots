@@ -19,6 +19,8 @@ pub struct StepRecord {
     pub count: usize,
     pub seconds: u64,
     pub detail: String,
+    /// "firefox 158.0.1-2.fc44 → 160.0-1.fc44" for each planned change.
+    pub changes: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -127,6 +129,7 @@ mod tests {
             count,
             seconds: 1,
             detail: String::new(),
+            changes: Vec::new(),
         }
     }
 

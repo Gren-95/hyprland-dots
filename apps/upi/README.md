@@ -24,8 +24,12 @@ upi --list                # the steps
    `dnf check-update` and the unneeded packages, `fwupdmgr get-updates`,
    `flatpak remote-ls --updates`, Gear Lever's update list, `npm outdated`,
    each uv tool against PyPI, bun against the npm registry, and each fish
-   plugin's upstream commit (`git ls-remote`). The list shows what would
-   change, with the kernel version when a new one is coming.
+   plugin's upstream commit (`git ls-remote`). Under each source comes
+   everything that would change, from what to what: packages with their
+   installed and new versions, firmware per device, Flatpak apps (runtimes
+   without a version show as a new build of their branch), npm, uv and bun
+   versions, fish plugins by commit, and the packages autoremove would take
+   away. Gear Lever gives no versions, so AppImages show as "→ newer".
 3. **Ask once.** "Update 17 items in 4 sources?" With nothing to update it
    stops there.
 4. **Snapshot.** The sudo password is asked once (and kept fresh for the
@@ -50,8 +54,8 @@ version is read from the npm registry, so checking it costs nothing.
 
 | Path | What |
 |------|------|
-| `~/.local/state/dots/last-update.json` | The last run: each step's result, count, time and detail; read by `upi --last` and the settings app's Updates panel |
-| `~/.local/state/dots/updates/<time>.log` | Every command's full output, the newest 20 kept |
+| `~/.local/state/dots/last-update.json` | The last run: each step's result, count, time, detail and its changes from what to what; read by `upi --last` and the settings app's Updates panel |
+| `~/.local/state/dots/updates/<time>.log` | The plan (every change, from what to what), then every command's full output; the newest 20 kept |
 | `~/.local/state/update-all/fisher/` | The upstream commit of each fish plugin, so unchanged plugins are left alone |
 
 ## Source
