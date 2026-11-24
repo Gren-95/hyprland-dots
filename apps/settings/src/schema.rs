@@ -90,8 +90,6 @@ pub enum Page {
     Recording,
     /// Remote access, remote login and the tailnet (sharing.rs).
     Sharing,
-    /// What each Flatpak app may reach outside its sandbox (flatpak.rs).
-    Flatpak,
     /// Every setting not at its default (changed.rs).
     Changed,
     /// The user's picture and full name (users.rs).
@@ -101,7 +99,8 @@ pub enum Page {
     /// Running upi and the Timeshift snapshots (updates.rs).
     Updates,
     /// In-use indicators and clipboard settings, then clearing the
-    /// clipboard history and recent files (privacy.rs).
+    /// clipboard history and recent files (privacy.rs), then what each Flatpak
+    /// app may reach outside its sandbox (flatpak.rs).
     Privacy,
     /// The Immich and Jellyfin syncs (services.rs, sync.rs), then their
     /// settings.
@@ -905,7 +904,7 @@ pub const PANELS: &[Panel] = &[
         glyph: ico::PANEL_TOP,
         group: Group::Appearance,
         page: Page::Bar,
-        keywords: "modules quick actions tray icons hide show overflow placement layout",
+        keywords: "modules quick actions tray icons hide show overflow placement layout system monitor sysmon cpu processor memory ram storage disk temperatures fans refresh",
         sections: &[
             Section {
                 title: "Size",
@@ -962,6 +961,52 @@ pub const PANELS: &[Panel] = &[
                     ],
                     "workspace",
                 )],
+            },
+            Section {
+                title: "System monitor",
+                settings: &[
+                    Setting {
+                        file: "sysmon-interval",
+                        label: "Interval",
+                        help: "Time between refreshes",
+                        control: Control::NumberChoice(&[
+                            (500, "0.5 s"),
+                            (1000, "1 s"),
+                            (1500, "1.5 s"),
+                            (2000, "2 s"),
+                            (5000, "5 s"),
+                        ]),
+                        default: Default::Int(1500),
+                    },
+                    Setting {
+                        file: "sysmon-show-cpu",
+                        label: "Shown",
+                        help: "Sections of the system monitor: processor, memory, storage, temperatures and fans",
+                        control: Control::Toggles(&[
+                            Toggle {
+                                file: "sysmon-show-cpu",
+                                label: "CPU",
+                                default: true,
+                            },
+                            Toggle {
+                                file: "sysmon-show-ram",
+                                label: "Memory",
+                                default: true,
+                            },
+                            Toggle {
+                                file: "sysmon-show-storage",
+                                label: "Storage",
+                                default: true,
+                            },
+                            Toggle {
+                                file: "sysmon-show-thermal",
+                                label: "Temperatures",
+                                default: true,
+                            },
+                        ]),
+                        default: Default::Bool(true),
+                    },
+                ],
             },
         ],
     },
@@ -1351,63 +1396,6 @@ pub const PANELS: &[Panel] = &[
         ],
     },
     Panel {
-        id: "sysmon",
-        title: "System monitor",
-        glyph: ico::CPU,
-        group: Group::System,
-        page: Page::Settings,
-        keywords: "",
-        sections: &[
-            Section {
-                title: "Refresh",
-                settings: &[Setting {
-                    file: "sysmon-interval",
-                    label: "Interval",
-                    help: "Time between refreshes",
-                    control: Control::NumberChoice(&[
-                        (500, "0.5 s"),
-                        (1000, "1 s"),
-                        (1500, "1.5 s"),
-                        (2000, "2 s"),
-                        (5000, "5 s"),
-                    ]),
-                    default: Default::Int(1500),
-                }],
-            },
-            Section {
-                title: "Sections",
-                settings: &[Setting {
-                    file: "sysmon-show-cpu",
-                    label: "Shown",
-                    help: "Sections of the system monitor: processor, memory, storage, temperatures and fans",
-                    control: Control::Toggles(&[
-                        Toggle {
-                            file: "sysmon-show-cpu",
-                            label: "CPU",
-                            default: true,
-                        },
-                        Toggle {
-                            file: "sysmon-show-ram",
-                            label: "Memory",
-                            default: true,
-                        },
-                        Toggle {
-                            file: "sysmon-show-storage",
-                            label: "Storage",
-                            default: true,
-                        },
-                        Toggle {
-                            file: "sysmon-show-thermal",
-                            label: "Temperatures",
-                            default: true,
-                        },
-                    ]),
-                    default: Default::Bool(true),
-                }],
-            },
-        ],
-    },
-    Panel {
         id: "gaming",
         title: "Gaming",
         glyph: ico::GAMEPAD_2,
@@ -1519,15 +1507,6 @@ pub const PANELS: &[Panel] = &[
         sections: &[],
     },
     Panel {
-        id: "updates",
-        title: "Updates",
-        glyph: ico::DOWNLOAD,
-        group: Group::System,
-        page: Page::Updates,
-        keywords: "update upgrade dnf flatpak packages firmware timeshift snapshot backup restore",
-        sections: &[],
-    },
-    Panel {
         id: "users",
         title: "Users",
         glyph: ico::CIRCLE_USER,
@@ -1542,7 +1521,7 @@ pub const PANELS: &[Panel] = &[
         glyph: ico::EYE_OFF,
         group: Group::System,
         page: Page::Privacy,
-        keywords: "privacy indicator dot camera microphone mic screen recording clipboard history recent files clear wipe",
+        keywords: "privacy indicator dot camera microphone mic screen recording clipboard history recent files clear wipe app permissions flatpak sandbox flatseal network files folders home devices override",
         sections: &[
             Section {
                 title: "In-use indicators",
@@ -1607,15 +1586,6 @@ pub const PANELS: &[Panel] = &[
         group: Group::System,
         page: Page::Changed,
         keywords: "modified customised customized non-default defaults reset",
-        sections: &[],
-    },
-    Panel {
-        id: "flatpak",
-        title: "App permissions",
-        glyph: ico::LOCK,
-        group: Group::System,
-        page: Page::Flatpak,
-        keywords: "flatpak sandbox flatseal network files folders home devices camera privacy override",
         sections: &[],
     },
     Panel {
@@ -1815,6 +1785,15 @@ pub const PANELS: &[Panel] = &[
                 }],
             },
         ],
+    },
+    Panel {
+        id: "updates",
+        title: "Updates",
+        glyph: ico::DOWNLOAD,
+        group: Group::System,
+        page: Page::Updates,
+        keywords: "update upgrade dnf flatpak packages firmware timeshift snapshot backup restore",
+        sections: &[],
     },
     Panel {
         id: "about",

@@ -338,7 +338,7 @@ impl App {
     /// Ask the system again, when the open panel shows system state.
     fn refresh_page(&mut self) -> Task<Message> {
         match PANELS[self.panel].page {
-            Page::Settings | Page::Changed | Page::Privacy => Task::none(),
+            Page::Settings | Page::Changed => Task::none(),
             Page::Users => self.users.update(users::Msg::Load).map(Message::Users),
             Page::Displays => self.displays.update(displays::Msg::Load).map(Message::Displays),
             Page::Updates => self.updates.update(updates::Msg::Load).map(Message::Updates),
@@ -362,7 +362,7 @@ impl App {
                 self.sync.update(sync::Msg::Load).map(Message::Sync),
             ]),
             Page::Sharing => self.sharing.update(sharing::Msg::Refresh).map(Message::Sharing),
-            Page::Flatpak => self.flatpak.update(flatpak::Msg::Load).map(Message::Flatpak),
+            Page::Privacy => self.flatpak.update(flatpak::Msg::Load).map(Message::Flatpak),
             Page::Notifications => {
                 self.notif_apps.update(notifapps::Msg::Load);
                 Task::none()
@@ -948,11 +948,7 @@ impl App {
                 }
                 body.into()
             }
-            Page::Users => {
-                let body = page_column(panel.title, layout);
-                let rows = self.users.rows().into_iter().map(|r| r.map(Message::Users)).collect();
-                ui::section(body, "You", rows).into()
-            }
+            Page::Users => Element::from(self.users.view(page_column(panel.title, layout))).map(Message::Users),
             Page::Privacy => {
                 let mut body = page_column(panel.title, layout);
                 for section in panel.sections {
@@ -970,7 +966,13 @@ impl App {
                 if let Some(error) = &self.error {
                     body = body.push(text(error).color(style::RED));
                 }
-                body.into()
+                let apps = self
+                    .flatpak
+                    .rows()
+                    .into_iter()
+                    .map(|r| r.map(Message::Flatpak))
+                    .collect();
+                ui::section(body, "App permissions", apps).into()
             }
             Page::Changed => {
                 let body = page_column(panel.title, layout);
@@ -1003,16 +1005,6 @@ impl App {
                         .collect()
                 };
                 ui::section(body, "Not at their default", rows).into()
-            }
-            Page::Flatpak => {
-                let body = page_column(panel.title, layout);
-                let rows = self
-                    .flatpak
-                    .rows()
-                    .into_iter()
-                    .map(|r| r.map(Message::Flatpak))
-                    .collect();
-                ui::section(body, "Flatpak apps", rows).into()
             }
             Page::Sharing => {
                 let mut body = page_column(panel.title, layout);

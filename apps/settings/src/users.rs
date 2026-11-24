@@ -5,8 +5,8 @@
 //! (~/.config/hypr/avatar.png points there); "Make initials picture" runs
 //! scripts/generate-avatar.sh.
 
-use iced::widget::{container, image, text_input};
-use iced::{Element, Length, Task};
+use iced::widget::{Column, column, container, image, row, text, text_input};
+use iced::{Alignment, Element, Length, Task};
 use lucide_iced::bytes as ico;
 
 use crate::store::home;
@@ -14,6 +14,8 @@ use crate::style::{self, Action};
 use crate::system::{self, args};
 use crate::ui;
 
+/// Size of the picture in the header.
+const AVATAR: f32 = 88.0;
 const ACCOUNTS: &str = "org.freedesktop.Accounts";
 const USER_IFACE: &str = "org.freedesktop.Accounts.User";
 
@@ -183,30 +185,27 @@ impl State {
         Task::none()
     }
 
-    pub fn rows(&self) -> Vec<Element<'_, Msg>> {
+    /// A header with the picture and name, then the controls that change them.
+    pub fn view<'a>(&'a self, mut body: Column<'a, Msg>) -> Column<'a, Msg> {
         let r = match &self.reading {
-            None => return vec![ui::note("Looking…")],
-            Some(Err(e)) => return vec![ui::note(e.clone())],
+            None => return ui::section(body, "Account", vec![ui::note("Looking…")]),
+            Some(Err(e)) => return ui::section(body, "Account", vec![ui::note(e.clone())]),
             Some(Ok(r)) => r,
         };
-        let idle = !self.busy;
-        let mut rows: Vec<Element<'_, Msg>> = Vec::new();
         if let Some(e) = &self.error {
-            rows.push(ui::error(e));
+            body = body.push(ui::error(e));
         }
-        if let Some(icon) = &r.icon {
-            let picture = image(icon.clone()).width(96).height(96);
-            rows.push(container(picture).padding([8, 14]).into());
-        }
-        rows.push(ui::item(
+        body = body.push(hero(r));
+        let idle = !self.busy;
+        let picture = ui::item(
             ico::IMAGE,
             "Picture".into(),
-            "Lock and login screens".into(),
+            "Shown on the lock and login screens".into(),
             vec![ui::button_group(vec![
                 ("Choose…", idle.then_some(Msg::Choose), Action::Normal),
                 ("Make initials picture", idle.then_some(Msg::Initials), Action::Normal),
             ])],
-        ));
+        );
         let shown = self.name_draft.as_deref().unwrap_or(&r.real_name);
         let field = text_input("Full name", shown)
             .on_input(Msg::Name)
@@ -214,14 +213,42 @@ impl State {
             .padding([6, 10])
             .width(Length::Fixed(260.0))
             .style(style::field);
-        rows.push(ui::item(
+        let name = ui::item(
             ico::USER,
             "Full name".into(),
-            format!("Login name {} · Enter to save", r.login),
+            "Enter to save".into(),
             vec![field.into()],
-        ));
-        rows
+        );
+        ui::section(body, "Account", vec![picture, name])
     }
+}
+
+/// The picture in a circle beside the full name and login name, like the
+/// About header.
+fn hero(r: &Reading) -> Element<'_, Msg> {
+    let picture: Element<'_, Msg> = match &r.icon {
+        Some(icon) => image(icon.clone())
+            .width(AVATAR)
+            .height(AVATAR)
+            .border_radius(AVATAR / 2.0)
+            .into(),
+        None => ui::icon(ico::CIRCLE_USER, AVATAR * 0.6),
+    };
+    let name = if r.real_name.is_empty() { &r.login } else { &r.real_name };
+    let info = column![
+        text(name.clone()).font(style::FONT_BOLD).size(26).color(style::FG),
+        text(r.login.clone()).size(14).color(style::FG_MUTED),
+    ]
+    .spacing(2);
+    container(
+        row![container(picture).center_x(AVATAR + 8.0).center_y(AVATAR + 8.0), info]
+            .spacing(20)
+            .align_y(Alignment::Center),
+    )
+    .padding([22, 24])
+    .width(Length::Fill)
+    .style(style::hero)
+    .into()
 }
 
 #[cfg(test)]
