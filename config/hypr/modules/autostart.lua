@@ -9,6 +9,15 @@ hl.env("BUN_INSTALL", os.getenv("HOME") .. "/.local/share/bun")
 hl.env("NPM_CONFIG_USERCONFIG", os.getenv("HOME") .. "/.config/npm/npmrc")
 hl.env("PYTHON_HISTORY", os.getenv("HOME") .. "/.local/state/python/history")
 
+-- ~/.local/bin (the settings app, upi, user installs) for everything Hyprland
+-- starts: the launcher's desktop entries run plain command names. Added once,
+-- so a config reload does not stack copies.
+local local_bin = os.getenv("HOME") .. "/.local/bin"
+local path = os.getenv("PATH")
+if not (":" .. path .. ":"):find(":" .. local_bin .. ":", 1, true) then
+    hl.env("PATH", local_bin .. ":" .. path)
+end
+
 -- Silence Quickshell's per-desktop-entry parse warnings — they come from
 
 -- system .desktop files we don't ship (swappy uses non-standard `\$` escapes
