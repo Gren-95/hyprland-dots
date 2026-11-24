@@ -1,7 +1,9 @@
 #!/bin/bash
 # Mirrors the Jellyfin music library into the music folder with jellyfin-music-rs
 # (https://github.com/Gren-95/jellyfin-music-rs), from jellyfin-sync.timer or by
-# hand. Jellyfin is the master: tracks removed there are deleted here. The tool
+# hand. Every track sits straight in the folder (--flat), so `mpv ~/Music/*`
+# plays the whole library. Jellyfin is the master: any audio file the server
+# does not have is deleted from the folder. The tool
 # does the sync; this wrapper adds the desktop side: the folder and server
 # address from the settings app, the log, notifications, and asking for a login
 # when run in a terminal without one.
@@ -57,7 +59,7 @@ summary() {
 
 # run_sync [--overwrite]: one sync; its JSON summary decides what to report.
 run_sync() {
-    local args=(sync --config "$JELLYFIN_CONF" --dir "$MUSIC_DIR" --json "$@")
+    local args=(sync --config "$JELLYFIN_CONF" --dir "$MUSIC_DIR" --flat --json "$@")
     [[ -n "$URL_SETTING" ]] && args+=(--url "$URL_SETTING")
 
     # In a terminal the progress bars go to the screen; otherwise the tool's

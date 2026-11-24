@@ -49,11 +49,13 @@ Auth is stored in `~/.config/immich/auth.yml` (gitignored).
 
 Syncs your Jellyfin music library to `~/Music/` once a day with
 [jellyfin-music-rs](https://github.com/Gren-95/jellyfin-music-rs), installed at
-`~/.local/bin/jellyfin-music-rs`. Jellyfin is the master: tracks removed there
-are deleted locally, unless that would remove more than half of them (a server
-with a half-mounted drive). Tracks are saved as
-`~/Music/<Artist>/<Album>/<Track>`, with a `cover.jpg` per album and your
-playlists in `~/Music/Playlists/`. Downloads resume after a dropped connection.
+`~/.local/bin/jellyfin-music-rs`. Every track is saved straight in the music
+folder as `~/Music/<Track>.mp3`, with no folders, covers or playlists, so
+`mpv --shuffle ~/Music/*` plays the whole library. Tracks with the same name get
+`<Track> (2).mp3`. Jellyfin is the master: any audio file in `~/Music` that the
+server doesn't have is deleted, including music you put there yourself, unless
+that would remove more than half of them (a server with a half-mounted drive).
+Keep other music in another folder. Downloads resume after a dropped connection.
 
 It notifies when tracks were downloaded, updated, removed or failed, and when
 something needs a look (a rejected key, the deletion guard). An unreachable
