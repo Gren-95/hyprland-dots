@@ -44,17 +44,26 @@
     {
       "type": "os",
       "key": "  OS",
-      "keyColor": "red"
+      "keyColor": "red",
+      "format": "{pretty-name}"
     },
     {
-      "type": "kernel",
+      "type": "command",
       "key": "  Kernel",
-      "keyColor": "red"
+      "keyColor": "red",
+      "text": "release=$(uname -r); echo \"$(uname -s) ${release%.$(uname -m)}\""
     },
     {
-      "type": "packages",
+      "type": "os",
+      "key": "  Arch",
+      "keyColor": "red",
+      "format": "{arch}"
+    },
+    {
+      "type": "command",
       "key": "  Packages",
-      "keyColor": "red"
+      "keyColor": "red",
+      "text": "~/.config/fastfetch/count-packages.sh"
     },
     {
       "type": "uptime",
@@ -83,7 +92,8 @@
     {
       "type": "display",
       "key": "  Display",
-      "keyColor": "yellow"
+      "keyColor": "yellow",
+      "format": "{width}x{height}{?inch} in {inch}\"{?}, {refresh-rate} Hz"
     },
     {
       "type": "custom",
@@ -95,29 +105,34 @@
       "keyColor": "cyan"
     },
     {
-      "type": "cpu",
+      "type": "command",
       "key": "  CPU",
-      "keyColor": "cyan"
+      "keyColor": "cyan",
+      "text": "sed -n 's/^model name[[:space:]]*: //p' /proc/cpuinfo | head -n1 | sed -E 's/\\((R|TM)\\)//g; s/^[0-9]+th Gen //; s/ +/ /g'"
     },
     {
       "type": "gpu",
       "key": "  GPU",
-      "keyColor": "cyan"
+      "keyColor": "cyan",
+      "format": "{vendor} {name}"
     },
     {
       "type": "memory",
       "key": "  Memory",
-      "keyColor": "cyan"
+      "keyColor": "cyan",
+      "format": "{percentage-bar} {used} / {total}"
     },
     {
       "type": "disk",
       "key": "  Disk",
-      "keyColor": "cyan"
+      "keyColor": "cyan",
+      "format": "{size-percentage-bar} {size-used} / {size-total}"
     },
     {
       "type": "battery",
       "key": "  Battery",
-      "keyColor": "cyan"
+      "keyColor": "cyan",
+      "format": "{capacity-bar} {capacity}{?time-formatted} · {?}{?time-hours}{time-hours}h {?}{?time-formatted}{time-minutes}m left{?}{/time-formatted} · {status}{/}"
     },
     {
       "type": "custom",
